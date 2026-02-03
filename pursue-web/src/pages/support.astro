@@ -1,0 +1,173 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+---
+
+<BaseLayout title="Support - Pursue">
+  <main>
+    <section class="bg-gradient-to-b from-pursue-blue-50 to-white py-12 sm:py-16">
+      <Header />
+      <div class="max-w-6xl mx-auto px-4 sm:px-6 pt-8">
+        <h1 class="text-4xl sm:text-5xl font-bold text-pursue-gray-900 mb-4">
+          Support
+        </h1>
+        <p class="text-xl text-pursue-gray-700 max-w-2xl">
+          Find answers to common questions. Can't find what you need? Email us at <a href="mailto:support@getpursue.app" class="text-pursue-blue-600 font-medium underline underline-offset-2">support@getpursue.app</a> — we respond within 24 hours.
+        </p>
+      </div>
+    </section>
+
+    <section class="py-16 sm:py-24 bg-white">
+      <div class="max-w-3xl mx-auto px-4 sm:px-6 space-y-12">
+        <!-- Getting Started -->
+        <div>
+          <h2 class="text-2xl font-bold text-pursue-gray-900 mb-6">Getting Started</h2>
+          <dl class="space-y-4">
+            <div class="border border-pursue-gray-200 rounded-lg overflow-hidden">
+              <dt class="px-5 py-4 bg-pursue-gray-50 font-semibold text-pursue-gray-900">How do I create an account?</dt>
+              <dd class="px-5 py-4 text-pursue-gray-700">
+                Open the app and you'll see the welcome screen. Choose <strong>Continue with Google</strong> to sign in with your Google account, or <strong>Create Account</strong> to sign up with email. For email sign-up you'll enter a display name, email, and password (min 8 characters). After signing in or creating an account, you're taken to the Home screen where you can join or create groups.
+              </dd>
+            </div>
+            <div class="border border-pursue-gray-200 rounded-lg overflow-hidden">
+              <dt class="px-5 py-4 bg-pursue-gray-50 font-semibold text-pursue-gray-900">How do I join a group?</dt>
+              <dd class="px-5 py-4 text-pursue-gray-700">
+                From the Home screen, tap <strong>Join Group</strong> (or use the join option in the empty state if you have no groups yet). Enter the invite code your friend shared (e.g. <code class="bg-pursue-gray-100 px-1 rounded">PURSUE-ABC123-XYZ789</code>), or tap <strong>Scan Code</strong> to scan a QR code. You'll see a confirmation screen with the group name and member count — tap <strong>Join</strong> to join. You can also open an invite link (e.g. getpursue.app/invite/CODE) on your phone to open the app and join directly.
+              </dd>
+            </div>
+            <div class="border border-pursue-gray-200 rounded-lg overflow-hidden">
+              <dt class="px-5 py-4 bg-pursue-gray-50 font-semibold text-pursue-gray-900">What's an invite code?</dt>
+              <dd class="px-5 py-4 text-pursue-gray-700">
+                An invite code is a unique code for a group (e.g. <code class="bg-pursue-gray-100 px-1 rounded">PURSUE-ABC123-XYZ789</code>). Group members can generate and share it from the group's <strong>Invite Members</strong> screen — they can copy the code, share it via messaging or social apps, or share a link (getpursue.app/invite/CODE). Anyone with the code or link can join that group. By default, invite codes don't expire and have unlimited uses; admins can change these settings.
+              </dd>
+            </div>
+          </dl>
+        </div>
+
+        <!-- Using Pursue -->
+        <div>
+          <h2 class="text-2xl font-bold text-pursue-gray-900 mb-6">Using Pursue</h2>
+          <dl class="space-y-4">
+            <div class="border border-pursue-gray-200 rounded-lg overflow-hidden">
+              <dt class="px-5 py-4 bg-pursue-gray-50 font-semibold text-pursue-gray-900">How do I log progress?</dt>
+              <dd class="px-5 py-4 text-pursue-gray-700">
+                On the <strong>Today</strong> screen, tap a goal card to log progress. For <strong>binary (yes/no)</strong> goals, one tap marks it complete and you'll see an undo toast for a few seconds. For <strong>numeric</strong> goals (e.g. miles, pages), a quick-entry dialog opens — enter the value and optional note, then tap <strong>Log</strong>. You can also open a goal from the Group Detail screen and log there. Your group gets a push notification when you log.
+              </dd>
+            </div>
+            <div class="border border-pursue-gray-200 rounded-lg overflow-hidden">
+              <dt class="px-5 py-4 bg-pursue-gray-50 font-semibold text-pursue-gray-900">Can I edit or delete progress entries?</dt>
+              <dd class="px-5 py-4 text-pursue-gray-700">
+                Yes. If you've already logged for today, tap the same goal card again. For <strong>binary</strong> goals you'll get a "Remove today's log?" confirmation — tap <strong>Remove</strong> to delete the entry. For <strong>numeric</strong> goals an edit dialog opens where you can change the value or note, or tap <strong>Delete Entry</strong> to remove it. You can also edit or delete your own entries from the Goal Detail screen (long press on an entry for options).
+              </dd>
+            </div>
+            <div class="border border-pursue-gray-200 rounded-lg overflow-hidden">
+              <dt class="px-5 py-4 bg-pursue-gray-50 font-semibold text-pursue-gray-900">What are the different goal types?</dt>
+              <dd class="px-5 py-4 text-pursue-gray-700">
+                Goals can be <strong>Daily</strong>, <strong>Weekly</strong>, <strong>Monthly</strong>, or <strong>Yearly</strong>. Each goal is either <strong>Binary</strong> (yes/no — e.g. "Did you meditate?") or <strong>Numeric</strong> (distance, time, or count — e.g. "Run 3x per week", "Read 30 pages", "Miles per month"). Admins create goals and choose the cadence and metric type; members log progress against them. Examples: daily habits (meditate, run), weekly targets (gym 3x, call parents), monthly milestones (read 2 books), yearly goals (run marathon).
+              </dd>
+            </div>
+            <div class="border border-pursue-gray-200 rounded-lg overflow-hidden">
+              <dt class="px-5 py-4 bg-pursue-gray-50 font-semibold text-pursue-gray-900">How do I invite friends?</dt>
+              <dd class="px-5 py-4 text-pursue-gray-700">
+                Open the group, go to the <strong>Members</strong> tab, and tap the <strong>Invite</strong> (person-plus) button. You'll see the group's invite code and a QR code. Use <strong>Copy</strong> to copy the code, or <strong>Share</strong> to send it via your apps. You can also copy a link (getpursue.app/invite/CODE) so friends can open it on their phone and join. Any member can invite; you don't need to be an admin.
+              </dd>
+            </div>
+          </dl>
+        </div>
+
+        <!-- Managing Groups -->
+        <div>
+          <h2 class="text-2xl font-bold text-pursue-gray-900 mb-6">Managing Groups</h2>
+          <dl class="space-y-4">
+            <div class="border border-pursue-gray-200 rounded-lg overflow-hidden">
+              <dt class="px-5 py-4 bg-pursue-gray-50 font-semibold text-pursue-gray-900">How do I create a group?</dt>
+              <dd class="px-5 py-4 text-pursue-gray-700">
+                From the Home screen, tap the <strong>+</strong> (FAB) button. Enter a group name (required), and optionally add an icon (emoji or uploaded image), description, and initial goals. Tap <strong>Create</strong> and you'll be taken to the new group. You're added as the creator and an admin. On the free plan you can have one group; Premium allows unlimited groups.
+              </dd>
+            </div>
+            <div class="border border-pursue-gray-200 rounded-lg overflow-hidden">
+              <dt class="px-5 py-4 bg-pursue-gray-50 font-semibold text-pursue-gray-900">What's the difference between admin and member?</dt>
+              <dd class="px-5 py-4 text-pursue-gray-700">
+                <strong>Admins</strong> can edit the group (name, icon, description), create and edit goals, manage members (e.g. make admin, remove from group), and change group settings. The <strong>creator</strong> is a special admin who can also delete the group. <strong>Members</strong> can view goals and activity, log their own progress, and invite others — but they can't create goals or edit group details. Admins see an "Add goal" button on the Goals tab; members don't.
+              </dd>
+            </div>
+            <div class="border border-pursue-gray-200 rounded-lg overflow-hidden">
+              <dt class="px-5 py-4 bg-pursue-gray-50 font-semibold text-pursue-gray-900">Can I leave a group?</dt>
+              <dd class="px-5 py-4 text-pursue-gray-700">
+                Yes. Open the group, tap the overflow menu (⋮) in the header, and choose <strong>Leave Group</strong>. You'll be removed from the group and it will disappear from your Home list. If you're the creator and want to shut down the group entirely, use <strong>Delete Group</strong> instead (creator only); that permanently deletes the group, all goals, and all member progress for that group.
+              </dd>
+            </div>
+            <div class="border border-pursue-gray-200 rounded-lg overflow-hidden">
+              <dt class="px-5 py-4 bg-pursue-gray-50 font-semibold text-pursue-gray-900">How do I delete a group?</dt>
+              <dd class="px-5 py-4 text-pursue-gray-700">
+                Only the <strong>group creator</strong> can delete a group. Open the group → overflow menu (⋮) → <strong>Edit Group</strong>. At the bottom, tap <strong>Delete Group</strong>. You'll see a confirmation explaining that this permanently deletes all goals, member progress, and activity and cannot be undone. Confirm to delete; you'll be taken back to the Home screen and the group will be removed for everyone.
+              </dd>
+            </div>
+          </dl>
+        </div>
+
+        <!-- Premium -->
+        <div>
+          <h2 class="text-2xl font-bold text-pursue-gray-900 mb-6">Premium</h2>
+          <dl class="space-y-4">
+            <div class="border border-pursue-gray-200 rounded-lg overflow-hidden">
+              <dt class="px-5 py-4 bg-pursue-gray-50 font-semibold text-pursue-gray-900">What's included in Premium?</dt>
+              <dd class="px-5 py-4 text-pursue-gray-700">
+                Premium ($30/year) includes <strong>unlimited groups</strong> (free is 1 group), all the same features as Free (unlimited members per group, all goal types, progress tracking), and <strong>priority support</strong>. Most users stay on the free plan; upgrade when you need more than one group.
+              </dd>
+            </div>
+            <div class="border border-pursue-gray-200 rounded-lg overflow-hidden">
+              <dt class="px-5 py-4 bg-pursue-gray-50 font-semibold text-pursue-gray-900">How do I upgrade?</dt>
+              <dd class="px-5 py-4 text-pursue-gray-700">
+                In the app, go to your profile or account settings and look for the upgrade or Premium option. You can also visit the <a href="/pricing" class="text-pursue-blue-600 font-medium underline underline-offset-2">Pricing</a> page on this site for an overview. Payment is processed through the Google Play Store (Android). No credit card is required to start with the free plan.
+              </dd>
+            </div>
+            <div class="border border-pursue-gray-200 rounded-lg overflow-hidden">
+              <dt class="px-5 py-4 bg-pursue-gray-50 font-semibold text-pursue-gray-900">Can I cancel anytime?</dt>
+              <dd class="px-5 py-4 text-pursue-gray-700">
+                Yes. You can manage or cancel your Premium subscription through your Google Play account settings. If you cancel, you'll keep Premium until the end of your current billing period; after that you'll revert to the free plan (one group). Your data is not deleted.
+              </dd>
+            </div>
+          </dl>
+        </div>
+
+        <!-- Troubleshooting -->
+        <div>
+          <h2 class="text-2xl font-bold text-pursue-gray-900 mb-6">Troubleshooting</h2>
+          <dl class="space-y-4">
+            <div class="border border-pursue-gray-200 rounded-lg overflow-hidden">
+              <dt class="px-5 py-4 bg-pursue-gray-50 font-semibold text-pursue-gray-900">App won't sync</dt>
+              <dd class="px-5 py-4 text-pursue-gray-700">
+                Check your internet connection. If you see "No internet connection" or "Offline — showing cached data," the app is using cached data and will sync when you're back online. Try <strong>pull to refresh</strong> on the Home or Today screen to fetch the latest data. If you see a "Server error" or "Request timed out," wait a moment and try again. If sync still fails, force-quit the app and reopen it, or log out and back in. If the problem continues, contact <a href="mailto:support@getpursue.app" class="text-pursue-blue-600 font-medium underline underline-offset-2">support@getpursue.app</a>.
+              </dd>
+            </div>
+            <div class="border border-pursue-gray-200 rounded-lg overflow-hidden">
+              <dt class="px-5 py-4 bg-pursue-gray-50 font-semibold text-pursue-gray-900">Notifications not working</dt>
+              <dd class="px-5 py-4 text-pursue-gray-700">
+                Ensure app notifications are enabled in your device settings (Settings → Apps → Pursue → Notifications). Pursue sends push notifications when someone in your group logs progress, when a new member joins, and when group details change. If you've just installed or reinstalled, sign in again so the app can register for notifications. On some devices, battery saver or "optimization" can block background delivery — try allowing Pursue to run in the background if notifications still don't appear.
+              </dd>
+            </div>
+            <div class="border border-pursue-gray-200 rounded-lg overflow-hidden">
+              <dt class="px-5 py-4 bg-pursue-gray-50 font-semibold text-pursue-gray-900">Can't join group with invite code</dt>
+              <dd class="px-5 py-4 text-pursue-gray-700">
+                Double-check the code: it's usually in the form <code class="bg-pursue-gray-100 px-1 rounded">PURSUE-XXXXXX-XXXXXX</code>. Avoid extra spaces at the start or end. If you're using a link, open it on the same phone where you have (or will install) Pursue — invite links are meant to open the app or the store. If the code was shared a while ago, the group admin may have changed or disabled the invite; ask for a fresh code or link. If you still can't join, email <a href="mailto:support@getpursue.app" class="text-pursue-blue-600 font-medium underline underline-offset-2">support@getpursue.app</a> with the group name and what you see on screen.
+              </dd>
+            </div>
+          </dl>
+        </div>
+
+        <!-- Contact -->
+        <div class="border-t border-pursue-gray-200 pt-8">
+          <h2 class="text-2xl font-bold text-pursue-gray-900 mb-4">Contact</h2>
+          <p class="text-pursue-gray-700">
+            Email: <a href="mailto:support@getpursue.app" class="text-pursue-blue-600 font-medium underline underline-offset-2">support@getpursue.app</a><br />
+            We aim to respond within 24 hours.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <Footer />
+  </main>
+</BaseLayout>

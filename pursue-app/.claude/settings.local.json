@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(./gradlew :app:testDebugUnitTest:*)",
+      "Bash(./gradlew testDebugUnitTest:*)",
+      "Bash(./gradlew compileDebugKotlin:*)",
+      "Bash(find:*)",
+      "Bash(for f in app/build/test-results/testDebugUnitTest/*.xml)",
+      "Bash(do grep -q 'failures=\"\"1\"\"' \"$f\")",
+      "Bash(echo:*)",
+      "Bash(done)",
+      "Bash(./gradlew test:*)",
+      "Bash(./gradlew assembleDebug:*)",
+      "Bash(git commit:*)",
+      "WebSearch",
+      "Bash(./gradlew:*)",
+      "Bash(git add:*)"
+    ]
+  },
+  "enabledMcpjsonServers": [
+    "ChunkHound"
+  ]
+}

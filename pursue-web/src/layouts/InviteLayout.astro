@@ -1,0 +1,155 @@
+---
+// Full invite handler page per spec §3.4. Client script reads code from pathname.
+const site = 'https://getpursue.app';
+---
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Join Pursue Group</title>
+    <meta name="description" content="You've been invited to join a Pursue accountability group!" />
+    <meta property="og:title" content="Join my Pursue group!" />
+    <meta property="og:description" content="Track goals together and stay accountable." />
+    <meta property="og:image" content={`${site}/og-image.png`} />
+    <meta property="og:type" content="website" />
+  </head>
+  <body>
+    <div id="app">
+      <div class="invite-mobile">
+        <img src="/logo.svg" alt="Pursue" width="80" />
+        <h1>Join Pursue Group</h1>
+        <p>Opening app...</p>
+        <div class="spinner" aria-hidden="true"></div>
+      </div>
+    </div>
+
+    <script define:vars={{ site }}>
+      (function () {
+        const pathParts = window.location.pathname.split('/').filter(Boolean);
+        const inviteCode = pathParts[pathParts.length - 1] || '';
+
+        const userAgent = navigator.userAgent || navigator.vendor || window.opera || '';
+        const isAndroid = /android/i.test(userAgent);
+        const isIOS = /iPad|iPhone|iPod/.test(userAgent) && !window.MSStream;
+        const isMobile = isAndroid || isIOS;
+
+        const app = document.getElementById('app');
+        if (!app) return;
+
+        if (isMobile) {
+          const appScheme = `pursue://invite/${inviteCode}`;
+          window.location.href = appScheme;
+
+          setTimeout(function () {
+            if (isAndroid) {
+              window.location.href = 'https://play.google.com/store/apps/details?id=app.getpursue';
+            } else if (isIOS) {
+              window.location.href = 'https://apps.apple.com/app/pursue/idXXXXXXXX';
+            }
+          }, 2500);
+        } else {
+          const inviteUrl = `${site}/invite/${inviteCode}`;
+          const qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(inviteUrl);
+          app.innerHTML = `
+            <div class="invite-desktop">
+              <img src="/logo.svg" alt="Pursue" width="100" />
+              <h1>Open on Mobile</h1>
+              <p class="invite-desktop-sub">Scan this QR code with your phone to join the group</p>
+              <div class="invite-qr-wrap">
+                <img src="${qrUrl}" alt="QR Code" width="200" height="200" />
+              </div>
+              <p class="invite-link-copy">Or visit this link on your mobile device:<br><strong>${inviteUrl}</strong></p>
+              <a href="/" class="invite-cta">Learn More About Pursue</a>
+            </div>
+          `;
+        }
+      })();
+    </script>
+
+    <style>
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        margin: 0;
+        padding: 0;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        color: #333;
+      }
+      .invite-mobile {
+        text-align: center;
+        padding: 50px 20px;
+      }
+      .invite-mobile img {
+        display: block;
+        margin: 0 auto 20px;
+      }
+      .invite-mobile h1 {
+        font-size: 1.75rem;
+        margin: 0 0 10px;
+      }
+      .invite-mobile p {
+        margin: 0 0 20px;
+        color: rgba(255, 255, 255, 0.9);
+      }
+      .spinner {
+        border: 4px solid rgba(255, 255, 255, 0.3);
+        border-top-color: #1976D2;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        animation: spin 1s linear infinite;
+        margin: 0 auto;
+      }
+      @keyframes spin {
+        to { transform: rotate(360deg); }
+      }
+      .invite-desktop {
+        max-width: 600px;
+        margin: 100px auto;
+        padding: 40px;
+        text-align: center;
+        color: #333;
+      }
+      .invite-desktop img[alt="Pursue"] {
+        margin-bottom: 20px;
+      }
+      .invite-desktop h1 {
+        font-size: 32px;
+        margin: 0 0 10px;
+      }
+      .invite-desktop-sub {
+        font-size: 18px;
+        color: #666;
+        margin: 0 0 30px;
+      }
+      .invite-qr-wrap {
+        background: #fff;
+        padding: 20px;
+        border-radius: 12px;
+        display: inline-block;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      }
+      .invite-link-copy {
+        margin-top: 30px;
+        color: rgba(255, 255, 255, 0.85);
+      }
+      .invite-link-copy strong {
+        color: #1976D2;
+      }
+      .invite-cta {
+        display: inline-block;
+        margin-top: 40px;
+        padding: 12px 24px;
+        background: #1976D2;
+        color: #fff;
+        text-decoration: none;
+        border-radius: 8px;
+        font-weight: 600;
+      }
+      .invite-cta:hover {
+        background: #1565C0;
+      }
+    </style>
+  </body>
+</html>

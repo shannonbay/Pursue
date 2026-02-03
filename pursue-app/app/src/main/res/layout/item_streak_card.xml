@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    app:cardCornerRadius="12dp"
+    app:cardElevation="1dp"
+    app:strokeWidth="0dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="🔥 Current Streak"
+            android:textAppearance="?attr/textAppearanceHeadlineSmall"
+            android:textColor="@color/on_surface"
+            android:layout_marginBottom="16dp" />
+
+        <TextView
+            android:id="@+id/streak_days"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAppearance="?attr/textAppearanceDisplayMedium"
+            android:textColor="@color/primary"
+            android:textStyle="bold"
+            android:layout_gravity="center"
+            android:layout_marginBottom="8dp"
+            tools:text="7 Days" />
+
+        <ProgressBar
+            android:id="@+id/streak_progress"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="match_parent"
+            android:layout_height="8dp"
+            android:layout_marginBottom="8dp"
+            android:progress="23"
+            android:progressTint="@color/primary"
+            android:progressBackgroundTint="@color/surface_variant"
+            android:max="100"
+            tools:progress="23" />
+
+        <TextView
+            android:id="@+id/streak_goal_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAppearance="?attr/textAppearanceBodyMedium"
+            android:textColor="@color/on_surface_variant"
+            android:layout_gravity="center"
+            android:layout_marginBottom="8dp"
+            tools:text="Goal: 30 days (23%)" />
+
+        <TextView
+            android:id="@+id/longest_streak_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAppearance="?attr/textAppearanceBodySmall"
+            android:textColor="@color/on_surface_variant"
+            android:layout_gravity="center"
+            tools:text="Longest streak: 14 days" />
+
+    </LinearLayout>
+
+</com.google.android.material.card.MaterialCardView>

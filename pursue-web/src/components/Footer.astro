@@ -1,0 +1,38 @@
+---
+export interface Props {
+  year?: number;
+}
+
+const { year = new Date().getFullYear() } = Astro.props;
+---
+<footer class="bg-pursue-gray-50 text-pursue-gray-700 py-16">
+  <div class="max-w-6xl mx-auto px-4 sm:px-6">
+    <div class="text-pursue-gray-900 font-semibold text-lg mb-8">PURSUE</div>
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-8 mb-12">
+      <div>
+        <h3 class="font-semibold text-pursue-gray-900 mb-3">Product</h3>
+        <ul class="space-y-2">
+          <li><a href="/features" class="hover:text-pursue-blue-600 underline underline-offset-2">Features</a></li>
+          <li><a href="/pricing" class="hover:text-pursue-blue-600 underline underline-offset-2">Pricing</a></li>
+          <li><a href="/support" class="hover:text-pursue-blue-600 underline underline-offset-2">Support</a></li>
+        </ul>
+      </div>
+      <div>
+        <h3 class="font-semibold text-pursue-gray-900 mb-3">Legal</h3>
+        <ul class="space-y-2">
+          <li><a href="/privacy" class="hover:text-pursue-blue-600 underline underline-offset-2">Privacy</a></li>
+          <li><a href="/terms" class="hover:text-pursue-blue-600 underline underline-offset-2">Terms</a></li>
+          <li><a href="mailto:support@getpursue.app" class="hover:text-pursue-blue-600 underline underline-offset-2">Contact</a></li>
+        </ul>
+      </div>
+      <div>
+        <h3 class="font-semibold text-pursue-gray-900 mb-3">Social</h3>
+        <ul class="space-y-2">
+          <li><a href="#" class="hover:text-pursue-blue-600 underline underline-offset-2">Twitter</a></li>
+          <li><a href="#" class="hover:text-pursue-blue-600 underline underline-offset-2">Instagram</a></li>
+        </ul>
+      </div>
+    </div>
+    <p class="text-pursue-gray-900 text-sm">&copy; {year} Pursue. All rights reserved.</p>
+  </div>
+</footer>

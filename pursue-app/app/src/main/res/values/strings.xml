@@ -1,0 +1,450 @@
+<resources>
+    <string name="app_name">Pursue</string>
+
+    <!-- Notifications -->
+    <string name="notification_channel_name">Pursue</string>
+    <string name="notifications_section_title">Notifications</string>
+    <string name="notify_progress_logs_label">Progress logs</string>
+    <string name="notify_progress_logs_summary">When someone logs progress on a goal</string>
+    <string name="notify_group_events_label">Group events</string>
+    <string name="notify_group_events_summary">Joins, leaves, promotions, renames</string>
+
+    <!-- Onboarding: Welcome (4.1.1) -->
+    <string name="welcome_tagline">Achieve goals together</string>
+    <string name="continue_with_google">Continue with Google</string>
+    <string name="or">or</string>
+    <string name="sign_in_with_email">Sign in with Email</string>
+    <string name="dont_have_account">Don\'t have an account?</string>
+    <string name="create_account">Create Account</string>
+    
+    <!-- Google Sign-In Configuration -->
+    <!-- android google client id 170178530674-hqsukacp5hkk656977l4lhcgd075t56r.apps.googleusercontent.com -->
+    <!-- web google client id 170178530674-n58jfi6m6kgqosu6bn86gkbmi62dcdr0.apps.googleusercontent.com -->
+    <string name="google_client_id">170178530674-n58jfi6m6kgqosu6bn86gkbmi62dcdr0.apps.googleusercontent.com</string>
+    <string name="signing_in_with_google">Signing in with Google…</string>
+    <string name="google_sign_in_failed">Google sign-in failed. Please try again.</string>
+    <string name="google_sign_in_cancelled">Sign-in cancelled</string>
+    <string name="welcome_back">Welcome back!</string>
+    <string name="account_created_google">Account created!</string>
+
+    <!-- Onboarding: Sign In with Email (4.1.3) -->
+    <string name="sign_in_title">Welcome back!</string>
+    <string name="email_label">Email</string>
+    <string name="email_hint">your@email.com</string>
+    <string name="password_label">Password</string>
+    <string name="password_hint">Enter password</string>
+    <string name="forgot_password">Forgot password?</string>
+    <string name="sign_in_button">Sign In</string>
+    <string name="email_error">Please enter a valid email address</string>
+    <string name="password_error">Password is required</string>
+    <string name="signing_in">Signing in…</string>
+
+    <!-- Onboarding: Sign Up with Email (4.1.4) -->
+    <string name="sign_up_title">Create Your Account</string>
+    <string name="display_name_label">Display Name *</string>
+    <string name="display_name_hint">Enter your name</string>
+    <string name="display_name_char_counter">%1$d/30</string>
+    <string name="display_name_error">Display name must be between 1 and 30 characters</string>
+    <string name="email_label_signup">Email *</string>
+    <string name="confirm_password_label">Confirm Password *</string>
+    <string name="confirm_password_hint">Re-enter password</string>
+    <string name="password_strength">Strength: %1$s</string>
+    <string name="password_weak">Weak</string>
+    <string name="password_medium">Medium</string>
+    <string name="password_strong">Strong</string>
+    <string name="password_mismatch">Passwords do not match</string>
+    <string name="create_account_button">Create Account</string>
+    <string name="creating_account">Creating account…</string>
+    <string name="account_created">Account created!</string>
+    
+    <!-- Avatar/Profile Picture -->
+    <string name="change_profile_picture">Change Profile Picture</string>
+    <string name="remove_photo">Remove Photo</string>
+    <string name="profile_picture_updated">Profile picture updated!</string>
+    <string name="profile_picture_removed">Profile picture removed</string>
+    <string name="profile_picture_upload_failed">Failed to upload profile picture. Please try again.</string>
+    <string name="profile_picture_delete_failed">Failed to remove profile picture. Please try again.</string>
+    <string name="select_image_source">Select Image Source</string>
+    <string name="from_gallery">From Gallery</string>
+    <string name="from_camera">Take Photo</string>
+    <string name="cancel">Cancel</string>
+
+    <!-- Home Screen: Groups List (4.2) -->
+    <string name="groups_title">Groups</string>
+    <string name="my_groups">My Groups</string>
+    <string name="members_and_goals">%1$d members · %2$d active goals</string>
+    <string name="empty_groups_title">You\'re not in any groups yet</string>
+    <string name="empty_groups_message">Join a group to get started or create your own accountability group with friends.</string>
+    <string name="empty_groups_message_fab">Use the + button below to join a group or create your own accountability group.</string>
+    <string name="join_group">Join Group</string>
+    <string name="create_group">Create Group</string>
+    <string name="hours_ago">%1$d hours ago</string>
+    <string name="hour_ago">1 hour ago</string>
+    <string name="minutes_ago">%1$d minutes ago</string>
+    <string name="minute_ago">1 minute ago</string>
+    <string name="days_ago">%1$d days ago</string>
+    <string name="day_ago">1 day ago</string>
+    <string name="just_now">Just now</string>
+    <string name="last_week">Last week</string>
+    <string name="weeks_ago">%1$d weeks ago</string>
+    <string name="week_ago">1 week ago</string>
+    <string name="last_month">Last month</string>
+    <string name="months_ago">%1$d months ago</string>
+    <string name="month_ago">1 month ago</string>
+    <string name="last_year">Last year</string>
+    <string name="years_ago">%1$d years ago</string>
+    <string name="year_ago">1 year ago</string>
+    <string name="joined_format">Joined %1$s</string>
+    <string name="error_loading_groups">Failed to load groups</string>
+
+    <!-- Today Screen (4.4) - Placeholder -->
+    <string name="today_title">Today</string>
+    <string name="today_placeholder">Today Screen</string>
+
+    <!-- Profile Screen (4.5) - Placeholder -->
+    <string name="profile_title">Profile</string>
+    <string name="profile_placeholder">Profile Screen</string>
+
+    <!-- Loading States -->
+    <string name="loading_groups">Loading groups…</string>
+    <string name="loading_today_goals">Loading today\'s goals…</string>
+    <string name="loading_progress">Loading progress…</string>
+
+    <!-- Error States -->
+    <string name="error_network_title">No internet connection</string>
+    <string name="error_network_message">Check your connection and try again</string>
+    <string name="error_server_title">Server error</string>
+    <string name="error_server_message">Our servers are having issues. Please try again later</string>
+    <string name="error_timeout_title">Request timed out</string>
+    <string name="error_timeout_message">The request took too long. Please try again</string>
+    <string name="error_unauthorized_title">Session expired</string>
+    <string name="error_unauthorized_message">Please log in again</string>
+    <string name="error_pending_approval_title">Join request pending</string>
+    <string name="error_pending_approval_message">Your request to join this group is pending approval by an admin.</string>
+    <string name="error_forbidden_title">Access denied</string>
+    <string name="error_forbidden_message">You don\'t have permission to view this content.</string>
+    <string name="error_failed_to_load_groups">Failed to load groups</string>
+    <string name="error_failed_to_load_goals">Failed to load today\'s goals</string>
+    <string name="error_failed_to_load_progress">Failed to load progress</string>
+    <string name="retry">Retry</string>
+
+    <!-- Empty States -->
+    <string name="empty_today_title">No daily goals yet</string>
+    <string name="empty_today_message">Add daily goals to your groups to track them here.</string>
+    <string name="browse_groups">Browse Groups</string>
+    <string name="empty_progress_title">No progress data yet</string>
+    <string name="empty_progress_message">Complete goals in your groups to see your progress here.</string>
+    <string name="view_todays_goals">View Today\'s Goals</string>
+
+    <!-- Offline States -->
+    <string name="offline_banner_title">Offline - showing cached data</string>
+    <string name="last_updated">Last updated: %1$s</string>
+    <string name="data_may_be_outdated">Data may be outdated</string>
+
+    <!-- Today Screen -->
+    <string name="today_complete">%1$d%% complete</string>
+    <string name="log_progress">Log Progress</string>
+
+    <!-- My Progress Screen -->
+    <string name="my_progress_title">My Progress</string>
+    <string name="current_streak">Current Streak</string>
+    <string name="streak_days">%1$d Days</string>
+    <string name="longest_streak">Longest streak: %1$d days</string>
+    <string name="streak_goal">Goal: %1$d days (%2$d%%)</string>
+    <string name="this_weeks_activity">This Week\'s Activity</string>
+    <string name="goals_completed">%1$d of %2$d goals completed</string>
+    <string name="last_30_days">Last 30 Days</string>
+    <string name="goal_breakdown">Goal Breakdown</string>
+    <string name="view_all">View All →</string>
+
+    <!-- Create Group Flow (4.8) -->
+    <string name="create_group_title">Create New Group</string>
+    <string name="group_icon_label">Group Icon (optional)</string>
+    <string name="choose_icon">Choose Icon</string>
+    <string name="group_name_label">Group Name *</string>
+    <string name="group_name_hint">Enter group name</string>
+    <string name="group_name_error">Group name must be between 1 and 100 characters</string>
+    <string name="description_label">Description (optional)</string>
+    <string name="description_hint">Describe your group</string>
+    <string name="description_char_counter">%1$d/500</string>
+    <string name="initial_goals_label">Initial Goals (optional)</string>
+    <string name="add_goal">+ Add a goal</string>
+    <string name="create_group_button">Create</string>
+    <string name="creating_group">Creating group…</string>
+    <string name="group_created">Group created!</string>
+    <string name="group_creation_failed">Failed to create group. Please try again.</string>
+    
+    <!-- Icon Picker -->
+    <string name="icon_picker_title">Choose Group Icon</string>
+    <string name="icon_picker_title_goal">Choose Goal Icon</string>
+    <string name="emoji_tab">Emoji</string>
+    <string name="upload_tab">Upload</string>
+    <string name="color_tab">Color</string>
+    <string name="search_emoji">Search emoji…</string>
+    <string name="upload_coming_soon">Upload custom icon (coming soon)</string>
+    <string name="background_color">Background Color</string>
+    <string name="color_blue">Blue</string>
+    <string name="color_yellow">Yellow</string>
+    <string name="color_green">Green</string>
+    <string name="color_red">Red</string>
+    <string name="color_purple">Purple</string>
+    <string name="color_orange">Orange</string>
+    <string name="color_pink">Pink</string>
+    <string name="color_teal">Teal</string>
+
+    <!-- Group Detail Screen (4.3) -->
+    <string name="group_detail_title">Group Details</string>
+    <string name="members_count">%1$d members</string>
+    <string name="active_goals_count">%1$d active goals</string>
+    <string name="members_and_goals_subtitle">%1$d members · %2$d active goals</string>
+    <string name="created_by">Created by %1$s</string>
+    <string name="unknown">Unknown</string>
+    
+    <!-- Tabs -->
+    <string name="tab_goals">Goals</string>
+    <string name="tab_members">Members</string>
+    <string name="tab_activity">Activity</string>
+    
+    <!-- Overflow Menu -->
+    <string name="menu_edit_group">Edit Group</string>
+    <string name="menu_manage_members">Manage Members</string>
+    <string name="menu_invite_members">Invite Members</string>
+    <string name="menu_leave_group">Leave Group</string>
+    <string name="menu_delete_group">Delete Group</string>
+    <string name="menu_edit_goal">Edit Goal</string>
+    <string name="menu_delete_goal">Delete Goal</string>
+    <string name="back">Back</string>
+    <string name="recent_entries">Recent Entries</string>
+    <string name="view_all_history">View All History</string>
+    <string name="progress_this_week">Progress This Week</string>
+    <string name="progress_this_month">Progress This Month</string>
+    <string name="progress_this_year">Progress This Year</string>
+    <string name="progress_today">Progress Today</string>
+    <string name="current_streak_weeks">Current Streak: 🔥 %1$d weeks</string>
+    <string name="current_streak_days">Current Streak: 🔥 %1$d days</string>
+    <string name="best_streak_weeks">Best Streak: %1$d weeks</string>
+    <string name="best_streak_days">Best Streak: %1$d days</string>
+    <string name="progress_complete">%1$d of %2$d complete</string>
+    <string name="progress_percentage">%1$d%% (%2$d/%3$d)</string>
+    <string name="no_entries_yet">No entries yet</string>
+    <string name="edit_entry">Edit Entry</string>
+    <string name="delete_entry">Delete Entry</string>
+    <string name="delete_entry_confirmation">Delete this entry?</string>
+    <string name="delete_goal_confirmation">Delete this goal? This action cannot be undone.</string>
+    <string name="delete">Delete</string>
+    <string name="entry_deleted">Entry deleted</string>
+    <string name="goal_deleted">Goal deleted</string>
+    <string name="error_loading_goal">Failed to load goal details</string>
+    <string name="error_loading_entries">Failed to load entries</string>
+    <string name="loading_goal">Loading goal…</string>
+    <string name="logged_at">Logged at %1$s</string>
+    <string name="delete_group_confirmation">Are you sure you want to delete this group? This action cannot be undone.</string>
+    <string name="delete_group_dialog_title">Delete \"%1$s\"?</string>
+    <string name="delete_group_dialog_message">This will permanently delete:\n• All group goals\n• All member progress\n• All group activity\n\nThis cannot be undone.</string>
+    <string name="group_updated_toast">Group updated!</string>
+    <string name="group_deleted_toast">Group deleted</string>
+    <string name="leave_group_confirmation">Are you sure you want to leave this group?</string>
+    <string name="leave_group_toast">You left the group</string>
+    <string name="leave">Leave</string>
+    
+    <!-- FAB Actions -->
+    <string name="fab_open_menu">Open menu</string>
+    <string name="fab_close_menu">Close menu</string>
+    <string name="fab_log_progress">Log Progress</string>
+    <string name="fab_invite">Invite</string>
+    <string name="fab_add_goal">Add goal</string>
+    <string name="fab_invite_members">Invite members</string>
+
+    <!-- Invite Members Flow (4.9) -->
+    <string name="invite_to_group_title">Invite to %1$s</string>
+    <string name="share_invite_code">Share invite code:</string>
+    <string name="share_invite_message">Join my group on Pursue!\n\nURL: %1$s\nInvite code: %2$s</string>
+    <string name="share_qr_code">Share QR Code</string>
+    <string name="copy">Copy</string>
+    <string name="share">Share</string>
+    <string name="expires_never">Expires: Never</string>
+    <string name="max_uses_unlimited">Max uses: Unlimited</string>
+    <string name="change_settings">Change Settings</string>
+    <string name="change_settings_coming_soon">Change settings (coming soon)</string>
+    <string name="regenerate_code">Regenerate Code</string>
+    <string name="regenerate_code_confirm">Regenerate invite code? The old code will stop working.</string>
+    <string name="regenerate_code_success">Invite code regenerated</string>
+    <string name="regenerate_code_failed">Failed to regenerate invite code</string>
+    <string name="done">Done</string>
+    <string name="invite_code_copied">Invite code copied</string>
+    <string name="invite_generate_failed">Failed to load invite code. Please try again.</string>
+    <string name="generating_invite">Generating invite…</string>
+    <string name="join_group_title">Join Group</string>
+    <string name="enter_invite_code">Enter invite code:</string>
+    <string name="invite_code_hint">PURSUE-XXXXXX-XXXXXX</string>
+    <string name="paste">Paste</string>
+    <string name="or_scan_qr">Or scan QR code:</string>
+    <string name="scan_code">Scan Code</string>
+    <string name="scan_code_coming_soon">Scan code (coming soon)</string>
+    <string name="invite_code_required">Please enter an invite code</string>
+    <string name="invite_code_invalid">Invalid invite code</string>
+    <string name="join_group_failed">Failed to join group. Please try again.</string>
+    <string name="join_group_success">Joined group!</string>
+    <string name="join_group_confirm_title">Join this group?</string>
+    <string name="view_goal_details">View goal details</string>
+    
+    <!-- Goals Tab (4.3.1) -->
+    <string name="daily_goals">Daily Goals</string>
+    <string name="weekly_goals">Weekly Goals</string>
+    <string name="monthly_goals">Monthly Goals</string>
+    <string name="yearly_goals">Yearly Goals</string>
+    <string name="empty_goals_title">No goals yet</string>
+    <string name="empty_goals_message">Add goals to this group to track progress together.</string>
+    <string name="empty_goals_message_admin">Get started by creating your first goal</string>
+    <string name="empty_goals_message_admin_link">Create goals to get started</string>
+    <string name="empty_goals_message_member">Ask an admin to create goals to get started.</string>
+    <string name="add_goal_to_group">Add Goal</string>
+    <string name="create_goal">Create Goal</string>
+    <string name="error_loading_goals">Failed to load goals</string>
+    <string name="loading_goals">Loading goals…</string>
+    <string name="logged_with_undo">✅ Logged!</string>
+    <string name="unlogged_with_undo">Unlogged!</string>
+    <string name="undone">Undone</string>
+    <string name="undo">Undo</string>
+    <string name="log_progress_title">Log Progress</string>
+    <string name="log_progress_value_label">Value</string>
+    <string name="log_progress_unit_label">%1$s</string>
+    <string name="log_progress_note_label">Note (optional)</string>
+    <string name="log_progress_value_required">Value is required</string>
+    <string name="log_progress_value_negative">Value cannot be negative</string>
+    <string name="log_progress_value_too_large">Value is too large (max 999,999.99)</string>
+    <string name="log_progress_value_invalid">Please enter a valid number</string>
+    <string name="log">Log</string>
+    <string name="log_progress_failed">Failed to log progress. Please try again.</string>
+    <string name="log_progress_duplicate">You have already logged progress for this period</string>
+    <string name="remove_progress_title">Remove today\'s log?</string>
+    <string name="remove_progress_confirm">Remove</string>
+    <string name="progress_removed_toast">Progress removed</string>
+    <string name="edit_progress_title">Edit Progress</string>
+    <string name="save">Save</string>
+    <string name="delete_progress_confirm">Delete Entry</string>
+    <string name="delete_progress_message">Are you sure you want to delete this progress entry?</string>
+    
+    <!-- Members Tab (4.3.2) -->
+    <string name="admins">Admins</string>
+    <string name="members_section">Members (%1$d)</string>
+    <string name="last_active_now">Last active: Now</string>
+    <string name="last_active">Last active: %1$s</string>
+    <string name="you">(You)</string>
+    <string name="empty_members_title">No members</string>
+    <string name="empty_members_message">Invite members to join this group.</string>
+    <string name="error_loading_members">Failed to load members</string>
+    <string name="loading_members">Loading members…</string>
+    
+    <!-- Pending Approvals (UI-Spec-Approval-Queue) -->
+    <string name="pending_requests_title">Pending Requests</string>
+    <string name="pending_requests_card">Pending Requests (%1$d)</string>
+    <string name="pending_requests_count_people">%1$d people waiting for approval</string>
+    <string name="approve_all">Approve All</string>
+    <string name="requested_ago">Requested %1$s</string>
+    <string name="approve">Approve</string>
+    <string name="decline">Decline</string>
+    <string name="decline_join_request_title">Decline join request?</string>
+    <string name="decline_join_request_message">%1$s won\'t be able to see group content. They can request to join again.</string>
+    <string name="approve_all_confirm_title">Approve all %1$d requests?</string>
+    <string name="approve_all_confirm_names">%1$s</string>
+    <string name="toast_approved">%1$s approved</string>
+    <string name="toast_request_declined">Request declined</string>
+    <string name="toast_approve_failed">Failed to approve %1$s. Try again.</string>
+    <string name="toast_already_approved">%1$s was already approved</string>
+    <string name="toast_members_approved">%1$d members approved</string>
+    <string name="empty_pending_title">All caught up!</string>
+    <string name="empty_pending_message">No pending join requests</string>
+    <string name="content_description_approve">Approve %1$s\'s request</string>
+    <string name="content_description_decline">Decline %1$s\'s request</string>
+    <string name="content_description_pending_count">%1$d pending requests</string>
+    
+    <!-- Activity Tab (4.3.3) -->
+    <string name="today">Today</string>
+    <string name="yesterday">Yesterday</string>
+    <string name="empty_activity_title">No activity yet</string>
+    <string name="empty_activity_message">Activity from group members will appear here.</string>
+    <string name="error_loading_activity">Failed to load activity</string>
+    <string name="loading_activity">Loading activity…</string>
+    
+    <!-- Activity Types -->
+    <string name="activity_progress_logged">%1$s completed \"%2$s\"</string>
+    <string name="activity_member_joined">%1$s joined the group</string>
+    <string name="activity_group_created">%1$s created the group</string>
+    <string name="activity_member_left">%1$s left the group</string>
+    <string name="activity_member_promoted">%1$s was promoted to admin</string>
+    <string name="activity_member_removed">%1$s was removed from the group</string>
+    <string name="activity_goal_added">%1$s added goal \"%2$s\"</string>
+    <string name="activity_goal_archived">Goal \"%1$s\" was archived</string>
+    <string name="activity_group_renamed">Group renamed to \"%1$s\"</string>
+    <string name="activity_join_request">%1$s requested to join the group</string>
+    <string name="activity_member_approved">%1$s was approved to join the group</string>
+    <string name="activity_member_declined">Join request from %1$s was declined</string>
+    
+    <!-- Time Formatting -->
+    <string name="yesterday_at">Yesterday at %1$s</string>
+    <string name="at_time">%1$s at %2$s</string>
+
+    <!-- Create Goal Screen (4.3.5) -->
+    <string name="create_goal_title">Create Goal</string>
+    <string name="goal_title_label">Goal Title *</string>
+    <string name="goal_title_hint">e.g., Run 3x per week</string>
+    <string name="goal_title_error">Goal title must be between 1 and 100 characters</string>
+    <string name="goal_icon_label">Icon (optional)</string>
+    <string name="default_goal_icon">🎯</string>
+
+    <!-- Cadence -->
+    <string name="cadence_label">How often?</string>
+    <string name="cadence_daily">Daily</string>
+    <string name="cadence_weekly">Weekly</string>
+    <string name="cadence_monthly">Monthly</string>
+    <string name="cadence_yearly">Yearly</string>
+
+    <!-- Metric Type -->
+    <string name="metric_type_label">Metric</string>
+    <string name="metric_type_binary">Yes/No</string>
+    <string name="metric_type_numeric">Number</string>
+    <string name="metric_type_duration">Duration</string>
+
+    <!-- Target -->
+    <string name="target_label">Target</string>
+    <string name="target_times_per_day">times per day</string>
+    <string name="target_times_per_week">times per week</string>
+    <string name="target_times_per_month">times per month</string>
+    <string name="target_times_per_year">times per year</string>
+    <string name="target_value_required">Target value is required</string>
+    <string name="target_hint">Enter target</string>
+    <string name="per_day">per day</string>
+    <string name="per_week">per week</string>
+    <string name="per_month">per month</string>
+    <string name="per_year">per year</string>
+
+    <!-- Units -->
+    <string name="unit_label">Unit</string>
+    <string name="unit_miles">miles</string>
+    <string name="unit_km">km</string>
+    <string name="unit_meters">meters</string>
+    <string name="unit_minutes">minutes</string>
+    <string name="unit_hours">hours</string>
+    <string name="unit_reps">reps</string>
+    <string name="unit_pages">pages</string>
+    <string name="unit_items">items</string>
+    <string name="unit_count">count</string>
+    <string name="unit_chapters">chapters</string>
+
+    <!-- Start Date -->
+    <string name="start_date_label">Start Date (optional)</string>
+    <string name="start_date_today">Today</string>
+
+    <!-- Actions &amp; Dialogs -->
+    <string name="save_goal">Save</string>
+    <string name="creating_goal">Creating goal…</string>
+    <string name="goal_created">Goal created!</string>
+    <string name="goal_creation_failed">Failed to create goal</string>
+    <string name="discard_changes_title">Discard changes?</string>
+    <string name="discard_changes_message">You have unsaved changes.</string>
+    <string name="discard">Discard</string>
+    <string name="keep_editing">Keep Editing</string>
+    <string name="validation_error_title">Please fix the following:</string>
+
+</resources>

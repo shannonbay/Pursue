@@ -1,0 +1,67 @@
+---
+interface Props {
+  title?: string;
+  description?: string;
+  image?: string;
+}
+
+const { title = 'Pursue - Group Goal Accountability App', description = 'Track goals together with friends. Join accountability groups, log daily progress, and achieve more together. Available on iOS and Android.', image = '/og-image.png' } = Astro.props;
+
+const site = import.meta.env.SITE ?? 'https://getpursue.app';
+const canonicalUrl = new URL(Astro.url.pathname, site).href;
+const imageUrl = image.startsWith('http') ? image : new URL(image, site).href;
+const keywords = 'goal tracking, accountability, habit tracker, group goals, social accountability';
+
+const structuredData = {
+  '@context': 'https://schema.org',
+  '@type': 'MobileApplication',
+  name: 'Pursue',
+  operatingSystem: 'Android',
+  applicationCategory: 'HealthApplication',
+  offers: {
+    '@type': 'Offer',
+    price: '0',
+    priceCurrency: 'USD',
+  },
+};
+---
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!-- Primary Meta Tags -->
+    <title>{title}</title>
+    <meta name="title" content={title} />
+    <meta name="description" content={description} />
+    <meta name="keywords" content={keywords} />
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content={canonicalUrl} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:image" content={imageUrl} />
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image" />
+    <meta property="twitter:url" content={canonicalUrl} />
+    <meta property="twitter:title" content={title} />
+    <meta property="twitter:description" content={description} />
+    <meta property="twitter:image" content={imageUrl} />
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+
+    <!-- Canonical URL -->
+    <link rel="canonical" href={canonicalUrl} />
+
+    <!-- Structured Data (JSON-LD) -->
+    <script type="application/ld+json" set:html={JSON.stringify(structuredData)} />
+  </head>
+  <body class="font-sans text-pursue-gray-900 antialiased min-h-screen">
+    <slot />
+  </body>
+</html>

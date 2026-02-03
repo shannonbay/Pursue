@@ -1,0 +1,125 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import AppStoreButtons from '../components/AppStoreButtons.astro';
+---
+<BaseLayout title="Features - Pursue">
+  <main>
+    <section class="bg-gradient-to-b from-pursue-blue-50 to-white py-12 sm:py-16">
+      <Header />
+      <div class="max-w-6xl mx-auto px-4 sm:px-6 pt-8">
+        <h1 class="text-4xl sm:text-5xl font-bold text-pursue-gray-900 mb-4">
+          Features
+        </h1>
+        <p class="text-xl text-pursue-gray-700 max-w-2xl">
+          Detailed feature explanations. See how Pursue helps you and your group stay accountable.
+        </p>
+      </div>
+    </section>
+
+    <section class="py-16 sm:py-24 bg-white">
+      <div class="max-w-6xl mx-auto px-4 sm:px-6 space-y-24">
+        <!-- Goal Types -->
+        <article class="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
+          <div>
+            <h2 class="text-3xl font-bold text-pursue-gray-900 mb-4">
+              Goal Types
+            </h2>
+            <p class="text-pursue-gray-700 text-lg">
+              Set daily habits like meditate or run, weekly targets like gym 3x or call parents, monthly milestones like read two books, and yearly goals like run a marathon. Pursue supports the cadence that fits your goal.
+            </p>
+          </div>
+          <figure class="bg-pursue-gray-100 rounded-xl overflow-hidden min-h-[280px] flex items-center justify-center">
+            <img
+              src="/screenshots/goal-types.jpg"
+              alt="Pursue app today screen showing goals"
+              class="max-h-[420px] w-auto object-contain"
+              width="280"
+              height="560"
+            />
+          </figure>
+        </article>
+
+        <!-- Social Accountability -->
+        <article class="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
+          <figure class="bg-pursue-gray-100 rounded-xl overflow-hidden min-h-[280px] flex items-center justify-center order-2 lg:order-1">
+            <img
+              src="/screenshots/activity-log.jpg"
+              alt="Pursue app activity feed"
+              class="max-h-[420px] w-auto object-contain"
+              width="280"
+              height="560"
+            />
+          </figure>
+          <div class="order-1 lg:order-2">
+            <h2 class="text-3xl font-bold text-pursue-gray-900 mb-4">
+              Social Accountability
+            </h2>
+            <p class="text-pursue-gray-700 text-lg">
+              See who's crushing their goals. Get push notifications when teammates log. Follow the group activity feed and keep each other honest with friendly competition.
+            </p>
+          </div>
+        </article>
+
+        <!-- Progress Tracking -->
+        <article class="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
+          <div>
+            <h2 class="text-3xl font-bold text-pursue-gray-900 mb-4">
+              Progress Tracking
+            </h2>
+            <p class="text-pursue-gray-700 text-lg">
+              Tap to log for instant feedback. View progress charts and heatmaps, track streaks and statistics, and explore historical data so you can see how far you've come.
+            </p>
+          </div>
+          <figure class="bg-pursue-gray-100 rounded-xl overflow-hidden min-h-[280px] flex items-center justify-center">
+            <img
+              src="/screenshots/today-screen.jpg"
+              alt="Pursue app progress and logging"
+              class="max-h-[420px] w-auto object-contain"
+              width="280"
+              height="560"
+            />
+          </figure>
+        </article>
+
+        <!-- Group Management -->
+        <article class="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
+          <figure class="bg-pursue-gray-100 rounded-xl overflow-hidden min-h-[280px] flex items-center justify-center order-2 lg:order-1">
+            <img
+              src="/screenshots/groups-screen.jpg"
+              alt="Pursue app groups screen"
+              class="max-h-[420px] w-auto object-contain"
+              width="280"
+              height="560"
+            />
+          </figure>
+          <div class="order-1 lg:order-2">
+            <h2 class="text-3xl font-bold text-pursue-gray-900 mb-4">
+              Group Management
+            </h2>
+            <p class="text-pursue-gray-700 text-lg">
+              Create groups and invite via codes or links. Free tier includes one group; upgrade for unlimited. Use admin controls and member roles to keep your accountability crew organized.
+            </p>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="py-16 sm:py-24 bg-pursue-gray-50">
+      <div class="max-w-6xl mx-auto px-4 sm:px-6 text-center">
+        <h2 class="text-4xl font-bold text-pursue-gray-900 mb-8">
+          Ready to pursue your goals?
+        </h2>
+        <div id="download">
+          <AppStoreButtons />
+        </div>
+        <p class="mt-6 text-base text-pursue-gray-600">
+          Free to download. No credit card needed.
+        </p>
+      </div>
+    </section>
+
+    <Footer />
+  </main>
+</BaseLayout>

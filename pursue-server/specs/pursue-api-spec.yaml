@@ -1,0 +1,1720 @@
+openapi: 3.0.3
+info:
+  title: Pursue API
+  version: 1.0.0
+  description: |
+    REST API for Pursue - a group goal accountability application.
+    
+    ## Overview
+    Pursue enables groups of people to track and achieve goals together through
+    social accountability. Users can create groups, set recurring goals (daily,
+    weekly, monthly, yearly), log progress, and see how other group members are doing.
+    
+    ## Authentication
+    Most endpoints require JWT authentication via Bearer token in the Authorization header.
+    Tokens expire after 1 hour (access) or 30 days (refresh).
+    
+    ## Rate Limiting
+    - General API: 100 requests/minute per user
+    - Auth endpoints: 5 attempts per 15 minutes
+    - File uploads: 10 uploads per 15 minutes
+    
+    ## Resource Limits
+    - Max 50 groups created per user
+    - Max 100 groups joined per user
+    - Max 100 goals per group
+    - Max 50 members per group
+    
+  contact:
+    name: Pursue API Support
+    email: support@getpursue.app
+  license:
+    name: Proprietary
+
+servers:
+  - url: https://api.getpursue.app
+    description: Production server
+  - url: https://staging-api.getpursue.app
+    description: Staging server
+
+security:
+  - BearerAuth: []
+
+tags:
+  - name: Authentication
+    description: User authentication and account management
+  - name: Users
+    description: User profile and settings
+  - name: Groups
+    description: Group management
+  - name: Goals
+    description: Goal creation and management
+  - name: Progress
+    description: Progress tracking
+  - name: Devices
+    description: Device registration for push notifications
+
+paths:
+  /api/auth/register:
+    post:
+      tags: [Authentication]
+      summary: Register new user
+      description: Create a new user account with email and password
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password, display_name]
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: shannon@example.com
+                password:
+                  type: string
+                  format: password
+                  minLength: 8
+                  maxLength: 100
+                  example: SecurePassword123
+                display_name:
+                  type: string
+                  minLength: 1
+                  maxLength: 100
+                  example: Shannon Thompson
+      responses:
+        '201':
+          description: User created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          description: Email already registered
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/auth/login:
+    post:
+      tags: [Authentication]
+      summary: Login with email/password
+      description: Authenticate and receive access/refresh tokens
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: shannon@example.com
+                password:
+                  type: string
+                  format: password
+                  example: SecurePassword123
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          description: Invalid email or password
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          $ref: '#/components/responses/RateLimitExceeded'
+
+  /api/auth/google:
+    post:
+      tags: [Authentication]
+      summary: Login with Google
+      description: Authenticate using Google OAuth ID token
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [id_token]
+              properties:
+                id_token:
+                  type: string
+                  description: Google OAuth ID token
+                  example: eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...
+      responses:
+        '200':
+          description: Login successful (existing user)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '201':
+          description: User created and logged in (new user)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /api/auth/refresh:
+    post:
+      tags: [Authentication]
+      summary: Refresh access token
+      description: Get a new access token using refresh token
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [refresh_token]
+              properties:
+                refresh_token:
+                  type: string
+                  example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+      responses:
+        '200':
+          description: Token refreshed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  access_token:
+                    type: string
+                  refresh_token:
+                    type: string
+        '401':
+          description: Invalid or expired refresh token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/auth/logout:
+    post:
+      tags: [Authentication]
+      summary: Logout user
+      description: Invalidate refresh token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [refresh_token]
+              properties:
+                refresh_token:
+                  type: string
+      responses:
+        '200':
+          description: Logout successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Logout successful
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /api/auth/forgot-password:
+    post:
+      tags: [Authentication]
+      summary: Request password reset
+      description: Send password reset email
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: shannon@example.com
+      responses:
+        '200':
+          description: Reset email sent (or email not found - same response for security)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: If that email exists, a reset link has been sent
+
+  /api/auth/reset-password:
+    post:
+      tags: [Authentication]
+      summary: Reset password with token
+      description: Set new password using reset token from email
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token, new_password]
+              properties:
+                token:
+                  type: string
+                  description: Reset token from email
+                new_password:
+                  type: string
+                  format: password
+                  minLength: 8
+                  maxLength: 100
+      responses:
+        '200':
+          description: Password reset successful
+        '400':
+          description: Invalid or expired token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/auth/link/google:
+    post:
+      tags: [Authentication]
+      summary: Link Google account
+      description: Link Google OAuth to existing account
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [id_token]
+              properties:
+                id_token:
+                  type: string
+                  description: Google OAuth ID token
+      responses:
+        '200':
+          description: Google account linked successfully
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          description: Google account already linked to another user
+
+  /api/auth/unlink/{provider}:
+    delete:
+      tags: [Authentication]
+      summary: Unlink OAuth provider
+      description: Remove OAuth provider from account (must have password or another provider)
+      parameters:
+        - name: provider
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [google]
+      responses:
+        '200':
+          description: Provider unlinked successfully
+        '400':
+          description: Cannot unlink (no other auth method)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/users/me:
+    get:
+      tags: [Users]
+      summary: Get current user profile
+      responses:
+        '200':
+          description: User profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+    patch:
+      tags: [Users]
+      summary: Update current user profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                display_name:
+                  type: string
+                  minLength: 1
+                  maxLength: 100
+                email:
+                  type: string
+                  format: email
+      responses:
+        '200':
+          description: Profile updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          description: Email already in use
+
+    delete:
+      tags: [Users]
+      summary: Delete current user account
+      description: Permanently delete account and all associated data
+      responses:
+        '200':
+          description: Account deleted
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/users/me/avatar:
+    post:
+      tags: [Users]
+      summary: Upload user avatar
+      description: Upload profile picture (max 5MB, JPEG/PNG/WebP only)
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [avatar]
+              properties:
+                avatar:
+                  type: string
+                  format: binary
+      responses:
+        '200':
+          description: Avatar uploaded successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  avatar_url:
+                    type: string
+                    format: uri
+                    example: https://api.getpursue.app/api/users/me/avatar
+        '400':
+          description: Invalid file type or size
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          $ref: '#/components/responses/RateLimitExceeded'
+
+    delete:
+      tags: [Users]
+      summary: Delete user avatar
+      responses:
+        '200':
+          description: Avatar deleted
+
+  /api/users/{user_id}/avatar:
+    get:
+      tags: [Users]
+      summary: Get user avatar
+      description: Returns the user's avatar image (public endpoint)
+      security: []
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Avatar image
+          content:
+            image/webp:
+              schema:
+                type: string
+                format: binary
+        '404':
+          description: Avatar not found
+
+  /api/users/me/password:
+    post:
+      tags: [Users]
+      summary: Change password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [current_password, new_password]
+              properties:
+                current_password:
+                  type: string
+                  format: password
+                new_password:
+                  type: string
+                  format: password
+                  minLength: 8
+                  maxLength: 100
+      responses:
+        '200':
+          description: Password changed successfully
+        '401':
+          description: Current password incorrect
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/users/me/providers:
+    get:
+      tags: [Users]
+      summary: Get linked auth providers
+      description: List all authentication methods linked to account
+      responses:
+        '200':
+          description: List of providers
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  providers:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        provider:
+                          type: string
+                          enum: [email, google]
+                        linked_at:
+                          type: string
+                          format: date-time
+
+  /api/users/me/groups:
+    get:
+      tags: [Users]
+      summary: Get user's groups
+      description: List all groups the user is a member of
+      responses:
+        '200':
+          description: List of groups
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  groups:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Group'
+
+  /api/groups:
+    post:
+      tags: [Groups]
+      summary: Create a new group
+      description: Create a group (max 50 per user)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name:
+                  type: string
+                  minLength: 1
+                  maxLength: 100
+                  example: Morning Runners
+                description:
+                  type: string
+                  maxLength: 500
+                  example: Daily running accountability group
+                icon_emoji:
+                  type: string
+                  example: 🏃
+                icon_color:
+                  type: string
+                  pattern: '^#[0-9A-Fa-f]{6}$'
+                  example: '#1976D2'
+      responses:
+        '201':
+          description: Group created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Group'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '429':
+          description: Resource limit exceeded (max 50 groups)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: Maximum groups limit reached (50)
+                  code:
+                    type: string
+                    example: RESOURCE_LIMIT_EXCEEDED
+                  limit:
+                    type: integer
+                    example: 50
+
+  /api/groups/{group_id}:
+    get:
+      tags: [Groups]
+      summary: Get group details
+      parameters:
+        - $ref: '#/components/parameters/GroupId'
+      responses:
+        '200':
+          description: Group details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GroupDetail'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    patch:
+      tags: [Groups]
+      summary: Update group details
+      description: Update group (admin only)
+      parameters:
+        - $ref: '#/components/parameters/GroupId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  minLength: 1
+                  maxLength: 100
+                description:
+                  type: string
+                  maxLength: 500
+                icon_emoji:
+                  type: string
+                icon_color:
+                  type: string
+                  pattern: '^#[0-9A-Fa-f]{6}$'
+      responses:
+        '200':
+          description: Group updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Group'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          description: Not an admin
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    delete:
+      tags: [Groups]
+      summary: Delete group
+      description: Permanently delete group (creator only)
+      parameters:
+        - $ref: '#/components/parameters/GroupId'
+      responses:
+        '200':
+          description: Group deleted
+        '403':
+          description: Not the creator
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/groups/{group_id}/icon:
+    patch:
+      tags: [Groups]
+      summary: Upload group icon
+      description: Upload custom icon image (max 5MB, JPEG/PNG/WebP)
+      parameters:
+        - $ref: '#/components/parameters/GroupId'
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [icon]
+              properties:
+                icon:
+                  type: string
+                  format: binary
+      responses:
+        '200':
+          description: Icon uploaded
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  icon_url:
+                    type: string
+                    format: uri
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '429':
+          $ref: '#/components/responses/RateLimitExceeded'
+
+    delete:
+      tags: [Groups]
+      summary: Delete group icon
+      description: Remove custom icon (reverts to emoji/letter)
+      parameters:
+        - $ref: '#/components/parameters/GroupId'
+      responses:
+        '200':
+          description: Icon deleted
+
+    get:
+      tags: [Groups]
+      summary: Get group icon
+      description: Returns group icon image (public endpoint)
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/GroupId'
+      responses:
+        '200':
+          description: Icon image
+          content:
+            image/webp:
+              schema:
+                type: string
+                format: binary
+        '404':
+          description: No custom icon set
+
+  /api/groups/{group_id}/members:
+    get:
+      tags: [Groups]
+      summary: Get group members
+      parameters:
+        - $ref: '#/components/parameters/GroupId'
+      responses:
+        '200':
+          description: List of members
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  members:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/GroupMember'
+
+  /api/groups/{group_id}/members/{user_id}:
+    patch:
+      tags: [Groups]
+      summary: Update member role
+      description: Make member admin or remove admin (admin only)
+      parameters:
+        - $ref: '#/components/parameters/GroupId'
+        - name: user_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [role]
+              properties:
+                role:
+                  type: string
+                  enum: [member, admin]
+      responses:
+        '200':
+          description: Role updated
+        '403':
+          description: Not an admin
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    delete:
+      tags: [Groups]
+      summary: Remove member from group
+      description: Remove a member (admin only)
+      parameters:
+        - $ref: '#/components/parameters/GroupId'
+        - name: user_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Member removed
+        '403':
+          description: Not an admin or trying to remove creator
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/groups/{group_id}/members/me:
+    delete:
+      tags: [Groups]
+      summary: Leave group
+      description: Remove yourself from group
+      parameters:
+        - $ref: '#/components/parameters/GroupId'
+      responses:
+        '200':
+          description: Left group successfully
+        '400':
+          description: Cannot leave (creator must transfer or delete group)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/groups/{group_id}/invites:
+    post:
+      tags: [Groups]
+      summary: Generate invite code
+      description: Create or refresh group invite code
+      parameters:
+        - $ref: '#/components/parameters/GroupId'
+      responses:
+        '200':
+          description: Invite code generated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  invite_code:
+                    type: string
+                    example: ABC123XYZ
+                  expires_at:
+                    type: string
+                    format: date-time
+
+  /api/groups/join:
+    post:
+      tags: [Groups]
+      summary: Join group with invite code
+      description: Join a group using invite code (max 100 groups per user)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [invite_code]
+              properties:
+                invite_code:
+                  type: string
+                  example: ABC123XYZ
+      responses:
+        '200':
+          description: Joined group
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Group'
+        '400':
+          description: Invalid or expired invite code
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Already a member
+        '429':
+          description: Resource limit exceeded (max 100 groups joined)
+
+  /api/groups/{group_id}/activity:
+    get:
+      tags: [Groups]
+      summary: Get group activity feed
+      description: Recent activity in the group
+      parameters:
+        - $ref: '#/components/parameters/GroupId'
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+      responses:
+        '200':
+          description: Activity feed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  activities:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Activity'
+                  total:
+                    type: integer
+
+  /api/groups/{group_id}/goals:
+    post:
+      tags: [Goals]
+      summary: Create goal
+      description: Create a goal for the group (admin only, max 100 goals per group)
+      parameters:
+        - $ref: '#/components/parameters/GroupId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [title, cadence, metric_type]
+              properties:
+                title:
+                  type: string
+                  minLength: 1
+                  maxLength: 200
+                  example: Run 3x per week
+                description:
+                  type: string
+                  maxLength: 1000
+                  example: Run for at least 30 minutes
+                cadence:
+                  type: string
+                  enum: [daily, weekly, monthly, yearly]
+                  example: weekly
+                metric_type:
+                  type: string
+                  enum: [binary, numeric, duration]
+                  example: binary
+                target_value:
+                  type: number
+                  minimum: 0
+                  example: 3
+                unit:
+                  type: string
+                  maxLength: 50
+                  example: times
+      responses:
+        '201':
+          description: Goal created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Goal'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          description: Not an admin
+        '429':
+          description: Resource limit exceeded (max 100 goals per group)
+
+    get:
+      tags: [Goals]
+      summary: Get all goals for group
+      description: |
+        Get all goals for a group, optionally with current period progress data.
+        
+        When include_progress=true, prevents N+1 query problem by fetching all
+        progress data in 3 total queries regardless of number of goals.
+      parameters:
+        - $ref: '#/components/parameters/GroupId'
+        - name: cadence
+          in: query
+          description: Filter by cadence
+          schema:
+            type: string
+            enum: [daily, weekly, monthly, yearly]
+        - name: archived
+          in: query
+          description: Include archived goals
+          schema:
+            type: boolean
+            default: false
+        - name: include_progress
+          in: query
+          description: Include current period progress data
+          schema:
+            type: boolean
+            default: false
+      responses:
+        '200':
+          description: List of goals
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  goals:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/GoalWithProgress'
+                  total:
+                    type: integer
+
+  /api/goals/{goal_id}:
+    get:
+      tags: [Goals]
+      summary: Get goal details
+      parameters:
+        - $ref: '#/components/parameters/GoalId'
+      responses:
+        '200':
+          description: Goal details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Goal'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+    patch:
+      tags: [Goals]
+      summary: Update goal
+      description: Update goal (admin only)
+      parameters:
+        - $ref: '#/components/parameters/GoalId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                  minLength: 1
+                  maxLength: 200
+                description:
+                  type: string
+                  maxLength: 1000
+                target_value:
+                  type: number
+      responses:
+        '200':
+          description: Goal updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Goal'
+        '403':
+          description: Not an admin
+
+    delete:
+      tags: [Goals]
+      summary: Delete goal
+      description: Soft delete (archive) goal (admin only)
+      parameters:
+        - $ref: '#/components/parameters/GoalId'
+      responses:
+        '200':
+          description: Goal archived
+        '403':
+          description: Not an admin
+
+  /api/goals/{goal_id}/progress:
+    get:
+      tags: [Goals, Progress]
+      summary: Get goal progress for all members
+      parameters:
+        - $ref: '#/components/parameters/GoalId'
+        - name: start_date
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: end_date
+          in: query
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Progress data for all members
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  entries:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ProgressEntry'
+
+  /api/goals/{goal_id}/progress/me:
+    get:
+      tags: [Goals, Progress]
+      summary: Get my progress for goal
+      parameters:
+        - $ref: '#/components/parameters/GoalId'
+        - name: start_date
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: end_date
+          in: query
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: My progress data
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  entries:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ProgressEntry'
+
+  /api/progress:
+    post:
+      tags: [Progress]
+      summary: Log progress
+      description: Record progress for a goal
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [goal_id, entry_date]
+              properties:
+                goal_id:
+                  type: string
+                  format: uuid
+                entry_date:
+                  type: string
+                  format: date
+                  example: '2026-01-27'
+                value:
+                  type: number
+                  description: For numeric/duration goals
+                  example: 5.2
+                note:
+                  type: string
+                  maxLength: 500
+                  example: Great run today!
+      responses:
+        '201':
+          description: Progress logged
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgressEntry'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          description: Not a member of goal's group
+
+  /api/progress/{entry_id}:
+    get:
+      tags: [Progress]
+      summary: Get progress entry
+      parameters:
+        - name: entry_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Progress entry
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgressEntry'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+    delete:
+      tags: [Progress]
+      summary: Delete progress entry
+      description: Delete own progress entry
+      parameters:
+        - name: entry_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Entry deleted
+        '403':
+          description: Can only delete own entries
+
+  /api/devices/register:
+    post:
+      tags: [Devices]
+      summary: Register device for push notifications
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [fcm_token, device_type]
+              properties:
+                fcm_token:
+                  type: string
+                  description: Firebase Cloud Messaging token
+                device_type:
+                  type: string
+                  enum: [android, ios]
+                device_name:
+                  type: string
+                  example: Pixel 7
+      responses:
+        '201':
+          description: Device registered
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  device_id:
+                    type: string
+                    format: uuid
+
+  /api/devices:
+    get:
+      tags: [Devices]
+      summary: Get registered devices
+      responses:
+        '200':
+          description: List of devices
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  devices:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Device'
+
+  /api/devices/{device_id}:
+    delete:
+      tags: [Devices]
+      summary: Unregister device
+      parameters:
+        - name: device_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Device unregistered
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        JWT access token obtained from login/register endpoints.
+        Include in Authorization header as: `Bearer {token}`
+        Tokens expire after 1 hour.
+
+  parameters:
+    GroupId:
+      name: group_id
+      in: path
+      required: true
+      description: Group UUID
+      schema:
+        type: string
+        format: uuid
+
+    GoalId:
+      name: goal_id
+      in: path
+      required: true
+      description: Goal UUID
+      schema:
+        type: string
+        format: uuid
+
+  responses:
+    Unauthorized:
+      description: Authentication required or token invalid/expired
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: Unauthorized
+
+    Forbidden:
+      description: Insufficient permissions
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: Forbidden
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: Not found
+
+    BadRequest:
+      description: Invalid request data
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: Validation failed
+            details:
+              - field: email
+                message: Invalid email format
+
+    RateLimitExceeded:
+      description: Too many requests
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: Too many requests, please try again later
+
+  schemas:
+    User:
+      type: object
+      required:
+        - id
+        - email
+        - display_name
+        - has_avatar
+        - created_at
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: 550e8400-e29b-41d4-a716-446655440000
+        email:
+          type: string
+          format: email
+          example: shannon@example.com
+        display_name:
+          type: string
+          example: Shannon Thompson
+        has_avatar:
+          type: boolean
+          example: false
+        avatar_url:
+          type: string
+          format: uri
+          nullable: true
+          example: https://api.getpursue.app/api/users/550e8400-e29b-41d4-a716-446655440000/avatar
+        created_at:
+          type: string
+          format: date-time
+          example: '2026-01-16T10:00:00Z'
+
+    AuthResponse:
+      type: object
+      required:
+        - access_token
+        - refresh_token
+        - user
+      properties:
+        access_token:
+          type: string
+          description: JWT access token (expires in 1 hour)
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        refresh_token:
+          type: string
+          description: JWT refresh token (expires in 30 days)
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        user:
+          $ref: '#/components/schemas/User'
+
+    Group:
+      type: object
+      required:
+        - id
+        - name
+        - creator_id
+        - created_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          example: Morning Runners
+        description:
+          type: string
+          nullable: true
+          example: Daily running accountability group
+        creator_id:
+          type: string
+          format: uuid
+        icon_emoji:
+          type: string
+          nullable: true
+          example: 🏃
+        icon_color:
+          type: string
+          nullable: true
+          example: '#1976D2'
+        icon_url:
+          type: string
+          format: uri
+          nullable: true
+          example: https://api.getpursue.app/api/groups/{id}/icon
+        created_at:
+          type: string
+          format: date-time
+
+    GroupDetail:
+      allOf:
+        - $ref: '#/components/schemas/Group'
+        - type: object
+          properties:
+            member_count:
+              type: integer
+              example: 8
+            active_goal_count:
+              type: integer
+              example: 5
+            my_role:
+              type: string
+              enum: [member, admin, creator]
+              example: admin
+
+    GroupMember:
+      type: object
+      required:
+        - user_id
+        - display_name
+        - role
+        - joined_at
+      properties:
+        user_id:
+          type: string
+          format: uuid
+        display_name:
+          type: string
+          example: Shannon Thompson
+        avatar_url:
+          type: string
+          format: uri
+          nullable: true
+        role:
+          type: string
+          enum: [member, admin, creator]
+          example: admin
+        joined_at:
+          type: string
+          format: date-time
+        last_active_at:
+          type: string
+          format: date-time
+          nullable: true
+
+    Goal:
+      type: object
+      required:
+        - id
+        - group_id
+        - title
+        - cadence
+        - metric_type
+        - created_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        group_id:
+          type: string
+          format: uuid
+        title:
+          type: string
+          example: Run 3x per week
+        description:
+          type: string
+          nullable: true
+          example: Run for at least 30 minutes
+        cadence:
+          type: string
+          enum: [daily, weekly, monthly, yearly]
+          example: weekly
+        metric_type:
+          type: string
+          enum: [binary, numeric, duration]
+          example: binary
+        target_value:
+          type: number
+          nullable: true
+          example: 3
+        unit:
+          type: string
+          nullable: true
+          example: times
+        created_by_user_id:
+          type: string
+          format: uuid
+        created_at:
+          type: string
+          format: date-time
+        archived_at:
+          type: string
+          format: date-time
+          nullable: true
+
+    GoalWithProgress:
+      allOf:
+        - $ref: '#/components/schemas/Goal'
+        - type: object
+          properties:
+            current_period_progress:
+              type: object
+              description: Only included when include_progress=true
+              properties:
+                start_date:
+                  type: string
+                  format: date-time
+                  example: '2026-01-20T00:00:00Z'
+                end_date:
+                  type: string
+                  format: date-time
+                  example: '2026-01-26T23:59:59Z'
+                period_type:
+                  type: string
+                  enum: [daily, weekly, monthly, yearly]
+                  example: weekly
+                user_progress:
+                  type: object
+                  properties:
+                    completed:
+                      type: number
+                      example: 2
+                    total:
+                      type: number
+                      example: 3
+                    percentage:
+                      type: integer
+                      example: 67
+                    entries:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          date:
+                            type: string
+                            format: date
+                          value:
+                            type: number
+                member_progress:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      user_id:
+                        type: string
+                        format: uuid
+                      display_name:
+                        type: string
+                        example: Shannon
+                      avatar_url:
+                        type: string
+                        format: uri
+                        nullable: true
+                      completed:
+                        type: number
+                        example: 2
+                      percentage:
+                        type: integer
+                        example: 67
+
+    ProgressEntry:
+      type: object
+      required:
+        - id
+        - goal_id
+        - user_id
+        - entry_date
+        - created_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        goal_id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        entry_date:
+          type: string
+          format: date
+          example: '2026-01-27'
+        value:
+          type: number
+          nullable: true
+          description: For numeric/duration goals
+          example: 5.2
+        note:
+          type: string
+          nullable: true
+          example: Great run today!
+        created_at:
+          type: string
+          format: date-time
+
+    Activity:
+      type: object
+      required:
+        - id
+        - group_id
+        - activity_type
+        - created_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        group_id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+          nullable: true
+        activity_type:
+          type: string
+          enum:
+            - progress_logged
+            - goal_created
+            - goal_updated
+            - goal_deleted
+            - member_joined
+            - member_left
+            - member_role_changed
+            - group_updated
+        metadata:
+          type: object
+          description: Activity-specific data
+        created_at:
+          type: string
+          format: date-time
+
+    Device:
+      type: object
+      required:
+        - id
+        - device_type
+        - registered_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        device_type:
+          type: string
+          enum: [android, ios]
+        device_name:
+          type: string
+          nullable: true
+          example: Pixel 7
+        registered_at:
+          type: string
+          format: date-time
+        last_used_at:
+          type: string
+          format: date-time
+          nullable: true
+
+    Error:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+          example: Validation failed
+        details:
+          type: array
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+              message:
+                type: string
+        code:
+          type: string
+          example: VALIDATION_ERROR

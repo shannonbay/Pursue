@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Cache directory for avatar images -->
+    <cache-path name="avatar_cache" path="avatars/" />
+
+    <!-- Cache directory for invite QR code sharing -->
+    <cache-path name="invite_qr" path="invite_qr/" />
+    
+    <!-- External files directory for camera photos -->
+    <external-files-path name="camera_photos" path="Pictures/" />
+    
+    <!-- Internal files directory -->
+    <files-path name="internal_files" path="." />
+</paths>

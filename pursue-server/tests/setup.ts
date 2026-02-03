@@ -1,0 +1,308 @@
+import dotenv from 'dotenv';
+import path from 'path';
+
+// Load .env.test file
+dotenv.config({ path: path.resolve(process.cwd(), '.env.test') });
+
+import pg from 'pg';
+import { Kysely, PostgresDialect, sql } from 'kysely';
+import type { Database } from '../src/database/types';
+
+const { Pool } = pg;
+
+// Ensure test environment variables are set
+process.env.NODE_ENV = 'test';
+if (!process.env.JWT_SECRET) {
+  process.env.JWT_SECRET = 'test-jwt-secret-key-for-testing-purposes-only';
+}
+if (!process.env.JWT_REFRESH_SECRET) {
+  process.env.JWT_REFRESH_SECRET = 'test-jwt-refresh-secret-key-for-testing';
+}
+if (!process.env.GOOGLE_CLIENT_ID) {
+  process.env.GOOGLE_CLIENT_ID = 'test-google-client-id';
+}
+
+const TEST_DATABASE_URL = process.env.TEST_DATABASE_URL ||
+  'postgresql://postgres:postgres@localhost:5432/pursue_test';
+
+// Also set DATABASE_URL so the app's database module uses the test database
+process.env.DATABASE_URL = TEST_DATABASE_URL;
+
+let pool: pg.Pool;
+let testDb: Kysely<Database>;
+
+// Run once before all tests
+beforeAll(async () => {
+  pool = new Pool({ connectionString: TEST_DATABASE_URL });
+  testDb = new Kysely<Database>({ dialect: new PostgresDialect({ pool }) });
+
+  // Create tables if they don't exist (run schema)
+  await createSchema(testDb);
+
+  console.log('Test database setup complete');
+});
+
+// Run after all tests
+afterAll(async () => {
+  await testDb.destroy();
+  console.log('Test database connection closed');
+});
+
+// Run before each test (clean slate)
+beforeEach(async () => {
+  await cleanDatabase(testDb);
+});
+
+async function createSchema(db: Kysely<Database>) {
+  // Enable UUID extension (wrapped in try-catch to handle parallel test runs)
+  try {
+    await sql`CREATE EXTENSION IF NOT EXISTS "uuid-ossp"`.execute(db);
+  } catch (error: unknown) {
+    // Ignore duplicate key error from parallel test runs
+    if (error instanceof Error && !error.message.includes('duplicate key')) {
+      throw error;
+    }
+  }
+
+  // Create users table
+  await sql`
+    CREATE TABLE IF NOT EXISTS users (
+      id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+      email VARCHAR(255) UNIQUE NOT NULL,
+      display_name VARCHAR(100) NOT NULL,
+      avatar_data BYTEA,
+      avatar_mime_type VARCHAR(50),
+      password_hash VARCHAR(255),
+      created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+      updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+      deleted_at TIMESTAMP WITH TIME ZONE
+    )
+  `.execute(db);
+
+  // Add missing columns to users table if they don't exist (for existing databases)
+  await sql`
+    DO $$
+    BEGIN
+      IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = 'users' AND column_name = 'avatar_data'
+      ) THEN
+        ALTER TABLE users ADD COLUMN avatar_data BYTEA;
+      END IF;
+      IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = 'users' AND column_name = 'avatar_mime_type'
+      ) THEN
+        ALTER TABLE users ADD COLUMN avatar_mime_type VARCHAR(50);
+      END IF;
+      IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = 'users' AND column_name = 'deleted_at'
+      ) THEN
+        ALTER TABLE users ADD COLUMN deleted_at TIMESTAMP WITH TIME ZONE;
+      END IF;
+    END $$;
+  `.execute(db);
+
+  // Create auth_providers table
+  await sql`
+    CREATE TABLE IF NOT EXISTS auth_providers (
+      id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+      user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      provider VARCHAR(50) NOT NULL,
+      provider_user_id VARCHAR(255) NOT NULL,
+      provider_email VARCHAR(255),
+      linked_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+      UNIQUE(provider, provider_user_id),
+      UNIQUE(user_id, provider)
+    )
+  `.execute(db);
+
+  // Create refresh_tokens table
+  await sql`
+    CREATE TABLE IF NOT EXISTS refresh_tokens (
+      id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+      user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      token_hash VARCHAR(255) NOT NULL,
+      expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+      created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+      revoked_at TIMESTAMP WITH TIME ZONE
+    )
+  `.execute(db);
+
+  // Create password_reset_tokens table
+  await sql`
+    CREATE TABLE IF NOT EXISTS password_reset_tokens (
+      id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+      user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      token_hash VARCHAR(255) NOT NULL,
+      expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+      created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+      used_at TIMESTAMP WITH TIME ZONE
+    )
+  `.execute(db);
+
+  // Create devices table
+  await sql`
+    CREATE TABLE IF NOT EXISTS devices (
+      id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+      user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      fcm_token VARCHAR(256) UNIQUE NOT NULL,
+      device_name VARCHAR(128),
+      platform VARCHAR(20),
+      last_active TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+      created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    )
+  `.execute(db);
+
+  // Create groups table
+  await sql`
+    CREATE TABLE IF NOT EXISTS groups (
+      id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+      name VARCHAR(100) NOT NULL,
+      description TEXT,
+      icon_emoji VARCHAR(10),
+      icon_color VARCHAR(7),
+      icon_data BYTEA,
+      icon_mime_type VARCHAR(50),
+      creator_user_id UUID NOT NULL REFERENCES users(id),
+      created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+      updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    )
+  `.execute(db);
+
+  // Add missing columns if they don't exist (for existing databases)
+  await sql`
+    DO $$
+    BEGIN
+      IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = 'groups' AND column_name = 'icon_color'
+      ) THEN
+        ALTER TABLE groups ADD COLUMN icon_color VARCHAR(7);
+      END IF;
+      IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = 'groups' AND column_name = 'icon_data'
+      ) THEN
+        ALTER TABLE groups ADD COLUMN icon_data BYTEA;
+      END IF;
+      IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = 'groups' AND column_name = 'icon_mime_type'
+      ) THEN
+        ALTER TABLE groups ADD COLUMN icon_mime_type VARCHAR(50);
+      END IF;
+    END $$;
+  `.execute(db);
+
+  // Create group_memberships table
+  await sql`
+    CREATE TABLE IF NOT EXISTS group_memberships (
+      id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+      group_id UUID NOT NULL REFERENCES groups(id) ON DELETE CASCADE,
+      user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      role VARCHAR(20) NOT NULL,
+      status VARCHAR(20) NOT NULL DEFAULT 'active',
+      joined_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+      UNIQUE(group_id, user_id)
+    )
+  `.execute(db);
+
+  // Add status column if table already existed without it (e.g. from older test runs)
+  await sql`
+    DO $$
+    BEGIN
+      IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = 'group_memberships' AND column_name = 'status'
+      ) THEN
+        ALTER TABLE group_memberships ADD COLUMN status VARCHAR(20) NOT NULL DEFAULT 'active';
+      END IF;
+    END $$
+  `.execute(db);
+
+  // Create invite_codes table (one active code per group; revoked_at null = active)
+  await sql`
+    DROP TABLE IF EXISTS invite_codes
+  `.execute(db);
+  await sql`
+    CREATE TABLE invite_codes (
+      id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+      group_id UUID NOT NULL REFERENCES groups(id) ON DELETE CASCADE,
+      code VARCHAR(50) UNIQUE NOT NULL,
+      created_by_user_id UUID NOT NULL REFERENCES users(id),
+      created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+      revoked_at TIMESTAMP WITH TIME ZONE
+    )
+  `.execute(db);
+  await sql`
+    CREATE UNIQUE INDEX idx_invite_codes_active_per_group ON invite_codes(group_id)
+    WHERE revoked_at IS NULL
+  `.execute(db);
+  await sql`
+    CREATE INDEX idx_invite_codes_code ON invite_codes(code)
+  `.execute(db);
+
+  // Create goals table
+  await sql`
+    CREATE TABLE IF NOT EXISTS goals (
+      id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+      group_id UUID NOT NULL REFERENCES groups(id) ON DELETE CASCADE,
+      title VARCHAR(200) NOT NULL,
+      description TEXT,
+      cadence VARCHAR(20) NOT NULL,
+      metric_type VARCHAR(20) NOT NULL,
+      target_value DECIMAL(10,2),
+      unit VARCHAR(50),
+      created_by_user_id UUID REFERENCES users(id),
+      created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+      deleted_at TIMESTAMP WITH TIME ZONE,
+      deleted_by_user_id UUID REFERENCES users(id)
+    )
+  `.execute(db);
+
+  // Create progress_entries table
+  await sql`
+    CREATE TABLE IF NOT EXISTS progress_entries (
+      id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+      goal_id UUID NOT NULL REFERENCES goals(id) ON DELETE CASCADE,
+      user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      value DECIMAL(10,2) NOT NULL,
+      note TEXT,
+      logged_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+      period_start DATE NOT NULL,
+      user_timezone VARCHAR(50),
+      created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    )
+  `.execute(db);
+
+  // Create group_activities table
+  await sql`
+    CREATE TABLE IF NOT EXISTS group_activities (
+      id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+      group_id UUID NOT NULL REFERENCES groups(id) ON DELETE CASCADE,
+      user_id UUID REFERENCES users(id) ON DELETE SET NULL,
+      activity_type VARCHAR(50) NOT NULL,
+      metadata JSONB,
+      created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    )
+  `.execute(db);
+}
+
+async function cleanDatabase(db: Kysely<Database>) {
+  // Delete all data in reverse order of dependencies
+  await db.deleteFrom('progress_entries').execute();
+  await db.deleteFrom('goals').execute();
+  await db.deleteFrom('group_activities').execute();
+  await db.deleteFrom('invite_codes').execute();
+  await db.deleteFrom('group_memberships').execute();
+  await db.deleteFrom('groups').execute();
+  await db.deleteFrom('devices').execute();
+  await db.deleteFrom('password_reset_tokens').execute();
+  await db.deleteFrom('refresh_tokens').execute();
+  await db.deleteFrom('auth_providers').execute();
+  await db.deleteFrom('users').execute();
+}
+
+export { testDb };

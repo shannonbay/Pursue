@@ -1,0 +1,38 @@
+  Auth Endpoints Implemented
+  ┌────────┬────────────────────────────┬────────────────────────────────────┐
+  │ Method │          Endpoint          │            Description             │
+  ├────────┼────────────────────────────┼────────────────────────────────────┤
+  │ POST   │ /api/auth/register         │ Register with email/password       │
+  ├────────┼────────────────────────────┼────────────────────────────────────┤
+  │ POST   │ /api/auth/login            │ Sign in with email/password        │
+  ├────────┼────────────────────────────┼────────────────────────────────────┤
+  │ POST   │ /api/auth/google           │ Sign in/register with Google OAuth │
+  ├────────┼────────────────────────────┼────────────────────────────────────┤
+  │ POST   │ /api/auth/refresh          │ Refresh access token               │
+  ├────────┼────────────────────────────┼────────────────────────────────────┤
+  │ POST   │ /api/auth/logout           │ Revoke refresh token (protected)   │
+  ├────────┼────────────────────────────┼────────────────────────────────────┤
+  │ POST   │ /api/auth/forgot-password  │ Request password reset email       │
+  ├────────┼────────────────────────────┼────────────────────────────────────┤
+  │ POST   │ /api/auth/reset-password   │ Reset password with token          │
+  ├────────┼────────────────────────────┼────────────────────────────────────┤
+  │ POST   │ /api/auth/link/google      │ Link Google account (protected)    │
+  ├────────┼────────────────────────────┼────────────────────────────────────┤
+  │ DELETE │ /api/auth/unlink/:provider │ Unlink auth provider (protected)   │
+  └────────┴────────────────────────────┴────────────────────────────────────┘
+  To Run
+
+  1. Copy .env.example to .env and configure your environment variables
+  2. Set up PostgreSQL database with the schema from the spec
+  3. Run npm run dev for development or npm run build && npm start for production
+
+TODOs in code:
+Client-side password hashing (currently sends plain password)
+Secure JWT token storage (Android Keystore)
+FCM token registration
+
+Next steps:
+Update SignInEmailFragment to use SecureTokenManager when implementing login API call
+Use SecureTokenManager.getAccessToken() in ApiClient to add Authorization headers for authenticated requests
+Use SecureTokenManager.clearTokens() in logout functionality
+The tokens are now stored securely using Android Keystore.

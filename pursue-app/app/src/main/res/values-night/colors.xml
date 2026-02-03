@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Pursue UI Spec primary palette (same for dark mode) -->
+    <color name="primary">#1976D2</color>
+    <color name="primary_variant">#1565C0</color>
+    <color name="on_primary">#FFFFFF</color>
+
+    <!-- Surface / background colors for dark mode -->
+    <color name="background_light">#121212</color>
+    <color name="surface">#1E1E1E</color>
+    <color name="surface_variant">#2C2C2C</color>
+    <color name="on_surface">#FFFFFF</color>
+    <color name="on_surface_variant">#B3B3B3</color>
+
+    <!-- Semantic colors -->
+    <color name="success_green">#66BB6A</color>
+    <color name="error">#EF5350</color>
+    <color name="warning_background">#FFF9A825</color>
+    
+    <!-- Secondary color from theme -->
+    <color name="secondary">#F9A825</color>
+
+    <!-- Shimmer colors for dark mode -->
+    <color name="shimmer_base">#2C2C2C</color>
+    <color name="shimmer_highlight">#3A3A3A</color>
+    
+    <!-- Visual feedback colors -->
+    <color name="card_highlight">#1E3A5F</color>
+
+    <!-- Offline state -->
+    <color name="offline_dimmed">#80FFFFFF</color>
+</resources>

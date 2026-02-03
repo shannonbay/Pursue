@@ -1,0 +1,98 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import AppStoreButtons from '../components/AppStoreButtons.astro';
+import FeatureCard from '../components/FeatureCard.astro';
+---
+<BaseLayout title="Pursue - Group Goal Accountability App">
+  <main>
+    <section class="min-h-screen bg-gradient-to-b from-pursue-blue-50 to-white">
+      <Header />
+      <div class="max-w-6xl mx-auto px-4 sm:px-6 py-12 sm:py-16">
+        <h1 class="text-5xl font-bold text-pursue-gray-900 mb-4">
+          Track goals together. Stay accountable.
+        </h1>
+        <p class="text-xl text-pursue-gray-700 mb-8 max-w-2xl">
+          Join accountability groups with friends and achieve more together.
+        </p>
+        <div id="download" class="mb-12">
+          <AppStoreButtons />
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <figure class="bg-pursue-gray-100 rounded-xl overflow-hidden min-h-[320px] flex items-center justify-center">
+            <img
+              src="/screenshots/groups-screen.jpg"
+              alt="Pursue app groups screen"
+              class="max-h-[480px] w-auto object-contain"
+              width="280"
+              height="560"
+            />
+          </figure>
+          <figure class="bg-pursue-gray-100 rounded-xl overflow-hidden min-h-[320px] flex items-center justify-center">
+            <img
+              src="/screenshots/today-screen.jpg"
+              alt="Pursue app today screen"
+              class="max-h-[480px] w-auto object-contain"
+              width="280"
+              height="560"
+            />
+          </figure>
+          <figure class="bg-pursue-gray-100 rounded-xl overflow-hidden min-h-[320px] flex items-center justify-center">
+            <img
+              src="/screenshots/activity-log.jpg"
+              alt="Pursue app activity log"
+              class="max-h-[480px] w-auto object-contain"
+              width="280"
+              height="560"
+            />
+          </figure>
+        </div>
+      </div>
+    </section>
+
+    <section class="py-16 sm:py-24 bg-white">
+      <div class="max-w-6xl mx-auto px-4 sm:px-6">
+        <h2 class="text-4xl font-bold text-pursue-gray-900 mb-12 text-center">
+          How Pursue Works
+        </h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+          <FeatureCard
+            icon="🎯"
+            title="Create Goals"
+            description="Daily, weekly, monthly habits."
+          />
+          <FeatureCard
+            icon="👥"
+            title="Invite Friends"
+            description="Share invite codes instantly."
+          />
+          <FeatureCard
+            icon="📊"
+            title="Track Together"
+            description="See everyone's progress."
+          />
+          <FeatureCard
+            icon="🔔"
+            title="Stay Motivated"
+            description="Push notifications when teammates log."
+          />
+        </div>
+      </div>
+    </section>
+
+    <section class="py-16 sm:py-24 bg-pursue-gray-50">
+      <div class="max-w-6xl mx-auto px-4 sm:px-6 text-center">
+        <h2 class="text-4xl font-bold text-pursue-gray-900 mb-8">
+          Ready to pursue your goals?
+        </h2>
+        <AppStoreButtons />
+        <p class="mt-6 text-base text-pursue-gray-600">
+          Free to download. No credit card needed.
+        </p>
+      </div>
+    </section>
+
+    <Footer />
+  </main>
+</BaseLayout>

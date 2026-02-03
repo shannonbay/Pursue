@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.coordinatorlayout.widget.CoordinatorLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/background_light">
+
+    <androidx.core.widget.NestedScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:fillViewport="true">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <!-- Header Section -->
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:id="@+id/header_container"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:padding="16dp"
+                android:background="@color/surface">
+
+                <!-- Group Icon Container (80dp circular) -->
+                <FrameLayout
+                    android:id="@+id/group_icon_container"
+                    android:layout_width="80dp"
+                    android:layout_height="80dp"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent">
+                    
+                    <!-- Group Icon Image (shown when has_icon = true) -->
+                    <ImageView
+                        android:id="@+id/group_icon_image"
+                        android:layout_width="80dp"
+                        android:layout_height="80dp"
+                        android:scaleType="centerCrop"
+                        android:background="@drawable/circle_background"
+                        android:visibility="gone"
+                        tools:visibility="visible" />
+                    
+                    <!-- Group Icon Emoji (shown when has_icon = false and icon_emoji exists) -->
+                    <TextView
+                        android:id="@+id/group_icon_emoji"
+                        android:layout_width="80dp"
+                        android:layout_height="80dp"
+                        android:textSize="48sp"
+                        android:gravity="center"
+                        android:background="@drawable/circle_background"
+                        android:visibility="gone"
+                        tools:text="🏃"
+                        tools:visibility="visible" />
+                    
+                    <!-- Group Icon First Letter (shown when no icon and no emoji) -->
+                    <TextView
+                        android:id="@+id/group_icon_letter"
+                        android:layout_width="80dp"
+                        android:layout_height="80dp"
+                        android:textSize="32sp"
+                        android:textStyle="bold"
+                        android:gravity="center"
+                        android:background="@drawable/circle_background"
+                        android:textColor="@color/on_primary"
+                        android:visibility="gone"
+                        tools:text="M"
+                        tools:visibility="visible" />
+                    
+                </FrameLayout>
+
+                <!-- Subtitle: Members and Goals -->
+                <TextView
+                    android:id="@+id/subtitle_members_goals"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="16dp"
+                    android:layout_marginTop="8dp"
+                    android:textAppearance="?attr/textAppearanceBodyMedium"
+                    android:textColor="@color/on_surface_variant"
+                    app:layout_constraintStart_toEndOf="@id/group_icon_container"
+                    app:layout_constraintTop_toTopOf="@id/group_icon_container"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    tools:text="8 members · 5 active goals" />
+
+                <!-- Created By -->
+                <TextView
+                    android:id="@+id/created_by"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:textAppearance="?attr/textAppearanceBodySmall"
+                    android:textColor="@color/on_surface_variant"
+                    app:layout_constraintStart_toStartOf="@id/subtitle_members_goals"
+                    app:layout_constraintTop_toBottomOf="@id/subtitle_members_goals"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    tools:text="Created by Shannon Thompson" />
+
+            </androidx.constraintlayout.widget.ConstraintLayout>
+
+            <!-- Tabs -->
+            <com.google.android.material.tabs.TabLayout
+                android:id="@+id/tab_layout"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@color/surface"
+                app:tabMode="fixed"
+                app:tabGravity="fill"
+                app:tabIndicatorColor="@color/primary">
+
+                <com.google.android.material.tabs.TabItem
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/tab_goals" />
+
+                <com.google.android.material.tabs.TabItem
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/tab_members" />
+
+                <com.google.android.material.tabs.TabItem
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/tab_activity" />
+
+            </com.google.android.material.tabs.TabLayout>
+
+            <!-- ViewPager2 for Tab Content -->
+            <androidx.viewpager2.widget.ViewPager2
+                android:id="@+id/view_pager"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1" />
+
+        </LinearLayout>
+
+    </androidx.core.widget.NestedScrollView>
+
+    <!-- Floating Action Button (context-aware) -->
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fab_action"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end"
+        android:layout_margin="16dp"
+        android:contentDescription="@string/fab_log_progress"
+        app:srcCompat="@android:drawable/ic_input_add"
+        app:tint="@color/on_primary"
+        app:maxImageSize="34dp" />
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginHorizontal="16dp"
+    android:layout_marginVertical="8dp"
+    app:cardCornerRadius="12dp"
+    app:cardElevation="1dp"
+    app:strokeWidth="0dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <!-- Top row: Icon, Name, Arrow -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <!-- Group Icon Container (supports both image and emoji) -->
+            <FrameLayout
+                android:layout_width="48dp"
+                android:layout_height="48dp">
+                
+                <!-- Group Icon Image (shown when has_icon = true) -->
+                <ImageView
+                    android:id="@+id/group_icon_image"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:scaleType="centerCrop"
+                    android:visibility="gone"
+                    tools:visibility="visible" />
+                
+                <!-- Group Icon Emoji (shown when has_icon = false) -->
+                <TextView
+                    android:id="@+id/group_icon_emoji"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:textSize="32sp"
+                    android:gravity="center"
+                    android:background="@drawable/circle_background"
+                    tools:text="🏃"
+                    tools:visibility="visible" />
+            </FrameLayout>
+
+            <!-- Group Name -->
+            <TextView
+                android:id="@+id/group_name"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="12dp"
+                android:textAppearance="?attr/textAppearanceHeadlineSmall"
+                android:textStyle="bold"
+                android:textColor="@color/on_surface"
+                tools:text="Morning Runners" />
+
+            <!-- Right Arrow -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="→"
+                android:textSize="20sp"
+                android:textColor="@color/on_surface_variant" />
+
+        </LinearLayout>
+
+        <!-- Member and Goal Count -->
+        <TextView
+            android:id="@+id/member_goal_count"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:textAppearance="?attr/textAppearanceBodyMedium"
+            android:textColor="@color/on_surface_variant"
+            tools:text="8 members · 5 active goals" />
+
+        <!-- Progress Bar -->
+        <ProgressBar
+            android:id="@+id/progress_bar"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="match_parent"
+            android:layout_height="4dp"
+            android:layout_marginTop="8dp"
+            android:progress="80"
+            android:progressTint="@color/primary"
+            android:progressBackgroundTint="@color/surface_variant"
+            android:max="100"
+            tools:progress="80" />
+
+        <!-- Last Activity Timestamp -->
+        <TextView
+            android:id="@+id/last_activity"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:textAppearance="?attr/textAppearanceBodySmall"
+            android:textColor="@color/on_surface_variant"
+            tools:text="2 hours ago" />
+
+    </LinearLayout>
+
+</com.google.android.material.card.MaterialCardView>

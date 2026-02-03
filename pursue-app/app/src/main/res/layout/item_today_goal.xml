@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginHorizontal="16dp"
+    android:layout_marginVertical="4dp"
+    app:cardCornerRadius="12dp"
+    app:cardElevation="1dp"
+    app:strokeWidth="0dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="16dp"
+        android:gravity="center_vertical">
+
+        <!-- Status Icon -->
+        <TextView
+            android:id="@+id/status_icon"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:text="✓"
+            android:textSize="20sp"
+            android:textColor="@color/primary"
+            android:gravity="center"
+            android:layout_marginEnd="12dp"
+            tools:text="✓" />
+
+        <!-- Goal Title -->
+        <TextView
+            android:id="@+id/goal_title"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:textAppearance="?attr/textAppearanceBodyLarge"
+            android:textColor="@color/on_surface"
+            tools:text="30 min run" />
+
+    </LinearLayout>
+
+</com.google.android.material.card.MaterialCardView>

@@ -1,0 +1,18 @@
+---
+export interface Props {
+  title?: string;
+}
+
+const { title = 'Pursue' } = Astro.props;
+---
+<header class="flex items-center justify-between max-w-6xl mx-auto px-4 py-4 sm:px-6">
+  <a href="/" class="flex-shrink-0" aria-label={title}>
+    <img src="/logo-with-text.svg" alt={title} width="160" height="40" class="h-8 w-auto" />
+  </a>
+  <a
+    href="#download"
+    class="inline-flex items-center px-6 py-3 bg-pursue-blue-500 text-white rounded-lg font-semibold shadow-md hover:bg-pursue-blue-600 transition-colors"
+  >
+    Download App
+  </a>
+</header>

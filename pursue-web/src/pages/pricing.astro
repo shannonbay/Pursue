@@ -1,0 +1,100 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import AppStoreButtons from '../components/AppStoreButtons.astro';
+---
+<BaseLayout title="Pricing - Pursue">
+  <main>
+    <section class="bg-gradient-to-b from-pursue-blue-50 to-white py-12 sm:py-16">
+      <Header />
+      <div class="max-w-6xl mx-auto px-4 sm:px-6 pt-8">
+        <h1 class="text-4xl sm:text-5xl font-bold text-pursue-gray-900 mb-4">
+          Pricing
+        </h1>
+        <p class="text-xl text-pursue-gray-700 max-w-2xl">
+          Start free, upgrade when you need more groups. No credit card required.
+        </p>
+      </div>
+    </section>
+
+    <section class="py-16 sm:py-24 bg-white">
+      <div class="max-w-6xl mx-auto px-4 sm:px-6">
+        <p class="text-center text-pursue-gray-700 text-lg mb-12 max-w-2xl mx-auto">
+          Most users stay on the free plan. Upgrade only when you need more groups.
+        </p>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+          <!-- Free tier -->
+          <article class="bg-white rounded-xl shadow-md p-8 border border-pursue-gray-200 flex flex-col">
+            <h2 class="text-2xl font-bold text-pursue-gray-900 mb-2">Free</h2>
+            <p class="text-3xl font-bold text-pursue-gray-900 mb-6">$0<span class="text-lg font-normal text-pursue-gray-600">/month</span></p>
+            <ul class="space-y-3 text-pursue-gray-700 mb-8 flex-1">
+              <li class="flex items-start gap-2">
+                <span class="text-pursue-blue-500 shrink-0" aria-hidden="true">✓</span>
+                1 group
+              </li>
+              <li class="flex items-start gap-2">
+                <span class="text-pursue-blue-500 shrink-0" aria-hidden="true">✓</span>
+                50 members per group
+              </li>
+              <li class="flex items-start gap-2">
+                <span class="text-pursue-blue-500 shrink-0" aria-hidden="true">✓</span>
+                All goal types
+              </li>
+              <li class="flex items-start gap-2">
+                <span class="text-pursue-blue-500 shrink-0" aria-hidden="true">✓</span>
+                Progress tracking
+              </li>
+            </ul>
+            <a
+              href="#download"
+              class="inline-flex justify-center items-center px-6 py-3 bg-pursue-blue-500 text-white rounded-lg font-semibold shadow-md hover:bg-pursue-blue-600 transition-colors w-full"
+            >
+              Start Free
+            </a>
+          </article>
+
+          <!-- Premium tier -->
+          <article class="bg-white rounded-xl shadow-md p-8 border-2 border-pursue-blue-500 flex flex-col">
+            <h2 class="text-2xl font-bold text-pursue-gray-900 mb-2">Premium</h2>
+            <p class="text-3xl font-bold text-pursue-gray-900 mb-6">$30<span class="text-lg font-normal text-pursue-gray-600">/year</span></p>
+            <ul class="space-y-3 text-pursue-gray-700 mb-8 flex-1">
+              <li class="flex items-start gap-2">
+                <span class="text-pursue-blue-500 shrink-0" aria-hidden="true">✓</span>
+                Ten groups
+              </li>
+              <li class="flex items-start gap-2">
+                <span class="text-pursue-blue-500 shrink-0" aria-hidden="true">✓</span>
+                All Free features
+              </li>
+              <li class="flex items-start gap-2">
+                <span class="text-pursue-blue-500 shrink-0" aria-hidden="true">✓</span>
+                Priority support
+              </li>
+            </ul>
+            <a
+              href="#download"
+              class="inline-flex justify-center items-center px-6 py-3 bg-pursue-blue-500 text-white rounded-lg font-semibold shadow-md hover:bg-pursue-blue-600 transition-colors w-full"
+            >
+              Upgrade
+            </a>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="py-16 sm:py-24 bg-pursue-gray-50" id="download">
+      <div class="max-w-6xl mx-auto px-4 sm:px-6 text-center">
+        <h2 class="text-4xl font-bold text-pursue-gray-900 mb-8">
+          Ready to pursue your goals?
+        </h2>
+        <AppStoreButtons />
+        <p class="mt-6 text-base text-pursue-gray-600">
+          Free to download. No credit card needed.
+        </p>
+      </div>
+    </section>
+
+    <Footer />
+  </main>
+</BaseLayout>

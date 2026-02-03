@@ -1,0 +1,8 @@
+---
+import InviteLayout from '../../layouts/InviteLayout.astro';
+
+export function getStaticPaths() {
+  return [{ params: { code: 'join' } }];
+}
+---
+<InviteLayout />

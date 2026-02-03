@@ -1,0 +1,70 @@
+[versions]
+agp = "8.9.0"
+kotlin = "2.0.21"
+# core-ktx 1.17.0 requires compileSdk 36+. Use 1.15.0 to stay compatible with compileSdk 35.
+coreKtx = "1.15.0"
+junit = "4.13.2"
+junitVersion = "1.3.0"
+espressoCore = "3.7.0"
+appcompat = "1.7.1"
+material = "1.13.0"
+fragment = "1.8.7"
+fragment-testing = "1.8.7"
+recyclerview = "1.3.2"
+swiperefreshlayout = "1.1.0"
+gridlayout = "1.0.0"
+lifecycle = "2.8.7"
+security-crypto = "1.1.0-alpha06"
+okhttp = "4.12.0"
+gson = "2.10.1"
+kotlinx-coroutines = "1.7.3"
+firebase-bom = "33.7.0"
+mockk = "1.13.8"
+robolectric = "4.11.1"
+kotlinx-coroutines-test = "1.7.3"
+shimmer = "0.5.0"
+googleSignIn = "21.2.0"
+glide = "4.16.0"
+glideOkHttp = "4.12.0"
+imageCropper = "4.5.0"
+zxing = "3.5.3"
+zxingAndroidEmbedded = "4.3.0"
+truth = "1.1.5"
+okhttpLogging = "4.12.0"
+
+[libraries]
+androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
+junit = { group = "junit", name = "junit", version.ref = "junit" }
+androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
+androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
+androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
+androidx-fragment-ktx = { group = "androidx.fragment", name = "fragment-ktx", version.ref = "fragment" }
+androidx-fragment-testing = { group = "androidx.fragment", name = "fragment-testing", version.ref = "fragment-testing" }
+androidx-recyclerview = { group = "androidx.recyclerview", name = "recyclerview", version.ref = "recyclerview" }
+androidx-swiperefreshlayout = { group = "androidx.swiperefreshlayout", name = "swiperefreshlayout", version.ref = "swiperefreshlayout" }
+androidx-gridlayout = { group = "androidx.gridlayout", name = "gridlayout", version.ref = "gridlayout" }
+androidx-lifecycle-runtime-ktx = { group = "androidx.lifecycle", name = "lifecycle-runtime-ktx", version.ref = "lifecycle" }
+androidx-security-crypto = { group = "androidx.security", name = "security-crypto", version.ref = "security-crypto" }
+okhttp = { group = "com.squareup.okhttp3", name = "okhttp", version.ref = "okhttp" }
+gson = { group = "com.google.code.gson", name = "gson", version.ref = "gson" }
+kotlinx-coroutines-android = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-android", version.ref = "kotlinx-coroutines" }
+material = { group = "com.google.android.material", name = "material", version.ref = "material" }
+firebase-bom = { group = "com.google.firebase", name = "firebase-bom", version.ref = "firebase-bom" }
+firebase-messaging-ktx = { group = "com.google.firebase", name = "firebase-messaging-ktx" }
+mockk = { group = "io.mockk", name = "mockk", version.ref = "mockk" }
+robolectric = { group = "org.robolectric", name = "robolectric", version.ref = "robolectric" }
+kotlinx-coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version.ref = "kotlinx-coroutines-test" }
+shimmer = { group = "com.facebook.shimmer", name = "shimmer", version.ref = "shimmer" }
+googleSignIn = { group = "com.google.android.gms", name = "play-services-auth", version.ref = "googleSignIn" }
+glide = { group = "com.github.bumptech.glide", name = "glide", version.ref = "glide" }
+glideOkHttp = { group = "com.github.bumptech.glide", name = "okhttp3-integration", version.ref = "glideOkHttp" }
+imageCropper = { group = "com.vanniktech", name = "android-image-cropper", version.ref = "imageCropper" }
+zxing = { group = "com.google.zxing", name = "core", version.ref = "zxing" }
+zxing-android-embedded = { group = "com.journeyapps", name = "zxing-android-embedded", version.ref = "zxingAndroidEmbedded" }
+truth = { group = "com.google.truth", name = "truth", version.ref = "truth" }
+okhttpLogging = { group = "com.squareup.okhttp3", name = "logging-interceptor", version.ref = "okhttpLogging" }
+
+[plugins]
+android-application = { id = "com.android.application", version.ref = "agp" }
+kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+

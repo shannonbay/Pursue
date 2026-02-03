@@ -1,0 +1,16 @@
+node_modules
+npm-debug.log
+.git
+.env
+.env.test
+specs
+.chunkhound.json
+.chunkhound
+.claude
+.cursor
+.github
+.grepai
+coverage
+.mcp.json
+migrations
+logs

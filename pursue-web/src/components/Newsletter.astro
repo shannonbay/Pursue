@@ -1,0 +1,11 @@
+---
+export interface Props {
+  title?: string;
+}
+
+const { title = 'Newsletter' } = Astro.props;
+---
+<section class="newsletter">
+  <h2>{title}</h2>
+  <p>Placeholder for newsletter signup.</p>
+</section>

@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "chunkhound": {
+      "command": "chunkhound",
+      "args": ["mcp", "C:\Users\layen\AndroidStudioProjects\pursue"]
+    }
+  }
+}
