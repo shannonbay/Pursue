@@ -1,0 +1,3 @@
+[submodule "pursue-web"]
+	path = pursue-web
+	url = https://github.com/shannonbay/pursue-web.git

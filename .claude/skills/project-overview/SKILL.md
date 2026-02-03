@@ -1,11 +1,13 @@
 ---
 name: project-overview
-description: Use when researching or editing the Pursue project which is this folder, a git monorepo containing three sub-projects: the Android app (pursue-app/), backend express.js server (pursue-server/), and marketing website (pursue-web/).
+description: Use when researching or editing the Pursue project which is this folder, a git monorepo containing three sub-projects: the Android app (pursue-app/), backend express.js server (pursue-server/), and marketing website (pursue-web/ - a git submodule).
 ---
 
 # Pursue Project Overview
 
 This monorepo contains three sub-projects that together make up the Pursue application - a group accountability app for tracking personal goals.
+
+**Note:** `pursue-web/` is a git submodule linked to https://github.com/shannonbay/pursue-web.git (deployed directly by Cloudflare Pages).
 
 ## Repository Structure
 
@@ -53,15 +55,17 @@ This monorepo contains three sub-projects that together make up the Pursue appli
 - `/api/progress/*` - Progress tracking
 - `/health` - Health check
 
-### 3. pursue-web/ - Marketing Website
+### 3. pursue-web/ - Marketing Website (Git Submodule)
 
 **Purpose:** Marketing site to convert visitors to app downloads, explain the product, handle invite deep links, and host legal/support content.
+
+**Repository:** https://github.com/shannonbay/pursue-web.git (submodule)
 
 **Tech Stack:**
 - Framework: Astro 4.x
 - Styling: Tailwind CSS 3.x
 - Language: TypeScript
-- Hosting: Cloudflare Pages
+- Hosting: Cloudflare Pages (deploys directly from the pursue-web repo)
 - Domain: getpursue.app
 
 **Key Pages:**
@@ -69,6 +73,13 @@ This monorepo contains three sub-projects that together make up the Pursue appli
 - Invite handler at `/invite/*` for deep linking
 - Legal pages (privacy policy, terms of service)
 - Support content
+
+**Working with the Submodule:**
+- Git commands run inside `pursue-web/` operate on the submodule's own repository
+- Changes must be committed and pushed within `pursue-web/` first
+- Then commit the updated submodule reference in the parent repo
+- To update to latest: `git -C pursue-web pull origin main`
+- After cloning parent repo: `git submodule update --init` to fetch submodule contents
 
 ## Architecture Overview
 
