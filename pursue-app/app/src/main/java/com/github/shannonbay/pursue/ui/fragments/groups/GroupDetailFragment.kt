@@ -13,6 +13,8 @@ import android.view.MenuInflater
 import android.view.MenuItem
 import android.animation.AnimatorSet
 import android.animation.ObjectAnimator
+import android.text.Editable
+import android.text.TextWatcher
 import android.view.View
 import android.view.ViewGroup
 import android.view.animation.AccelerateDecelerateInterpolator
@@ -52,6 +54,7 @@ import com.github.shannonbay.pursue.models.GroupMember
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.tabs.TabLayout
 import com.google.android.material.tabs.TabLayoutMediator
+import com.google.android.material.textfield.TextInputEditText
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
@@ -517,9 +520,10 @@ class GroupDetailFragment : Fragment() {
     }
 
     private fun showDeleteGroupConfirmation(groupName: String, gid: String) {
+        val view = layoutInflater.inflate(R.layout.dialog_delete_group_confirm, null)
         val dialog = MaterialAlertDialogBuilder(requireContext())
             .setTitle(getString(R.string.delete_group_dialog_title, groupName))
-            .setMessage(getString(R.string.delete_group_dialog_message))
+            .setView(view)
             .setNegativeButton(getString(R.string.cancel), null)
             .setPositiveButton(getString(R.string.delete)) { _, _ ->
                 lifecycleScope.launch {
@@ -547,9 +551,17 @@ class GroupDetailFragment : Fragment() {
             }
             .create()
         dialog.show()
-        dialog.getButton(AlertDialog.BUTTON_POSITIVE)?.setTextColor(
-            ContextCompat.getColor(requireContext(), R.color.secondary)
-        )
+        val positiveButton = dialog.getButton(AlertDialog.BUTTON_POSITIVE)
+        positiveButton?.isEnabled = false
+        positiveButton?.setTextColor(ContextCompat.getColor(requireContext(), R.color.secondary))
+        val editText = view.findViewById<TextInputEditText>(R.id.delete_confirm_input)
+        editText.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+            override fun afterTextChanged(s: Editable?) {
+                positiveButton?.isEnabled = (editText.text?.toString()?.trim() == "delete")
+            }
+        })
     }
 
     private fun showLeaveGroupConfirmation(gid: String) {
