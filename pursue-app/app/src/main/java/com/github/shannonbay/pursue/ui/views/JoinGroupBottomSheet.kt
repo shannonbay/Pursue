@@ -82,7 +82,7 @@ class JoinGroupBottomSheet : BottomSheetDialogFragment() {
             if (::editCode.isInitialized && ::inputLayout.isInitialized) {
                 editCode.setText(code)
                 inputLayout.error = null
-                attemptJoin()
+                performJoin(code)
             }
         } else {
             Toast.makeText(requireContext(), getString(R.string.invite_code_invalid), Toast.LENGTH_SHORT).show()
