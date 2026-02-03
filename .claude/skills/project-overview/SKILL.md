@@ -31,6 +31,6 @@ Group accountability app for tracking personal goals. Three sub-projects:
 - `specs/Pursue-Backend-Server-Spec.md` - Backend spec
 
 ## Infrastructure
-- Backend: Google Cloud Run + Cloud SQL PostgreSQL
+- Backend: Google Cloud Run + Supabase
 - Website: Cloudflare Pages
 - Push: Firebase Cloud Messaging
