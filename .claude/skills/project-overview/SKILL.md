@@ -1,15 +1,15 @@
 ---
 name: project-overview
-description: Use when researching or editing the Pursue project which is this folder (not a git repo) containing three git repos: the Android app (pursue/), backend express.js server (pursue-server/), and marketing website (pursue-web/).
+description: Use when researching or editing the Pursue project which is this folder, a git monorepo containing three sub-projects: the Android app (pursue-app/), backend express.js server (pursue-server/), and marketing website (pursue-web/).
 ---
 
 # Pursue Project Overview
 
-This monorepo contains three separate git repositories that together make up the Pursue application - a group accountability app for tracking personal goals.
+This monorepo contains three sub-projects that together make up the Pursue application - a group accountability app for tracking personal goals.
 
 ## Repository Structure
 
-### 1. pursue/ - Android Mobile App
+### 1. pursue-app/ - Android Mobile App
 
 **Purpose:** Native Android application for end users to track goals and share progress with accountability groups.
 
@@ -29,8 +29,8 @@ This monorepo contains three separate git repositories that together make up the
 - Colorblind-friendly blue and gold color scheme
 
 **Documentation:**
-- `pursue/Spec.md` - Main technical specification
-- `pursue/specs/Pursue-UI-Spec.md` - Complete UI/UX specification
+- `specs/Spec.md` - Main technical specification
+- `specs/Pursue-UI-Spec.md` - Complete UI/UX specification
 
 ### 2. pursue-server/ - Backend API Server
 
@@ -82,7 +82,7 @@ The system uses a **centralized client-server architecture**:
 ## Development Workflow
 
 When working across repositories:
-- Backend changes in `pursue-server/` may require corresponding Android client updates in `pursue/`
+- Backend changes in `pursue-server/` may require corresponding Android client updates in `pursue-app/`
 - API endpoint changes should be reflected in both server routes and Android Retrofit interfaces
 - Database schema changes require updating `pursue-server/schema.sql` and creating a migration in `pursue-server/migrations`
 
