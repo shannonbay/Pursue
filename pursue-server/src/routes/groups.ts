@@ -18,6 +18,7 @@ import {
   regenerateInviteCode,
   joinGroup,
   getActivity,
+  validateExportRange,
   exportGroupProgress,
 } from '../controllers/groups.js';
 import { createGoal, listGoals } from '../controllers/goals.js';
@@ -34,6 +35,7 @@ router.post('/join', joinGroup);
 
 // Group CRUD
 router.post('/', createGroup);
+router.get('/:group_id/export-progress/validate-range', validateExportRange);
 router.get('/:group_id/export-progress', exportProgressLimiter, exportGroupProgress);
 router.get('/:group_id', getGroup);
 router.patch('/:group_id', updateGroup);

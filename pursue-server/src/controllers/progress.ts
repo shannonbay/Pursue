@@ -14,6 +14,7 @@ import {
   requireGroupMember,
   requireActiveGroupMember,
 } from '../services/authorization.js';
+import { canUserWriteInGroup } from '../services/subscription.service.js';
 import { createGroupActivity, ACTIVITY_TYPES } from '../services/activity.service.js';
 import { sendToTopic, buildTopicName } from '../services/fcm.service.js';
 
@@ -79,6 +80,21 @@ export async function createProgress(
 
     // Verify user is active member of goal's group
     await requireActiveGroupMember(req.user.id, goal.group_id);
+
+    const writeCheck = await canUserWriteInGroup(req.user.id, goal.group_id);
+    if (!writeCheck.allowed) {
+      if (writeCheck.reason === 'group_selection_required') {
+        throw new ApplicationError(
+          'Select which group to keep in your subscription settings.',
+          403,
+          'SUBSCRIPTION_GROUP_SELECTION_REQUIRED'
+        );
+      }
+      const msg = writeCheck.read_only_until
+        ? `This group is read-only until ${writeCheck.read_only_until.toISOString().slice(0, 10)}.`
+        : 'This group is read-only.';
+      throw new ApplicationError(msg, 403, 'GROUP_READ_ONLY');
+    }
 
     // Calculate period_start based on cadence
     const periodStart = calculatePeriodStart(goal.cadence, data.user_date);
@@ -245,15 +261,36 @@ export async function deleteProgress(
 
     const entryId = String(req.params.entry_id);
 
-    // Fetch entry to verify ownership
+    // Fetch entry with goal to get group_id for write check
     const entry = await db
       .selectFrom('progress_entries')
-      .select(['id', 'user_id'])
-      .where('id', '=', entryId)
+      .innerJoin('goals', 'progress_entries.goal_id', 'goals.id')
+      .select([
+        'progress_entries.id',
+        'progress_entries.user_id',
+        'goals.group_id as group_id',
+      ])
+      .where('progress_entries.id', '=', entryId)
+      .where('goals.deleted_at', 'is', null)
       .executeTakeFirst();
 
     if (!entry) {
       throw new ApplicationError('Progress entry not found', 404, 'NOT_FOUND');
+    }
+
+    const writeCheck = await canUserWriteInGroup(req.user.id, entry.group_id);
+    if (!writeCheck.allowed) {
+      if (writeCheck.reason === 'group_selection_required') {
+        throw new ApplicationError(
+          'Select which group to keep in your subscription settings.',
+          403,
+          'SUBSCRIPTION_GROUP_SELECTION_REQUIRED'
+        );
+      }
+      const msg = writeCheck.read_only_until
+        ? `This group is read-only until ${writeCheck.read_only_until.toISOString().slice(0, 10)}.`
+        : 'This group is read-only.';
+      throw new ApplicationError(msg, 403, 'GROUP_READ_ONLY');
     }
 
     // Verify user owns the entry
@@ -265,10 +302,10 @@ export async function deleteProgress(
       );
     }
 
-    // Delete entry
+    // Delete entry (use progress_entries.id only)
     await db
       .deleteFrom('progress_entries')
-      .where('id', '=', entryId)
+      .where('id', '=', entry.id)
       .execute();
 
     res.status(204).send();

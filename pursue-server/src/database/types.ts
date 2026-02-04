@@ -11,6 +11,10 @@ export interface UsersTable {
   created_at: ColumnType<Date, string | undefined, never>;
   updated_at: ColumnType<Date, string | undefined, string | undefined>;
   deleted_at: ColumnType<Date | null, string | undefined, string | undefined>;
+  current_subscription_tier: ColumnType<'free' | 'premium', string | undefined, string>;
+  subscription_status: ColumnType<'active' | 'cancelled' | 'expired' | 'grace_period' | 'over_limit', string | undefined, string>;
+  group_limit: ColumnType<number, number | undefined, number>;
+  current_group_count: ColumnType<number, number | undefined, number>;
 }
 
 export type User = Selectable<UsersTable>;
@@ -164,6 +168,59 @@ export interface GroupActivitiesTable {
 export type GroupActivity = Selectable<GroupActivitiesTable>;
 export type NewGroupActivity = Insertable<GroupActivitiesTable>;
 
+// User subscriptions table
+export interface UserSubscriptionsTable {
+  id: Generated<string>;
+  user_id: string;
+  tier: 'free' | 'premium';
+  status: 'active' | 'cancelled' | 'expired' | 'grace_period';
+  started_at: ColumnType<Date, string | undefined, never>;
+  expires_at: Date | null;
+  cancelled_at: Date | null;
+  platform: 'google_play' | 'app_store' | null;
+  platform_subscription_id: string | null;
+  platform_purchase_token: string | null;
+  auto_renew: boolean;
+  created_at: ColumnType<Date, string | undefined, never>;
+  updated_at: ColumnType<Date, string | undefined, string | undefined>;
+}
+
+export type UserSubscription = Selectable<UserSubscriptionsTable>;
+export type NewUserSubscription = Insertable<UserSubscriptionsTable>;
+export type UserSubscriptionUpdate = Updateable<UserSubscriptionsTable>;
+
+// Subscription downgrade history table
+export interface SubscriptionDowngradeHistoryTable {
+  id: Generated<string>;
+  user_id: string;
+  downgrade_date: ColumnType<Date, string | undefined, never>;
+  previous_tier: string;
+  groups_before_downgrade: number;
+  kept_group_id: string | null;
+  removed_group_ids: string[];
+  created_at: ColumnType<Date, string | undefined, never>;
+}
+
+export type SubscriptionDowngradeHistory = Selectable<SubscriptionDowngradeHistoryTable>;
+export type NewSubscriptionDowngradeHistory = Insertable<SubscriptionDowngradeHistoryTable>;
+
+// Subscription transactions table
+export interface SubscriptionTransactionsTable {
+  id: Generated<string>;
+  subscription_id: string;
+  transaction_type: 'purchase' | 'renewal' | 'cancellation' | 'refund';
+  platform: 'google_play' | 'app_store';
+  platform_transaction_id: string;
+  amount_cents: number | null;
+  currency: string | null;
+  transaction_date: Date;
+  raw_receipt: string | null;
+  created_at: ColumnType<Date, string | undefined, never>;
+}
+
+export type SubscriptionTransaction = Selectable<SubscriptionTransactionsTable>;
+export type NewSubscriptionTransaction = Insertable<SubscriptionTransactionsTable>;
+
 // Database interface combining all tables
 export interface Database {
   users: UsersTable;
@@ -177,4 +234,7 @@ export interface Database {
   goals: GoalsTable;
   progress_entries: ProgressEntriesTable;
   group_activities: GroupActivitiesTable;
+  user_subscriptions: UserSubscriptionsTable;
+  subscription_downgrade_history: SubscriptionDowngradeHistoryTable;
+  subscription_transactions: SubscriptionTransactionsTable;
 }

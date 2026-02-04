@@ -13,6 +13,10 @@ import {
   DeleteUserSchema,
   GetGroupsQuerySchema,
 } from '../validations/users.js';
+import {
+  getUserSubscriptionState,
+  getSubscriptionEligibility,
+} from '../services/subscription.service.js';
 
 // Temporary debug logging for avatar endpoints
 const DEBUG_AVATAR = process.env.DEBUG_AVATAR === 'true';
@@ -517,6 +521,76 @@ export async function getAuthProviders(
     });
 
     res.status(200).json({ providers: providersWithPassword });
+  } catch (error) {
+    next(error);
+  }
+}
+
+// GET /api/users/me/subscription
+export async function getSubscription(
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    if (!req.user) {
+      throw new ApplicationError('Unauthorized', 401, 'UNAUTHORIZED');
+    }
+    const state = await getUserSubscriptionState(req.user.id);
+    if (!state) {
+      throw new ApplicationError('User not found', 404, 'NOT_FOUND');
+    }
+    const groupsRemaining = Math.max(0, state.group_limit - state.current_group_count);
+    const canCreate = state.current_group_count < state.group_limit;
+    const canJoin = state.current_group_count < state.group_limit;
+
+    let subscription_expires_at: string | null = null;
+    let auto_renew: boolean | null = null;
+    if (state.current_subscription_tier === 'premium') {
+      const sub = await db
+        .selectFrom('user_subscriptions')
+        .select(['expires_at', 'auto_renew'])
+        .where('user_id', '=', req.user.id)
+        .where('tier', '=', 'premium')
+        .where('status', 'in', ['active', 'grace_period'])
+        .orderBy('started_at', 'desc')
+        .executeTakeFirst();
+      if (sub?.expires_at) subscription_expires_at = new Date(sub.expires_at as Date).toISOString();
+      if (sub) auto_renew = sub.auto_renew ?? null;
+    }
+
+    res.status(200).json({
+      tier: state.current_subscription_tier,
+      status: state.subscription_status,
+      group_limit: state.group_limit,
+      current_group_count: state.current_group_count,
+      groups_remaining: groupsRemaining,
+      is_over_limit: state.subscription_status === 'over_limit',
+      subscription_expires_at,
+      auto_renew,
+      can_create_group: canCreate,
+      can_join_group: canJoin,
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+// GET /api/users/me/subscription/eligibility
+export async function getSubscriptionEligibilityHandler(
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    if (!req.user) {
+      throw new ApplicationError('Unauthorized', 401, 'UNAUTHORIZED');
+    }
+    const eligibility = await getSubscriptionEligibility(req.user.id);
+    if (!eligibility) {
+      throw new ApplicationError('User not found', 404, 'NOT_FOUND');
+    }
+    res.status(200).json(eligibility);
   } catch (error) {
     next(error);
   }

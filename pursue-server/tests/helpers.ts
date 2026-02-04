@@ -284,6 +284,37 @@ export async function addMemberToGroup(
 }
 
 /**
+ * Set a user to premium tier (up to 10 groups) for testing.
+ */
+export async function setUserPremium(userId: string): Promise<void> {
+  const expiresAt = new Date();
+  expiresAt.setFullYear(expiresAt.getFullYear() + 1);
+
+  await testDb
+    .insertInto('user_subscriptions')
+    .values({
+      user_id: userId,
+      tier: 'premium',
+      status: 'active',
+      expires_at: expiresAt,
+      platform: 'google_play',
+      platform_purchase_token: `test-token-${userId}`,
+      auto_renew: true,
+    })
+    .execute();
+
+  await testDb
+    .updateTable('users')
+    .set({
+      current_subscription_tier: 'premium',
+      subscription_status: 'active',
+      group_limit: 10,
+    })
+    .where('id', '=', userId)
+    .execute();
+}
+
+/**
  * Create a progress entry directly in the database for testing
  */
 export async function createProgressEntry(

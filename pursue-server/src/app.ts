@@ -11,6 +11,7 @@ import goalRoutes from './routes/goals.js';
 import groupRoutes from './routes/groups.js';
 import progressRoutes from './routes/progress.js';
 import userRoutes from './routes/users.js';
+import subscriptionRoutes from './routes/subscriptions.js';
 
 const app = express();
 
@@ -112,6 +113,7 @@ app.use('/api/goals', goalRoutes);
 app.use('/api/groups', groupRoutes);
 app.use('/api/progress', progressRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/subscriptions', subscriptionRoutes);
 
 // Error handling
 app.use(errorHandler);

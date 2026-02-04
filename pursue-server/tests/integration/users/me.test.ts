@@ -2,7 +2,7 @@ import request from 'supertest';
 import { sql } from 'kysely';
 import { app } from '../../../src/app';
 import { testDb } from '../../setup';
-import { createAuthenticatedUser, createGoogleUser } from '../../helpers';
+import { createAuthenticatedUser, createGoogleUser, setUserPremium } from '../../helpers';
 import { generateAccessToken } from '../../../src/utils/jwt.js';
 import { uploadUserAvatar } from '../../../src/services/storage.service.js';
 import sharp from 'sharp';
@@ -584,6 +584,7 @@ describe('GET /api/users/me/groups', () => {
 
   it('should return groups ordered by joined_at DESC', async () => {
     const { accessToken, userId } = await createAuthenticatedUser();
+    await setUserPremium(userId);
 
     // Create multiple groups with delays to ensure different timestamps
     const group1 = await request(app)
@@ -617,9 +618,10 @@ describe('GET /api/users/me/groups', () => {
   });
 
   it('should paginate with limit', async () => {
-    const { accessToken } = await createAuthenticatedUser();
+    const { accessToken, userId } = await createAuthenticatedUser();
+    await setUserPremium(userId);
 
-    // Create 7 groups
+    // Create 7 groups (premium allows up to 10)
     for (let i = 0; i < 7; i++) {
       await request(app)
         .post('/api/groups')
@@ -637,9 +639,10 @@ describe('GET /api/users/me/groups', () => {
   });
 
   it('should paginate with offset', async () => {
-    const { accessToken } = await createAuthenticatedUser();
+    const { accessToken, userId } = await createAuthenticatedUser();
+    await setUserPremium(userId);
 
-    // Create 10 groups
+    // Create 10 groups (premium max)
     const groupIds: string[] = [];
     for (let i = 0; i < 10; i++) {
       const createResponse = await request(app)
@@ -667,10 +670,11 @@ describe('GET /api/users/me/groups', () => {
   });
 
   it('should use default limit of 50', async () => {
-    const { accessToken } = await createAuthenticatedUser();
+    const { accessToken, userId } = await createAuthenticatedUser();
+    await setUserPremium(userId);
 
-    // Create 60 groups
-    for (let i = 0; i < 60; i++) {
+    // Create 10 groups (premium max; default limit 50 returns all)
+    for (let i = 0; i < 10; i++) {
       await request(app)
         .post('/api/groups')
         .set('Authorization', `Bearer ${accessToken}`)
@@ -683,14 +687,15 @@ describe('GET /api/users/me/groups', () => {
 
     expect(response.status).toBe(200);
     expect(response.body.groups.length).toBeLessThanOrEqual(50);
-    expect(response.body.total).toBe(60);
+    expect(response.body.total).toBe(10);
   });
 
   it('should enforce max limit of 100', async () => {
-    const { accessToken } = await createAuthenticatedUser();
+    const { accessToken, userId } = await createAuthenticatedUser();
+    await setUserPremium(userId);
 
-    // Create 150 groups
-    for (let i = 0; i < 150; i++) {
+    // Create 10 groups (premium max); request limit=200 is clamped to 100
+    for (let i = 0; i < 10; i++) {
       await request(app)
         .post('/api/groups')
         .set('Authorization', `Bearer ${accessToken}`)
@@ -703,7 +708,7 @@ describe('GET /api/users/me/groups', () => {
 
     expect(response.status).toBe(200);
     expect(response.body.groups.length).toBeLessThanOrEqual(100);
-    expect(response.body.total).toBe(150);
+    expect(response.body.total).toBe(10);
   });
 
   it('should return correct member_count for each group', async () => {

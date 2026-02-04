@@ -27,6 +27,7 @@ import {
   requireActiveGroupMember,
   requireGroupAdmin,
 } from '../services/authorization.js';
+import { canUserWriteInGroup } from '../services/subscription.service.js';
 import { createGroupActivity, ACTIVITY_TYPES } from '../services/activity.service.js';
 import { sendToTopic, buildTopicName } from '../services/fcm.service.js';
 
@@ -281,6 +282,21 @@ export async function createGoal(
     await ensureGroupExists(group_id);
     await requireGroupAdmin(req.user.id, group_id);
 
+    const writeCheck = await canUserWriteInGroup(req.user.id, group_id);
+    if (!writeCheck.allowed) {
+      if (writeCheck.reason === 'group_selection_required') {
+        throw new ApplicationError(
+          'Select which group to keep in your subscription settings.',
+          403,
+          'SUBSCRIPTION_GROUP_SELECTION_REQUIRED'
+        );
+      }
+      const msg = writeCheck.read_only_until
+        ? `This group is read-only until ${writeCheck.read_only_until.toISOString().slice(0, 10)}.`
+        : 'This group is read-only.';
+      throw new ApplicationError(msg, 403, 'GROUP_READ_ONLY');
+    }
+
     const data = CreateGoalSchema.parse(req.body);
 
     const goal = await db
@@ -471,6 +487,21 @@ export async function updateGoal(
     const goal = await ensureGoalExists(String(req.params.goal_id));
     await requireGroupAdmin(req.user.id, goal.group_id);
 
+    const writeCheck = await canUserWriteInGroup(req.user.id, goal.group_id);
+    if (!writeCheck.allowed) {
+      if (writeCheck.reason === 'group_selection_required') {
+        throw new ApplicationError(
+          'Select which group to keep in your subscription settings.',
+          403,
+          'SUBSCRIPTION_GROUP_SELECTION_REQUIRED'
+        );
+      }
+      const msg = writeCheck.read_only_until
+        ? `This group is read-only until ${writeCheck.read_only_until.toISOString().slice(0, 10)}.`
+        : 'This group is read-only.';
+      throw new ApplicationError(msg, 403, 'GROUP_READ_ONLY');
+    }
+
     const data = UpdateGoalSchema.parse(req.body);
 
     const updates: Record<string, string | null> = {};
@@ -516,6 +547,21 @@ export async function deleteGoal(
 
     const goal = await ensureGoalExists(String(req.params.goal_id));
     await requireGroupAdmin(req.user.id, goal.group_id);
+
+    const writeCheck = await canUserWriteInGroup(req.user.id, goal.group_id);
+    if (!writeCheck.allowed) {
+      if (writeCheck.reason === 'group_selection_required') {
+        throw new ApplicationError(
+          'Select which group to keep in your subscription settings.',
+          403,
+          'SUBSCRIPTION_GROUP_SELECTION_REQUIRED'
+        );
+      }
+      const msg = writeCheck.read_only_until
+        ? `This group is read-only until ${writeCheck.read_only_until.toISOString().slice(0, 10)}.`
+        : 'This group is read-only.';
+      throw new ApplicationError(msg, 403, 'GROUP_READ_ONLY');
+    }
 
     await db
       .updateTable('goals')

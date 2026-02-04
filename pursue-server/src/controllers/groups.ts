@@ -11,6 +11,7 @@ import {
   JoinGroupSchema,
   ExportProgressQuerySchema,
 } from '../validations/groups.js';
+import { ValidateExportRangeQuerySchema } from '../validations/subscriptions.js';
 import {
   ensureGroupExists,
   getGroupMembership,
@@ -19,6 +20,7 @@ import {
   requireGroupCreator,
   requireActiveGroupMember,
 } from '../services/authorization.js';
+import { canUserJoinOrCreateGroup, validateExportDateRange } from '../services/subscription.service.js';
 import { createGroupActivity, ACTIVITY_TYPES } from '../services/activity.service.js';
 import { sendGroupNotification, sendNotificationToUser, sendPushNotification, sendToTopic, buildTopicName } from '../services/fcm.service.js';
 import { uploadGroupIcon, deleteGroupIcon } from '../services/storage.service.js';
@@ -78,6 +80,14 @@ export async function createGroup(
 
     const data = CreateGroupSchema.parse(req.body);
     const userId = req.user!.id;
+
+    const { allowed, reason } = await canUserJoinOrCreateGroup(userId);
+    if (!allowed) {
+      const message = reason === 'free_tier_limit_reached'
+        ? 'Upgrade to Premium to create additional groups'
+        : 'Maximum groups reached (10)';
+      throw new ApplicationError(message, 403, 'GROUP_LIMIT_REACHED');
+    }
 
     const result = await db.transaction().execute(async (trx) => {
       // 1. Create group
@@ -584,6 +594,14 @@ export async function approveMember(
 
     if (membership.status !== 'pending') {
       throw new ApplicationError('No pending request found', 404, 'NOT_FOUND');
+    }
+
+    const { allowed, reason } = await canUserJoinOrCreateGroup(user_id);
+    if (!allowed) {
+      const message = reason === 'free_tier_limit_reached'
+        ? 'User has reached free tier group limit. Upgrade to Premium to approve.'
+        : 'User has reached maximum groups (10).';
+      throw new ApplicationError(message, 403, 'GROUP_LIMIT_REACHED');
     }
 
     // Update status to active
@@ -1276,15 +1294,12 @@ export async function joinGroup(
       throw new ApplicationError('Already a member of this group', 409, 'ALREADY_MEMBER');
     }
 
-    // Check resource limit (max 100 active groups per user)
-    const userGroupCount = await db
-      .selectFrom('group_memberships')
-      .where('user_id', '=', req.user.id)
-      .where('status', '=', 'active')
-      .select(db.fn.count('id').as('count'))
-      .executeTakeFirst();
-    if (Number(userGroupCount?.count ?? 0) >= 100) {
-      throw new ApplicationError('Maximum groups limit reached (100)', 429, 'RESOURCE_LIMIT');
+    const { allowed, reason } = await canUserJoinOrCreateGroup(req.user.id);
+    if (!allowed) {
+      const message = reason === 'free_tier_limit_reached'
+        ? 'Upgrade to Premium to join more groups'
+        : 'Maximum groups reached (10)';
+      throw new ApplicationError(message, 403, 'GROUP_LIMIT_REACHED');
     }
 
     // Add user to group with status='pending' (approval required)
@@ -1428,6 +1443,50 @@ export async function getActivity(
         created_at: a.created_at,
       })),
       total: Number(totalResult.count),
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * GET /api/groups/:group_id/export-progress/validate-range
+ * Validate export date range against subscription tier (free: 30 days, premium: 12 months).
+ */
+export async function validateExportRange(
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    if (!req.user) {
+      throw new ApplicationError('Unauthorized', 401, 'UNAUTHORIZED');
+    }
+    const group_id = String(req.params.group_id);
+    await ensureGroupExists(group_id);
+    await requireActiveGroupMember(req.user.id, group_id);
+
+    const query = ValidateExportRangeQuerySchema.parse(req.query);
+    const result = await validateExportDateRange(req.user.id, query.start_date, query.end_date);
+    if (!result) {
+      throw new ApplicationError('User not found', 404, 'NOT_FOUND');
+    }
+    if (result.valid) {
+      res.status(200).json({
+        valid: true,
+        max_days_allowed: result.max_days_allowed,
+        requested_days: result.requested_days,
+        subscription_tier: result.subscription_tier,
+      });
+      return;
+    }
+    res.status(400).json({
+      valid: false,
+      max_days_allowed: result.max_days_allowed,
+      requested_days: result.requested_days,
+      subscription_tier: result.subscription_tier,
+      error: result.error,
+      message: result.message,
     });
   } catch (error) {
     next(error);

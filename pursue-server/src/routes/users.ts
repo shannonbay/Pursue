@@ -7,6 +7,8 @@ import {
   updateCurrentUser,
   changePassword,
   getAuthProviders,
+  getSubscription,
+  getSubscriptionEligibilityHandler,
   getUserGroups,
   deleteCurrentUser,
 } from '../controllers/users.js';
@@ -21,6 +23,8 @@ router.get('/me', authenticate, getCurrentUser);
 router.patch('/me', authenticate, updateCurrentUser);
 router.post('/me/password', authenticate, changePassword);
 router.get('/me/providers', authenticate, getAuthProviders);
+router.get('/me/subscription', authenticate, getSubscription);
+router.get('/me/subscription/eligibility', authenticate, getSubscriptionEligibilityHandler);
 router.get('/me/groups', authenticate, getUserGroups);
 router.delete('/me', authenticate, deleteCurrentUser);
 

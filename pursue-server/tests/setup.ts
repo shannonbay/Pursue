@@ -75,7 +75,11 @@ async function createSchema(db: Kysely<Database>) {
       password_hash VARCHAR(255),
       created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
       updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-      deleted_at TIMESTAMP WITH TIME ZONE
+      deleted_at TIMESTAMP WITH TIME ZONE,
+      current_subscription_tier VARCHAR(20) NOT NULL DEFAULT 'free',
+      subscription_status VARCHAR(20) NOT NULL DEFAULT 'active',
+      group_limit INTEGER NOT NULL DEFAULT 1,
+      current_group_count INTEGER NOT NULL DEFAULT 0
     )
   `.execute(db);
 
@@ -100,6 +104,30 @@ async function createSchema(db: Kysely<Database>) {
         WHERE table_name = 'users' AND column_name = 'deleted_at'
       ) THEN
         ALTER TABLE users ADD COLUMN deleted_at TIMESTAMP WITH TIME ZONE;
+      END IF;
+      IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = 'users' AND column_name = 'current_subscription_tier'
+      ) THEN
+        ALTER TABLE users ADD COLUMN current_subscription_tier VARCHAR(20) NOT NULL DEFAULT 'free';
+      END IF;
+      IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = 'users' AND column_name = 'subscription_status'
+      ) THEN
+        ALTER TABLE users ADD COLUMN subscription_status VARCHAR(20) NOT NULL DEFAULT 'active';
+      END IF;
+      IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = 'users' AND column_name = 'group_limit'
+      ) THEN
+        ALTER TABLE users ADD COLUMN group_limit INTEGER NOT NULL DEFAULT 1;
+      END IF;
+      IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = 'users' AND column_name = 'current_group_count'
+      ) THEN
+        ALTER TABLE users ADD COLUMN current_group_count INTEGER NOT NULL DEFAULT 0;
       END IF;
     END $$;
   `.execute(db);
@@ -244,6 +272,60 @@ async function createSchema(db: Kysely<Database>) {
     CREATE INDEX idx_invite_codes_code ON invite_codes(code)
   `.execute(db);
 
+  // Create user_subscriptions table
+  await sql`
+    CREATE TABLE IF NOT EXISTS user_subscriptions (
+      id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+      user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      tier VARCHAR(20) NOT NULL CHECK (tier IN ('free', 'premium')),
+      status VARCHAR(20) NOT NULL CHECK (status IN ('active', 'cancelled', 'expired', 'grace_period')),
+      started_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      expires_at TIMESTAMPTZ,
+      cancelled_at TIMESTAMPTZ,
+      platform VARCHAR(20) CHECK (platform IN ('google_play', 'app_store')),
+      platform_subscription_id VARCHAR(255),
+      platform_purchase_token TEXT,
+      auto_renew BOOLEAN DEFAULT true,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      UNIQUE(user_id, started_at)
+    )
+  `.execute(db);
+  await sql`CREATE INDEX IF NOT EXISTS idx_user_subscriptions_user_id ON user_subscriptions(user_id)`.execute(db);
+
+  // Create subscription_downgrade_history table
+  await sql`
+    CREATE TABLE IF NOT EXISTS subscription_downgrade_history (
+      id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+      user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      downgrade_date TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      previous_tier VARCHAR(20) NOT NULL,
+      groups_before_downgrade INTEGER NOT NULL,
+      kept_group_id UUID REFERENCES groups(id) ON DELETE SET NULL,
+      removed_group_ids UUID[] NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `.execute(db);
+  await sql`CREATE INDEX IF NOT EXISTS idx_subscription_downgrade_history_user_id ON subscription_downgrade_history(user_id)`.execute(db);
+
+  // Create subscription_transactions table (after user_subscriptions)
+  await sql`
+    CREATE TABLE IF NOT EXISTS subscription_transactions (
+      id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+      subscription_id UUID NOT NULL REFERENCES user_subscriptions(id) ON DELETE CASCADE,
+      transaction_type VARCHAR(50) NOT NULL CHECK (transaction_type IN ('purchase', 'renewal', 'cancellation', 'refund')),
+      platform VARCHAR(20) NOT NULL CHECK (platform IN ('google_play', 'app_store')),
+      platform_transaction_id VARCHAR(255) NOT NULL,
+      amount_cents INTEGER,
+      currency VARCHAR(3),
+      transaction_date TIMESTAMPTZ NOT NULL,
+      raw_receipt TEXT,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      UNIQUE(platform, platform_transaction_id)
+    )
+  `.execute(db);
+  await sql`CREATE INDEX IF NOT EXISTS idx_subscription_transactions_subscription_id ON subscription_transactions(subscription_id)`.execute(db);
+
   // Create goals table
   await sql`
     CREATE TABLE IF NOT EXISTS goals (
@@ -297,7 +379,10 @@ async function cleanDatabase(db: Kysely<Database>) {
   await db.deleteFrom('group_activities').execute();
   await db.deleteFrom('invite_codes').execute();
   await db.deleteFrom('group_memberships').execute();
+  await db.deleteFrom('subscription_transactions').execute();
+  await db.deleteFrom('subscription_downgrade_history').execute();
   await db.deleteFrom('groups').execute();
+  await db.deleteFrom('user_subscriptions').execute();
   await db.deleteFrom('devices').execute();
   await db.deleteFrom('password_reset_tokens').execute();
   await db.deleteFrom('refresh_tokens').execute();
