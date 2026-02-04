@@ -52,7 +52,45 @@ export const JoinGroupSchema = z
   })
   .strict();
 
+/** Valid IANA timezone (e.g. America/New_York). Throws if invalid. */
+function isValidIANATimezone(tz: string): boolean {
+  try {
+    Intl.DateTimeFormat(undefined, { timeZone: tz });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export const ExportProgressQuerySchema = z
+  .object({
+    start_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'start_date must be YYYY-MM-DD'),
+    end_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'end_date must be YYYY-MM-DD'),
+    user_timezone: z.string().min(1, 'user_timezone is required')
+  })
+  .strict()
+  .refine((data) => isValidIANATimezone(data.user_timezone), {
+    message: 'Invalid IANA timezone',
+    path: ['user_timezone']
+  })
+  .refine(
+    (data) => {
+      const start = new Date(data.start_date);
+      const end = new Date(data.end_date);
+      const now = new Date();
+      if (start > now || end > now) return false;
+      if (end < start) return false;
+      const daysDiff = (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24);
+      return daysDiff <= 730;
+    },
+    {
+      message: 'Dates cannot be in the future; end_date must be >= start_date; date range cannot exceed 24 months (730 days)',
+      path: ['start_date']
+    }
+  );
+
 export type CreateGroupInput = z.infer<typeof CreateGroupSchema>;
 export type UpdateGroupInput = z.infer<typeof UpdateGroupSchema>;
 export type UpdateMemberRoleInput = z.infer<typeof UpdateMemberRoleSchema>;
 export type JoinGroupInput = z.infer<typeof JoinGroupSchema>;
+export type ExportProgressQuery = z.infer<typeof ExportProgressQuerySchema>;

@@ -9,6 +9,7 @@ import {
   UpdateGroupSchema,
   UpdateMemberRoleSchema,
   JoinGroupSchema,
+  ExportProgressQuerySchema,
 } from '../validations/groups.js';
 import {
   ensureGroupExists,
@@ -21,7 +22,16 @@ import {
 import { createGroupActivity, ACTIVITY_TYPES } from '../services/activity.service.js';
 import { sendGroupNotification, sendNotificationToUser, sendPushNotification, sendToTopic, buildTopicName } from '../services/fcm.service.js';
 import { uploadGroupIcon, deleteGroupIcon } from '../services/storage.service.js';
+import {
+  sanitizeSheetName,
+  sanitizeFilename,
+  generateSummarySection,
+  generateCalendarSection,
+  type ExportGoal,
+  type ExportProgressEntry,
+} from '../services/exportProgress.service.js';
 import { logger } from '../utils/logger.js';
+import ExcelJS from 'exceljs';
 
 // Configure multer for icon uploads
 const upload = multer({
@@ -1416,6 +1426,186 @@ export async function getActivity(
       })),
       total: Number(totalResult.count),
     });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * GET /api/groups/:group_id/export-progress
+ * Generate Excel workbook with progress overview for all group members.
+ */
+export async function exportGroupProgress(
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    if (!req.user) {
+      throw new ApplicationError('Unauthorized', 401, 'UNAUTHORIZED');
+    }
+
+    const group_id = String(req.params.group_id);
+    const userId = req.user.id;
+
+    const query = ExportProgressQuerySchema.parse(req.query);
+    const { start_date, end_date, user_timezone } = query;
+
+    await ensureGroupExists(group_id);
+    await requireActiveGroupMember(userId, group_id);
+
+    const groupDataRaw = await db
+      .selectFrom('groups')
+      .innerJoin('group_memberships', 'groups.id', 'group_memberships.group_id')
+      .innerJoin('users', 'group_memberships.user_id', 'users.id')
+      .leftJoin('goals', (join) =>
+        join
+          .onRef('goals.group_id', '=', 'groups.id')
+          .on('goals.deleted_at', 'is', null)
+      )
+      .select([
+        'groups.id as group_id',
+        'groups.name as group_name',
+        'users.id as user_id',
+        'users.display_name',
+        'users.email',
+        'goals.id as goal_id',
+        'goals.title as goal_title',
+        'goals.cadence',
+        'goals.metric_type',
+        'goals.target_value',
+        'goals.unit',
+        'goals.created_at as goal_created_at',
+      ])
+      .where('groups.id', '=', group_id)
+      .where('group_memberships.status', '=', 'active')
+      .orderBy('users.display_name')
+      .orderBy('goals.created_at')
+      .execute();
+
+    if (groupDataRaw.length === 0) {
+      throw new ApplicationError('Group not found', 404, 'NOT_FOUND');
+    }
+
+    const progressData: ExportProgressEntry[] = await db
+      .selectFrom('progress_entries')
+      .innerJoin('goals', 'progress_entries.goal_id', 'goals.id')
+      .select([
+        'progress_entries.goal_id',
+        'progress_entries.user_id',
+        'progress_entries.value',
+        'progress_entries.period_start',
+        'goals.cadence',
+        'goals.metric_type',
+        'goals.target_value',
+      ])
+      .where('goals.group_id', '=', group_id)
+      .where('progress_entries.period_start', '>=', start_date)
+      .where('progress_entries.period_start', '<=', end_date)
+      .execute()
+      .then((rows) =>
+        rows.map((r) => ({
+          goal_id: r.goal_id,
+          user_id: r.user_id,
+          value: Number(r.value),
+          period_start: r.period_start,
+          cadence: r.cadence,
+          metric_type: r.metric_type,
+          target_value: r.target_value != null ? Number(r.target_value) : null,
+        }))
+      );
+
+    const groupName = groupDataRaw[0].group_name as string;
+    const memberMap = new Map<
+      string,
+      { id: string; display_name: string; email: string; goals: ExportGoal[] }
+    >();
+
+    for (const row of groupDataRaw) {
+      if (!memberMap.has(row.user_id)) {
+        memberMap.set(row.user_id, {
+          id: row.user_id,
+          display_name: row.display_name,
+          email: row.email,
+          goals: [],
+        });
+      }
+      if (row.goal_id) {
+        const member = memberMap.get(row.user_id)!;
+        if (!member.goals.some((g) => g.id === row.goal_id)) {
+          member.goals.push({
+            id: row.goal_id,
+            title: row.goal_title ?? '',
+            cadence: row.cadence as ExportGoal['cadence'],
+            metric_type: row.metric_type as ExportGoal['metric_type'],
+            target_value:
+              row.target_value != null ? Number(row.target_value) : null,
+            unit: row.unit,
+            user_id: row.user_id,
+          });
+        }
+      }
+    }
+
+    const workbook = new ExcelJS.Workbook();
+    workbook.creator = 'Pursue';
+    workbook.created = new Date();
+    workbook.modified = new Date();
+    (workbook as { properties?: { title?: string; subject?: string; keywords?: string } }).properties = {
+      title: `${groupName} Progress Report`,
+      subject: `Progress from ${start_date} to ${end_date}`,
+      keywords: 'pursue, goals, progress, accountability',
+    };
+
+    const members = Array.from(memberMap.values()).sort((a, b) =>
+      a.display_name.localeCompare(b.display_name)
+    );
+
+    for (const member of members) {
+      const sheetName = sanitizeSheetName(member.display_name);
+      const worksheet = workbook.addWorksheet(sheetName);
+
+      let currentRow = 1;
+      currentRow = generateSummarySection(
+        worksheet,
+        currentRow,
+        member,
+        groupName,
+        member.goals,
+        progressData,
+        start_date,
+        end_date
+      );
+
+      currentRow += 2;
+      generateCalendarSection(
+        worksheet,
+        currentRow,
+        member.goals,
+        progressData.filter((p) => p.user_id === member.id),
+        start_date,
+        end_date,
+        user_timezone
+      );
+    }
+
+    const filename = `${sanitizeFilename(groupName)}_Progress_${start_date}_to_${end_date}.xlsx`;
+
+    res.setHeader(
+      'Content-Type',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    );
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+
+    await workbook.xlsx.write(res);
+    res.end();
+
+    await createGroupActivity(
+      group_id,
+      ACTIVITY_TYPES.EXPORT_PROGRESS,
+      userId,
+      { start_date, end_date }
+    );
   } catch (error) {
     next(error);
   }

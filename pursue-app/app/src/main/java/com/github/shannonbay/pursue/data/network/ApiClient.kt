@@ -927,6 +927,68 @@ object ApiClient {
     }
 
     /**
+     * Export group progress as Excel workbook.
+     * GET /api/groups/:group_id/export-progress?start_date=YYYY-MM-DD&end_date=YYYY-MM-DD&user_timezone=IANA
+     * User must be an approved (active) member. Max date range 24 months.
+     *
+     * @param accessToken JWT access token for authentication
+     * @param groupId Group ID to export progress for
+     * @param startDate Start date (YYYY-MM-DD)
+     * @param endDate End date (YYYY-MM-DD)
+     * @param userTimezone IANA timezone (e.g. America/New_York)
+     * @return ByteArray containing the xlsx file
+     * @throws ApiException on error (400 validation, 403, 404, 429 rate limit)
+     */
+    suspend fun exportGroupProgress(
+        accessToken: String,
+        groupId: String,
+        startDate: String,
+        endDate: String,
+        userTimezone: String
+    ): ByteArray {
+        val encodedParams = listOf(
+            "start_date=$startDate",
+            "end_date=$endDate",
+            "user_timezone=${java.net.URLEncoder.encode(userTimezone, "UTF-8")}"
+        ).joinToString("&")
+        val url = "$baseUrl/groups/$groupId/export-progress?$encodedParams"
+        val request = Request.Builder()
+            .url(url)
+            .get()
+            .addHeader("Authorization", "Bearer $accessToken")
+            .build()
+
+        return try {
+            getClient().newCall(request).execute().use { response ->
+                if (!response.isSuccessful) {
+                    val responseBody = response.body?.string() ?: ""
+                    Log.e("ApiClient", "Export progress failed: ${response.code} - ${response.message}")
+                    val (errorMessage, errorCode) = try {
+                        val wrapper = gson.fromJson(responseBody, ErrorWrapper::class.java)
+                        val msg = wrapper.error?.message ?: "Export failed with code ${response.code}"
+                        val code = wrapper.error?.code
+                        Pair(msg, code)
+                    } catch (e: Exception) {
+                        try {
+                            val flat = gson.fromJson(responseBody, ErrorResponse::class.java)
+                            Pair(flat.message ?: "Export failed with code ${response.code}", null)
+                        } catch (e2: Exception) {
+                            Pair("Export failed with code ${response.code}", null)
+                        }
+                    }
+                    throw ApiException(response.code, errorMessage, errorCode)
+                }
+                response.body?.bytes() ?: throw ApiException(0, "Empty response body")
+            }
+        } catch (e: ApiException) {
+            throw e
+        } catch (e: Exception) {
+            Log.e("ApiClient", "Export progress network error", e)
+            throw ApiException(0, "Network error: ${e.message}")
+        }
+    }
+
+    /**
      * Get all goals for a group, optionally with current period progress.
      * 
      * @param accessToken JWT access token for authentication

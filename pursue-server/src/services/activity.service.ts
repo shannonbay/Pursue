@@ -13,7 +13,8 @@ export const ACTIVITY_TYPES = {
   JOIN_REQUEST: 'join_request',
   MEMBER_APPROVED: 'member_approved',
   MEMBER_DECLINED: 'member_declined',
-  INVITE_CODE_REGENERATED: 'invite_code_regenerated'
+  INVITE_CODE_REGENERATED: 'invite_code_regenerated',
+  EXPORT_PROGRESS: 'export_progress'
 } as const;
 
 /**

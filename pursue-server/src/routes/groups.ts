@@ -18,9 +18,11 @@ import {
   regenerateInviteCode,
   joinGroup,
   getActivity,
+  exportGroupProgress,
 } from '../controllers/groups.js';
 import { createGoal, listGoals } from '../controllers/goals.js';
 import { authenticate } from '../middleware/authenticate.js';
+import { exportProgressLimiter } from '../middleware/rateLimiter.js';
 
 const router = Router();
 
@@ -32,6 +34,7 @@ router.post('/join', joinGroup);
 
 // Group CRUD
 router.post('/', createGroup);
+router.get('/:group_id/export-progress', exportProgressLimiter, exportGroupProgress);
 router.get('/:group_id', getGroup);
 router.patch('/:group_id', updateGroup);
 router.delete('/:group_id', deleteGroup);

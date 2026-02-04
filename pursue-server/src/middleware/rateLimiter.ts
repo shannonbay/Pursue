@@ -95,3 +95,22 @@ export const uploadLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
 });
+
+// Progress export (CPU-intensive; 10 per hour per user)
+export const exportProgressLimiter = rateLimit({
+  skip: () => isTest,
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 10,
+  keyGenerator: (req) => {
+    const authReq = req as any;
+    return authReq.user?.id || 'unknown';
+  },
+  message: {
+    error: {
+      message: 'Too many export requests, please try again later',
+      code: 'EXPORT_RATE_LIMIT_EXCEEDED',
+    },
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});

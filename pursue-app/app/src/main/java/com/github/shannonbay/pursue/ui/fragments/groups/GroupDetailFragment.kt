@@ -4,8 +4,10 @@ import android.animation.Animator
 import android.animation.AnimatorListenerAdapter
 import android.content.res.ColorStateList
 import android.graphics.Color
+import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
+import android.widget.RadioGroup
 import android.os.Looper
 import android.view.LayoutInflater
 import android.view.Menu
@@ -22,6 +24,7 @@ import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
@@ -51,6 +54,7 @@ import com.github.shannonbay.pursue.R
 import com.github.shannonbay.pursue.data.auth.SecureTokenManager
 import com.github.shannonbay.pursue.models.GroupDetailResponse
 import com.github.shannonbay.pursue.models.GroupMember
+import com.google.android.material.button.MaterialButton
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.tabs.TabLayout
 import com.google.android.material.tabs.TabLayoutMediator
@@ -60,6 +64,10 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.io.IOException
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+import java.util.TimeZone
 
 /**
  * Group Detail Fragment (UI spec section 4.3).
@@ -107,6 +115,18 @@ class GroupDetailFragment : Fragment() {
     private lateinit var tabLayout: TabLayout
     private lateinit var viewPager: ViewPager2
     private lateinit var fabAction: FloatingActionButton
+
+    private var pendingExportGid: String? = null
+    private var pendingExportStartDate: String? = null
+    private var pendingExportEndDate: String? = null
+    private var pendingExportUserTimezone: String? = null
+
+    private val createDocumentLauncher = registerForActivityResult(
+        ActivityResultContracts.CreateDocument("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+    ) { uri: Uri? ->
+        if (uri == null) return@registerForActivityResult
+        onExportUriSelected(uri)
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -500,6 +520,10 @@ class GroupDetailFragment : Fragment() {
                         showInviteMembersSheet()
                         true
                     }
+                    R.id.menu_export_progress -> {
+                        showExportProgressDialog()
+                        true
+                    }
                     R.id.menu_leave_group -> {
                         val gid = groupId
                         if (gid != null) showLeaveGroupConfirmation(gid) else Toast.makeText(requireContext(), getString(R.string.error_failed_to_load_groups), Toast.LENGTH_SHORT).show()
@@ -611,6 +635,133 @@ class GroupDetailFragment : Fragment() {
         dialog.getButton(AlertDialog.BUTTON_POSITIVE)?.setTextColor(
             ContextCompat.getColor(requireContext(), R.color.secondary)
         )
+    }
+
+    private fun showExportProgressDialog() {
+        val gid = groupId ?: return
+        val groupName = groupDetail?.name ?: arguments?.getString(ARG_GROUP_NAME) ?: "Group"
+        val view = layoutInflater.inflate(R.layout.dialog_export_progress, null)
+        val timeframeGroup = view.findViewById<RadioGroup>(R.id.export_progress_timeframe_group)
+        val cancelButton = view.findViewById<MaterialButton>(R.id.export_progress_cancel)
+        val exportButton = view.findViewById<MaterialButton>(R.id.export_progress_export)
+
+        val dialog = MaterialAlertDialogBuilder(requireContext())
+            .setView(view)
+            .setCancelable(true)
+            .create()
+
+        cancelButton.setOnClickListener { dialog.dismiss() }
+        exportButton.setOnClickListener {
+            val selectedId = timeframeGroup.checkedRadioButtonId
+            val (startDate, endDate) = when (selectedId) {
+                R.id.export_progress_30_days -> {
+                    val end = LocalDate.now()
+                    Pair(end.minusDays(29).format(DateTimeFormatter.ISO_LOCAL_DATE), end.format(DateTimeFormatter.ISO_LOCAL_DATE))
+                }
+                R.id.export_progress_3_months -> {
+                    val end = LocalDate.now()
+                    Pair(end.minusMonths(3).plusDays(1).format(DateTimeFormatter.ISO_LOCAL_DATE), end.format(DateTimeFormatter.ISO_LOCAL_DATE))
+                }
+                R.id.export_progress_6_months -> {
+                    val end = LocalDate.now()
+                    Pair(end.minusMonths(6).plusDays(1).format(DateTimeFormatter.ISO_LOCAL_DATE), end.format(DateTimeFormatter.ISO_LOCAL_DATE))
+                }
+                R.id.export_progress_12_months -> {
+                    val end = LocalDate.now()
+                    Pair(end.minusMonths(12).plusDays(1).format(DateTimeFormatter.ISO_LOCAL_DATE), end.format(DateTimeFormatter.ISO_LOCAL_DATE))
+                }
+                else -> {
+                    val end = LocalDate.now()
+                    Pair(end.minusMonths(3).plusDays(1).format(DateTimeFormatter.ISO_LOCAL_DATE), end.format(DateTimeFormatter.ISO_LOCAL_DATE))
+                }
+            }
+            val userTimezone = TimeZone.getDefault().id
+            val sanitizedName = groupName.replace(Regex("[^a-zA-Z0-9_-]"), "_").take(100)
+            val defaultFilename = "Pursue_Progress_${sanitizedName}_${startDate}_to_${endDate}.xlsx"
+
+            pendingExportGid = gid
+            pendingExportStartDate = startDate
+            pendingExportEndDate = endDate
+            pendingExportUserTimezone = userTimezone
+
+            dialog.dismiss()
+            createDocumentLauncher.launch(defaultFilename)
+        }
+
+        dialog.show()
+    }
+
+    private fun onExportUriSelected(uri: Uri) {
+        val gid = pendingExportGid ?: return
+        val startDate = pendingExportStartDate ?: return
+        val endDate = pendingExportEndDate ?: return
+        val userTimezone = pendingExportUserTimezone ?: return
+
+        pendingExportGid = null
+        pendingExportStartDate = null
+        pendingExportEndDate = null
+        pendingExportUserTimezone = null
+
+        val progressView = layoutInflater.inflate(R.layout.dialog_export_progress_loading, null)
+        val progressDialog = MaterialAlertDialogBuilder(requireContext())
+            .setView(progressView)
+            .setCancelable(false)
+            .create()
+        progressDialog.show()
+
+        lifecycleScope.launch {
+            try {
+                val tokenManager = SecureTokenManager.getInstance(requireContext())
+                val token = tokenManager.getAccessToken()
+                if (token == null) {
+                    Handler(Looper.getMainLooper()).post {
+                        if (isAdded) {
+                            progressDialog.dismiss()
+                            Toast.makeText(requireContext(), getString(R.string.error_unauthorized_message), Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                    return@launch
+                }
+                val bytes = withContext(Dispatchers.IO) {
+                    ApiClient.exportGroupProgress(token, gid, startDate, endDate, userTimezone)
+                }
+                if (!isAdded) {
+                    Handler(Looper.getMainLooper()).post { progressDialog.dismiss() }
+                    return@launch
+                }
+                withContext(Dispatchers.IO) {
+                    requireContext().contentResolver.openOutputStream(uri)?.use { it.write(bytes) }
+                        ?: throw IOException("Failed to open output stream")
+                }
+                Handler(Looper.getMainLooper()).post {
+                    if (isAdded) {
+                        progressDialog.dismiss()
+                        Toast.makeText(requireContext(), getString(R.string.export_progress_success), Toast.LENGTH_SHORT).show()
+                    }
+                }
+            } catch (e: ApiException) {
+                Handler(Looper.getMainLooper()).post {
+                    if (isAdded) {
+                        progressDialog.dismiss()
+                        Toast.makeText(requireContext(), e.message ?: getString(R.string.export_progress_failed), Toast.LENGTH_SHORT).show()
+                    }
+                }
+            } catch (e: IOException) {
+                Handler(Looper.getMainLooper()).post {
+                    if (isAdded) {
+                        progressDialog.dismiss()
+                        Toast.makeText(requireContext(), getString(R.string.export_progress_failed), Toast.LENGTH_SHORT).show()
+                    }
+                }
+            } catch (e: Exception) {
+                Handler(Looper.getMainLooper()).post {
+                    if (isAdded) {
+                        progressDialog.dismiss()
+                        Toast.makeText(requireContext(), getString(R.string.export_progress_failed), Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+        }
     }
 
     private fun setupIconTapForAdmin(detail: GroupDetailResponse) {

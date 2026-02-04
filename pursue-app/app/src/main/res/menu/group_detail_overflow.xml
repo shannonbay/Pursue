@@ -18,6 +18,11 @@
         app:showAsAction="never" />
     
     <item
+        android:id="@+id/menu_export_progress"
+        android:title="@string/menu_export_progress"
+        app:showAsAction="never" />
+    
+    <item
         android:id="@+id/menu_leave_group"
         android:title="@string/menu_leave_group"
         app:showAsAction="never" />

@@ -8,7 +8,10 @@
     
     <!-- External files directory for camera photos -->
     <external-files-path name="camera_photos" path="Pictures/" />
-    
+
+    <!-- External files root for export downloads (progress xlsx) -->
+    <external-files-path name="exports" path="." />
+
     <!-- Internal files directory -->
     <files-path name="internal_files" path="." />
 </paths>

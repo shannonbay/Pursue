@@ -38,6 +38,7 @@
     "pg": "^8.17.1",
     "sharp": "^0.33.5",
     "winston": "^3.19.0",
+    "exceljs": "^4.4.0",
     "zod": "^4.3.5"
   },
   "devDependencies": {

@@ -213,6 +213,17 @@
     <string name="menu_delete_group">Delete Group</string>
     <string name="menu_edit_goal">Edit Goal</string>
     <string name="menu_delete_goal">Delete Goal</string>
+    <string name="menu_export_progress">Export progress</string>
+    <string name="export_progress_dialog_title">Export progress</string>
+    <string name="export_progress_timeframe">Timeframe</string>
+    <string name="export_progress_last_30_days">Last 30 days</string>
+    <string name="export_progress_last_3_months">Last 3 months</string>
+    <string name="export_progress_last_6_months">Last 6 months</string>
+    <string name="export_progress_last_12_months">Last 12 months</string>
+    <string name="export_progress_export">Export</string>
+    <string name="export_progress_exporting">Exporting…</string>
+    <string name="export_progress_success">Progress report saved</string>
+    <string name="export_progress_failed">Failed to export. Please try again.</string>
     <string name="back">Back</string>
     <string name="recent_entries">Recent Entries</string>
     <string name="view_all_history">View All History</string>

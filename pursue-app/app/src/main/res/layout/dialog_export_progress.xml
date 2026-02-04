@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="16dp"
+    android:background="@color/surface">
+
+    <TextView
+        android:id="@+id/export_progress_title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/export_progress_dialog_title"
+        android:textAppearance="?attr/textAppearanceHeadlineSmall"
+        android:textColor="@color/on_surface"
+        android:layout_marginBottom="16dp" />
+
+    <TextView
+        android:id="@+id/export_progress_timeframe_label"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/export_progress_timeframe"
+        android:textAppearance="?attr/textAppearanceBodyMedium"
+        android:textColor="@color/on_surface_variant"
+        android:layout_marginBottom="8dp" />
+
+    <RadioGroup
+        android:id="@+id/export_progress_timeframe_group"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:layout_marginBottom="24dp">
+
+        <RadioButton
+            android:id="@+id/export_progress_30_days"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:minHeight="48dp"
+            android:text="@string/export_progress_last_30_days"
+            android:checked="true" />
+
+        <RadioButton
+            android:id="@+id/export_progress_3_months"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:minHeight="48dp"
+            android:text="@string/export_progress_last_3_months" />
+
+        <RadioButton
+            android:id="@+id/export_progress_6_months"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:minHeight="48dp"
+            android:text="@string/export_progress_last_6_months" />
+
+        <RadioButton
+            android:id="@+id/export_progress_12_months"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:minHeight="48dp"
+            android:text="@string/export_progress_last_12_months" />
+    </RadioGroup>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="end">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/export_progress_cancel"
+            style="@style/Widget.Material3.Button.TextButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:minHeight="40dp"
+            android:text="@string/cancel"
+            android:layout_marginEnd="8dp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/export_progress_export"
+            style="@style/Widget.Material3.Button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:minHeight="40dp"
+            android:text="@string/export_progress_export" />
+    </LinearLayout>
+</LinearLayout>
