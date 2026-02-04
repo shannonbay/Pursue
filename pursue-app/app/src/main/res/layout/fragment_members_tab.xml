@@ -69,7 +69,7 @@
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- Members RecyclerView -->
+            <!-- Members RecyclerView (hidden when using ScrollView) -->
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/members_recycler_view"
                 android:layout_width="0dp"
@@ -83,6 +83,28 @@
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@id/pending_requests_card"
                 tools:listitem="@layout/item_member_card" />
+
+            <!-- Members ScrollView (populated with member cards) -->
+            <androidx.core.widget.NestedScrollView
+                android:id="@+id/members_scroll_view"
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:clipToPadding="false"
+                android:paddingTop="8dp"
+                android:paddingBottom="80dp"
+                android:visibility="gone"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/pending_requests_card">
+
+                <LinearLayout
+                    android:id="@+id/members_list_container"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical" />
+
+            </androidx.core.widget.NestedScrollView>
 
             <!-- Loading Skeleton -->
             <LinearLayout
