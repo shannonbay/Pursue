@@ -76,6 +76,7 @@ class HomeFragment : Fragment() {
     private var cachedGroups: List<Group> = emptyList()
     private var isSpeedDialExpanded = false
     private val speedDialAnimDurationMs = 200L
+    private var hasResumedOnce = false
 
     override fun onAttach(context: Context) {
         super.onAttach(context)
@@ -137,8 +138,24 @@ class HomeFragment : Fragment() {
             }
         }, viewLifecycleOwner, Lifecycle.State.RESUMED)
 
+        // Listen for join group result (e.g., pending status from JoinGroupBottomSheet)
+        parentFragmentManager.setFragmentResultListener("join_group_result", viewLifecycleOwner) { _, bundle ->
+            if (bundle.getBoolean("refresh_needed", false)) {
+                refreshGroups()
+            }
+        }
+
         // Load groups on first view
         loadGroups()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if (!hasResumedOnce) {
+            hasResumedOnce = true
+            return
+        }
+        refreshGroups()
     }
 
     private fun setupSpeedDial() {

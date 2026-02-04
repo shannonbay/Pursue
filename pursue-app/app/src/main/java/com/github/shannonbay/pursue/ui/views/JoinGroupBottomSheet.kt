@@ -165,6 +165,9 @@ class JoinGroupBottomSheet : BottomSheetDialogFragment() {
                 when (response.status) {
                     "pending" -> {
                         Toast.makeText(requireContext(), response.message, Toast.LENGTH_LONG).show()
+                        parentFragmentManager.setFragmentResult("join_group_result", Bundle().apply {
+                            putBoolean("refresh_needed", true)
+                        })
                         dismiss()
                     }
                     else -> {
