@@ -329,13 +329,18 @@ object ApiClient {
         var totalGoals = 0
 
         for (group in groupsResponse.groups) {
-            val goalsResponse = getGroupGoals(
-                accessToken = accessToken,
-                groupId = group.id,
-                cadence = "daily",
-                archived = false,
-                includeProgress = true
-            )
+            val goalsResponse = try {
+                getGroupGoals(
+                    accessToken = accessToken,
+                    groupId = group.id,
+                    cadence = "daily",
+                    archived = false,
+                    includeProgress = true
+                )
+            } catch (e: ApiException) {
+                if (e.code == 403 || e.code == 404) continue
+                throw e
+            }
             if (goalsResponse.goals.isEmpty()) continue
 
             val todayGoals = goalsResponse.goals.map { mapGroupGoalResponseToTodayGoal(it) }
