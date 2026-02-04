@@ -257,9 +257,9 @@ export function calculateMonthlyStats(
 
 // --- Letterhead ---
 
-// Letterhead source is 2400×630; scale to fit width while preserving aspect ratio
+// Letterhead source is 2600×630; scale to fit width while preserving aspect ratio
 const LETTERHEAD_IMAGE_WIDTH = 480;
-const LETTERHEAD_IMAGE_HEIGHT = Math.round(480 * (630 / 2400)); // 126
+const LETTERHEAD_IMAGE_HEIGHT = Math.round(480 * (630 / 2600)); // 126
 const LETTERHEAD_ROW_HEIGHT = 95; // points, to fit image height
 const PURSUE_URL = 'https://getpursue.app';
 
