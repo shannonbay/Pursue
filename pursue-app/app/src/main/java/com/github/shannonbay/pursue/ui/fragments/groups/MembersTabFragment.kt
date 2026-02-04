@@ -38,13 +38,10 @@ import com.google.android.material.button.MaterialButton
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.textfield.TextInputEditText
 import androidx.appcompat.app.AlertDialog
+import com.github.shannonbay.pursue.utils.RelativeTimeUtils
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
-import java.util.concurrent.TimeUnit
 
 /**
  * Members Tab Fragment for Group Detail (UI spec section 4.3.2).
@@ -316,7 +313,7 @@ class MembersTabFragment : Fragment() {
             memberAvatarFallback.text = firstLetter.toString()
         }
 
-        lastActive.text = formatLastActive(member.joined_at)
+        lastActive.text = RelativeTimeUtils.formatRelativeTime(requireContext(), member.joined_at)
 
         if (isAdmin) {
             view.setOnLongClickListener {
@@ -441,28 +438,6 @@ class MembersTabFragment : Fragment() {
                     Toast.makeText(requireContext(), getString(R.string.error_failed_to_load_groups), Toast.LENGTH_SHORT).show()
                 }
             }
-        }
-    }
-
-    private fun formatLastActive(isoTimestamp: String): String {
-        return try {
-            val format = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US)
-            val timestamp = format.parse(isoTimestamp) ?: return isoTimestamp
-            val now = Date()
-            val diffMs = now.time - timestamp.time
-            val diffHours = TimeUnit.MILLISECONDS.toHours(diffMs)
-            val diffDays = TimeUnit.MILLISECONDS.toDays(diffMs)
-            val context = requireContext()
-            when {
-                diffMs < 60000 -> context.getString(R.string.last_active_now)
-                diffHours < 1 -> context.getString(R.string.last_active_now)
-                diffHours == 1L -> context.getString(R.string.last_active, context.getString(R.string.hour_ago))
-                diffHours < 24 -> context.getString(R.string.last_active, context.getString(R.string.hours_ago, diffHours.toInt()))
-                diffDays == 1L -> context.getString(R.string.last_active, context.getString(R.string.day_ago))
-                else -> context.getString(R.string.last_active, context.getString(R.string.days_ago, diffDays.toInt()))
-            }
-        } catch (e: Exception) {
-            isoTimestamp
         }
     }
 
