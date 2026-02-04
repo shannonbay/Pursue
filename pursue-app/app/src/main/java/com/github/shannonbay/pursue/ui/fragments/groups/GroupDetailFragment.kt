@@ -2,6 +2,8 @@ package com.github.shannonbay.pursue.ui.fragments.groups
 
 import android.animation.Animator
 import android.animation.AnimatorListenerAdapter
+import android.content.ActivityNotFoundException
+import android.content.Intent
 import android.content.res.ColorStateList
 import android.graphics.Color
 import android.net.Uri
@@ -736,7 +738,7 @@ class GroupDetailFragment : Fragment() {
                 Handler(Looper.getMainLooper()).post {
                     if (isAdded) {
                         progressDialog.dismiss()
-                        Toast.makeText(requireContext(), getString(R.string.export_progress_success), Toast.LENGTH_SHORT).show()
+                        showExportSuccessDialog(uri)
                     }
                 }
             } catch (e: ApiException) {
@@ -762,6 +764,35 @@ class GroupDetailFragment : Fragment() {
                 }
             }
         }
+    }
+
+    private fun showExportSuccessDialog(exportUri: Uri) {
+        if (!isAdded) return
+        val openFileIntent = Intent(Intent.ACTION_VIEW).apply {
+            setDataAndType(exportUri, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+        val shareIntent = Intent(Intent.ACTION_SEND).apply {
+            type = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            putExtra(Intent.EXTRA_STREAM, exportUri)
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+        MaterialAlertDialogBuilder(requireContext())
+            .setMessage(getString(R.string.export_progress_success))
+            .setPositiveButton(R.string.export_progress_open_file) { _, _ ->
+                if (!isAdded) return@setPositiveButton
+                try {
+                    startActivity(Intent.createChooser(openFileIntent, null))
+                } catch (e: ActivityNotFoundException) {
+                    Toast.makeText(requireContext(), getString(R.string.export_progress_no_app_to_open_file), Toast.LENGTH_SHORT).show()
+                }
+            }
+            .setNegativeButton(R.string.export_progress_share) { _, _ ->
+                if (!isAdded) return@setNegativeButton
+                startActivity(Intent.createChooser(shareIntent, null))
+            }
+            .setNeutralButton(android.R.string.ok, null)
+            .show()
     }
 
     private fun setupIconTapForAdmin(detail: GroupDetailResponse) {
