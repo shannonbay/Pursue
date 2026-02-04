@@ -25,6 +25,7 @@ import { uploadGroupIcon, deleteGroupIcon } from '../services/storage.service.js
 import {
   sanitizeSheetName,
   sanitizeFilename,
+  addLetterhead,
   generateSummarySection,
   generateCalendarSection,
   type ExportGoal,
@@ -32,6 +33,8 @@ import {
 } from '../services/exportProgress.service.js';
 import { logger } from '../utils/logger.js';
 import ExcelJS from 'exceljs';
+import path from 'node:path';
+import fs from 'node:fs/promises';
 
 // Configure multer for icon uploads
 const upload = multer({
@@ -1561,14 +1564,22 @@ export async function exportGroupProgress(
       a.display_name.localeCompare(b.display_name)
     );
 
+    let letterheadBuffer: Buffer | null = null;
+    const letterheadPath = path.join(process.cwd(), 'assets', 'letterhead.png');
+    try {
+      letterheadBuffer = await fs.readFile(letterheadPath);
+    } catch {
+      logger.warn('Letterhead not found at %s, progress export will omit letterhead', letterheadPath);
+    }
+
     for (const member of members) {
       const sheetName = sanitizeSheetName(member.display_name);
       const worksheet = workbook.addWorksheet(sheetName);
 
-      let currentRow = 1;
-      currentRow = generateSummarySection(
+      const startRow = letterheadBuffer ? addLetterhead(workbook, worksheet, letterheadBuffer) : 1;
+      let currentRow = generateSummarySection(
         worksheet,
-        currentRow,
+        startRow,
         member,
         groupName,
         member.goals,

@@ -1,5 +1,5 @@
 import type ExcelJS from 'exceljs';
-import type { Worksheet } from 'exceljs';
+import type { Workbook, Worksheet } from 'exceljs';
 
 export interface ExportGoal {
   id: string;
@@ -253,6 +253,44 @@ export function calculateMonthlyStats(
   }
 
   return { completed: 0, total: 0, percentage: '0.0', percentageValue: 0 };
+}
+
+// --- Letterhead ---
+
+// Letterhead source is 2400×630; scale to fit width while preserving aspect ratio
+const LETTERHEAD_IMAGE_WIDTH = 480;
+const LETTERHEAD_IMAGE_HEIGHT = Math.round(480 * (630 / 2400)); // 126
+const LETTERHEAD_ROW_HEIGHT = 95; // points, to fit image height
+const PURSUE_URL = 'https://getpursue.app';
+
+/**
+ * Add letterhead image in row 1 and clickable URL in row 2.
+ * Returns the next row index for content (e.g. 4).
+ */
+export function addLetterhead(
+  workbook: Workbook,
+  worksheet: Worksheet,
+  imageBuffer: Buffer
+): number {
+  const imageId = workbook.addImage({
+    buffer: imageBuffer as unknown as ArrayBuffer,
+    extension: 'png',
+  });
+  worksheet.addImage(imageId, {
+    tl: { col: 0, row: 0 },
+    ext: { width: LETTERHEAD_IMAGE_WIDTH, height: LETTERHEAD_IMAGE_HEIGHT },
+  });
+  worksheet.getRow(1).height = LETTERHEAD_ROW_HEIGHT;
+
+  const urlRow = worksheet.getRow(2);
+  urlRow.getCell(1).value = {
+    text: PURSUE_URL,
+    hyperlink: PURSUE_URL,
+  };
+  urlRow.getCell(1).font = { name: 'Segoe UI', size: 10, color: { argb: 'FF1565C0' } };
+  urlRow.height = 18;
+
+  return 4;
 }
 
 // --- Summary section ---
