@@ -852,6 +852,53 @@ object ApiClient {
     }
 
     /**
+     * Update member role (admin or creator only). PATCH /api/groups/:group_id/members/:user_id.
+     * Client use: Promote to Admin by sending role "admin".
+     *
+     * @param accessToken JWT access token
+     * @param groupId Group ID
+     * @param userId User ID of the member to update
+     * @param role New role (e.g. "admin")
+     * @throws ApiException on error (400, 403, 404)
+     */
+    suspend fun updateMemberRole(
+        accessToken: String,
+        groupId: String,
+        userId: String,
+        role: String
+    ) {
+        val body = """{"role":"$role"}""".trimIndent().toRequestBody(jsonMediaType)
+        val request = Request.Builder()
+            .url("$baseUrl/groups/$groupId/members/$userId")
+            .patch(body)
+            .addHeader("Content-Type", "application/json")
+            .build()
+        executeRequest<Unit>(request, getClient()) { Unit }
+    }
+
+    /**
+     * Remove member from group (admin or creator only). DELETE /api/groups/:group_id/members/:user_id.
+     * Returns 204 No Content.
+     *
+     * @param accessToken JWT access token
+     * @param groupId Group ID
+     * @param userId User ID of the member to remove
+     * @throws ApiException on error (400, 403, 404)
+     */
+    suspend fun removeMember(
+        accessToken: String,
+        groupId: String,
+        userId: String
+    ) {
+        val request = Request.Builder()
+            .url("$baseUrl/groups/$groupId/members/$userId")
+            .delete()
+            .addHeader("Content-Type", "application/json")
+            .build()
+        executeRequest<Unit>(request, getClient()) { Unit }
+    }
+
+    /**
      * Get group activity feed.
      * 
      * @param accessToken JWT access token for authentication

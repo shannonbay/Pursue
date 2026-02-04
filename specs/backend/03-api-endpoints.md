@@ -1195,6 +1195,8 @@ Authorization: Bearer {access_token}
 - Cannot demote creator
 - Cannot change own role
 
+**Client use:** Promote to Admin by sending `{ "role": "admin" }`.
+
 ---
 
 #### DELETE /api/groups/:group_id/members/:user_id

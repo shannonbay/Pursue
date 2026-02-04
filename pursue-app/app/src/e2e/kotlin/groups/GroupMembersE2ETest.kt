@@ -152,4 +152,45 @@ class GroupMembersE2ETest : E2ETest() {
             assertThat(apiException.code).isAnyOf(403, 200)
         }
     }
+
+    @Test
+    fun `updateMemberRole promotes member to admin`() = runTest {
+        val creator = getOrCreateSharedUser()
+        val group = testDataHelper.createTestGroup(api, creator.access_token)
+        trackGroup(group.id)
+
+        val invite = api.getGroupInviteCode(creator.access_token, group.id)
+        val memberAuth = testDataHelper.createTestUser(api, displayName = "Member User")
+        trackUser(memberAuth.user!!.id)
+
+        api.joinGroup(memberAuth.access_token, invite.invite_code)
+        api.approveMember(creator.access_token, group.id, memberAuth.user!!.id)
+
+        api.updateMemberRole(creator.access_token, group.id, memberAuth.user!!.id, "admin")
+
+        val membersResponse = api.getGroupMembers(creator.access_token, group.id)
+        val promoted = membersResponse.members.find { it.user_id == memberAuth.user!!.id }
+        assertThat(promoted).isNotNull()
+        assertThat(promoted!!.role).isEqualTo("admin")
+    }
+
+    @Test
+    fun `removeMember removes member from group`() = runTest {
+        val creator = getOrCreateSharedUser()
+        val group = testDataHelper.createTestGroup(api, creator.access_token)
+        trackGroup(group.id)
+
+        val invite = api.getGroupInviteCode(creator.access_token, group.id)
+        val memberAuth = testDataHelper.createTestUser(api, displayName = "Member To Remove")
+        trackUser(memberAuth.user!!.id)
+
+        api.joinGroup(memberAuth.access_token, invite.invite_code)
+        api.approveMember(creator.access_token, group.id, memberAuth.user!!.id)
+
+        api.removeMember(creator.access_token, group.id, memberAuth.user!!.id)
+
+        val membersResponse = api.getGroupMembers(creator.access_token, group.id)
+        val removed = membersResponse.members.find { it.user_id == memberAuth.user!!.id }
+        assertThat(removed).isNull()
+    }
 }

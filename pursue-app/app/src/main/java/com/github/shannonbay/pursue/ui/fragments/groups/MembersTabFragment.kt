@@ -1,21 +1,30 @@
 package com.github.shannonbay.pursue.ui.fragments.groups
 
+import android.text.Editable
+import android.text.TextWatcher
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.view.LayoutInflater
+import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
+import android.widget.ImageView
 import android.widget.LinearLayout
+import android.widget.PopupMenu
 import android.widget.TextView
 import android.widget.Toast
+import androidx.core.content.ContextCompat
+import androidx.core.widget.NestedScrollView
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.commit
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+import com.bumptech.glide.Glide
+import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.github.shannonbay.pursue.data.network.ApiClient
 import com.github.shannonbay.pursue.data.network.ApiException
 import com.github.shannonbay.pursue.ui.activities.GroupDetailActivity
@@ -26,9 +35,16 @@ import com.github.shannonbay.pursue.data.auth.SecureTokenManager
 import com.github.shannonbay.pursue.models.GroupMember
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.button.MaterialButton
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.google.android.material.textfield.TextInputEditText
+import androidx.appcompat.app.AlertDialog
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import java.util.concurrent.TimeUnit
 
 /**
  * Members Tab Fragment for Group Detail (UI spec section 4.3.2).
@@ -41,6 +57,8 @@ class MembersTabFragment : Fragment() {
     companion object {
         private const val ARG_GROUP_ID = "group_id"
         private const val ARG_IS_ADMIN = "is_admin"
+        private const val MENU_PROMOTE = 1
+        private const val MENU_REMOVE = 2
 
         fun newInstance(groupId: String, isAdmin: Boolean = false): MembersTabFragment {
             return MembersTabFragment().apply {
@@ -55,6 +73,8 @@ class MembersTabFragment : Fragment() {
     private var groupId: String? = null
     private var isAdmin: Boolean = false
     private lateinit var membersRecyclerView: RecyclerView
+    private lateinit var membersScrollView: NestedScrollView
+    private lateinit var membersListContainer: LinearLayout
     private lateinit var pendingRequestsCard: MaterialCardView
     private lateinit var pendingRequestsLabel: TextView
     private lateinit var swipeRefreshLayout: SwipeRefreshLayout
@@ -74,6 +94,7 @@ class MembersTabFragment : Fragment() {
 
     private var currentState: MembersUiState = MembersUiState.LOADING
     private var cachedMembers: List<GroupMember> = emptyList()
+    private var currentUserId: String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -100,6 +121,8 @@ class MembersTabFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         membersRecyclerView = view.findViewById(R.id.members_recycler_view)
+        membersScrollView = view.findViewById(R.id.members_scroll_view)
+        membersListContainer = view.findViewById(R.id.members_list_container)
         swipeRefreshLayout = view.findViewById(R.id.swipe_refresh)
         skeletonContainer = view.findViewById(R.id.skeleton_container)
         emptyStateContainer = view.findViewById(R.id.empty_state_container)
@@ -151,6 +174,14 @@ class MembersTabFragment : Fragment() {
                     return@launch
                 }
 
+                if (currentUserId == null) {
+                    try {
+                        currentUserId = withContext(Dispatchers.IO) {
+                            ApiClient.getMyUser(accessToken).id
+                        }
+                    } catch (_: Exception) { /* ignore */ }
+                }
+
                 val response = withContext(Dispatchers.IO) {
                     ApiClient.getGroupMembers(accessToken, groupId)
                 }
@@ -181,14 +212,7 @@ class MembersTabFragment : Fragment() {
                     if (response.members.isEmpty()) {
                         updateUiState(MembersUiState.SUCCESS_EMPTY)
                     } else {
-                        adapter?.let { currentAdapter ->
-                            val newAdapter = GroupMembersAdapter(response.members)
-                            membersRecyclerView.adapter = newAdapter
-                            adapter = newAdapter
-                        } ?: run {
-                            adapter = GroupMembersAdapter(response.members)
-                            membersRecyclerView.adapter = adapter
-                        }
+                        populateMembersScrollView(response.members)
                         updateUiState(MembersUiState.SUCCESS_WITH_DATA)
                     }
                     swipeRefreshLayout.isRefreshing = false
@@ -210,6 +234,238 @@ class MembersTabFragment : Fragment() {
         }
     }
 
+    /**
+     * Populate the ScrollView with role headers and member cards (same order as GroupMembersAdapter).
+     */
+    private fun populateMembersScrollView(members: List<GroupMember>) {
+        membersListContainer.layoutTransition = null
+        membersListContainer.removeAllViews()
+
+        val admins = members.filter { it.role == "creator" || it.role == "admin" }
+        val regularMembers = members.filter { it.role == "member" }
+
+        if (admins.isNotEmpty()) {
+            val headerView = TextView(requireContext()).apply {
+                text = getString(R.string.admins)
+                textSize = 16f
+                setTextColor(ContextCompat.getColor(requireContext(), R.color.on_surface))
+                setPadding(16, 16, 16, 8)
+            }
+            membersListContainer.addView(headerView)
+            admins.forEach { member ->
+                val cardView = LayoutInflater.from(requireContext())
+                    .inflate(R.layout.item_member_card, membersListContainer, false)
+                bindMemberCardView(cardView, member)
+                membersListContainer.addView(cardView)
+            }
+        }
+        if (regularMembers.isNotEmpty()) {
+            val headerView = TextView(requireContext()).apply {
+                text = getString(R.string.members_section, regularMembers.size)
+                textSize = 16f
+                setTextColor(ContextCompat.getColor(requireContext(), R.color.on_surface))
+                setPadding(16, 16, 16, 8)
+            }
+            membersListContainer.addView(headerView)
+            regularMembers.forEach { member ->
+                val cardView = LayoutInflater.from(requireContext())
+                    .inflate(R.layout.item_member_card, membersListContainer, false)
+                bindMemberCardView(cardView, member)
+                membersListContainer.addView(cardView)
+            }
+        }
+
+        membersScrollView.visibility = View.VISIBLE
+        membersRecyclerView.visibility = View.GONE
+    }
+
+    private fun bindMemberCardView(view: View, member: GroupMember) {
+        val memberAvatar = view.findViewById<ImageView>(R.id.member_avatar)
+        val memberAvatarFallback = view.findViewById<TextView>(R.id.member_avatar_fallback)
+        val memberDisplayName = view.findViewById<TextView>(R.id.member_display_name)
+        val adminBadge = view.findViewById<TextView>(R.id.admin_badge)
+        val lastActive = view.findViewById<TextView>(R.id.last_active)
+
+        val displayName = if (member.user_id == currentUserId) {
+            "${member.display_name} ${requireContext().getString(R.string.you)}"
+        } else {
+            member.display_name
+        }
+        memberDisplayName.text = displayName
+
+        adminBadge.visibility = if (member.role == "creator" || member.role == "admin") {
+            View.VISIBLE
+        } else {
+            View.GONE
+        }
+
+        if (member.has_avatar) {
+            memberAvatar.visibility = View.VISIBLE
+            memberAvatarFallback.visibility = View.GONE
+            val imageUrl = "${ApiClient.getBaseUrl()}/users/${member.user_id}/avatar"
+            Glide.with(requireContext())
+                .load(imageUrl)
+                .diskCacheStrategy(DiskCacheStrategy.ALL)
+                .circleCrop()
+                .error(R.drawable.ic_pursue_logo)
+                .into(memberAvatar)
+        } else {
+            memberAvatar.visibility = View.GONE
+            memberAvatarFallback.visibility = View.VISIBLE
+            val firstLetter = member.display_name.takeIf { it.isNotEmpty() }?.first()?.uppercaseChar() ?: '?'
+            memberAvatarFallback.text = firstLetter.toString()
+        }
+
+        lastActive.text = formatLastActive(member.joined_at)
+
+        if (isAdmin) {
+            view.setOnLongClickListener {
+                showMemberContextMenu(view, member)
+                true
+            }
+        } else {
+            view.setOnLongClickListener(null)
+        }
+    }
+
+    private fun showMemberContextMenu(anchor: View, member: GroupMember) {
+        val popup = PopupMenu(requireContext(), anchor)
+        val showPromote = member.role == "member"
+        val showRemove = member.role != "creator" && member.user_id != currentUserId
+        if (!showPromote && !showRemove) return
+        if (showPromote) {
+            popup.menu.add(0, MENU_PROMOTE, 0, getString(R.string.promote_to_admin))
+        }
+        if (showRemove) {
+            popup.menu.add(0, MENU_REMOVE, 0, getString(R.string.remove_from_group))
+        }
+        popup.setOnMenuItemClickListener { item: MenuItem ->
+            when (item.itemId) {
+                MENU_PROMOTE -> {
+                    showConfirmPromoteDialog(member)
+                    true
+                }
+                MENU_REMOVE -> {
+                    showConfirmRemoveDialog(member)
+                    true
+                }
+                else -> false
+            }
+        }
+        popup.show()
+    }
+
+    private fun showConfirmPromoteDialog(member: GroupMember) {
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle(getString(R.string.confirm_promote_title, member.display_name))
+            .setMessage(getString(R.string.confirm_promote_message))
+            .setNegativeButton(getString(R.string.cancel), null)
+            .setPositiveButton(getString(R.string.promote_to_admin)) { _, _ -> performPromote(member) }
+            .show()
+    }
+
+    private fun showConfirmRemoveDialog(member: GroupMember) {
+        val view = layoutInflater.inflate(R.layout.dialog_remove_member_confirm, null)
+        val dialog = MaterialAlertDialogBuilder(requireContext())
+            .setTitle(getString(R.string.confirm_remove_member_title, member.display_name))
+            .setView(view)
+            .setNegativeButton(getString(R.string.cancel), null)
+            .setPositiveButton(getString(R.string.remove_from_group)) { _, _ -> performRemove(member) }
+            .create()
+        dialog.show()
+        val positiveButton = dialog.getButton(AlertDialog.BUTTON_POSITIVE)
+        positiveButton?.isEnabled = false
+        positiveButton?.setTextColor(ContextCompat.getColor(requireContext(), R.color.secondary))
+        val editText = view.findViewById<TextInputEditText>(R.id.remove_confirm_input)
+        editText.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+            override fun afterTextChanged(s: Editable?) {
+                positiveButton?.isEnabled = (editText.text?.toString()?.trim() == "remove")
+            }
+        })
+    }
+
+    private fun performPromote(member: GroupMember) {
+        val gid = groupId ?: return
+        lifecycleScope.launch {
+            try {
+                if (!isAdded) return@launch
+                val tokenManager = SecureTokenManager.Companion.getInstance(requireContext())
+                val token = tokenManager.getAccessToken()
+                if (token == null) {
+                    Toast.makeText(requireContext(), getString(R.string.error_unauthorized_message), Toast.LENGTH_SHORT).show()
+                    return@launch
+                }
+                withContext(Dispatchers.IO) {
+                    ApiClient.updateMemberRole(token, gid, member.user_id, "admin")
+                }
+                if (!isAdded) return@launch
+                Toast.makeText(requireContext(), getString(R.string.member_promoted_toast), Toast.LENGTH_SHORT).show()
+                loadMembers()
+            } catch (e: ApiException) {
+                if (isAdded) {
+                    Toast.makeText(requireContext(), e.message ?: getString(R.string.error_failed_to_load_groups), Toast.LENGTH_SHORT).show()
+                }
+            } catch (e: Exception) {
+                if (isAdded) {
+                    Toast.makeText(requireContext(), getString(R.string.error_failed_to_load_groups), Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+    }
+
+    private fun performRemove(member: GroupMember) {
+        val gid = groupId ?: return
+        lifecycleScope.launch {
+            try {
+                if (!isAdded) return@launch
+                val tokenManager = SecureTokenManager.Companion.getInstance(requireContext())
+                val token = tokenManager.getAccessToken()
+                if (token == null) {
+                    Toast.makeText(requireContext(), getString(R.string.error_unauthorized_message), Toast.LENGTH_SHORT).show()
+                    return@launch
+                }
+                withContext(Dispatchers.IO) {
+                    ApiClient.removeMember(token, gid, member.user_id)
+                }
+                if (!isAdded) return@launch
+                Toast.makeText(requireContext(), getString(R.string.member_removed_toast), Toast.LENGTH_SHORT).show()
+                loadMembers()
+            } catch (e: ApiException) {
+                if (isAdded) {
+                    Toast.makeText(requireContext(), e.message ?: getString(R.string.error_failed_to_load_groups), Toast.LENGTH_SHORT).show()
+                }
+            } catch (e: Exception) {
+                if (isAdded) {
+                    Toast.makeText(requireContext(), getString(R.string.error_failed_to_load_groups), Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+    }
+
+    private fun formatLastActive(isoTimestamp: String): String {
+        return try {
+            val format = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US)
+            val timestamp = format.parse(isoTimestamp) ?: return isoTimestamp
+            val now = Date()
+            val diffMs = now.time - timestamp.time
+            val diffHours = TimeUnit.MILLISECONDS.toHours(diffMs)
+            val diffDays = TimeUnit.MILLISECONDS.toDays(diffMs)
+            val context = requireContext()
+            when {
+                diffMs < 60000 -> context.getString(R.string.last_active_now)
+                diffHours < 1 -> context.getString(R.string.last_active_now)
+                diffHours == 1L -> context.getString(R.string.last_active, context.getString(R.string.hour_ago))
+                diffHours < 24 -> context.getString(R.string.last_active, context.getString(R.string.hours_ago, diffHours.toInt()))
+                diffDays == 1L -> context.getString(R.string.last_active, context.getString(R.string.day_ago))
+                else -> context.getString(R.string.last_active, context.getString(R.string.days_ago, diffDays.toInt()))
+            }
+        } catch (e: Exception) {
+            isoTimestamp
+        }
+    }
+
     private fun updateUiState(state: MembersUiState, errorType: ErrorStateView.ErrorType? = null) {
         currentState = state
 
@@ -217,18 +473,21 @@ class MembersTabFragment : Fragment() {
             MembersUiState.LOADING -> {
                 skeletonContainer.visibility = View.VISIBLE
                 membersRecyclerView.visibility = View.GONE
+                membersScrollView.visibility = View.GONE
                 emptyStateContainer.visibility = View.GONE
                 errorStateContainer.visibility = View.GONE
             }
             MembersUiState.SUCCESS_WITH_DATA -> {
                 skeletonContainer.visibility = View.GONE
-                membersRecyclerView.visibility = View.VISIBLE
+                membersScrollView.visibility = View.VISIBLE
+                membersRecyclerView.visibility = View.GONE
                 emptyStateContainer.visibility = View.GONE
                 errorStateContainer.visibility = View.GONE
             }
             MembersUiState.SUCCESS_EMPTY -> {
                 skeletonContainer.visibility = View.GONE
                 membersRecyclerView.visibility = View.GONE
+                membersScrollView.visibility = View.GONE
                 emptyStateContainer.visibility = View.VISIBLE
                 errorStateContainer.visibility = View.GONE
 
@@ -250,6 +509,7 @@ class MembersTabFragment : Fragment() {
             MembersUiState.ERROR -> {
                 skeletonContainer.visibility = View.GONE
                 membersRecyclerView.visibility = View.GONE
+                membersScrollView.visibility = View.GONE
                 emptyStateContainer.visibility = View.GONE
                 errorStateContainer.visibility = View.VISIBLE
 

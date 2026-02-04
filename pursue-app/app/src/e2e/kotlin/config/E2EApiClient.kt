@@ -123,6 +123,34 @@ class E2EApiClient(private val context: Context) {
         return ApiClient.joinGroup("", inviteCode)
     }
 
+    suspend fun updateMemberRole(
+        accessToken: String,
+        groupId: String,
+        userId: String,
+        role: String
+    ) {
+        storeTokenIfPresent(accessToken)
+        ApiClient.updateMemberRole("", groupId, userId, role)
+    }
+
+    suspend fun removeMember(
+        accessToken: String,
+        groupId: String,
+        userId: String
+    ) {
+        storeTokenIfPresent(accessToken)
+        ApiClient.removeMember("", groupId, userId)
+    }
+
+    suspend fun approveMember(
+        accessToken: String,
+        groupId: String,
+        userId: String
+    ) {
+        storeTokenIfPresent(accessToken)
+        ApiClient.approveMember("", groupId, userId)
+    }
+
     // --- Goal Endpoints (3.4) ---
 
     suspend fun createGoal(
