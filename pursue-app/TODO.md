@@ -97,14 +97,8 @@ My TODOs
 - Unit test for Speed dial FAB for join group and create group
 - E2E Tests for progress endpoint (may already be done)
 
-- Join group -> back -> group list empty
-- When pending approval, goals list says Failed to load instead of "Awaiting approval"
-- TODO backend only allows admins to invite members but UI allows anyone to try
-- UI group detail overflow menu for Manage Members - Assign admin roles via UI
-- Hold a member card for menu to promote to admin or kick from group
-- The extra dialog window for Join Group after scanning a QR code is superfluous
-- Join group and HomeFragment is still empty
 - My Progress and other Profile sub-screens from UI Spec
+- When join request notification comes in, add join queue button to members list
 
 TODO: Redis-backed sliding-window limits
 
