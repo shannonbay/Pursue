@@ -28,6 +28,11 @@ export interface ExportMember {
   goals: ExportGoal[];
 }
 
+/** Format year/month/day as "YYYY-MM-DD" without Date object timezone issues */
+function formatDateString(year: number, month: number, day: number): string {
+  return `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+}
+
 // --- Helpers ---
 
 export function sanitizeSheetName(name: string): string {
@@ -183,7 +188,7 @@ function getWeekStartFromDateRow(
     if (val !== undefined && val !== null && typeof val === 'number') {
       const d = new Date(monthDate.getFullYear(), monthDate.getMonth(), val);
       const monday = getMonday(d);
-      return monday.toISOString().split('T')[0];
+      return formatDateString(monday.getFullYear(), monday.getMonth(), monday.getDate());
     }
   }
   return null;
@@ -212,7 +217,7 @@ export function calculateMonthlyStats(
       ) + 1;
     let completed = 0;
     for (let d = new Date(effectiveStart); d <= effectiveEnd; d.setDate(d.getDate() + 1)) {
-      const dateString = d.toISOString().split('T')[0];
+      const dateString = formatDateString(d.getFullYear(), d.getMonth(), d.getDate());
       if (checkProgressForDate(goal, progressData, dateString)) completed++;
     }
     const percentageValue = (completed / daysInRange) * 100;
@@ -232,7 +237,7 @@ export function calculateMonthlyStats(
 
     while (currentWeekStart <= finalWeekStart) {
       weeksInRange++;
-      const weekStartString = currentWeekStart.toISOString().split('T')[0];
+      const weekStartString = formatDateString(currentWeekStart.getFullYear(), currentWeekStart.getMonth(), currentWeekStart.getDate());
       if (checkWeeklyProgress(goal, progressData, weekStartString)) completed++;
       currentWeekStart.setDate(currentWeekStart.getDate() + 7);
     }
@@ -599,12 +604,7 @@ function generateMonthCalendar(
       for (let col = 1; col <= 7; col++) {
         const dateValue = dateRow.getCell(col).value;
         if (dateValue !== undefined && dateValue !== null && typeof dateValue === 'number') {
-          const cellDate = new Date(
-            monthDate.getFullYear(),
-            monthDate.getMonth(),
-            dateValue
-          );
-          const dateString = cellDate.toISOString().split('T')[0];
+          const dateString = formatDateString(monthDate.getFullYear(), monthDate.getMonth(), dateValue);
           if (dateString >= overallStart && dateString <= overallEnd) {
             goalValues[col - 1] = checkProgressForDate(goal, progressData, dateString)
               ? '✓'

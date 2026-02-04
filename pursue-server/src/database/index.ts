@@ -2,6 +2,9 @@ import { Kysely, PostgresDialect } from 'kysely';
 import pg from 'pg';
 import type { Database } from './types.js';
 
+// Return DATE columns as raw "YYYY-MM-DD" strings instead of Date objects
+pg.types.setTypeParser(1082, (val: string) => val);
+
 const { Pool } = pg;
 
 const pool = new Pool({
