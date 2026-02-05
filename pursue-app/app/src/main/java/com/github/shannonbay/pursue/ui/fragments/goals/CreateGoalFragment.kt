@@ -25,9 +25,9 @@ import androidx.lifecycle.lifecycleScope
 import com.github.shannonbay.pursue.data.network.ApiClient
 import com.github.shannonbay.pursue.data.network.ApiException
 import com.github.shannonbay.pursue.ui.views.IconPickerBottomSheet
-import android.content.Intent
 import com.github.shannonbay.pursue.R
 import com.github.shannonbay.pursue.data.auth.SecureTokenManager
+import com.github.shannonbay.pursue.ui.activities.GroupDetailActivity
 import com.github.shannonbay.pursue.ui.activities.MainAppActivity
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.button.MaterialButtonToggleGroup
@@ -517,12 +517,11 @@ class CreateGoalFragment : Fragment() {
                         401 -> "Please sign in again"
                         403 -> {
                             if (e.errorCode == "GROUP_READ_ONLY") {
-                                val intent = Intent(requireContext(), MainAppActivity::class.java).apply {
-                                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-                                    putExtra(MainAppActivity.EXTRA_OPEN_PREMIUM, true)
+                                val activity = requireActivity()
+                                when (activity) {
+                                    is GroupDetailActivity -> activity.showPremiumScreen()
+                                    is MainAppActivity -> activity.showPremiumScreen()
                                 }
-                                startActivity(intent)
-                                activity?.finish()
                                 return@post
                             }
                             "You don't have permission to create goals in this group."

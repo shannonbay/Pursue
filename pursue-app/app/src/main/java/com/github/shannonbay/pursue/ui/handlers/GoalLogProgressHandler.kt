@@ -1,6 +1,5 @@
 package com.github.shannonbay.pursue.ui.handlers
 
-import android.content.Intent
 import android.os.Handler
 import android.os.Looper
 import android.view.View
@@ -14,6 +13,7 @@ import com.github.shannonbay.pursue.data.network.ApiClient
 import com.github.shannonbay.pursue.data.network.ApiException
 import com.github.shannonbay.pursue.models.GoalForLogging
 import com.github.shannonbay.pursue.ui.dialogs.LogProgressDialog
+import com.github.shannonbay.pursue.ui.activities.GroupDetailActivity
 import com.github.shannonbay.pursue.ui.activities.MainAppActivity
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
@@ -47,12 +47,11 @@ class GoalLogProgressHandler(
             .setMessage(R.string.group_read_only_upgrade_message)
             .setNegativeButton(R.string.maybe_later, null)
             .setPositiveButton(R.string.upgrade_to_premium) { _, _ ->
-                val intent = Intent(ctx, MainAppActivity::class.java).apply {
-                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-                    putExtra(MainAppActivity.EXTRA_OPEN_PREMIUM, true)
+                val activity = fragment.requireActivity()
+                when (activity) {
+                    is GroupDetailActivity -> activity.showPremiumScreen()
+                    is MainAppActivity -> activity.showPremiumScreen()
                 }
-                fragment.startActivity(intent)
-                fragment.activity?.finish()
             }
             .show()
         d.getButton(AlertDialog.BUTTON_POSITIVE)?.apply {

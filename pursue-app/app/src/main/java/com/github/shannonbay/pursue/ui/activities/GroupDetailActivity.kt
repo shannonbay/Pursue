@@ -13,10 +13,11 @@ import androidx.fragment.app.commit
 import com.github.shannonbay.pursue.R
 import com.github.shannonbay.pursue.ui.fragments.groups.GroupDetailFragment
 import com.github.shannonbay.pursue.ui.fragments.groups.PendingApprovalsFragment
+import com.github.shannonbay.pursue.ui.fragments.home.PremiumFragment
 
 /**
  * Activity for displaying Group Detail screen without bottom navigation.
- * 
+ *
  * Hosts GroupDetailFragment and handles nested navigation (e.g., GoalDetailFragment).
  */
 class GroupDetailActivity : AppCompatActivity() {
@@ -34,17 +35,17 @@ class GroupDetailActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        
+
         // Enable edge-to-edge display for proper WindowInsets handling
         WindowCompat.setDecorFitsSystemWindows(window, false)
-        
+
         setContentView(R.layout.activity_group_detail)
 
         // Setup Toolbar
         val toolbar: Toolbar = findViewById(R.id.toolbar)
         setSupportActionBar(toolbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
-        
+
         // Get group data from Intent
         val groupId = intent.getStringExtra(EXTRA_GROUP_ID)
         val groupName = intent.getStringExtra(EXTRA_GROUP_NAME) ?: ""
@@ -98,6 +99,18 @@ class GroupDetailActivity : AppCompatActivity() {
                     }
                 }
             }
+        }
+    }
+
+    /**
+     * Opens the Pursue Premium screen within this activity so back returns to the group.
+     */
+    fun showPremiumScreen() {
+        supportActionBar?.title = getString(R.string.pursue_premium_title)
+        supportActionBar?.setDisplayHomeAsUpEnabled(true)
+        supportFragmentManager.commit {
+            replace(R.id.fragment_container, PremiumFragment.newInstance())
+            addToBackStack(null)
         }
     }
 }
