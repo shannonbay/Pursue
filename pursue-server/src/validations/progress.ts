@@ -3,12 +3,17 @@ import { db } from '../database/index.js';
 
 const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be YYYY-MM-DD');
 
-// Helper to check if date is not in the future
-function isNotFutureDate(dateStr: string): boolean {
-  const date = new Date(dateStr);
-  const today = new Date();
-  today.setHours(23, 59, 59, 999); // End of today
-  return date <= today;
+// Helper to check if date is not in the future (relative to user's timezone)
+function isNotFutureDateInTimezone(dateStr: string, timezone: string): boolean {
+  // Get today's date in the user's timezone
+  const formatter = new Intl.DateTimeFormat('en-CA', {
+    timeZone: timezone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  });
+  const todayInUserTz = formatter.format(new Date()); // "YYYY-MM-DD" format
+  return dateStr <= todayInUserTz;
 }
 
 export const CreateProgressSchema = z
@@ -20,7 +25,7 @@ export const CreateProgressSchema = z
     user_timezone: z.string().min(1, 'Timezone is required'),
   })
   .strict()
-  .refine((data) => isNotFutureDate(data.user_date), {
+  .refine((data) => isNotFutureDateInTimezone(data.user_date, data.user_timezone), {
     message: 'Date cannot be in the future',
     path: ['user_date'],
   })
