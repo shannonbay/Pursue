@@ -728,12 +728,7 @@ class GroupDetailFragment : Fragment() {
             .setMessage(message)
             .setNegativeButton(R.string.adjust_dates, null)
             .setPositiveButton(R.string.upgrade_to_premium) { _, _ ->
-                val intent = Intent(requireContext(), com.github.shannonbay.pursue.ui.activities.MainAppActivity::class.java).apply {
-                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-                    putExtra(com.github.shannonbay.pursue.ui.activities.MainAppActivity.EXTRA_OPEN_PREMIUM, true)
-                }
-                startActivity(intent)
-                activity?.finish()
+                (requireActivity() as? GroupDetailActivity)?.showPremiumScreen()
             }
             .show()
         d.getButton(androidx.appcompat.app.AlertDialog.BUTTON_POSITIVE)?.apply {
