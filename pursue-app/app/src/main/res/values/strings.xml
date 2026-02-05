@@ -110,6 +110,7 @@
     <string name="maybe_later">Maybe Later</string>
     <string name="group_limit_reached_dialog_title">Upgrade to Premium</string>
     <string name="group_limit_reached_message">You\'ve reached your free tier limit of 1 group.</string>
+    <string name="group_read_only_upgrade_message">This group is read-only on the free plan. Upgrade to Premium to log progress and create goals in all your groups.</string>
     <string name="group_limit_reached_bullets">Upgrade to Premium for:\n• Up to 10 groups\n• All features unlocked\n• Only $30/year</string>
     <string name="choose_your_group_dialog_title">Choose Your Group</string>
     <string name="choose_your_group_message">Your subscription expired. Select ONE group to keep:</string>

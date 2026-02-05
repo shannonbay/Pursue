@@ -25,8 +25,10 @@ import androidx.lifecycle.lifecycleScope
 import com.github.shannonbay.pursue.data.network.ApiClient
 import com.github.shannonbay.pursue.data.network.ApiException
 import com.github.shannonbay.pursue.ui.views.IconPickerBottomSheet
+import android.content.Intent
 import com.github.shannonbay.pursue.R
 import com.github.shannonbay.pursue.data.auth.SecureTokenManager
+import com.github.shannonbay.pursue.ui.activities.MainAppActivity
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.button.MaterialButtonToggleGroup
 import com.google.android.material.datepicker.MaterialDatePicker
@@ -513,7 +515,18 @@ class CreateGoalFragment : Fragment() {
                     val errorMessage = when (e.code) {
                         400 -> "Invalid goal data. Please check your input."
                         401 -> "Please sign in again"
-                        403 -> "You don't have permission to create goals in this group."
+                        403 -> {
+                            if (e.errorCode == "GROUP_READ_ONLY") {
+                                val intent = Intent(requireContext(), MainAppActivity::class.java).apply {
+                                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                                    putExtra(MainAppActivity.EXTRA_OPEN_PREMIUM, true)
+                                }
+                                startActivity(intent)
+                                activity?.finish()
+                                return@post
+                            }
+                            "You don't have permission to create goals in this group."
+                        }
                         500, 503 -> "Server error. Please try again later."
                         else -> getString(R.string.goal_creation_failed)
                     }

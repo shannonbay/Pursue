@@ -1,5 +1,6 @@
 package com.github.shannonbay.pursue.ui.handlers
 
+import android.content.Intent
 import android.os.Handler
 import android.os.Looper
 import android.view.View
@@ -13,6 +14,7 @@ import com.github.shannonbay.pursue.data.network.ApiClient
 import com.github.shannonbay.pursue.data.network.ApiException
 import com.github.shannonbay.pursue.models.GoalForLogging
 import com.github.shannonbay.pursue.ui.dialogs.LogProgressDialog
+import com.github.shannonbay.pursue.ui.activities.MainAppActivity
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import kotlinx.coroutines.Dispatchers
@@ -37,6 +39,27 @@ class GoalLogProgressHandler(
 ) {
     private var currentSnackbar: Snackbar? = null
     private val undoHandler = Handler(Looper.getMainLooper())
+
+    private fun showUpgradeDialog() {
+        val ctx = fragment.requireContext()
+        val d = MaterialAlertDialogBuilder(ctx)
+            .setTitle(R.string.group_limit_reached_dialog_title)
+            .setMessage(R.string.group_read_only_upgrade_message)
+            .setNegativeButton(R.string.maybe_later, null)
+            .setPositiveButton(R.string.upgrade_to_premium) { _, _ ->
+                val intent = Intent(ctx, MainAppActivity::class.java).apply {
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                    putExtra(MainAppActivity.EXTRA_OPEN_PREMIUM, true)
+                }
+                fragment.startActivity(intent)
+                fragment.activity?.finish()
+            }
+            .show()
+        d.getButton(AlertDialog.BUTTON_POSITIVE)?.apply {
+            setTextColor(ContextCompat.getColor(ctx, R.color.secondary))
+            setTypeface(typeface, android.graphics.Typeface.BOLD)
+        }
+    }
 
     fun handleCardBodyClick(goal: GoalForLogging) {
         when (goal.metricType) {
@@ -113,8 +136,12 @@ class GoalLogProgressHandler(
             } catch (e: ApiException) {
                 fragment.requireActivity().runOnUiThread {
                     onOptimisticUpdate?.invoke(goal.id, previousCompleted, previousProgressValue)
-                    val msg = if (e.code == 400) fragment.getString(R.string.log_progress_duplicate) else fragment.getString(R.string.log_progress_failed)
-                    Toast.makeText(fragment.requireContext(), msg, Toast.LENGTH_SHORT).show()
+                    if (e.errorCode == "GROUP_READ_ONLY") {
+                        showUpgradeDialog()
+                    } else {
+                        val msg = if (e.code == 400) fragment.getString(R.string.log_progress_duplicate) else fragment.getString(R.string.log_progress_failed)
+                        Toast.makeText(fragment.requireContext(), msg, Toast.LENGTH_SHORT).show()
+                    }
                 }
             } catch (e: Exception) {
                 fragment.requireActivity().runOnUiThread {
@@ -271,8 +298,12 @@ class GoalLogProgressHandler(
             } catch (e: ApiException) {
                 fragment.requireActivity().runOnUiThread {
                     onOptimisticUpdate?.invoke(goal.id, previousCompleted, previousProgressValue)
-                    val msg = if (e.code == 400) fragment.getString(R.string.log_progress_duplicate) else fragment.getString(R.string.log_progress_failed)
-                    Toast.makeText(fragment.requireContext(), msg, Toast.LENGTH_SHORT).show()
+                    if (e.errorCode == "GROUP_READ_ONLY") {
+                        showUpgradeDialog()
+                    } else {
+                        val msg = if (e.code == 400) fragment.getString(R.string.log_progress_duplicate) else fragment.getString(R.string.log_progress_failed)
+                        Toast.makeText(fragment.requireContext(), msg, Toast.LENGTH_SHORT).show()
+                    }
                 }
             } catch (e: Exception) {
                 fragment.requireActivity().runOnUiThread {
@@ -332,6 +363,15 @@ class GoalLogProgressHandler(
                         snackbar.dismiss()
                         currentSnackbar = null
                     }, 3000)
+                }
+            } catch (e: ApiException) {
+                fragment.requireActivity().runOnUiThread {
+                    onOptimisticUpdate?.invoke(goal.id, previousCompleted, previousProgressValue)
+                    if (e.errorCode == "GROUP_READ_ONLY") {
+                        showUpgradeDialog()
+                    } else {
+                        Toast.makeText(fragment.requireContext(), fragment.getString(R.string.log_progress_failed), Toast.LENGTH_SHORT).show()
+                    }
                 }
             } catch (e: Exception) {
                 fragment.requireActivity().runOnUiThread {
