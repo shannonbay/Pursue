@@ -39,6 +39,7 @@ export const ListGoalsQuerySchema = z
     cadence: z.enum(['daily', 'weekly', 'monthly', 'yearly']).optional(),
     archived: z.enum(['true', 'false']).optional(),
     include_progress: z.enum(['true', 'false']).optional(),
+    user_timezone: z.string().optional(),
   })
   .strict();
 

@@ -423,7 +423,8 @@ object ApiClient {
                     groupId = group.id,
                     cadence = "daily",
                     archived = false,
-                    includeProgress = true
+                    includeProgress = true,
+                    userTimezone = java.time.ZoneId.systemDefault().id
                 )
             } catch (e: ApiException) {
                 if (e.code == 403 || e.code == 404) continue
@@ -1083,12 +1084,13 @@ object ApiClient {
 
     /**
      * Get all goals for a group, optionally with current period progress.
-     * 
+     *
      * @param accessToken JWT access token for authentication
      * @param groupId Group ID to fetch goals for
      * @param cadence Optional filter by cadence ('daily', 'weekly', 'monthly', 'yearly')
      * @param archived Include archived goals (default: false, only active goals)
      * @param includeProgress Include current period progress data (default: true)
+     * @param userTimezone IANA timezone (e.g., "America/New_York") for accurate period calculation
      * @return GroupGoalsResponse with list of goals and progress information
      * @throws ApiException on error
      */
@@ -1097,13 +1099,15 @@ object ApiClient {
         groupId: String,
         cadence: String? = null,
         archived: Boolean = false,
-        includeProgress: Boolean = true
+        includeProgress: Boolean = true,
+        userTimezone: String? = null
     ): GroupGoalsResponse {
         val urlBuilder = StringBuilder("$baseUrl/groups/$groupId/goals")
         val params = mutableListOf<String>()
         if (cadence != null) params.add("cadence=$cadence")
         if (archived) params.add("archived=true")
         if (includeProgress) params.add("include_progress=true")
+        if (userTimezone != null) params.add("user_timezone=${java.net.URLEncoder.encode(userTimezone, "UTF-8")}")
         if (params.isNotEmpty()) {
             urlBuilder.append("?").append(params.joinToString("&"))
         }

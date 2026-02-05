@@ -37,6 +37,17 @@ function formatPeriodStart(ps: string | Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
+// Helper: Get period bounds from a date string (YYYY-MM-DD) without timezone conversion
+function getPeriodBoundsForDateStr(cadence: string, dateStr: string): { start: string; end: string } {
+  const [year, month, day] = dateStr.split('-').map(Number);
+  const date = new Date(year, month - 1, day);
+  const bounds = getPeriodBounds(cadence, date);
+  return {
+    start: formatPeriodStart(bounds.start),
+    end: formatPeriodStart(bounds.end),
+  };
+}
+
 // Helper: Get period start/end based on cadence
 function getPeriodBounds(cadence: string, date: Date): { start: Date; end: Date } {
   switch (cadence) {
@@ -87,7 +98,7 @@ function calculateCompleted(goal: Goal, entries: ProgressEntry[]): number {
 }
 
 // Helper: Calculate total target for period
-function calculateTotal(goal: Goal, period: { start: Date; end: Date }): number {
+function calculateTotal(goal: Goal, _period?: { start: string; end: string }): number {
   if (goal.metric_type === 'binary') {
     // For binary: target is the goal's target_value (e.g., 3x per week)
     // Convert to number since DECIMAL returns as string
@@ -121,7 +132,8 @@ async function attachProgressToGoals(
     archived_at: Date | null;
   }>,
   currentUserId: string,
-  groupId: string
+  groupId: string,
+  userTimezone?: string
 ): Promise<Array<{
   id: string;
   group_id: string;
@@ -158,18 +170,39 @@ async function attachProgressToGoals(
   const goalIds = goals.map((g) => g.id);
   const now = new Date();
 
-  // Calculate period bounds for each goal
+  // Calculate today's date in user's timezone (or server time if not provided)
+  let todayStr: string;
+  if (userTimezone) {
+    const formatter = new Intl.DateTimeFormat('en-CA', {
+      timeZone: userTimezone,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    });
+    todayStr = formatter.format(now);
+  } else {
+    todayStr = formatPeriodStart(now);
+  }
+
+  // Calculate period bounds for each goal using date string (for progress filtering)
+  // Also calculate Date-based bounds for API response (backwards compatible)
   const periodBounds = goals.map((goal) => {
-    const bounds = getPeriodBounds(goal.cadence, now);
+    const strBounds = getPeriodBoundsForDateStr(goal.cadence, todayStr);
+    // Parse the date strings back to Date objects for API response
+    const [startYear, startMonth, startDay] = strBounds.start.split('-').map(Number);
+    const [endYear, endMonth, endDay] = strBounds.end.split('-').map(Number);
     return {
       goal_id: goal.id,
-      start: bounds.start,
-      end: bounds.end,
+      start: strBounds.start,
+      end: strBounds.end,
+      // Date objects for API response (local time interpretation)
+      startDate: new Date(startYear, startMonth - 1, startDay, 0, 0, 0, 0),
+      endDate: new Date(endYear, endMonth - 1, endDay, 23, 59, 59, 999),
     };
   });
 
   // Find the earliest start date across all periods
-  const earliestStart = new Date(Math.min(...periodBounds.map((p) => p.start.getTime())));
+  const earliestStart = periodBounds.reduce((min, p) => (p.start < min ? p.start : min), periodBounds[0].start);
 
   // QUERY 2: Fetch all progress entries for all goals in ONE query
   // Using SQL IN clause - very efficient with proper index
@@ -185,7 +218,7 @@ async function attachProgressToGoals(
       'progress_entries.created_at',
     ])
     .where('progress_entries.goal_id', 'in', goalIds)
-    .where('progress_entries.period_start', '>=', formatPeriodStart(earliestStart))
+    .where('progress_entries.period_start', '>=', earliestStart)
     .orderBy('progress_entries.period_start', 'desc')
     .execute();
 
@@ -217,11 +250,9 @@ async function attachProgressToGoals(
 
     // Filter entries for this goal's current period
     // period_start is stored as DATE string (YYYY-MM-DD)
-    const periodStartStr = formatPeriodStart(periodBound.start);
-    const periodEndStr = formatPeriodStart(periodBound.end);
     const currentPeriodEntries = goalProgressEntries.filter((entry) => {
       const entryDateStr = formatPeriodStart(entry.period_start);
-      return entryDateStr >= periodStartStr && entryDateStr <= periodEndStr;
+      return entryDateStr >= periodBound.start && entryDateStr <= periodBound.end;
     });
 
     // Calculate current user's progress
@@ -249,8 +280,8 @@ async function attachProgressToGoals(
     return {
       ...goal,
       current_period_progress: {
-        start_date: periodBound.start.toISOString(),
-        end_date: periodBound.end.toISOString(),
+        start_date: periodBound.startDate.toISOString(),
+        end_date: periodBound.endDate.toISOString(),
         period_type: goal.cadence,
         user_progress: {
           completed: userCompleted,
@@ -378,10 +409,12 @@ export async function listGoals(
       cadence: req.query.cadence,
       archived: req.query.archived,
       include_progress: req.query.include_progress,
+      user_timezone: req.query.user_timezone,
     });
     const cadence = parsed.success ? parsed.data.cadence : undefined;
     const archived = parsed.success ? parsed.data.archived : undefined;
     const includeProgress = parsed.success ? parsed.data.include_progress : undefined;
+    const userTimezone = parsed.success ? parsed.data.user_timezone : undefined;
     const includeArchived = archived === 'true';
 
     let query = db
@@ -429,7 +462,7 @@ export async function listGoals(
 
     // If include_progress requested, attach progress data
     if (includeProgress === 'true' && goals.length > 0) {
-      const goalsWithProgress = await attachProgressToGoals(goals, req.user.id, group_id);
+      const goalsWithProgress = await attachProgressToGoals(goals, req.user.id, group_id, userTimezone);
 
       res.status(200).json({
         goals: goalsWithProgress,

@@ -246,7 +246,8 @@ class GoalsTabFragment : Fragment() {
                         accessToken = accessToken,
                         groupId = groupId,
                         archived = false,
-                        includeProgress = true
+                        includeProgress = true,
+                        userTimezone = ZoneId.systemDefault().id
                     )
                 }
 
