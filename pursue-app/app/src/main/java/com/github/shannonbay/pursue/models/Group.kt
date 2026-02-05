@@ -18,5 +18,6 @@ data class Group(
     val member_count: Int,
     val role: String, // "creator", "admin", or "member"
     val joined_at: String, // ISO 8601 timestamp
-    val updated_at: String? // ISO 8601 timestamp for cache invalidation
+    val updated_at: String?, // ISO 8601 timestamp for cache invalidation
+    val is_read_only: Boolean = false // true when free user is over limit and this is not their kept group
 )

@@ -640,6 +640,25 @@ export async function getUserGroups(
       .offset(offset)
       .execute();
 
+    // Determine read-only groups for free users who downgraded (over group limit)
+    let keptGroupId: string | null = null;
+    const subState = await getUserSubscriptionState(req.user.id);
+    if (
+      subState &&
+      subState.current_subscription_tier === 'free' &&
+      subState.current_group_count > subState.group_limit
+    ) {
+      const latest = await db
+        .selectFrom('subscription_downgrade_history')
+        .select(['kept_group_id'])
+        .where('user_id', '=', req.user.id)
+        .where('kept_group_id', 'is not', null)
+        .orderBy('downgrade_date', 'desc')
+        .limit(1)
+        .executeTakeFirst();
+      keptGroupId = latest?.kept_group_id ?? null;
+    }
+
     // Get total count
     const totalResult = await db
       .selectFrom('group_memberships')
@@ -660,6 +679,7 @@ export async function getUserGroups(
         member_count: Number(g.member_count),
         role: g.role,
         joined_at: g.joined_at,
+        is_read_only: keptGroupId !== null && g.id !== keptGroupId,
       })),
       total,
     });

@@ -42,6 +42,7 @@ class GroupAdapter(
         private val groupIconImage: ImageView = itemView.findViewById(R.id.group_icon_image)
         private val groupIconEmoji: TextView = itemView.findViewById(R.id.group_icon_emoji)
         private val groupName: TextView = itemView.findViewById(R.id.group_name)
+        private val readOnlyBadge: TextView = itemView.findViewById(R.id.read_only_badge)
         private val memberGoalCount: TextView = itemView.findViewById(R.id.member_goal_count)
         private val progressBar: ProgressBar = itemView.findViewById(R.id.progress_bar)
         private val lastActivity: TextView = itemView.findViewById(R.id.last_activity)
@@ -103,6 +104,15 @@ class GroupAdapter(
                 R.string.joined_format,
                 RelativeTimeUtils.formatRelativeTime(itemView.context, group.updated_at ?: group.joined_at)
             )
+
+            // Read-only visual treatment (free user over limit; only kept group is editable)
+            if (group.is_read_only) {
+                itemView.alpha = 0.6f
+                readOnlyBadge.visibility = View.VISIBLE
+            } else {
+                itemView.alpha = 1.0f
+                readOnlyBadge.visibility = View.GONE
+            }
 
             itemView.setOnClickListener {
                 onGroupClick(group)

@@ -73,6 +73,7 @@
     <string name="groups_title">Groups</string>
     <string name="my_groups">My Groups</string>
     <string name="members_and_goals">%1$d members · %2$d active goals</string>
+    <string name="read_only_badge">Read Only</string>
     <string name="empty_groups_title">You\'re not in any groups yet</string>
     <string name="empty_groups_message">Join a group to get started or create your own accountability group with friends.</string>
     <string name="empty_groups_message_fab">Use the + button below to join a group or create your own accountability group.</string>

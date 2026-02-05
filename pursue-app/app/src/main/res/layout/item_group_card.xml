@@ -62,6 +62,23 @@
                 android:textColor="@color/on_surface"
                 tools:text="Morning Runners" />
 
+            <!-- Read Only Badge (after group_name, before arrow) -->
+            <TextView
+                android:id="@+id/read_only_badge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:paddingStart="8dp"
+                android:paddingEnd="8dp"
+                android:paddingTop="2dp"
+                android:paddingBottom="2dp"
+                android:text="@string/read_only_badge"
+                android:textSize="11sp"
+                android:textColor="@color/on_surface_variant"
+                android:background="@drawable/badge_read_only_background"
+                android:visibility="gone"
+                tools:visibility="visible" />
+
             <!-- Right Arrow -->
             <TextView
                 android:layout_width="wrap_content"
