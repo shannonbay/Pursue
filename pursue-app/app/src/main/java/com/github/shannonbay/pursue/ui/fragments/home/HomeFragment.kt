@@ -253,6 +253,7 @@ class HomeFragment : Fragment() {
                 if (accessToken == null) {
                     updateUiState(GroupsUiState.ERROR, ErrorStateView.ErrorType.UNAUTHORIZED)
                     Handler(Looper.getMainLooper()).post {
+                        if (!isAdded) return@post
                         swipeRefreshLayout.isRefreshing = false
                     }
                     return@launch
@@ -261,6 +262,8 @@ class HomeFragment : Fragment() {
                 val response = withContext(Dispatchers.IO) {
                     ApiClient.getMyGroups(accessToken)
                 }
+
+                if (!isAdded) return@launch
 
                 // Cache the groups
                 cachedGroups = response.groups
@@ -305,6 +308,7 @@ class HomeFragment : Fragment() {
 
                 // Ensure Toast runs on main thread with looper to avoid issues in tests
                 Handler(Looper.getMainLooper()).post {
+                    if (!isAdded) return@post
                     Toast.makeText(requireContext(), getString(R.string.error_loading_groups), Toast.LENGTH_SHORT).show()
                 }
             } catch (e: Exception) {
@@ -318,12 +322,14 @@ class HomeFragment : Fragment() {
 
                 // Ensure Toast runs on main thread with looper to avoid issues in tests
                 Handler(Looper.getMainLooper()).post {
+                    if (!isAdded) return@post
                     Toast.makeText(requireContext(), getString(R.string.error_loading_groups), Toast.LENGTH_SHORT).show()
                 }
             } finally {
                 // Ensure setRefreshing runs on main thread with looper to avoid issues in tests
                 // Use Handler.post to guarantee execution on main looper thread
                 Handler(Looper.getMainLooper()).post {
+                    if (!isAdded) return@post
                     swipeRefreshLayout.isRefreshing = false
                 }
             }
@@ -334,6 +340,7 @@ class HomeFragment : Fragment() {
      * Update UI state and show/hide appropriate views.
      */
     private fun updateUiState(state: GroupsUiState, errorType: ErrorStateView.ErrorType? = null) {
+        if (!isAdded) return
         currentState = state
 
         when (state) {
