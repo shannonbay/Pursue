@@ -68,6 +68,7 @@ object ApiClient {
         val appContext = context.applicationContext
         return OkHttpClient.Builder()
             .addInterceptor(AuthInterceptor(appContext))
+            .addInterceptor(UserNotFoundSignOutInterceptor(appContext))
             .authenticator(TokenAuthenticator(appContext))
             .connectTimeout(30, TimeUnit.SECONDS)
             .readTimeout(30, TimeUnit.SECONDS)
