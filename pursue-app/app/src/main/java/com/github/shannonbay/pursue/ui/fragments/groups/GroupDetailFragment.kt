@@ -681,16 +681,65 @@ class GroupDetailFragment : Fragment() {
             val sanitizedName = groupName.replace(Regex("[^a-zA-Z0-9_-]"), "_").take(100)
             val defaultFilename = "Pursue_Progress_${sanitizedName}_${startDate}_to_${endDate}.xlsx"
 
-            pendingExportGid = gid
-            pendingExportStartDate = startDate
-            pendingExportEndDate = endDate
-            pendingExportUserTimezone = userTimezone
-
-            dialog.dismiss()
-            createDocumentLauncher.launch(defaultFilename)
+            lifecycleScope.launch {
+                val token = SecureTokenManager.getInstance(requireContext()).getAccessToken()
+                if (token == null) {
+                    Handler(Looper.getMainLooper()).post {
+                        dialog.dismiss()
+                        Toast.makeText(requireContext(), getString(R.string.error_unauthorized_message), Toast.LENGTH_SHORT).show()
+                    }
+                    return@launch
+                }
+                val validation = try {
+                    withContext(Dispatchers.IO) { ApiClient.validateExportRange(token, gid, startDate, endDate) }
+                } catch (e: ApiException) {
+                    Handler(Looper.getMainLooper()).post {
+                        dialog.dismiss()
+                        Toast.makeText(requireContext(), e.message ?: getString(R.string.export_progress_failed), Toast.LENGTH_SHORT).show()
+                    }
+                    return@launch
+                }
+                Handler(Looper.getMainLooper()).post {
+                    if (!isAdded) return@post
+                    if (!validation.valid) {
+                        dialog.dismiss()
+                        showExportLimitReachedDialog(startDate, endDate, validation.requested_days, validation.max_days_allowed)
+                    } else {
+                        pendingExportGid = gid
+                        pendingExportStartDate = startDate
+                        pendingExportEndDate = endDate
+                        pendingExportUserTimezone = userTimezone
+                        dialog.dismiss()
+                        createDocumentLauncher.launch(defaultFilename)
+                    }
+                }
+            }
         }
 
         dialog.show()
+    }
+
+    private fun showExportLimitReachedDialog(startDate: String, endDate: String, requestedDays: Int, maxDaysAllowed: Int) {
+        val message = getString(R.string.export_limit_reached_message) + "\n\n" +
+            getString(R.string.export_limit_reached_selected, startDate, endDate, requestedDays) + "\n\n" +
+            getString(R.string.export_limit_reached_upgrade)
+        val d = MaterialAlertDialogBuilder(requireContext())
+            .setTitle(R.string.export_limit_reached_title)
+            .setMessage(message)
+            .setNegativeButton(R.string.adjust_dates, null)
+            .setPositiveButton(R.string.upgrade_to_premium) { _, _ ->
+                val intent = Intent(requireContext(), com.github.shannonbay.pursue.ui.activities.MainAppActivity::class.java).apply {
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                    putExtra(com.github.shannonbay.pursue.ui.activities.MainAppActivity.EXTRA_OPEN_PREMIUM, true)
+                }
+                startActivity(intent)
+                activity?.finish()
+            }
+            .show()
+        d.getButton(androidx.appcompat.app.AlertDialog.BUTTON_POSITIVE)?.apply {
+            setTextColor(ContextCompat.getColor(requireContext(), R.color.secondary))
+            setTypeface(typeface, android.graphics.Typeface.BOLD)
+        }
     }
 
     private fun onExportUriSelected(uri: Uri) {

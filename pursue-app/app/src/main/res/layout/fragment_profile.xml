@@ -36,6 +36,47 @@
         app:layout_constraintTop_toBottomOf="@id/avatar_image"
         tools:text="Shannon Thompson" />
 
+    <!-- Subscription status (Free • 1/1 groups or Premium • 3/10 groups) -->
+    <TextView
+        android:id="@+id/subscription_status"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:textAppearance="?attr/textAppearanceBodyMedium"
+        android:textColor="@color/on_surface_variant"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/display_name"
+        tools:text="Free • 1/1 groups" />
+
+    <!-- Renews line (Premium only) -->
+    <TextView
+        android:id="@+id/subscription_renews"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:textAppearance="?attr/textAppearanceBodySmall"
+        android:textColor="@color/on_surface_variant"
+        android:visibility="gone"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/subscription_status"
+        tools:text="Renews Feb 5, 2027"
+        tools:visibility="visible" />
+
+    <!-- Upgrade to Premium (hidden when Premium) -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/button_upgrade_premium"
+        style="@style/Widget.Material3.Button.TextButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text="@string/upgrade_to_premium"
+        android:contentDescription="@string/upgrade_to_premium"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/subscription_renews" />
+
     <!-- Change Profile Picture Button -->
     <com.google.android.material.button.MaterialButton
         android:id="@+id/button_change_avatar"
@@ -45,7 +86,7 @@
         android:text="@string/change_profile_picture"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/display_name" />
+        app:layout_constraintTop_toBottomOf="@id/button_upgrade_premium" />
 
     <!-- Remove Photo Button (only shown when has_avatar = true) -->
     <com.google.android.material.button.MaterialButton

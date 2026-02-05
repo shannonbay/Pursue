@@ -105,6 +105,29 @@
     <string name="profile_title">Profile</string>
     <string name="profile_placeholder">Profile Screen</string>
 
+    <!-- Subscription (pursue-subscription-spec) -->
+    <string name="upgrade_to_premium">Upgrade to Premium</string>
+    <string name="maybe_later">Maybe Later</string>
+    <string name="group_limit_reached_dialog_title">Upgrade to Premium</string>
+    <string name="group_limit_reached_message">You\'ve reached your free tier limit of 1 group.</string>
+    <string name="group_limit_reached_bullets">Upgrade to Premium for:\n• Up to 10 groups\n• All features unlocked\n• Only $30/year</string>
+    <string name="choose_your_group_dialog_title">Choose Your Group</string>
+    <string name="choose_your_group_message">Your subscription expired. Select ONE group to keep:</string>
+    <string name="choose_your_group_footer">Other groups: read-only for 30 days</string>
+    <string name="keep_selected_group">Keep Selected Group</string>
+    <string name="subscription_free_format">Free • %1$d/%2$d groups</string>
+    <string name="subscription_premium_format">Premium • %1$d/%2$d groups</string>
+    <string name="subscription_renews_format">Renews %1$s</string>
+    <string name="pursue_premium_title">Pursue Premium</string>
+    <string name="pursue_premium_price">$30/year</string>
+    <string name="pursue_premium_subscribe">Subscribe</string>
+    <string name="pursue_premium_footer">Auto-renews annually. Cancel anytime.</string>
+    <string name="export_limit_reached_title">Export Limit Reached</string>
+    <string name="export_limit_reached_message">Free users can export up to 30 days of data at a time.</string>
+    <string name="export_limit_reached_selected">You selected: %1$s – %2$s (%3$d days)</string>
+    <string name="export_limit_reached_upgrade">Upgrade to Premium for:\n• Export up to 12 months\n• Only $30/year</string>
+    <string name="adjust_dates">Adjust Dates</string>
+
     <!-- Loading States -->
     <string name="loading_groups">Loading groups…</string>
     <string name="loading_today_goals">Loading today\'s goals…</string>

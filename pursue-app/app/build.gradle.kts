@@ -90,7 +90,10 @@ dependencies {
     implementation(libs.zxing.android.embedded) {
         exclude(group = "com.google.zxing", module = "core")
     }
-    
+
+    // Google Play Billing (subscriptions)
+    implementation(libs.billing.ktx)
+
     testImplementation(libs.junit)
     testImplementation(libs.mockk)
     testImplementation(libs.robolectric)

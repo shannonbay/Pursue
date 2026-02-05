@@ -267,6 +267,46 @@ describe('POST /api/subscriptions/downgrade/select-group', () => {
     expect(response.body.removed_groups[0].id).toBe(g2.body.id);
     expect(response.body.read_only_access_until).toBeDefined();
   });
+
+  it('rejects second select-group call after free user has already chosen a group to retain', async () => {
+    const { accessToken, userId } = await createAuthenticatedUser();
+    await setUserPremium(userId);
+    const g1 = await request(app)
+      .post('/api/groups')
+      .set('Authorization', `Bearer ${accessToken}`)
+      .send({ name: 'Group A' });
+    const g2 = await request(app)
+      .post('/api/groups')
+      .set('Authorization', `Bearer ${accessToken}`)
+      .send({ name: 'Group B' });
+
+    await testDb
+      .updateTable('users')
+      .set({
+        current_subscription_tier: 'free',
+        subscription_status: 'over_limit',
+        group_limit: 1,
+      })
+      .where('id', '=', userId)
+      .execute();
+
+    const first = await request(app)
+      .post('/api/subscriptions/downgrade/select-group')
+      .set('Authorization', `Bearer ${accessToken}`)
+      .send({ keep_group_id: g1.body.id });
+
+    expect(first.status).toBe(200);
+    expect(first.body.kept_group.id).toBe(g1.body.id);
+
+    const second = await request(app)
+      .post('/api/subscriptions/downgrade/select-group')
+      .set('Authorization', `Bearer ${accessToken}`)
+      .send({ keep_group_id: g2.body.id });
+
+    expect(second.status).toBe(400);
+    expect(second.body.error?.code).toBe('INVALID_STATE');
+    expect(second.body.error?.message).toMatch(/not in over_limit state/i);
+  });
 });
 
 describe('GET /api/groups/:group_id/export-progress/validate-range', () => {

@@ -1667,15 +1667,15 @@ export async function exportGroupProgress(
     );
     res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
 
-    await workbook.xlsx.write(res);
-    res.end();
-
     await createGroupActivity(
       group_id,
       ACTIVITY_TYPES.EXPORT_PROGRESS,
       userId,
       { start_date, end_date }
     );
+
+    await workbook.xlsx.write(res);
+    res.end();
   } catch (error) {
     next(error);
   }

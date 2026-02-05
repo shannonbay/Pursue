@@ -311,6 +311,92 @@ object ApiClient {
     }
 
     /**
+     * Get current subscription state. GET /api/users/me/subscription
+     */
+    suspend fun getSubscription(accessToken: String): SubscriptionState {
+        val request = Request.Builder()
+            .url("$baseUrl/users/me/subscription")
+            .get()
+            .addHeader("Content-Type", "application/json")
+            .build()
+        return executeRequest(request, getClient()) { responseBody ->
+            gson.fromJson(responseBody, SubscriptionState::class.java)
+        }
+    }
+
+    /**
+     * Get group create/join eligibility. GET /api/users/me/subscription/eligibility
+     */
+    suspend fun getSubscriptionEligibility(accessToken: String): SubscriptionEligibility {
+        val request = Request.Builder()
+            .url("$baseUrl/users/me/subscription/eligibility")
+            .get()
+            .addHeader("Content-Type", "application/json")
+            .build()
+        return executeRequest(request, getClient()) { responseBody ->
+            gson.fromJson(responseBody, SubscriptionEligibility::class.java)
+        }
+    }
+
+    /**
+     * Validate export date range against subscription tier. GET /api/groups/:group_id/export-progress/validate-range
+     * Returns same DTO for 200 (valid=true) and 400 (valid=false); check response.valid. Other errors throw ApiException.
+     */
+    suspend fun validateExportRange(
+        accessToken: String,
+        groupId: String,
+        startDate: String,
+        endDate: String
+    ): ValidateExportRangeResponse {
+        val url = "$baseUrl/groups/$groupId/export-progress/validate-range?start_date=$startDate&end_date=$endDate"
+        val request = Request.Builder()
+            .url(url)
+            .get()
+            .addHeader("Content-Type", "application/json")
+            .build()
+        val response = getClient().newCall(request).execute()
+        val body = response.body?.string() ?: throw ApiException(response.code, "Empty response")
+        val parsed = gson.fromJson(body, ValidateExportRangeResponse::class.java)
+        if (response.isSuccessful || response.code == 400) return parsed
+        throw ApiException(response.code, parsed.message ?: "Validation failed", parsed.error)
+    }
+
+    /**
+     * Upgrade to premium. POST /api/subscriptions/upgrade
+     */
+    suspend fun upgradeSubscription(
+        accessToken: String,
+        platform: String,
+        purchaseToken: String,
+        productId: String
+    ): UpgradeSubscriptionResponse {
+        val body = gson.toJson(UpgradeSubscriptionRequest(platform = platform, purchase_token = purchaseToken, product_id = productId))
+        val request = Request.Builder()
+            .url("$baseUrl/subscriptions/upgrade")
+            .post(body.toRequestBody(jsonMediaType))
+            .addHeader("Content-Type", "application/json")
+            .build()
+        return executeRequest(request, getClient()) { responseBody ->
+            gson.fromJson(responseBody, UpgradeSubscriptionResponse::class.java)
+        }
+    }
+
+    /**
+     * Select group to keep on downgrade (over_limit). POST /api/subscriptions/downgrade/select-group
+     */
+    suspend fun downgradeSelectGroup(accessToken: String, keepGroupId: String): DowngradeSelectGroupResponse {
+        val body = gson.toJson(mapOf("keep_group_id" to keepGroupId))
+        val request = Request.Builder()
+            .url("$baseUrl/subscriptions/downgrade/select-group")
+            .post(body.toRequestBody(jsonMediaType))
+            .addHeader("Content-Type", "application/json")
+            .build()
+        return executeRequest(request, getClient()) { responseBody ->
+            gson.fromJson(responseBody, DowngradeSelectGroupResponse::class.java)
+        }
+    }
+
+    /**
      * Get today's goals for the user via client-side aggregation.
      * Fetches user's groups, then each group's daily goals with progress, and builds
      * TodayGoalsResponse. Use this when the backend has no GET /users/me/today-goals.
@@ -1421,6 +1507,67 @@ data class UploadAvatarResponse(
  */
 data class DeleteAvatarResponse(
     val has_avatar: Boolean
+)
+
+// --- Subscription (pursue-subscription-spec) ---
+
+/** GET /api/users/me/subscription */
+data class SubscriptionState(
+    val tier: String,
+    val status: String,
+    val group_limit: Int,
+    val current_group_count: Int,
+    val groups_remaining: Int,
+    val is_over_limit: Boolean,
+    val subscription_expires_at: String?,
+    val auto_renew: Boolean?,
+    val can_create_group: Boolean,
+    val can_join_group: Boolean
+)
+
+/** GET /api/users/me/subscription/eligibility */
+data class SubscriptionEligibility(
+    val can_create_group: Boolean,
+    val can_join_group: Boolean,
+    val reason: String?,
+    val current_count: Int,
+    val limit: Int,
+    val upgrade_required: Boolean
+)
+
+/** GET /api/groups/:group_id/export-progress/validate-range (200 or 400) */
+data class ValidateExportRangeResponse(
+    val valid: Boolean,
+    val max_days_allowed: Int,
+    val requested_days: Int,
+    val subscription_tier: String,
+    val error: String? = null,
+    val message: String? = null
+)
+
+/** POST /api/subscriptions/downgrade/select-group */
+data class DowngradeSelectGroupResponse(
+    val status: String,
+    val kept_group: DowngradeGroupInfo,
+    val removed_groups: List<DowngradeGroupInfo>,
+    val read_only_access_until: String
+)
+data class DowngradeGroupInfo(val id: String, val name: String)
+
+/** POST /api/subscriptions/upgrade request */
+data class UpgradeSubscriptionRequest(
+    val platform: String,
+    val purchase_token: String,
+    val product_id: String
+)
+
+/** POST /api/subscriptions/upgrade response */
+data class UpgradeSubscriptionResponse(
+    val subscription_id: String,
+    val tier: String,
+    val status: String,
+    val expires_at: String,
+    val group_limit: Int
 )
 
 /**

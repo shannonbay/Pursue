@@ -81,10 +81,22 @@ export async function getUserSubscriptionState(userId: string): Promise<UserSubs
   let status = (user.subscription_status as SubscriptionStatus) ?? 'active';
   const group_limit = Number(user.group_limit ?? FREE_GROUP_LIMIT);
 
-  // Sync over_limit: free user with more groups than limit should be over_limit
+  // Sync over_limit: free user with more groups than limit should be over_limit,
+  // unless they have already resolved it by selecting a group to keep
   if (tier === 'free' && current_group_count > group_limit && status !== 'over_limit') {
-    await updateSubscriptionStatus(userId);
-    status = 'over_limit';
+    const handledDowngrade = await db
+      .selectFrom('subscription_downgrade_history')
+      .select('id')
+      .where('user_id', '=', userId)
+      .where('kept_group_id', 'is not', null)
+      .orderBy('downgrade_date', 'desc')
+      .limit(1)
+      .executeTakeFirst();
+
+    if (!handledDowngrade) {
+      await updateSubscriptionStatus(userId);
+      status = 'over_limit';
+    }
   }
 
   return {
@@ -215,7 +227,28 @@ export async function canUserWriteInGroup(
 ): Promise<CanUserWriteInGroupResult> {
   const state = await getUserSubscriptionState(userId);
   if (!state) return { allowed: false };
-  if (state.subscription_status !== 'over_limit') return { allowed: true };
+
+  // If user is in over_limit state and hasn't selected a group yet, block all writes
+  if (state.subscription_status === 'over_limit') {
+    const latest = await db
+      .selectFrom('subscription_downgrade_history')
+      .select(['kept_group_id'])
+      .where('user_id', '=', userId)
+      .where('kept_group_id', 'is not', null)
+      .orderBy('downgrade_date', 'desc')
+      .limit(1)
+      .executeTakeFirst();
+
+    if (!latest) {
+      return { allowed: false, reason: 'group_selection_required' };
+    }
+  }
+
+  // For free-tier users with more groups than their limit, enforce read-only
+  // on non-kept groups after downgrade selection
+  if (state.current_subscription_tier !== 'free' || state.current_group_count <= state.group_limit) {
+    return { allowed: true };
+  }
 
   const latest = await db
     .selectFrom('subscription_downgrade_history')
@@ -225,7 +258,7 @@ export async function canUserWriteInGroup(
     .executeTakeFirst();
 
   if (!latest || latest.kept_group_id === null) {
-    return { allowed: false, reason: 'group_selection_required' };
+    return { allowed: true };
   }
   if (latest.kept_group_id === groupId) return { allowed: true };
 

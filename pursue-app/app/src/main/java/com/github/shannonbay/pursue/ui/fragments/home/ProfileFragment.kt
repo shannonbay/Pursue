@@ -39,6 +39,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
+import java.text.SimpleDateFormat
+import java.util.Locale
 
 /**
  * Profile Screen fragment (UI spec section 4.5).
@@ -49,6 +51,7 @@ class ProfileFragment : Fragment() {
 
     interface Callbacks {
         fun onViewMyProgress()
+        fun onUpgradeToPremium()
     }
 
     private var callbacks: Callbacks? = null
@@ -59,6 +62,9 @@ class ProfileFragment : Fragment() {
     private lateinit var switchNotifyProgressLogs: MaterialSwitch
     private lateinit var switchNotifyGroupEvents: MaterialSwitch
     private lateinit var loadingIndicator: ProgressBar
+    private lateinit var subscriptionStatus: TextView
+    private lateinit var subscriptionRenews: TextView
+    private lateinit var buttonUpgradePremium: MaterialButton
 
     private var currentUser: User? = null
     private var photoUri: Uri? = null
@@ -115,6 +121,11 @@ class ProfileFragment : Fragment() {
         switchNotifyProgressLogs = view.findViewById(R.id.switch_notify_progress_logs)
         switchNotifyGroupEvents = view.findViewById(R.id.switch_notify_group_events)
         loadingIndicator = view.findViewById(R.id.loading_indicator)
+        subscriptionStatus = view.findViewById(R.id.subscription_status)
+        subscriptionRenews = view.findViewById(R.id.subscription_renews)
+        buttonUpgradePremium = view.findViewById(R.id.button_upgrade_premium)
+
+        buttonUpgradePremium.setOnClickListener { callbacks?.onUpgradeToPremium() }
 
         switchNotifyProgressLogs.isChecked = NotificationPreferences.getNotifyProgressLogs(requireContext())
         switchNotifyGroupEvents.isChecked = NotificationPreferences.getNotifyGroupEvents(requireContext())
@@ -182,6 +193,11 @@ class ProfileFragment : Fragment() {
                 val user = withContext(Dispatchers.IO) {
                     ApiClient.getMyUser(accessToken)
                 }
+                val subscription = try {
+                    withContext(Dispatchers.IO) { ApiClient.getSubscription(accessToken) }
+                } catch (e: Exception) {
+                    null
+                }
                 
                 currentUser = user
                 
@@ -194,8 +210,27 @@ class ProfileFragment : Fragment() {
                     
                     // Show/hide remove button based on has_avatar
                     removeAvatarButton.visibility = if (user.has_avatar) View.VISIBLE else View.GONE
+
+                    // Subscription status
+                    if (subscription != null) {
+                        subscriptionStatus.text = if (subscription.tier == "premium")
+                            getString(R.string.subscription_premium_format, subscription.current_group_count, subscription.group_limit)
+                        else
+                            getString(R.string.subscription_free_format, subscription.current_group_count, subscription.group_limit)
+                        val expiresAt = subscription.subscription_expires_at
+                        if (subscription.tier == "premium" && !expiresAt.isNullOrBlank()) {
+                            subscriptionRenews.visibility = View.VISIBLE
+                            subscriptionRenews.text = getString(R.string.subscription_renews_format, formatRenewsDate(expiresAt))
+                        } else {
+                            subscriptionRenews.visibility = View.GONE
+                        }
+                        buttonUpgradePremium.visibility = if (subscription.tier == "premium") View.GONE else View.VISIBLE
+                    } else {
+                        subscriptionStatus.text = getString(R.string.subscription_free_format, 0, 1)
+                        subscriptionRenews.visibility = View.GONE
+                        buttonUpgradePremium.visibility = View.VISIBLE
+                    }
                 }
-                
             } catch (e: ApiException) {
                 Log.e("ProfileFragment", "Failed to load user data", e)
                 Handler(Looper.getMainLooper()).post {
@@ -209,6 +244,19 @@ class ProfileFragment : Fragment() {
             } finally {
                 showLoading(false)
             }
+        }
+    }
+
+    private fun formatRenewsDate(isoDate: String): String {
+        return try {
+            val inFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US).apply { timeZone = java.util.TimeZone.getTimeZone("UTC") }
+            val outFormat = SimpleDateFormat("MMM d, yyyy", Locale.getDefault())
+            val date = inFormat.parse(isoDate) ?: run {
+                SimpleDateFormat("yyyy-MM-dd", Locale.US).parse(isoDate.take(10))
+            }
+            if (date != null) outFormat.format(date) else isoDate.take(10)
+        } catch (e: Exception) {
+            isoDate.take(10)
         }
     }
 

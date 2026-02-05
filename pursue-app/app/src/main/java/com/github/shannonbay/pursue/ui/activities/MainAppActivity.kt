@@ -12,11 +12,18 @@ import android.net.NetworkCapabilities
 import android.net.NetworkRequest
 import android.os.Bundle
 import android.util.Log
+import android.graphics.Typeface
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
 import android.view.Menu
 import android.view.MenuInflater
 import android.view.MenuItem
+import android.widget.RadioButton
+import android.widget.RadioGroup
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.core.view.MenuProvider
@@ -30,14 +37,29 @@ import com.github.shannonbay.pursue.data.fcm.FcmRegistrationHelper
 import com.github.shannonbay.pursue.ui.fragments.home.HomeFragment
 import com.github.shannonbay.pursue.ui.views.JoinGroupBottomSheet
 import com.github.shannonbay.pursue.ui.fragments.home.MyProgressFragment
+import com.github.shannonbay.pursue.ui.fragments.home.PremiumFragment
 import com.github.shannonbay.pursue.ui.fragments.home.ProfileFragment
 import com.github.shannonbay.pursue.R
 import com.github.shannonbay.pursue.data.auth.SecureTokenManager
+import com.github.shannonbay.pursue.data.network.ApiClient
+import com.github.shannonbay.pursue.data.network.ApiException
 import com.github.shannonbay.pursue.ui.fragments.home.TodayFragment
 import com.github.shannonbay.pursue.models.Group
 import com.google.android.material.bottomnavigation.BottomNavigationView
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.navigation.NavigationBarView
+import com.android.billingclient.api.AcknowledgePurchaseParams
+import com.android.billingclient.api.BillingClient
+import com.android.billingclient.api.BillingClientStateListener
+import com.android.billingclient.api.BillingFlowParams
+import com.android.billingclient.api.BillingResult
+import com.android.billingclient.api.ProductDetails
+import com.android.billingclient.api.Purchase
+import com.android.billingclient.api.PurchasesUpdatedListener
+import com.android.billingclient.api.QueryProductDetailsParams
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /**
  * Main application activity with bottom navigation bar.
@@ -56,6 +78,23 @@ class MainAppActivity : AppCompatActivity(),
     private lateinit var bottomNavigation: BottomNavigationView
     private lateinit var connectivityManager: ConnectivityManager
     private lateinit var authRepository: AuthRepository
+
+    private var overLimitDialogShowing = false
+    private var overLimitSelectionCompletedThisSession = false
+
+    private var billingClient: BillingClient? = null
+    private var premiumProductDetails: ProductDetails? = null
+    private val purchasesUpdatedListener = PurchasesUpdatedListener { billingResult, purchases ->
+        if (billingResult.responseCode == BillingClient.BillingResponseCode.OK && purchases != null) {
+            for (purchase in purchases) {
+                if (purchase.purchaseState == Purchase.PurchaseState.PURCHASED && !purchase.isAcknowledged) {
+                    lifecycleScope.launch {
+                        acknowledgeAndVerifyPurchase(purchase)
+                    }
+                }
+            }
+        }
+    }
 
     private val prefs: SharedPreferences by lazy {
         getSharedPreferences(MainActivity.PREFS_NAME, MODE_PRIVATE)
@@ -145,11 +184,18 @@ class MainAppActivity : AppCompatActivity(),
         authRepository = AuthRepository.Companion.getInstance(this)
         observeAuthState()
 
-        // Load HomeFragment on first launch
+        // Load HomeFragment on first launch, or Premium if launched with EXTRA_OPEN_PREMIUM
         if (savedInstanceState == null) {
-            Log.d("MainAppActivity", "Loading HomeFragment on first launch")
-            supportFragmentManager.commit {
-                replace(R.id.fragment_container, HomeFragment.Companion.newInstance())
+            if (intent.getBooleanExtra(EXTRA_OPEN_PREMIUM, false)) {
+                supportFragmentManager.popBackStack(null, androidx.fragment.app.FragmentManager.POP_BACK_STACK_INCLUSIVE)
+                supportFragmentManager.commit {
+                    replace(R.id.fragment_container, PremiumFragment.newInstance())
+                }
+            } else {
+                Log.d("MainAppActivity", "Loading HomeFragment on first launch")
+                supportFragmentManager.commit {
+                    replace(R.id.fragment_container, HomeFragment.Companion.newInstance())
+                }
             }
         } else {
             Log.d("MainAppActivity", "Restoring MainAppActivity from saved state")
@@ -157,6 +203,57 @@ class MainAppActivity : AppCompatActivity(),
 
         supportFragmentManager.addOnBackStackChangedListener { syncToolbarWithFragment() }
         syncToolbarWithFragment()
+
+        // Billing: connect and query subscription product
+        billingClient = BillingClient.newBuilder(this)
+            .setListener(purchasesUpdatedListener)
+            .enablePendingPurchases()
+            .build()
+        billingClient?.startConnection(object : BillingClientStateListener {
+            override fun onBillingSetupFinished(billingResult: BillingResult) {
+                if (billingResult.responseCode == BillingClient.BillingResponseCode.OK) {
+                    queryPremiumProduct()
+                }
+            }
+            override fun onBillingServiceDisconnected() {}
+        })
+    }
+
+    private fun queryPremiumProduct() {
+        val productList = listOf(
+            QueryProductDetailsParams.Product.newBuilder()
+                .setProductId("pursue_premium_annual")
+                .setProductType(BillingClient.ProductType.SUBS)
+                .build()
+        )
+        val params = QueryProductDetailsParams.newBuilder().setProductList(productList).build()
+        billingClient?.queryProductDetailsAsync(params) { billingResult, productDetailsList ->
+            if (billingResult.responseCode == BillingClient.BillingResponseCode.OK && !productDetailsList.isNullOrEmpty()) {
+                premiumProductDetails = productDetailsList.first()
+            }
+        }
+    }
+
+    private suspend fun acknowledgeAndVerifyPurchase(purchase: Purchase) {
+        val token = SecureTokenManager.getInstance(this).getAccessToken() ?: return
+        val params = AcknowledgePurchaseParams.newBuilder().setPurchaseToken(purchase.purchaseToken).build()
+        billingClient?.acknowledgePurchase(params) { _ -> }
+        try {
+            withContext(Dispatchers.IO) {
+                ApiClient.upgradeSubscription(
+                    token,
+                    "google_play",
+                    purchase.purchaseToken,
+                    purchase.products.firstOrNull() ?: "pursue_premium_annual"
+                )
+            }
+            runOnUiThread {
+                Toast.makeText(this, getString(R.string.pursue_premium_subscribe), Toast.LENGTH_SHORT).show()
+                supportFragmentManager.popBackStack()
+            }
+        } catch (e: ApiException) {
+            runOnUiThread { Toast.makeText(this, e.message ?: "Upgrade failed", Toast.LENGTH_SHORT).show() }
+        }
     }
 
     /**
@@ -195,6 +292,24 @@ class MainAppActivity : AppCompatActivity(),
         finish()
     }
 
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        if (intent.getBooleanExtra(EXTRA_OPEN_PREMIUM, false)) {
+            supportFragmentManager.popBackStack(null, androidx.fragment.app.FragmentManager.POP_BACK_STACK_INCLUSIVE)
+            supportActionBar?.title = getString(R.string.pursue_premium_title)
+            supportActionBar?.setDisplayHomeAsUpEnabled(false)
+            supportFragmentManager.commit {
+                replace(R.id.fragment_container, PremiumFragment.newInstance())
+            }
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        checkOverLimitAndShowDialog()
+    }
+
     override fun onDestroy() {
         super.onDestroy()
         // Unregister network callback
@@ -203,6 +318,84 @@ class MainAppActivity : AppCompatActivity(),
         } catch (e: Exception) {
             // Ignore if already unregistered
             Log.d("MainAppActivity", "Network callback already unregistered")
+        }
+    }
+
+    /**
+     * If user is over_limit (subscription expired, multiple groups), show dialog to select one group to keep.
+     */
+    private fun checkOverLimitAndShowDialog() {
+        if (overLimitDialogShowing) return
+        if (overLimitSelectionCompletedThisSession) return
+        lifecycleScope.launch {
+            val token = SecureTokenManager.getInstance(this@MainAppActivity).getAccessToken() ?: return@launch
+            val subscription = try {
+                withContext(Dispatchers.IO) { ApiClient.getSubscription(token) }
+            } catch (e: ApiException) {
+                return@launch
+            }
+            if (!subscription.is_over_limit) {
+                return@launch
+            }
+            val groupsResponse = try {
+                withContext(Dispatchers.IO) { ApiClient.getMyGroups(token) }
+            } catch (e: ApiException) {
+                runOnUiThread { Toast.makeText(this@MainAppActivity, e.message, Toast.LENGTH_SHORT).show() }
+                return@launch
+            }
+            val groups = groupsResponse.groups
+            if (groups.isEmpty()) return@launch
+            runOnUiThread { showOverLimitDialog(token, groups) }
+        }
+    }
+
+    private fun showOverLimitDialog(token: String, groups: List<Group>) {
+        overLimitDialogShowing = true
+        val view = LayoutInflater.from(this).inflate(R.layout.dialog_over_limit_select_group, null as ViewGroup?)
+        val radioGroupActual = view.findViewById<RadioGroup>(R.id.over_limit_group_radio_group)
+        val groupIds = groups.map { it.id }
+        val paddingPx = (16 * resources.displayMetrics.density).toInt()
+        groups.forEachIndexed { index, group ->
+            val radio = RadioButton(this).apply {
+                id = View.generateViewId()
+                text = group.name
+                setPadding(paddingPx, 0, 0, 0)
+            }
+            radioGroupActual.addView(radio)
+            if (index == 0) radioGroupActual.check(radio.id)
+        }
+        val dialog = MaterialAlertDialogBuilder(this)
+            .setTitle(R.string.choose_your_group_dialog_title)
+            .setView(view)
+            .setNegativeButton(R.string.upgrade_to_premium) { _, _ ->
+                overLimitDialogShowing = false
+                showPremiumScreen()
+            }
+            .setPositiveButton(R.string.keep_selected_group) { d, _ ->
+                val checkedId = radioGroupActual.checkedRadioButtonId
+                val selectedIndex = radioGroupActual.indexOfChild(radioGroupActual.findViewById(checkedId))
+                val keepGroupId = groupIds.getOrNull(selectedIndex) ?: groupIds.first()
+                overLimitDialogShowing = false
+                d.dismiss()
+                lifecycleScope.launch {
+                    try {
+                        withContext(Dispatchers.IO) { ApiClient.downgradeSelectGroup(token, keepGroupId) }
+                        overLimitSelectionCompletedThisSession = true
+                        runOnUiThread {
+                            (supportFragmentManager.findFragmentById(R.id.fragment_container) as? HomeFragment)?.refreshGroups()
+                            Toast.makeText(this@MainAppActivity, getString(R.string.keep_selected_group), Toast.LENGTH_SHORT).show()
+                        }
+                    } catch (e: ApiException) {
+                        runOnUiThread { Toast.makeText(this@MainAppActivity, e.message, Toast.LENGTH_SHORT).show() }
+                    }
+                }
+            }
+            .setOnDismissListener { overLimitDialogShowing = false }
+            .create()
+        dialog.show()
+        dialog.getButton(AlertDialog.BUTTON_NEGATIVE)?.apply {
+            setTextColor(ContextCompat.getColor(this@MainAppActivity, R.color.secondary))
+            setTypeface(typeface, Typeface.BOLD)
         }
     }
 
@@ -239,6 +432,10 @@ class MainAppActivity : AppCompatActivity(),
             }
             is CreateGroupFragment -> {
                 supportActionBar?.title = getString(R.string.create_group_title)
+                supportActionBar?.setDisplayHomeAsUpEnabled(true)
+            }
+            is PremiumFragment -> {
+                supportActionBar?.title = getString(R.string.pursue_premium_title)
                 supportActionBar?.setDisplayHomeAsUpEnabled(true)
             }
             is MyProgressFragment -> {
@@ -315,6 +512,46 @@ class MainAppActivity : AppCompatActivity(),
     }
 
     override fun onCreateGroup() {
+        lifecycleScope.launch {
+            val token = SecureTokenManager.getInstance(this@MainAppActivity).getAccessToken()
+            if (token == null) {
+                runOnUiThread { proceedToCreateGroup() }
+                return@launch
+            }
+            val eligibility = try {
+                withContext(Dispatchers.IO) { ApiClient.getSubscriptionEligibility(token) }
+            } catch (e: ApiException) {
+                runOnUiThread { Toast.makeText(this@MainAppActivity, e.message, Toast.LENGTH_SHORT).show() }
+                return@launch
+            }
+            runOnUiThread {
+                if (eligibility.can_create_group) proceedToCreateGroup()
+                else showGroupLimitReachedDialog()
+            }
+        }
+    }
+
+    override fun onJoinGroup() {
+        lifecycleScope.launch {
+            val token = SecureTokenManager.getInstance(this@MainAppActivity).getAccessToken()
+            if (token == null) {
+                runOnUiThread { JoinGroupBottomSheet.show(supportFragmentManager) }
+                return@launch
+            }
+            val eligibility = try {
+                withContext(Dispatchers.IO) { ApiClient.getSubscriptionEligibility(token) }
+            } catch (e: ApiException) {
+                runOnUiThread { Toast.makeText(this@MainAppActivity, e.message, Toast.LENGTH_SHORT).show() }
+                return@launch
+            }
+            runOnUiThread {
+                if (eligibility.can_join_group) JoinGroupBottomSheet.show(supportFragmentManager)
+                else showGroupLimitReachedDialog()
+            }
+        }
+    }
+
+    private fun proceedToCreateGroup() {
         supportActionBar?.title = getString(R.string.create_group_title)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         supportFragmentManager.commit {
@@ -323,8 +560,55 @@ class MainAppActivity : AppCompatActivity(),
         }
     }
 
-    override fun onJoinGroup() {
-        JoinGroupBottomSheet.show(supportFragmentManager)
+    private fun showGroupLimitReachedDialog() {
+        val d = MaterialAlertDialogBuilder(this)
+            .setTitle(R.string.group_limit_reached_dialog_title)
+            .setMessage(getString(R.string.group_limit_reached_message) + "\n\n" + getString(R.string.group_limit_reached_bullets))
+            .setNegativeButton(R.string.maybe_later, null)
+            .setPositiveButton(R.string.upgrade_to_premium) { _, _ -> showPremiumScreen() }
+            .show()
+        d.getButton(AlertDialog.BUTTON_POSITIVE)?.apply {
+            setTextColor(ContextCompat.getColor(this@MainAppActivity, R.color.secondary))
+            setTypeface(typeface, Typeface.BOLD)
+        }
+    }
+
+    /**
+     * Opens the Pursue Premium screen. Called from group-limit dialog, over-limit dialog, profile, export-limit dialog.
+     */
+    fun showPremiumScreen() {
+        supportActionBar?.title = getString(R.string.pursue_premium_title)
+        supportActionBar?.setDisplayHomeAsUpEnabled(true)
+        supportFragmentManager.commit {
+            replace(R.id.fragment_container, com.github.shannonbay.pursue.ui.fragments.home.PremiumFragment.newInstance())
+            addToBackStack(null)
+        }
+    }
+
+    /**
+     * Launch Google Play Billing purchase flow for Premium. Called from PremiumFragment.
+     */
+    fun launchPremiumPurchaseFlow() {
+        val productDetails = premiumProductDetails
+        if (productDetails == null) {
+            Toast.makeText(this, getString(R.string.pursue_premium_subscribe), Toast.LENGTH_SHORT).show()
+            return
+        }
+        val offerToken = productDetails.subscriptionOfferDetails?.firstOrNull()?.offerToken
+        if (offerToken == null) {
+            Toast.makeText(this, "Subscription offer not available", Toast.LENGTH_SHORT).show()
+            return
+        }
+        val productDetailsParamsList = listOf(
+            BillingFlowParams.ProductDetailsParams.newBuilder()
+                .setProductDetails(productDetails)
+                .setOfferToken(offerToken)
+                .build()
+        )
+        val params = BillingFlowParams.newBuilder()
+            .setProductDetailsParamsList(productDetailsParamsList)
+            .build()
+        billingClient?.launchBillingFlow(this, params)
     }
 
     // endregion
@@ -348,6 +632,10 @@ class MainAppActivity : AppCompatActivity(),
         }
     }
 
+    override fun onUpgradeToPremium() {
+        showPremiumScreen()
+    }
+
     // endregion
 
     override fun onSupportNavigateUp(): Boolean {
@@ -360,5 +648,6 @@ class MainAppActivity : AppCompatActivity(),
 
     companion object {
         private const val KEY_NOTIFICATION_PERMISSION_REQUESTED = "notification_permission_requested"
+        const val EXTRA_OPEN_PREMIUM = "extra_open_premium"
     }
 }
