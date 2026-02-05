@@ -14,6 +14,7 @@ import com.bumptech.glide.Glide
 import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.bumptech.glide.signature.ObjectKey
 import com.github.shannonbay.pursue.data.network.ApiClient
+import com.github.shannonbay.pursue.utils.GrayscaleTransformation
 import com.github.shannonbay.pursue.R
 import com.github.shannonbay.pursue.models.Group
 import com.github.shannonbay.pursue.utils.RelativeTimeUtils
@@ -53,35 +54,47 @@ class GroupAdapter(
                 // Show image, hide emoji
                 groupIconImage.visibility = View.VISIBLE
                 groupIconEmoji.visibility = View.GONE
-                
                 // Build image URL with access token in header (Glide will use custom headers)
                 val imageUrl = "${ApiClient.getBaseUrl()}/groups/${group.id}/icon"
-                
+
                 // Create a custom Glide request with authorization header
                 val requestBuilder = Glide.with(itemView.context)
                     .load(imageUrl)
                     .diskCacheStrategy(DiskCacheStrategy.ALL)
                     .centerCrop()
                     .error(R.drawable.ic_pursue_logo) // Fallback on error
-                
+
                 // Add cache signature based on updated_at for cache invalidation
                 if (group.updated_at != null) {
                     requestBuilder.signature(ObjectKey(group.updated_at))
                 }
-                
+
+                if (group.is_read_only) {
+                    requestBuilder.transform(GrayscaleTransformation())
+                } else {
+                    groupIconImage.colorFilter = null
+                }
                 requestBuilder.into(groupIconImage)
             } else {
                 // Show emoji, hide image (circle background tinted by icon_color)
                 groupIconImage.visibility = View.GONE
                 groupIconEmoji.visibility = View.VISIBLE
                 groupIconEmoji.text = group.icon_emoji ?: "📁"
-                val fallbackColor = ContextCompat.getColor(itemView.context, R.color.primary)
-                try {
+                if (group.is_read_only) {
                     groupIconEmoji.backgroundTintList = ColorStateList.valueOf(
-                        if (group.icon_color != null) Color.parseColor(group.icon_color) else fallbackColor
+                        ContextCompat.getColor(itemView.context, R.color.surface_variant)
                     )
-                } catch (_: IllegalArgumentException) {
-                    groupIconEmoji.backgroundTintList = ColorStateList.valueOf(fallbackColor)
+                    groupIconEmoji.setTextColor(ContextCompat.getColor(itemView.context, R.color.on_surface_variant))
+                } else {
+                    val fallbackColor = ContextCompat.getColor(itemView.context, R.color.primary)
+                    try {
+                        groupIconEmoji.backgroundTintList = ColorStateList.valueOf(
+                            if (group.icon_color != null) Color.parseColor(group.icon_color) else fallbackColor
+                        )
+                    } catch (_: IllegalArgumentException) {
+                        groupIconEmoji.backgroundTintList = ColorStateList.valueOf(fallbackColor)
+                    }
+                    groupIconEmoji.setTextColor(ContextCompat.getColor(itemView.context, R.color.on_surface))
                 }
             }
             
