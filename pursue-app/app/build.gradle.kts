@@ -1,7 +1,19 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     id("com.google.gms.google-services")
+}
+
+// Load local.properties for dev API URL (ngrok). Not committed; see local.properties.example.
+val localPropertiesFile = rootProject.file("local.properties")
+val devApiBaseUrl = if (localPropertiesFile.exists()) {
+    Properties().apply {
+        load(localPropertiesFile.inputStream())
+    }.getProperty("pursue.api.base.url", "https://api.getpursue.app/api")
+} else {
+    "https://api.getpursue.app/api"
 }
 
 android {
@@ -18,8 +30,16 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    buildFeatures {
+        buildConfig = true
+    }
+
     buildTypes {
+        debug {
+            buildConfigField("String", "API_BASE_URL", "\"$devApiBaseUrl\"")
+        }
         release {
+            buildConfigField("String", "API_BASE_URL", "\"https://api.getpursue.app/api\"")
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),

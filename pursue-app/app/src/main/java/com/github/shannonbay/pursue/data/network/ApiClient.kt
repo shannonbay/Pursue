@@ -27,15 +27,16 @@ import java.io.File
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.concurrent.TimeUnit
+import com.github.shannonbay.pursue.BuildConfig
 
 /**
  * API client for making HTTP requests to the Pursue backend.
+ * Base URL: debug builds use pursue.api.base.url from local.properties (or production);
+ * release builds always use https://api.getpursue.app/api.
  */
 object ApiClient {
-    private const val DEFAULT_BASE_URL = "https://machinely-downiest-jaylah.ngrok-free.dev/api"
-    //private const val DEFAULT_BASE_URL = "https://api.getpursue.app/api"
     @Volatile
-    private var baseUrl: String = DEFAULT_BASE_URL
+    private var baseUrl: String = BuildConfig.API_BASE_URL
 
     /**
      * Returns the current base URL for API requests.
@@ -54,7 +55,7 @@ object ApiClient {
      * Restore default base URL after E2E. Optional; call from E2ETest @After.
      */
     fun resetBaseUrlForE2E() {
-        baseUrl = DEFAULT_BASE_URL
+        baseUrl = BuildConfig.API_BASE_URL
     }
 
     private var client: OkHttpClient? = null

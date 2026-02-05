@@ -1,0 +1,4 @@
+# Copy to local.properties and set your ngrok API URL for debug builds.
+# local.properties is gitignored; release builds always use https://api.getpursue.app/api
+#
+# pursue.api.base.url=https://YOUR-SUBDOMAIN.ngrok-free.app/api
