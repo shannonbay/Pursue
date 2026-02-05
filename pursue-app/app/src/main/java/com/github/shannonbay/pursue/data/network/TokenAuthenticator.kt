@@ -37,31 +37,34 @@ class TokenAuthenticator(
     
     override fun authenticate(route: Route?, response: Response): Request? {
         Log.d(TAG, "authenticate: Received 401, attempting token refresh")
-        
+
+        val requestToken = response.request.header("Authorization")
+            ?.removePrefix("Bearer ")?.trim()
+
         // Don't retry if this is already a retry
         if (response.request.header(HEADER_RETRY_COUNT) != null) {
             Log.w(TAG, "authenticate: Already retried once, giving up")
-            clearTokensAndSignOut()
+            signOutIfCurrentToken(requestToken)
             return null
         }
-        
+
         // Don't retry if this is a refresh or auth request
         val url = response.request.url.toString()
-        if (url.contains("/auth/refresh") || 
-            url.contains("/auth/login") || 
+        if (url.contains("/auth/refresh") ||
+            url.contains("/auth/login") ||
             url.contains("/auth/register") ||
             url.contains("/auth/google")) {
             Log.w(TAG, "authenticate: Auth endpoint failed, clearing tokens")
-            clearTokensAndSignOut()
+            signOutIfCurrentToken(requestToken)
             return null
         }
-        
+
         // Get refresh token
         val tokenManager = SecureTokenManager.Companion.getInstance(context)
         val refreshToken = tokenManager.getRefreshToken()
         if (refreshToken == null) {
             Log.w(TAG, "authenticate: No refresh token available")
-            clearTokensAndSignOut()
+            signOutIfCurrentToken(requestToken)
             return null
         }
         
@@ -70,12 +73,9 @@ class TokenAuthenticator(
             refreshMutex.withLock {
                 Log.d(TAG, "authenticate: Acquired lock, checking if token already refreshed")
                 
-                // Check if another thread already refreshed the token
+                // Check if another thread already refreshed the token (or a new sign-in occurred)
                 val currentToken = tokenManager.getAccessToken()
-                val requestToken = response.request.header("Authorization")
-                    ?.removePrefix("Bearer ")
-                    ?.trim()
-                
+
                 if (currentToken != null && currentToken != requestToken) {
                     Log.d(TAG, "authenticate: Token already refreshed by another request")
                     // Token was already refreshed, just retry with new token
@@ -94,7 +94,7 @@ class TokenAuthenticator(
                     // Malformed response: success but missing or empty access_token
                     if (refreshResponse.access_token.isBlank()) {
                         Log.e(TAG, "authenticate: Refresh succeeded but access_token is missing or empty")
-                        clearTokensAndSignOut()
+                        signOutIfCurrentToken(requestToken)
                         return@withLock null
                     }
                     
@@ -120,17 +120,30 @@ class TokenAuthenticator(
                         .build()
                 } catch (e: ApiException) {
                     Log.e(TAG, "authenticate: Token refresh failed with code ${e.code}: ${e.message}")
-                    clearTokensAndSignOut()
+                    signOutIfCurrentToken(requestToken)
                     return@withLock null
                 } catch (e: Exception) {
                     Log.e(TAG, "authenticate: Token refresh exception: ${e.message}", e)
-                    clearTokensAndSignOut()
+                    signOutIfCurrentToken(requestToken)
                     return@withLock null
                 }
             }
         }
     }
     
+    /**
+     * Sign out only if the request's token still matches the current stored token.
+     * If they differ, a new sign-in has occurred and we must not invalidate the new session.
+     */
+    private fun signOutIfCurrentToken(requestToken: String?) {
+        val currentToken = SecureTokenManager.Companion.getInstance(context).getAccessToken()
+        if (requestToken != null && currentToken != null && requestToken != currentToken) {
+            Log.d(TAG, "signOutIfCurrentToken: Token changed since request, skipping sign-out (stale request)")
+            return
+        }
+        clearTokensAndSignOut()
+    }
+
     private fun clearTokensAndSignOut() {
         Log.d(TAG, "clearTokensAndSignOut: Clearing tokens and signing out")
         val authRepository = AuthRepository.Companion.getInstance(context)
