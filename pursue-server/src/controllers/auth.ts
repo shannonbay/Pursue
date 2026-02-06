@@ -233,6 +233,7 @@ export async function googleAuth(
     const googleUser = await verifyGoogleIdToken(data.id_token);
 
     // Check if auth_provider exists for this Google account (by provider_user_id)
+    // Exclude soft-deleted users to avoid returning tokens for deleted accounts
     const existingProvider = await db
       .selectFrom('auth_providers')
       .innerJoin('users', 'users.id', 'auth_providers.user_id')
@@ -244,6 +245,7 @@ export async function googleAuth(
       ])
       .where('auth_providers.provider', '=', 'google')
       .where('auth_providers.provider_user_id', '=', googleUser.sub)
+      .where('users.deleted_at', 'is', null)
       .executeTakeFirst();
 
     let user: { id: string; email: string; display_name: string; has_avatar: boolean };
@@ -259,6 +261,7 @@ export async function googleAuth(
       };
     } else {
       // Case 2: Google account not linked - check if user exists by email
+      // Exclude soft-deleted users
       const existingUserByEmail = await db
         .selectFrom('users')
         .select([
@@ -268,6 +271,7 @@ export async function googleAuth(
           sql<boolean>`avatar_data IS NOT NULL`.as('has_avatar'),
         ])
         .where('email', '=', googleUser.email.toLowerCase())
+        .where('deleted_at', 'is', null)
         .executeTakeFirst();
 
       if (existingUserByEmail) {
