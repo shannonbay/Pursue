@@ -83,17 +83,35 @@ export async function getUserSubscriptionState(userId: string): Promise<UserSubs
 
   // Sync over_limit: free user with more groups than limit should be over_limit,
   // unless they have already resolved it by selecting a group to keep
+  // AND they are still an active member of that kept group
   if (tier === 'free' && current_group_count > group_limit && status !== 'over_limit') {
     const handledDowngrade = await db
       .selectFrom('subscription_downgrade_history')
-      .select('id')
+      .select(['id', 'kept_group_id'])
       .where('user_id', '=', userId)
       .where('kept_group_id', 'is not', null)
       .orderBy('downgrade_date', 'desc')
       .limit(1)
       .executeTakeFirst();
 
-    if (!handledDowngrade) {
+    let needsNewSelection = !handledDowngrade;
+
+    // If there was a previous selection, verify user is still a member of that group
+    if (handledDowngrade?.kept_group_id) {
+      const stillMember = await db
+        .selectFrom('group_memberships')
+        .select('id')
+        .where('user_id', '=', userId)
+        .where('group_id', '=', handledDowngrade.kept_group_id)
+        .where('status', '=', 'active')
+        .executeTakeFirst();
+
+      if (!stillMember) {
+        needsNewSelection = true;
+      }
+    }
+
+    if (needsNewSelection) {
       await updateSubscriptionStatus(userId);
       status = 'over_limit';
     }

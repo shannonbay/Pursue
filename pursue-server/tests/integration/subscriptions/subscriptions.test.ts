@@ -307,6 +307,80 @@ describe('POST /api/subscriptions/downgrade/select-group', () => {
     expect(second.body.error?.code).toBe('INVALID_STATE');
     expect(second.body.error?.message).toMatch(/not in over_limit state/i);
   });
+
+  it('requires new group selection after user leaves their kept group', async () => {
+    const { accessToken, userId } = await createAuthenticatedUser();
+    await setUserPremium(userId);
+    // Create 3 groups so after leaving the kept group, user still has 2 (over free limit of 1)
+    const g1 = await request(app)
+      .post('/api/groups')
+      .set('Authorization', `Bearer ${accessToken}`)
+      .send({ name: 'Group A' });
+    const g2 = await request(app)
+      .post('/api/groups')
+      .set('Authorization', `Bearer ${accessToken}`)
+      .send({ name: 'Group B' });
+    const g3 = await request(app)
+      .post('/api/groups')
+      .set('Authorization', `Bearer ${accessToken}`)
+      .send({ name: 'Group C' });
+
+    // Set user to over_limit (simulating premium expiration)
+    // Must also expire the subscription record so updateSubscriptionStatus doesn't revert to premium
+    await testDb
+      .updateTable('user_subscriptions')
+      .set({
+        status: 'expired',
+        expires_at: new Date(Date.now() - 86400000), // Expired yesterday
+      })
+      .where('user_id', '=', userId)
+      .execute();
+    await testDb
+      .updateTable('users')
+      .set({
+        current_subscription_tier: 'free',
+        subscription_status: 'over_limit',
+        group_limit: 1,
+      })
+      .where('id', '=', userId)
+      .execute();
+
+    // User selects Group A to keep
+    const selectRes = await request(app)
+      .post('/api/subscriptions/downgrade/select-group')
+      .set('Authorization', `Bearer ${accessToken}`)
+      .send({ keep_group_id: g1.body.id });
+    expect(selectRes.status).toBe(200);
+
+    // Verify not over_limit anymore (downgrade selection clears over_limit)
+    const subRes1 = await request(app)
+      .get('/api/users/me/subscription')
+      .set('Authorization', `Bearer ${accessToken}`);
+    expect(subRes1.body.is_over_limit).toBe(false);
+
+    // User leaves Group A (their kept group)
+    const leaveRes = await request(app)
+      .delete(`/api/groups/${g1.body.id}/members/me`)
+      .set('Authorization', `Bearer ${accessToken}`);
+    expect(leaveRes.status).toBe(204);
+
+    // Now user should be back in over_limit state since they still have Groups B and C
+    // (2 groups, over free limit of 1) and no longer have their kept group
+    const subRes2 = await request(app)
+      .get('/api/users/me/subscription')
+      .set('Authorization', `Bearer ${accessToken}`);
+    expect(subRes2.body.is_over_limit).toBe(true);
+    expect(subRes2.body.status).toBe('over_limit');
+    expect(subRes2.body.current_group_count).toBe(2);
+
+    // User should now be able to select Group B as their new kept group
+    const selectRes2 = await request(app)
+      .post('/api/subscriptions/downgrade/select-group')
+      .set('Authorization', `Bearer ${accessToken}`)
+      .send({ keep_group_id: g2.body.id });
+    expect(selectRes2.status).toBe(200);
+    expect(selectRes2.body.kept_group.id).toBe(g2.body.id);
+  });
 });
 
 describe('GET /api/groups/:group_id/export-progress/validate-range', () => {
