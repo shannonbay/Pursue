@@ -1,10 +1,11 @@
 package com.github.shannonbay.pursue.e2e.config
 
 import android.content.Context
-import com.github.shannonbay.pursue.data.network.ApiException
-import com.github.shannonbay.pursue.data.auth.SecureTokenManager
-import com.github.shannonbay.pursue.data.network.CreateGoalResponse
-import com.github.shannonbay.pursue.data.network.RegistrationResponse
+import app.getpursue.data.network.ApiException
+import app.getpursue.data.auth.SecureTokenManager
+import app.getpursue.data.network.CreateGoalResponse
+import app.getpursue.data.network.RegistrationResponse
+import app.getpursue.models.Group
 import kotlinx.coroutines.delay
 import java.util.UUID
 
@@ -114,7 +115,7 @@ class TestDataHelper(private val context: Context) {
         description: String = "E2E test group",
         iconEmoji: String? = null,
         iconColor: String? = null
-    ): com.github.shannonbay.pursue.models.Group {
+    ): Group {
         return try {
             val response = api.createGroup(
                 accessToken = accessToken,
@@ -127,7 +128,7 @@ class TestDataHelper(private val context: Context) {
             // Convert CreateGroupResponse to Group model
             // Note: Group model has different fields than CreateGroupResponse
             // Group uses role, joined_at, updated_at instead of creator_user_id, created_at
-            com.github.shannonbay.pursue.models.Group(
+            Group(
                 id = response.id,
                 name = response.name,
                 description = response.description,

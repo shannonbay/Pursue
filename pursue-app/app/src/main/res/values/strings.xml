@@ -20,7 +20,8 @@
     <!-- Google Sign-In Configuration -->
     <!-- android google client id 170178530674-hqsukacp5hkk656977l4lhcgd075t56r.apps.googleusercontent.com -->
     <!-- web google client id 170178530674-n58jfi6m6kgqosu6bn86gkbmi62dcdr0.apps.googleusercontent.com -->
-    <string name="google_client_id">170178530674-n58jfi6m6kgqosu6bn86gkbmi62dcdr0.apps.googleusercontent.com</string>
+    <!--string name="google_client_id">170178530674-n58jfi6m6kgqosu6bn86gkbmi62dcdr0.apps.googleusercontent.com</string -->
+    <string name="google_client_id">170178530674-li10s2m320i3bqgdcudm3p7ms14paktg.apps.googleusercontent.com</string>
     <string name="signing_in_with_google">Signing in with Google…</string>
     <string name="google_sign_in_failed">Google sign-in failed. Please try again.</string>
     <string name="google_sign_in_cancelled">Sign-in cancelled</string>

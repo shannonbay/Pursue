@@ -1,6 +1,7 @@
 package com.github.shannonbay.pursue.e2e.groups
 
-import com.github.shannonbay.pursue.data.network.ApiException
+import app.getpursue.data.network.ApiException
+import app.getpursue.models.GroupsResponse
 import com.github.shannonbay.pursue.e2e.config.E2ETest
 import com.github.shannonbay.pursue.e2e.helpers.TestImageHelper
 import com.google.common.truth.Truth.assertThat
@@ -65,7 +66,7 @@ class GroupIconE2ETest : E2ETest() {
         val authResponse = getOrCreateSharedUser()
         
         // Get user's groups - handle 404 as "no groups" (valid for new user)
-        var groupsResponse: com.github.shannonbay.pursue.models.GroupsResponse? = null
+        var groupsResponse: GroupsResponse? = null
         try {
             groupsResponse = api.getMyGroups(authResponse.access_token)
         } catch (e: ApiException) {

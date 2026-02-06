@@ -1,7 +1,7 @@
 package com.github.shannonbay.pursue.e2e.groups
 
 import com.google.common.truth.Truth.assertThat
-import com.github.shannonbay.pursue.data.network.ApiException
+import app.getpursue.data.network.ApiException
 import com.github.shannonbay.pursue.e2e.config.E2ETest
 import kotlinx.coroutines.test.runTest
 import org.junit.Test

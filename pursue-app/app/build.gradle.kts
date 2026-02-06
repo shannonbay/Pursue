@@ -17,11 +17,11 @@ val devApiBaseUrl = if (localPropertiesFile.exists()) {
 }
 
 android {
-    namespace = "com.github.shannonbay.pursue"
+    namespace = "app.getpursue"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.github.shannonbay.pursue"
+        applicationId = "app.getpursue"
         minSdk = 24
         targetSdk = 35
         versionCode = 1

@@ -1,6 +1,6 @@
 package com.github.shannonbay.pursue.e2e.user
 
-import com.github.shannonbay.pursue.data.network.ApiException
+import app.getpursue.data.network.ApiException
 import com.google.common.truth.Truth.assertThat
 import com.github.shannonbay.pursue.e2e.config.E2ETest
 import com.github.shannonbay.pursue.e2e.helpers.TestImageHelper

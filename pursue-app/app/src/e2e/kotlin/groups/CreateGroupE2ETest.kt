@@ -1,8 +1,9 @@
 package com.github.shannonbay.pursue.e2e.groups
 
 import com.google.common.truth.Truth.assertThat
-import com.github.shannonbay.pursue.data.network.ApiException
-import com.github.shannonbay.pursue.data.auth.SecureTokenManager
+import app.getpursue.data.network.ApiException
+import app.getpursue.data.auth.SecureTokenManager
+import app.getpursue.models.GroupsResponse
 import com.github.shannonbay.pursue.e2e.config.E2ETest
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
@@ -299,7 +300,7 @@ class CreateGroupE2ETest : E2ETest() {
         trackGroup(createResponse.id)
         
         // Act - Get user's groups
-        var groupsResponse: com.github.shannonbay.pursue.models.GroupsResponse? = null
+        var groupsResponse: GroupsResponse? = null
         try {
             groupsResponse = api.getMyGroups(authResponse.access_token)
         } catch (e: ApiException) {

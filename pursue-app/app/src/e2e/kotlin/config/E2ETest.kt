@@ -2,9 +2,9 @@ package com.github.shannonbay.pursue.e2e.config
 
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
-import com.github.shannonbay.pursue.data.network.ApiClient
-import com.github.shannonbay.pursue.data.network.ApiException
-import com.github.shannonbay.pursue.data.network.RegistrationResponse
+import app.getpursue.data.network.ApiClient
+import app.getpursue.data.network.ApiException
+import app.getpursue.data.network.RegistrationResponse
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assume.assumeTrue

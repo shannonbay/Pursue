@@ -1,8 +1,8 @@
 package com.github.shannonbay.pursue.e2e.goals
 
 import com.google.common.truth.Truth.assertThat
-import com.github.shannonbay.pursue.data.network.ApiException
-import com.github.shannonbay.pursue.data.auth.SecureTokenManager
+import app.getpursue.data.network.ApiException
+import app.getpursue.data.auth.SecureTokenManager
 import com.github.shannonbay.pursue.e2e.config.E2ETest
 import kotlinx.coroutines.test.runTest
 import org.junit.Ignore
