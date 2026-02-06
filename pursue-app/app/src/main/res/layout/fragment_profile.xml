@@ -1,10 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout
+<ScrollView
     xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true">
+
+<androidx.constraintlayout.widget.ConstraintLayout
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
+    android:layout_height="wrap_content"
     android:background="@color/background_light"
     android:padding="32dp">
 
@@ -67,7 +72,6 @@
     <!-- Upgrade to Premium (hidden when Premium) -->
     <com.google.android.material.button.MaterialButton
         android:id="@+id/button_upgrade_premium"
-        style="@style/Widget.Material3.Button.TextButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
@@ -76,29 +80,6 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/subscription_renews" />
-
-    <!-- Change Profile Picture Button -->
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/button_change_avatar"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="24dp"
-        android:text="@string/change_profile_picture"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/button_upgrade_premium" />
-
-    <!-- Remove Photo Button (only shown when has_avatar = true) -->
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/button_remove_avatar"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:text="@string/remove_photo"
-        android:visibility="gone"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/button_change_avatar" />
 
     <!-- Notifications section -->
     <TextView
@@ -111,7 +92,7 @@
         android:textColor="@color/on_surface"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/button_remove_avatar" />
+        app:layout_constraintTop_toBottomOf="@id/button_upgrade_premium" />
 
     <LinearLayout
         android:id="@+id/notify_progress_logs_row"
@@ -185,14 +166,12 @@
             android:layout_height="wrap_content" />
     </LinearLayout>
 
-    <!-- Sign out (Tertiary/Text button per design system; 32dp section separation) -->
+    <!-- Sign out -->
     <com.google.android.material.button.MaterialButton
         android:id="@+id/button_sign_out"
-        style="@style/Widget.Material3.Button.TextButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="32dp"
-        android:minHeight="48dp"
         android:text="@string/sign_out"
         android:contentDescription="@string/sign_out"
         app:layout_constraintEnd_toEndOf="parent"
@@ -211,3 +190,4 @@
         app:layout_constraintTop_toTopOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
+</ScrollView>

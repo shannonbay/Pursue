@@ -58,8 +58,6 @@ class ProfileFragment : Fragment() {
     private var callbacks: Callbacks? = null
     private lateinit var avatarImage: ImageView
     private lateinit var displayName: TextView
-    private lateinit var changeAvatarButton: MaterialButton
-    private lateinit var removeAvatarButton: MaterialButton
     private lateinit var switchNotifyProgressLogs: MaterialSwitch
     private lateinit var switchNotifyGroupEvents: MaterialSwitch
     private lateinit var loadingIndicator: ProgressBar
@@ -117,8 +115,6 @@ class ProfileFragment : Fragment() {
         
         avatarImage = view.findViewById(R.id.avatar_image)
         displayName = view.findViewById(R.id.display_name)
-        changeAvatarButton = view.findViewById(R.id.button_change_avatar)
-        removeAvatarButton = view.findViewById(R.id.button_remove_avatar)
         switchNotifyProgressLogs = view.findViewById(R.id.switch_notify_progress_logs)
         switchNotifyGroupEvents = view.findViewById(R.id.switch_notify_group_events)
         loadingIndicator = view.findViewById(R.id.loading_indicator)
@@ -140,14 +136,6 @@ class ProfileFragment : Fragment() {
         // Set up click listeners
         avatarImage.setOnClickListener {
             showImageSourceDialog()
-        }
-        
-        changeAvatarButton.setOnClickListener {
-            showImageSourceDialog()
-        }
-        
-        removeAvatarButton.setOnClickListener {
-            deleteAvatar()
         }
 
         view.findViewById<MaterialButton>(R.id.button_sign_out).setOnClickListener {
@@ -212,9 +200,6 @@ class ProfileFragment : Fragment() {
                     
                     // Load avatar
                     loadAvatar(user)
-                    
-                    // Show/hide remove button based on has_avatar
-                    removeAvatarButton.visibility = if (user.has_avatar) View.VISIBLE else View.GONE
 
                     // Subscription status
                     if (subscription != null) {
@@ -416,10 +401,7 @@ class ProfileFragment : Fragment() {
                 Handler(Looper.getMainLooper()).post {
                     // Reload avatar
                     currentUser?.let { loadAvatar(it) }
-                    
-                    // Show/hide remove button
-                    removeAvatarButton.visibility = if (response.has_avatar) View.VISIBLE else View.GONE
-                    
+
                     // Show success toast
                     Toast.makeText(requireContext(), getString(R.string.profile_picture_updated), Toast.LENGTH_SHORT).show()
                 }
@@ -466,10 +448,7 @@ class ProfileFragment : Fragment() {
                 Handler(Looper.getMainLooper()).post {
                     // Reload avatar (will show letter avatar)
                     currentUser?.let { loadAvatar(it) }
-                    
-                    // Hide remove button
-                    removeAvatarButton.visibility = View.GONE
-                    
+
                     // Show success toast
                     Toast.makeText(requireContext(), getString(R.string.profile_picture_removed), Toast.LENGTH_SHORT).show()
                 }
@@ -494,8 +473,6 @@ class ProfileFragment : Fragment() {
         // Ensure UI operations run on main thread with looper to avoid issues in tests
         Handler(Looper.getMainLooper()).post {
             loadingIndicator.visibility = if (show) View.VISIBLE else View.GONE
-            changeAvatarButton.isEnabled = !show
-            removeAvatarButton.isEnabled = !show
             avatarImage.isEnabled = !show
         }
     }
