@@ -18,7 +18,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
-import com.github.shannonbay.pursue.R
+import app.getpursue.R
 import android.widget.Toast
 import app.getpursue.data.auth.SecureTokenManager
 import app.getpursue.data.network.ApiClient

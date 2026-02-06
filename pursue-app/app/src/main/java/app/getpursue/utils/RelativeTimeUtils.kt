@@ -1,7 +1,7 @@
 package app.getpursue.utils
 
 import android.content.Context
-import com.github.shannonbay.pursue.R
+import app.getpursue.R
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale

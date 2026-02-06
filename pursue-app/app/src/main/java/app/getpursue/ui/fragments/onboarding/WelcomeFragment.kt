@@ -6,7 +6,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
-import com.github.shannonbay.pursue.R
+import app.getpursue.R
 
 /**
  * 4.1.1 Welcome / Splash Screen

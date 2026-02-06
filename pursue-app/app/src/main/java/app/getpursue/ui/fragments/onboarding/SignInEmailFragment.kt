@@ -11,7 +11,7 @@ import android.view.ViewGroup
 import android.widget.Button
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
-import com.github.shannonbay.pursue.R
+import app.getpursue.R
 import com.google.android.material.textfield.TextInputEditText
 
 /**

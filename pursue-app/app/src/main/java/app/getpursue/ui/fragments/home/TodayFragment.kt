@@ -18,7 +18,7 @@ import app.getpursue.data.network.ApiClient
 import app.getpursue.data.network.ApiException
 import app.getpursue.ui.views.EmptyStateView
 import app.getpursue.ui.views.ErrorStateView
-import com.github.shannonbay.pursue.R
+import app.getpursue.R
 import app.getpursue.data.auth.SecureTokenManager
 import androidx.fragment.app.commit
 import app.getpursue.models.TodayGoalsResponse

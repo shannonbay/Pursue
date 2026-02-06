@@ -32,8 +32,10 @@ import androidx.fragment.app.commit
 import androidx.lifecycle.lifecycleScope
 import app.getpursue.data.auth.AuthRepository
 import app.getpursue.data.auth.AuthState
+import app.getpursue.data.auth.GoogleSignInHelper
 import app.getpursue.data.auth.SecureTokenManager
 import app.getpursue.data.fcm.FcmRegistrationHelper
+import app.getpursue.data.fcm.FcmTokenManager
 import app.getpursue.data.network.ApiClient
 import app.getpursue.data.network.ApiException
 import app.getpursue.models.Group
@@ -44,7 +46,7 @@ import app.getpursue.ui.fragments.home.PremiumFragment
 import app.getpursue.ui.fragments.home.ProfileFragment
 import app.getpursue.ui.fragments.home.TodayFragment
 import app.getpursue.ui.views.JoinGroupBottomSheet
-import com.github.shannonbay.pursue.R
+import app.getpursue.R
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.navigation.NavigationBarView
@@ -278,10 +280,10 @@ class MainAppActivity : AppCompatActivity(),
     private fun handleSignOut() {
         Log.d("MainAppActivity", "Auth state changed to SignedOut, navigating to OnboardingActivity")
 
-        // Show toast message
+        // Show toast message (user-initiated sign out or session expired)
         Toast.makeText(
             this,
-            "Session expired. Please sign in again.",
+            getString(R.string.signed_out_toast),
             Toast.LENGTH_LONG
         ).show()
 
@@ -634,6 +636,12 @@ class MainAppActivity : AppCompatActivity(),
 
     override fun onUpgradeToPremium() {
         showPremiumScreen()
+    }
+
+    override fun onSignOut() {
+        GoogleSignInHelper(this).signOut()
+        FcmTokenManager.getInstance(this).clearToken()
+        authRepository.signOut()
     }
 
     // endregion

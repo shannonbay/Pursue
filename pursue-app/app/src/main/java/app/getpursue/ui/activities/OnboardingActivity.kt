@@ -17,7 +17,7 @@ import app.getpursue.data.network.ApiException
 import app.getpursue.ui.fragments.onboarding.SignInEmailFragment
 import app.getpursue.ui.fragments.onboarding.SignUpEmailFragment
 import app.getpursue.ui.fragments.onboarding.WelcomeFragment
-import com.github.shannonbay.pursue.R
+import app.getpursue.R
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext

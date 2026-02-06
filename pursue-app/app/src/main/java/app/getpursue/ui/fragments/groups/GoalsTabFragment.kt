@@ -30,7 +30,7 @@ import app.getpursue.ui.fragments.goals.CreateGoalFragment
 import app.getpursue.ui.views.ErrorStateView
 import app.getpursue.ui.fragments.goals.GoalDetailFragment
 import app.getpursue.ui.adapters.GroupGoalsAdapter
-import com.github.shannonbay.pursue.R
+import app.getpursue.R
 import app.getpursue.data.auth.SecureTokenManager
 import app.getpursue.models.GroupGoal
 import app.getpursue.models.MemberProgress

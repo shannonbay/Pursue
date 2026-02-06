@@ -22,7 +22,7 @@ import androidx.lifecycle.lifecycleScope
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.bumptech.glide.signature.ObjectKey
-import com.github.shannonbay.pursue.R
+import app.getpursue.R
 import app.getpursue.utils.ImageUtils
 import android.os.Handler
 import android.os.Looper
@@ -52,6 +52,7 @@ class ProfileFragment : Fragment() {
     interface Callbacks {
         fun onViewMyProgress()
         fun onUpgradeToPremium()
+        fun onSignOut()
     }
 
     private var callbacks: Callbacks? = null
@@ -147,6 +148,10 @@ class ProfileFragment : Fragment() {
         
         removeAvatarButton.setOnClickListener {
             deleteAvatar()
+        }
+
+        view.findViewById<MaterialButton>(R.id.button_sign_out).setOnClickListener {
+            callbacks?.onSignOut()
         }
         
         // Load user data and fetch group IDs for topic management

@@ -15,7 +15,7 @@ import app.getpursue.data.network.ApiClient
 import app.getpursue.data.notifications.NotificationPreferences
 import app.getpursue.ui.activities.GroupDetailActivity
 import app.getpursue.ui.activities.MainActivity
-import com.github.shannonbay.pursue.R
+import app.getpursue.R
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import kotlinx.coroutines.CoroutineScope

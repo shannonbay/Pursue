@@ -20,8 +20,9 @@
     <!-- Google Sign-In Configuration -->
     <!-- android google client id 170178530674-hqsukacp5hkk656977l4lhcgd075t56r.apps.googleusercontent.com -->
     <!-- web google client id 170178530674-n58jfi6m6kgqosu6bn86gkbmi62dcdr0.apps.googleusercontent.com -->
-    <!--string name="google_client_id">170178530674-n58jfi6m6kgqosu6bn86gkbmi62dcdr0.apps.googleusercontent.com</string -->
-    <string name="google_client_id">170178530674-li10s2m320i3bqgdcudm3p7ms14paktg.apps.googleusercontent.com</string>
+    <string name="google_client_id">170178530674-n58jfi6m6kgqosu6bn86gkbmi62dcdr0.apps.googleusercontent.com</string>
+    <!-- GetPursue Android Client - It seems like we just use a web client id so don't actually need this -->
+    <!-- string name="google_client_id">170178530674-li10s2m320i3bqgdcudm3p7ms14paktg.apps.googleusercontent.com</string -->
     <string name="signing_in_with_google">Signing in with Google…</string>
     <string name="google_sign_in_failed">Google sign-in failed. Please try again.</string>
     <string name="google_sign_in_cancelled">Sign-in cancelled</string>
@@ -106,6 +107,8 @@
     <!-- Profile Screen (4.5) - Placeholder -->
     <string name="profile_title">Profile</string>
     <string name="profile_placeholder">Profile Screen</string>
+    <string name="sign_out">Sign out</string>
+    <string name="signed_out_toast">You have been signed out</string>
 
     <!-- Subscription (pursue-subscription-spec) -->
     <string name="upgrade_to_premium">Upgrade to Premium</string>

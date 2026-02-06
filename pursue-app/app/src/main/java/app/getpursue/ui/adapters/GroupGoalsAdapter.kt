@@ -9,7 +9,7 @@ import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import app.getpursue.models.GroupGoal
-import com.github.shannonbay.pursue.R
+import app.getpursue.R
 import com.google.android.material.card.MaterialCardView
 
 /**

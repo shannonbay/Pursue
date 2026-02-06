@@ -10,7 +10,7 @@ import app.getpursue.data.network.ApiClient
 import app.getpursue.models.GroupMember
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.engine.DiskCacheStrategy
-import com.github.shannonbay.pursue.R
+import app.getpursue.R
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale

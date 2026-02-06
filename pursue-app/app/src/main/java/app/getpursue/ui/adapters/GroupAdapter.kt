@@ -17,7 +17,7 @@ import app.getpursue.utils.RelativeTimeUtils
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.bumptech.glide.signature.ObjectKey
-import com.github.shannonbay.pursue.R
+import app.getpursue.R
 
 /**
  * RecyclerView adapter for displaying group cards.

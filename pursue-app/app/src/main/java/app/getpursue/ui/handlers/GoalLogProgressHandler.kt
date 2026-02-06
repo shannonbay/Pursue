@@ -17,7 +17,7 @@ import app.getpursue.models.TodayGoal
 import app.getpursue.ui.activities.GroupDetailActivity
 import app.getpursue.ui.activities.MainAppActivity
 import app.getpursue.ui.dialogs.LogProgressDialog
-import com.github.shannonbay.pursue.R
+import app.getpursue.R
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import kotlinx.coroutines.Dispatchers

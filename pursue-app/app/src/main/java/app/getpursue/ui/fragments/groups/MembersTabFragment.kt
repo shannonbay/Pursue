@@ -30,7 +30,7 @@ import app.getpursue.data.network.ApiException
 import app.getpursue.ui.activities.GroupDetailActivity
 import app.getpursue.ui.views.ErrorStateView
 import app.getpursue.ui.adapters.GroupMembersAdapter
-import com.github.shannonbay.pursue.R
+import app.getpursue.R
 import app.getpursue.data.auth.SecureTokenManager
 import app.getpursue.models.GroupMember
 import com.google.android.material.card.MaterialCardView

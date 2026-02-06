@@ -20,7 +20,7 @@ import app.getpursue.data.network.ApiException
 import app.getpursue.models.GroupActivity
 import app.getpursue.ui.adapters.GroupActivityAdapter
 import app.getpursue.ui.views.ErrorStateView
-import com.github.shannonbay.pursue.R
+import app.getpursue.R
 import com.google.android.material.button.MaterialButton
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch

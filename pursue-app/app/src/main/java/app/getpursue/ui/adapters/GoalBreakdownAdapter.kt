@@ -7,7 +7,7 @@ import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import app.getpursue.models.GoalBreakdown
-import com.github.shannonbay.pursue.R
+import app.getpursue.R
 
 /**
  * RecyclerView adapter for displaying goal breakdown.

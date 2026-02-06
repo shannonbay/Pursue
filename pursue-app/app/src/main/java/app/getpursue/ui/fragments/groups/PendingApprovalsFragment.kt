@@ -20,7 +20,7 @@ import app.getpursue.data.network.ApiClient
 import app.getpursue.data.network.ApiException
 import app.getpursue.models.PendingMember
 import app.getpursue.ui.adapters.PendingMembersAdapter
-import com.github.shannonbay.pursue.R
+import app.getpursue.R
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch

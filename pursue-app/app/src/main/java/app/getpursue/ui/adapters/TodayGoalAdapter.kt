@@ -11,7 +11,7 @@ import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import app.getpursue.models.TodayGoal
 import app.getpursue.models.TodayGroup
-import com.github.shannonbay.pursue.R
+import app.getpursue.R
 import com.google.android.material.card.MaterialCardView
 
 /**

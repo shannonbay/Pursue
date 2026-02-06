@@ -32,7 +32,7 @@ import app.getpursue.models.GoalDetailUiModel
 import app.getpursue.models.GoalEntryUiModel
 import app.getpursue.models.StreakUiModel
 import app.getpursue.ui.adapters.GoalEntryAdapter
-import com.github.shannonbay.pursue.R
+import app.getpursue.R
 import app.getpursue.ui.views.ErrorStateView
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.card.MaterialCardView

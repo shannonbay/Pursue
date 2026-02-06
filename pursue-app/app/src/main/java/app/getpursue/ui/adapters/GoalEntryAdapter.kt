@@ -6,7 +6,7 @@ import android.view.ViewGroup
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import app.getpursue.models.GoalEntryUiModel
-import com.github.shannonbay.pursue.R
+import app.getpursue.R
 
 /**
  * RecyclerView adapter for displaying progress entries in Goal Detail screen.

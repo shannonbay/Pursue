@@ -6,7 +6,7 @@ import android.view.ViewGroup
 import android.widget.TextView
 import androidx.annotation.StringRes
 import app.getpursue.data.network.ApiException
-import com.github.shannonbay.pursue.R
+import app.getpursue.R
 import com.google.android.material.button.MaterialButton
 
 /**

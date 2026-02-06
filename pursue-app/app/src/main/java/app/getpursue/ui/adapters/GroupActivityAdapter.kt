@@ -7,7 +7,7 @@ import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import app.getpursue.models.GroupActivity
 import app.getpursue.utils.RelativeTimeUtils
-import com.github.shannonbay.pursue.R
+import app.getpursue.R
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale

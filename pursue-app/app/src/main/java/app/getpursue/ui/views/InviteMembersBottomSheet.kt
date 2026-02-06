@@ -19,7 +19,7 @@ import androidx.fragment.app.FragmentManager
 import app.getpursue.data.auth.SecureTokenManager
 import app.getpursue.data.network.ApiClient
 import app.getpursue.data.network.ApiException
-import com.github.shannonbay.pursue.R
+import app.getpursue.R
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.zxing.BarcodeFormat

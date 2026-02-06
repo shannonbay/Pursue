@@ -26,7 +26,7 @@ import java.io.File
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.concurrent.TimeUnit
-import com.github.shannonbay.pursue.BuildConfig
+import app.getpursue.BuildConfig
 import java.net.URLEncoder
 import java.time.ZoneId
 

@@ -22,7 +22,7 @@ import app.getpursue.data.fcm.FcmRegistrationHelper
 import app.getpursue.data.network.ApiClient
 import app.getpursue.data.network.ApiException
 import app.getpursue.ui.activities.MainActivity
-import com.github.shannonbay.pursue.R
+import app.getpursue.R
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext

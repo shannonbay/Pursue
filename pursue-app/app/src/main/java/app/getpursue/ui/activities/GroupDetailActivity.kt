@@ -13,7 +13,7 @@ import androidx.fragment.app.commit
 import app.getpursue.ui.fragments.groups.GroupDetailFragment
 import app.getpursue.ui.fragments.groups.PendingApprovalsFragment
 import app.getpursue.ui.fragments.home.PremiumFragment
-import com.github.shannonbay.pursue.R
+import app.getpursue.R
 
 /**
  * Activity for displaying Group Detail screen without bottom navigation.

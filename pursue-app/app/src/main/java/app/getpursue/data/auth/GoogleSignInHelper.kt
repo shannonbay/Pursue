@@ -3,7 +3,7 @@ package app.getpursue.data.auth
 import android.content.Context
 import android.content.Intent
 import android.util.Log
-import com.github.shannonbay.pursue.R
+import app.getpursue.R
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount
 import com.google.android.gms.auth.api.signin.GoogleSignInClient
@@ -44,7 +44,20 @@ class GoogleSignInHelper(private val context: Context) {
     fun getSignInIntent(): Intent {
         return googleSignInClient.signInIntent
     }
-    
+
+    /**
+     * Sign out from Google so the next sign-in can choose a different account.
+     */
+    fun signOut() {
+        googleSignInClient.signOut().addOnCompleteListener { task ->
+            if (task.isSuccessful) {
+                Log.d(TAG, "Google sign-out completed")
+            } else {
+                Log.w(TAG, "Google sign-out failed", task.exception)
+            }
+        }
+    }
+
     /**
      * Handle the result from Google Sign-In activity.
      *

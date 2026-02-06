@@ -3,7 +3,7 @@ package app.getpursue.ui.views
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import com.github.shannonbay.pursue.R
+import app.getpursue.R
 
 /**
  * Reusable empty state view component.
