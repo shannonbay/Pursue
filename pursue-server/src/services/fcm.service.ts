@@ -18,6 +18,12 @@ if (
   });
 }
 
+/** FCM error codes that mean the token is invalid and should be removed from the DB. */
+const INVALID_TOKEN_CODES = new Set([
+  'messaging/registration-token-not-registered',
+  'messaging/invalid-registration-token',
+]);
+
 export async function sendPushNotification(
   deviceToken: string,
   title: string,
@@ -38,9 +44,28 @@ export async function sendPushNotification(
       }
     });
 
-    console.log('✅ Push notification sent:', { title, deviceToken });
-  } catch (error) {
-    console.error('❌ Failed to send notification:', error);
+    logger.info('Push notification sent', { title, deviceToken: deviceToken.slice(0, 20) + '…' });
+  } catch (error: unknown) {
+    const code = (error as { errorInfo?: { code?: string } })?.errorInfo?.code;
+    if (code && INVALID_TOKEN_CODES.has(code)) {
+      try {
+        await db.deleteFrom('devices').where('fcm_token', '=', deviceToken).execute();
+        logger.info('Removed invalid FCM token from devices', {
+          code,
+          deviceToken: deviceToken.slice(0, 20) + '…',
+        });
+      } catch (deleteError) {
+        logger.error('Failed to remove invalid FCM token', {
+          code,
+          deleteError: deleteError instanceof Error ? deleteError.message : String(deleteError),
+        });
+      }
+      return;
+    }
+    logger.error('Failed to send notification', {
+      error: error instanceof Error ? error.message : String(error),
+      code,
+    });
     throw error;
   }
 }
