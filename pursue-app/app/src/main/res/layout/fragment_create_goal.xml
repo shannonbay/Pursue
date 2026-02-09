@@ -363,10 +363,14 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="32dp"
-                android:layout_marginBottom="16dp"
                 android:text="@string/save_goal"
                 style="@style/Widget.MaterialComponents.Button"
                 android:contentDescription="@string/save_goal" />
+
+            <!-- Keyboard spacer -->
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="300dp" />
 
         </LinearLayout>
 
