@@ -1,0 +1,14 @@
+{
+  "hooks": {
+    "TaskCompleted": [
+      {
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "A task is being completed: $ARGUMENTS. Check if the task_subject or task_description suggests source code was modified (new files, classes, methods, refactoring, bug fixes in code). If code was likely changed, respond {\"ok\": false, \"reason\": \"Update .claude/structure/ to reflect any added, modified, or removed files, classes, or methods before completing this task.\"}. If the task is purely research, documentation, discussion, or non-code, respond {\"ok\": true}."
+          }
+        ]
+      }
+    ]
+  }
+}

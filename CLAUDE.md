@@ -65,6 +65,12 @@ $env:JAVA_HOME = [System.Environment]::GetEnvironmentVariable("JAVA_HOME", "Mach
 **UI**: XML layouts with Material Design 3
 **Test reports**: `app/build/reports/tests/testDebugUnitTest/index.html`
 
+## Codebase Structure Index
+
+Before exploring code, read the relevant `.claude/structure/*.yaml` files for a structural overview of each module. These contain every file, exported function/class, and key relationships (imports, calls). Read these first to orient yourself before using grep/glob to find specific code.
+
+After modifying source code, update the relevant structure file to reflect any added, modified, or removed files, classes, or methods.
+
 ## Project Structure
 
 ```
@@ -86,7 +92,8 @@ Pursue/
 │   └── schema.sql        # PostgreSQL schema
 ├── pursue-web/           # Marketing site (git submodule)
 ├── specs/                # Design specifications
-└── .claude/skills/       # Claude Code skills
+├── .claude/skills/       # Claude Code skills
+└── .claude/structure/    # Codebase structure index (YAML)
 ```
 
 ## Tech Stack
