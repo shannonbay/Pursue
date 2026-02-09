@@ -10,8 +10,9 @@ export async function uploadGroupIcon(
   groupId: string,
   buffer: Buffer
 ): Promise<void> {
-  // Process image: resize to 256x256, crop to center, convert to WebP
+  // Process image: apply EXIF orientation, resize to 256x256, crop to center, convert to WebP
   const processedBuffer = await sharp(buffer)
+    .rotate()
     .resize(256, 256, { fit: 'cover', position: 'center' })
     .webp({ quality: 90 })
     .toBuffer();
@@ -53,8 +54,9 @@ export async function uploadUserAvatar(
 ): Promise<void> {
   const DEBUG_AVATAR = process.env.DEBUG_AVATAR === 'true';
 
-  // Process image: resize to 256x256, crop to center, convert to WebP
+  // Process image: apply EXIF orientation, resize to 256x256, crop to center, convert to WebP
   const processedBuffer = await sharp(buffer)
+    .rotate()
     .resize(256, 256, { fit: 'cover', position: 'center' })
     .webp({ quality: 90 })
     .toBuffer();

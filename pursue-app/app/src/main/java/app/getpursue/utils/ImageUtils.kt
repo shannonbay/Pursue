@@ -2,8 +2,10 @@ package app.getpursue.utils
 
 import android.content.Context
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.graphics.Color
+import android.graphics.Matrix
 import android.graphics.Paint
 import android.graphics.Typeface
 import android.graphics.drawable.BitmapDrawable
@@ -11,6 +13,7 @@ import android.graphics.drawable.Drawable
 import android.net.Uri
 import android.provider.MediaStore
 import android.util.Log
+import androidx.exifinterface.media.ExifInterface
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.asRequestBody
@@ -62,6 +65,60 @@ object ImageUtils {
         return BitmapDrawable(context.resources, bitmap)
     }
     
+    /**
+     * Convert a URI to a File with EXIF orientation applied (pixels rotated so the image
+     * displays correctly). Use this for avatar/upload so the server receives correctly oriented bytes.
+     *
+     * @param context Context for content resolver
+     * @param uri URI of the image (from gallery or camera)
+     * @return File containing JPEG with normalized orientation, or null if conversion fails
+     */
+    fun uriToFileWithNormalizedOrientation(context: Context, uri: Uri): File? {
+        return try {
+            val inputStream = context.contentResolver.openInputStream(uri) ?: return null
+            val bytes = inputStream.use { it.readBytes() }
+            val exif = ExifInterface(bytes.inputStream())
+            val orientation = exif.getAttributeInt(
+                ExifInterface.TAG_ORIENTATION,
+                ExifInterface.ORIENTATION_NORMAL
+            )
+            val degrees = when (orientation) {
+                ExifInterface.ORIENTATION_ROTATE_90 -> 90
+                ExifInterface.ORIENTATION_ROTATE_180 -> 180
+                ExifInterface.ORIENTATION_ROTATE_270 -> 270
+                else -> 0
+            }
+            val bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size) ?: return null
+            val rotated = if (degrees != 0) {
+                val matrix = Matrix().apply { postRotate(degrees.toFloat()) }
+                Bitmap.createBitmap(
+                    bitmap,
+                    0,
+                    0,
+                    bitmap.width,
+                    bitmap.height,
+                    matrix,
+                    true
+                )
+            } else {
+                bitmap
+            }
+            val tempFile = File.createTempFile("avatar_", ".jpg", context.cacheDir)
+            FileOutputStream(tempFile).use { out ->
+                rotated.compress(Bitmap.CompressFormat.JPEG, 90, out)
+            }
+            if (rotated != bitmap) rotated.recycle()
+            bitmap.recycle()
+            tempFile
+        } catch (e: IOException) {
+            Log.e("ImageUtils", "Failed to normalize orientation", e)
+            null
+        } catch (e: Exception) {
+            Log.e("ImageUtils", "Failed to normalize orientation", e)
+            null
+        }
+    }
+
     /**
      * Convert a URI to a File for multipart upload.
      * 

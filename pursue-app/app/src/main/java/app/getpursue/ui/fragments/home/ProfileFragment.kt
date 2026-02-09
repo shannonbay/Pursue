@@ -377,8 +377,8 @@ class ProfileFragment : Fragment() {
                     return@launch
                 }
                 
-                // Convert URI to File
-                val imageFile = ImageUtils.uriToFile(requireContext(), imageUri)
+                // Convert URI to File with EXIF orientation applied
+                val imageFile = ImageUtils.uriToFileWithNormalizedOrientation(requireContext(), imageUri)
                     ?: run {
                         Handler(Looper.getMainLooper()).post {
                             Toast.makeText(requireContext(), "Failed to process image", Toast.LENGTH_SHORT).show()
