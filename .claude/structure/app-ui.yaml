@@ -1,0 +1,298 @@
+# app-ui structure detail
+module: pursue-app
+directory: ui/activities/, ui/adapters/, ui/handlers/, ui/dialogs/, ui/views/
+description: UI layer - activities, adapters, handlers, dialogs, and custom views
+
+files:
+  ui/activities/MainActivity.kt:
+    description: Entry point activity - checks auth and launches onboarding or main app
+    exports:
+      - name: MainActivity
+        kind: class
+        extends: AppCompatActivity
+        methods:
+          - name: onCreate
+            params: [{name: savedInstanceState, type: Bundle?}]
+            returns: void
+            description: Check auth and launch appropriate activity; handle FCM deep links
+    imports:
+      - app.getpursue.data.auth.SecureTokenManager
+
+  ui/activities/OnboardingActivity.kt:
+    description: Hosts first-time user onboarding flow with email/password and Google Sign-In
+    exports:
+      - name: OnboardingActivity
+        kind: class
+        extends: AppCompatActivity
+        implements:
+          - WelcomeFragment.Callbacks
+          - SignInEmailFragment.Callbacks
+          - SignUpEmailFragment.Callbacks
+        methods:
+          - name: onCreate
+            params: [{name: savedInstanceState, type: Bundle?}]
+            returns: void
+            description: Initialize Google Sign-In and show WelcomeFragment
+          - name: onSignInWithEmail
+            params: []
+            returns: void
+            description: Show SignInEmailFragment
+          - name: onSignIn
+            params: [{name: email, type: String}, {name: password, type: String}]
+            returns: void
+            description: Handle email/password login
+          - name: onSignUp
+            params: [{name: displayName, type: String}, {name: email, type: String}, {name: password, type: String}]
+            returns: void
+            description: Handle email/password registration
+    imports:
+      - app.getpursue.data.auth (AuthRepository, GoogleSignInHelper, SecureTokenManager)
+      - app.getpursue.data.fcm.FcmRegistrationHelper
+      - app.getpursue.data.network.ApiClient
+      - app.getpursue.ui.fragments.onboarding
+
+  ui/activities/MainAppActivity.kt:
+    description: Main app activity with bottom navigation bar hosting home tabs
+    exports:
+      - name: MainAppActivity
+        kind: class
+        extends: AppCompatActivity
+        implements:
+          - NavigationBarView.OnItemSelectedListener
+          - HomeFragment.Callbacks
+          - TodayFragment.Callbacks
+          - ProfileFragment.Callbacks
+        methods:
+          - name: onCreate
+            params: [{name: savedInstanceState, type: Bundle?}]
+            returns: void
+            description: Setup bottom navigation and fragment container
+          - name: onItemSelected
+            params: [{name: item, type: MenuItem}]
+            returns: Boolean
+            description: Handle bottom navigation item selection
+          - name: onGroupSelected
+            params: [{name: group, type: Group}]
+            returns: void
+            description: Launch GroupDetailActivity when group selected
+          - name: onCreateGroup
+            params: []
+            returns: void
+            description: Show CreateGroupFragment
+          - name: onJoinGroup
+            params: []
+            returns: void
+            description: Show JoinGroupBottomSheet
+          - name: onViewMyProgress
+            params: []
+            returns: void
+            description: Show MyProgressFragment
+          - name: onUpgradeToPremium
+            params: []
+            returns: void
+            description: Show PremiumFragment
+          - name: onSignOut
+            params: []
+            returns: void
+            description: Clear tokens and return to MainActivity
+          - name: launchPremiumPurchaseFlow
+            params: []
+            returns: void
+            description: Handle Google Play Billing premium purchase
+          - name: showPremiumScreen
+            params: []
+            returns: void
+            description: Show PremiumFragment
+    imports:
+      - app.getpursue.ui.fragments.home
+      - app.getpursue.ui.fragments.groups
+      - app.getpursue.data.auth
+      - app.getpursue.data.fcm
+      - app.getpursue.data.network.ApiClient
+      - com.android.billingclient.api (Google Play Billing)
+
+  ui/activities/GroupDetailActivity.kt:
+    description: Activity for displaying group detail with ViewPager2 tabs
+    exports:
+      - name: GroupDetailActivity
+        kind: class
+        extends: AppCompatActivity
+        methods:
+          - name: onCreate
+            params: [{name: savedInstanceState, type: Bundle?}]
+            returns: void
+            description: Setup toolbar and load GroupDetailFragment with initial tab
+          - name: showPremiumScreen
+            params: []
+            returns: void
+            description: Show PremiumFragment with back navigation to group
+        constants:
+          - {name: EXTRA_GROUP_ID, type: String}
+          - {name: EXTRA_GROUP_NAME, type: String}
+          - {name: EXTRA_GROUP_HAS_ICON, type: String}
+          - {name: EXTRA_GROUP_ICON_EMOJI, type: String}
+          - {name: EXTRA_INITIAL_TAB, type: String}
+          - {name: EXTRA_OPEN_PENDING_APPROVALS, type: String}
+
+  ui/adapters/GroupAdapter.kt:
+    description: RecyclerView adapter for group cards list
+    exports:
+      - name: GroupAdapter
+        kind: class
+        extends: RecyclerView.Adapter<GroupAdapter.GroupViewHolder>
+        methods:
+          - name: onCreateViewHolder
+            params: [{name: parent, type: ViewGroup}, {name: viewType, type: Int}]
+            returns: GroupViewHolder
+          - name: onBindViewHolder
+            params: [{name: holder, type: GroupViewHolder}, {name: position, type: Int}]
+            returns: void
+          - name: getItemCount
+            params: []
+            returns: Int
+
+  ui/adapters/TodayGoalAdapter.kt:
+    description: RecyclerView adapter for today's daily goals
+    exports:
+      - name: TodayGoalAdapter
+        kind: class
+        extends: RecyclerView.Adapter<TodayGoalAdapter.TodayGoalViewHolder>
+
+  ui/adapters/GroupGoalsAdapter.kt:
+    description: RecyclerView adapter for group goals
+    exports:
+      - name: GroupGoalsAdapter
+        kind: class
+        extends: RecyclerView.Adapter<GroupGoalsAdapter.GoalViewHolder>
+
+  ui/adapters/GroupMembersAdapter.kt:
+    description: RecyclerView adapter for group members
+    exports:
+      - name: GroupMembersAdapter
+        kind: class
+        extends: RecyclerView.Adapter<GroupMembersAdapter.MemberViewHolder>
+
+  ui/adapters/GroupActivityAdapter.kt:
+    description: RecyclerView adapter for group activity feed
+    exports:
+      - name: GroupActivityAdapter
+        kind: class
+        extends: RecyclerView.Adapter<GroupActivityAdapter.ActivityViewHolder>
+
+  ui/adapters/GoalBreakdownAdapter.kt:
+    description: RecyclerView adapter for goal breakdown in progress screen
+    exports:
+      - name: GoalBreakdownAdapter
+        kind: class
+        extends: RecyclerView.Adapter<GoalBreakdownAdapter.GoalBreakdownViewHolder>
+
+  ui/adapters/GoalEntryAdapter.kt:
+    description: RecyclerView adapter for goal progress entries
+    exports:
+      - name: GoalEntryAdapter
+        kind: class
+        extends: RecyclerView.Adapter<GoalEntryAdapter.GoalEntryViewHolder>
+
+  ui/adapters/PendingMembersAdapter.kt:
+    description: RecyclerView adapter for pending member requests
+    exports:
+      - name: PendingMembersAdapter
+        kind: class
+        extends: RecyclerView.Adapter<PendingMembersAdapter.PendingMemberViewHolder>
+
+  ui/handlers/GoalLogProgressHandler.kt:
+    description: Shared handler for goal card body tap (log, edit, remove progress)
+    exports:
+      - name: GoalLogProgressHandler
+        kind: class
+        description: Used by GoalsTabFragment and TodayFragment to avoid duplication
+        methods:
+          - name: handleCardBodyClick
+            params: [{name: goal, type: GoalForLogging}]
+            returns: void
+            description: Handle tap on goal card (log/edit for numeric, toggle for binary)
+    imports:
+      - app.getpursue.models.GoalForLogging
+      - app.getpursue.data.network.ApiClient
+      - app.getpursue.ui.dialogs.LogProgressDialog
+      - kotlinx.coroutines
+
+  ui/dialogs/LogProgressDialog.kt:
+    description: Dialog for logging/editing numeric goal progress
+    exports:
+      - name: LogProgressDialog
+        kind: class
+        extends: DialogFragment
+        methods:
+          - name: onCreate
+            params: [{name: savedInstanceState, type: Bundle?}]
+            returns: void
+          - name: onCreateDialog
+            params: [{name: savedInstanceState, type: Bundle?}]
+            returns: Dialog
+            description: Create dialog with number input and note field
+          - name: newInstance
+            params: [{name: goalTitle, type: String}, {name: unit, type: String?}, {name: isEditMode, type: Boolean}, {name: currentValue, type: Double?}, {name: currentNote, type: String?}]
+            returns: LogProgressDialog
+      - name: LogProgressListener
+        kind: interface
+        methods:
+          - name: onLogProgress
+            params: [{name: value, type: Double}, {name: note, type: String?}]
+            returns: void
+      - name: DeleteProgressListener
+        kind: interface
+        methods:
+          - name: onDeleteProgress
+            params: []
+            returns: void
+
+  ui/views/EmptyStateView.kt:
+    description: Reusable empty state view component
+    exports:
+      - name: EmptyStateView
+        kind: class
+        methods:
+          - name: setOnBrowseGroupsClickListener
+            params: [{name: listener, type: View.OnClickListener}]
+            returns: void
+          - name: setOnViewTodaysGoalsClickListener
+            params: [{name: listener, type: View.OnClickListener}]
+            returns: void
+          - name: inflateToday
+            params: [{name: inflater, type: LayoutInflater}, {name: parent, type: ViewGroup}]
+            returns: EmptyStateView
+            description: Create empty state view for Today screen
+          - name: inflateProgress
+            params: [{name: inflater, type: LayoutInflater}, {name: parent, type: ViewGroup}]
+            returns: EmptyStateView
+            description: Create empty state view for Progress screen
+        properties:
+          - {name: view, type: View, description: Root view}
+
+  ui/views/ErrorStateView.kt:
+    description: Reusable error state view component
+    exports:
+      - name: ErrorStateView
+        kind: class
+
+  ui/views/IconPickerBottomSheet.kt:
+    description: Bottom sheet for selecting goal/group icon emoji
+    exports:
+      - name: IconPickerBottomSheet
+        kind: class
+        extends: BottomSheetDialogFragment
+
+  ui/views/InviteMembersBottomSheet.kt:
+    description: Bottom sheet for inviting members to group
+    exports:
+      - name: InviteMembersBottomSheet
+        kind: class
+        extends: BottomSheetDialogFragment
+
+  ui/views/JoinGroupBottomSheet.kt:
+    description: Bottom sheet for joining group via invite code
+    exports:
+      - name: JoinGroupBottomSheet
+        kind: class
+        extends: BottomSheetDialogFragment

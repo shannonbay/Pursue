@@ -1,0 +1,307 @@
+# app-fragments structure detail
+module: pursue-app
+directory: ui/fragments/
+description: Fragment screens organized by feature (home, groups, goals, onboarding)
+
+files:
+  ui/fragments/home/HomeFragment.kt:
+    description: Groups list screen with pull-to-refresh, speed dial FAB
+    exports:
+      - name: HomeFragment
+        kind: class
+        extends: Fragment
+        methods:
+          - name: onCreateView
+            params: [{name: inflater, type: LayoutInflater}, {name: container, type: ViewGroup?}, {name: savedInstanceState, type: Bundle?}]
+            returns: View
+          - name: onViewCreated
+            params: [{name: view, type: View}, {name: savedInstanceState, type: Bundle?}]
+            returns: void
+            description: Setup RecyclerView, pull-to-refresh, speed dial FAB
+      - name: Callbacks
+        kind: interface
+        methods:
+          - name: onGroupSelected
+            params: [{name: group, type: Group}]
+            returns: void
+          - name: onCreateGroup
+            params: []
+            returns: void
+          - name: onJoinGroup
+            params: []
+            returns: void
+      - name: GroupsUiState
+        kind: enum
+        values: [LOADING, SUCCESS_WITH_DATA, SUCCESS_EMPTY, ERROR, OFFLINE]
+    imports:
+      - app.getpursue.models.Group
+      - app.getpursue.data.network.ApiClient
+      - app.getpursue.ui.adapters.GroupAdapter
+      - app.getpursue.ui.views.ErrorStateView
+
+  ui/fragments/home/TodayFragment.kt:
+    description: Today's daily goals screen
+    exports:
+      - name: TodayFragment
+        kind: class
+        extends: Fragment
+        methods:
+          - name: onCreateView
+            params: [{name: inflater, type: LayoutInflater}, {name: container, type: ViewGroup?}, {name: savedInstanceState, type: Bundle?}]
+            returns: View
+          - name: onViewCreated
+            params: [{name: view, type: View}, {name: savedInstanceState, type: Bundle?}]
+            returns: void
+            description: Setup RecyclerView, pull-to-refresh, GoalLogProgressHandler
+      - name: Callbacks
+        kind: interface
+        methods:
+          - name: onViewGroups
+            params: []
+            returns: void
+      - name: TodayUiState
+        kind: enum
+        values: [LOADING, SUCCESS_WITH_DATA, SUCCESS_EMPTY, ERROR, OFFLINE]
+    imports:
+      - app.getpursue.models.TodayGoalsResponse
+      - app.getpursue.data.network.ApiClient
+      - app.getpursue.ui.adapters.TodayGoalAdapter
+      - app.getpursue.ui.handlers.GoalLogProgressHandler
+      - app.getpursue.ui.views.EmptyStateView
+
+  ui/fragments/home/MyProgressFragment.kt:
+    description: User progress detail screen with streak, heatmap, goal breakdown
+    exports:
+      - name: MyProgressFragment
+        kind: class
+        extends: Fragment
+        methods:
+          - name: onCreateView
+            params: [{name: inflater, type: LayoutInflater}, {name: container, type: ViewGroup?}, {name: savedInstanceState, type: Bundle?}]
+            returns: View
+          - name: onViewCreated
+            params: [{name: view, type: View}, {name: savedInstanceState, type: Bundle?}]
+            returns: void
+            description: Setup RecyclerView, pull-to-refresh, display progress data
+      - name: ProgressUiState
+        kind: enum
+        values: [LOADING, SUCCESS_WITH_DATA, SUCCESS_EMPTY, ERROR, OFFLINE]
+    imports:
+      - app.getpursue.models.MyProgressResponse
+      - app.getpursue.data.network.ApiClient
+      - app.getpursue.ui.adapters.GoalBreakdownAdapter
+      - app.getpursue.ui.views.EmptyStateView
+
+  ui/fragments/home/ProfileFragment.kt:
+    description: User profile screen with avatar upload/delete, notification preferences
+    exports:
+      - name: ProfileFragment
+        kind: class
+        extends: Fragment
+        methods:
+          - name: onCreateView
+            params: [{name: inflater, type: LayoutInflater}, {name: container, type: ViewGroup?}, {name: savedInstanceState, type: Bundle?}]
+            returns: View
+          - name: onViewCreated
+            params: [{name: view, type: View}, {name: savedInstanceState, type: Bundle?}]
+            returns: void
+            description: Setup profile display, avatar picker, notification switches
+      - name: Callbacks
+        kind: interface
+        methods:
+          - name: onViewMyProgress
+            params: []
+            returns: void
+          - name: onUpgradeToPremium
+            params: []
+            returns: void
+          - name: onSignOut
+            params: []
+            returns: void
+    imports:
+      - app.getpursue.data.auth.SecureTokenManager
+      - app.getpursue.data.network.ApiClient
+      - app.getpursue.data.notifications.NotificationPreferences
+      - app.getpursue.utils.ImageUtils
+
+  ui/fragments/home/PremiumFragment.kt:
+    description: Premium upgrade screen
+    exports:
+      - name: PremiumFragment
+        kind: class
+        extends: Fragment
+        methods:
+          - name: onCreateView
+            params: [{name: inflater, type: LayoutInflater}, {name: container, type: ViewGroup?}, {name: savedInstanceState, type: Bundle?}]
+            returns: View
+          - name: onViewCreated
+            params: [{name: view, type: View}, {name: savedInstanceState, type: Bundle?}]
+            returns: void
+            description: Show premium features and launch purchase flow on button click
+          - name: newInstance
+            params: []
+            returns: PremiumFragment
+
+  ui/fragments/groups/GroupDetailFragment.kt:
+    description: Group detail screen with ViewPager2 tabs (Goals, Members, Activity)
+    exports:
+      - name: GroupDetailFragment
+        kind: class
+        extends: Fragment
+        methods:
+          - name: onCreate
+            params: [{name: savedInstanceState, type: Bundle?}]
+            returns: void
+          - name: onCreateView
+            params: [{name: inflater, type: LayoutInflater}, {name: container, type: ViewGroup?}, {name: savedInstanceState, type: Bundle?}]
+            returns: View
+          - name: onViewCreated
+            params: [{name: view, type: View}, {name: savedInstanceState, type: Bundle?}]
+            returns: void
+            description: Setup ViewPager2 tabs, header, FAB
+          - name: newInstance
+            params: [{name: groupId, type: String}, {name: groupName, type: String}, {name: hasIcon, type: Boolean}, {name: iconEmoji, type: String?}, {name: initialTabIndex, type: Int}]
+            returns: GroupDetailFragment
+    imports:
+      - app.getpursue.ui.fragments.groups (GoalsTabFragment, MembersTabFragment, ActivityTabFragment)
+      - app.getpursue.data.network.ApiClient
+      - androidx.viewpager2.widget.ViewPager2
+
+  ui/fragments/groups/GoalsTabFragment.kt:
+    description: Goals tab in group detail
+    exports:
+      - name: GoalsTabFragment
+        kind: class
+        extends: Fragment
+        methods:
+          - name: onCreate
+            params: [{name: savedInstanceState, type: Bundle?}]
+            returns: void
+          - name: onCreateView
+            params: [{name: inflater, type: LayoutInflater}, {name: container, type: ViewGroup?}, {name: savedInstanceState, type: Bundle?}]
+            returns: View
+          - name: onViewCreated
+            params: [{name: view, type: View}, {name: savedInstanceState, type: Bundle?}]
+            returns: void
+            description: Setup goals RecyclerView with pull-to-refresh
+          - name: newInstance
+            params: [{name: groupId, type: String}, {name: isAdmin, type: Boolean}]
+            returns: GoalsTabFragment
+
+  ui/fragments/groups/MembersTabFragment.kt:
+    description: Members tab in group detail with admin actions
+    exports:
+      - name: MembersTabFragment
+        kind: class
+        extends: Fragment
+        methods:
+          - name: onCreate
+            params: [{name: savedInstanceState, type: Bundle?}]
+            returns: void
+          - name: onCreateView
+            params: [{name: inflater, type: LayoutInflater}, {name: container, type: ViewGroup?}, {name: savedInstanceState, type: Bundle?}]
+            returns: View
+          - name: onViewCreated
+            params: [{name: view, type: View}, {name: savedInstanceState, type: Bundle?}]
+            returns: void
+            description: Setup members list with admin context menus
+          - name: newInstance
+            params: [{name: groupId, type: String}, {name: isAdmin, type: Boolean}]
+            returns: MembersTabFragment
+
+  ui/fragments/groups/ActivityTabFragment.kt:
+    description: Activity feed tab in group detail
+    exports:
+      - name: ActivityTabFragment
+        kind: class
+        extends: Fragment
+
+  ui/fragments/groups/CreateGroupFragment.kt:
+    description: Fragment for creating new group
+    exports:
+      - name: CreateGroupFragment
+        kind: class
+        extends: Fragment
+
+  ui/fragments/groups/EditGroupFragment.kt:
+    description: Fragment for editing existing group
+    exports:
+      - name: EditGroupFragment
+        kind: class
+        extends: Fragment
+
+  ui/fragments/groups/PendingApprovalsFragment.kt:
+    description: Fragment for viewing and approving pending member requests
+    exports:
+      - name: PendingApprovalsFragment
+        kind: class
+        extends: Fragment
+        methods:
+          - name: newInstance
+            params: [{name: groupId, type: String}, {name: groupName, type: String}]
+            returns: PendingApprovalsFragment
+
+  ui/fragments/goals/CreateGoalFragment.kt:
+    description: Fragment for creating goal in group
+    exports:
+      - name: CreateGoalFragment
+        kind: class
+        extends: Fragment
+
+  ui/fragments/goals/GoalDetailFragment.kt:
+    description: Fragment for viewing goal details and progress
+    exports:
+      - name: GoalDetailFragment
+        kind: class
+        extends: Fragment
+
+  ui/fragments/onboarding/WelcomeFragment.kt:
+    description: Welcome screen of onboarding flow
+    exports:
+      - name: WelcomeFragment
+        kind: class
+        extends: Fragment
+        methods:
+          - name: newInstance
+            params: []
+            returns: WelcomeFragment
+      - name: Callbacks
+        kind: interface
+        methods:
+          - name: onSignInWithEmail
+            params: []
+            returns: void
+
+  ui/fragments/onboarding/SignInEmailFragment.kt:
+    description: Email/password sign-in screen
+    exports:
+      - name: SignInEmailFragment
+        kind: class
+        extends: Fragment
+        methods:
+          - name: newInstance
+            params: []
+            returns: SignInEmailFragment
+      - name: Callbacks
+        kind: interface
+        methods:
+          - name: onSignIn
+            params: [{name: email, type: String}, {name: password, type: String}]
+            returns: void
+
+  ui/fragments/onboarding/SignUpEmailFragment.kt:
+    description: Email/password sign-up (registration) screen
+    exports:
+      - name: SignUpEmailFragment
+        kind: class
+        extends: Fragment
+        methods:
+          - name: newInstance
+            params: []
+            returns: SignUpEmailFragment
+      - name: Callbacks
+        kind: interface
+        methods:
+          - name: onSignUp
+            params: [{name: displayName, type: String}, {name: email, type: String}, {name: password, type: String}]
+            returns: void

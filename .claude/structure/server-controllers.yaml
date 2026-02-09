@@ -1,0 +1,276 @@
+# server-controllers structure detail
+module: pursue-server
+directory: controllers/
+description: Route handlers that process requests and call services/db
+
+files:
+
+  auth.ts:
+    description: Authentication endpoints (register, login, Google OAuth, refresh, password reset)
+    exports:
+      - name: register
+        kind: function
+        params: [{name: req, type: AuthRequest}, {name: res, type: Response}, {name: next, type: NextFunction}]
+        returns: Promise<void>
+        description: POST /api/auth/register - Create new user with email/password
+      - name: login
+        kind: function
+        description: POST /api/auth/login - Authenticate with email/password
+      - name: googleAuth
+        kind: function
+        description: POST /api/auth/google - Sign in/register with Google OAuth
+      - name: refresh
+        kind: function
+        description: POST /api/auth/refresh - Rotate refresh token for new access token
+      - name: logout
+        kind: function
+        description: POST /api/auth/logout - Revoke refresh token
+      - name: forgotPassword
+        kind: function
+        description: POST /api/auth/forgot-password - Initiate password reset
+      - name: resetPassword
+        kind: function
+        description: POST /api/auth/reset-password - Complete password reset with token
+      - name: linkGoogle
+        kind: function
+        description: POST /api/auth/link/google - Link Google account to existing user
+      - name: unlinkProvider
+        kind: function
+        description: DELETE /api/auth/unlink/:provider - Unlink auth provider
+    imports:
+      - from: database/index
+        items: [db]
+      - from: utils/jwt
+        items: [generateAccessToken, generateRefreshToken, verifyRefreshToken, hashToken, generateRandomToken]
+      - from: utils/password
+        items: [hashPassword, verifyPassword]
+      - from: services/googleAuth
+        items: [verifyGoogleIdToken]
+      - from: middleware/errorHandler
+        items: [ApplicationError]
+
+  users.ts:
+    description: User profile endpoints (avatar upload/download, settings, subscription, groups)
+    exports:
+      - name: uploadAvatar
+        kind: export
+        type: Express middleware array
+        description: POST /api/users/me/avatar - Upload user avatar
+      - name: getUserAvatar
+        kind: function
+        description: GET /api/users/:user_id/avatar - Download user avatar with caching
+      - name: deleteAvatar
+        kind: function
+        description: DELETE /api/users/me/avatar - Remove user avatar
+      - name: getCurrentUser
+        kind: function
+        description: GET /api/users/me - Get current user profile
+      - name: updateCurrentUser
+        kind: function
+        description: PATCH /api/users/me - Update display name
+      - name: changePassword
+        kind: function
+        description: POST /api/users/me/password - Change password (with optional current password verification)
+      - name: getAuthProviders
+        kind: function
+        description: GET /api/users/me/providers - List linked auth providers
+      - name: getSubscription
+        kind: function
+        description: GET /api/users/me/subscription - Get subscription state and group limits
+      - name: getSubscriptionEligibilityHandler
+        kind: function
+        description: GET /api/users/me/subscription/eligibility - Check upgrade eligibility
+      - name: getUserGroups
+        kind: function
+        description: GET /api/users/me/groups - List user's groups with pagination
+      - name: deleteCurrentUser
+        kind: function
+        description: DELETE /api/users/me - Soft delete user account (requires password)
+    imports:
+      - from: database/index
+        items: [db]
+      - from: services/storage.service
+        items: [uploadUserAvatar, deleteUserAvatar]
+      - from: services/subscription.service
+        items: [getUserSubscriptionState, getSubscriptionEligibility]
+      - from: utils/password
+        items: [hashPassword, verifyPassword]
+
+  groups.ts:
+    description: Group management endpoints (CRUD, members, invites, activity, exports)
+    exports:
+      - name: createGroup
+        kind: function
+        description: POST /api/groups - Create new group with optional initial goals
+      - name: getGroup
+        kind: function
+        description: GET /api/groups/:group_id - Get group details with member count
+      - name: updateGroup
+        kind: function
+        description: PATCH /api/groups/:group_id - Update group name, description, icon emoji/color (admin only)
+      - name: uploadIcon
+        kind: export
+        type: Express middleware array
+        description: PATCH /api/groups/:group_id/icon - Upload group icon image (admin only)
+      - name: getGroupIcon
+        kind: function
+        description: GET /api/groups/:group_id/icon - Download group icon with caching
+      - name: deleteIcon
+        kind: function
+        description: DELETE /api/groups/:group_id/icon - Remove group icon
+      - name: deleteGroup
+        kind: function
+        description: DELETE /api/groups/:group_id - Delete group (creator only, cascade deletes all related data)
+      - name: listPendingMembers
+        kind: function
+        description: GET /api/groups/:group_id/members/pending - List pending join requests (admin only)
+      - name: approveMember
+        kind: function
+        description: POST /api/groups/:group_id/members/:user_id/approve - Approve pending member (admin only)
+      - name: declineMember
+        kind: function
+        description: POST /api/groups/:group_id/members/:user_id/decline - Decline pending member (admin only)
+      - name: listMembers
+        kind: function
+        description: GET /api/groups/:group_id/members - List active group members sorted by role then joined_at
+      - name: updateMemberRole
+        kind: function
+        description: PATCH /api/groups/:group_id/members/:user_id - Promote/demote member (admin only)
+      - name: removeMember
+        kind: function
+        description: DELETE /api/groups/:group_id/members/:user_id - Remove member from group (admin only)
+      - name: leaveGroup
+        kind: function
+        description: DELETE /api/groups/:group_id/members/me - Leave group (auto-promotes replacement if last admin)
+      - name: getGroupInvite
+        kind: function
+        description: GET /api/groups/:group_id/invite - Get active invite code for sharing
+      - name: regenerateInviteCode
+        kind: function
+        description: POST /api/groups/:group_id/invite/regenerate - Revoke old and create new invite code (admin only)
+      - name: joinGroup
+        kind: function
+        description: POST /api/groups/join - Join group with invite code (creates pending membership)
+      - name: getActivity
+        kind: function
+        description: GET /api/groups/:group_id/activity - Get group activity feed with pagination
+      - name: validateExportRange
+        kind: function
+        description: GET /api/groups/:group_id/export-progress/validate-range - Validate export date range against tier
+      - name: exportGroupProgress
+        kind: function
+        description: GET /api/groups/:group_id/export-progress - Generate Excel workbook with progress data
+    imports:
+      - from: database/index
+        items: [db]
+      - from: services/authorization
+        items: [ensureGroupExists, requireGroupMember, requireGroupAdmin, requireGroupCreator, requireActiveGroupMember]
+      - from: services/subscription.service
+        items: [canUserJoinOrCreateGroup, validateExportDateRange]
+      - from: services/activity.service
+        items: [createGroupActivity, ACTIVITY_TYPES]
+      - from: services/fcm.service
+        items: [sendGroupNotification, sendNotificationToUser, sendPushNotification, sendToTopic, buildTopicName]
+      - from: services/storage.service
+        items: [uploadGroupIcon, deleteGroupIcon]
+      - from: services/exportProgress.service
+        items: [sanitizeSheetName, addLetterhead, generateSummarySection, generateCalendarSection]
+
+  goals.ts:
+    description: Goal endpoints (CRUD, progress tracking with per-period calculations)
+    exports:
+      - name: createGoal
+        kind: function
+        description: POST /api/groups/:group_id/goals - Create goal with cadence, metric, targets (admin only)
+      - name: listGoals
+        kind: function
+        description: GET /api/groups/:group_id/goals - List group goals with optional progress attachment
+      - name: getGoal
+        kind: function
+        description: GET /api/goals/:goal_id - Get single goal details
+      - name: updateGoal
+        kind: function
+        description: PATCH /api/goals/:goal_id - Update goal title/description (admin only)
+      - name: deleteGoal
+        kind: function
+        description: DELETE /api/goals/:goal_id - Soft delete goal (admin only)
+      - name: getProgress
+        kind: function
+        description: GET /api/goals/:goal_id/progress - Get progress entries for all members (with date range filter)
+      - name: getProgressMe
+        kind: function
+        description: GET /api/goals/:goal_id/progress/me - Get current user's progress entries
+    imports:
+      - from: database/index
+        items: [db]
+      - from: services/authorization
+        items: [ensureGroupExists, ensureGoalExists, requireGroupMember, requireActiveGroupMember, requireGroupAdmin]
+      - from: services/subscription.service
+        items: [canUserWriteInGroup]
+      - from: services/activity.service
+        items: [createGroupActivity, ACTIVITY_TYPES]
+      - from: services/fcm.service
+        items: [sendToTopic, buildTopicName]
+
+  progress.ts:
+    description: Progress entry endpoints (log daily/weekly/monthly progress)
+    exports:
+      - name: createProgress
+        kind: function
+        description: POST /api/progress - Log progress entry (calculates period_start from cadence)
+      - name: getProgress
+        kind: function
+        description: GET /api/progress/:entry_id - Get progress entry (owner or group member)
+      - name: deleteProgress
+        kind: function
+        description: DELETE /api/progress/:entry_id - Delete progress entry (owner only)
+    imports:
+      - from: database/index
+        items: [db]
+      - from: services/authorization
+        items: [ensureGoalExists, requireGroupMember, requireActiveGroupMember]
+      - from: services/subscription.service
+        items: [canUserWriteInGroup]
+      - from: services/activity.service
+        items: [createGroupActivity, ACTIVITY_TYPES]
+      - from: services/fcm.service
+        items: [sendToTopic, buildTopicName]
+
+  devices.ts:
+    description: Device registration for FCM notifications
+    exports:
+      - name: registerDevice
+        kind: function
+        description: POST /api/devices/register - Register or update device with FCM token (upsert by fcm_token)
+      - name: listDevices
+        kind: function
+        description: GET /api/devices - List user's registered devices
+      - name: unregisterDevice
+        kind: function
+        description: DELETE /api/devices/:device_id - Unregister device
+    imports:
+      - from: database/index
+        items: [db]
+      - from: middleware/errorHandler
+        items: [ApplicationError]
+
+  subscriptions.ts:
+    description: Subscription management endpoints (upgrade, verify, cancel, downgrade)
+    exports:
+      - name: upgrade
+        kind: function
+        description: POST /api/subscriptions/upgrade - Create premium subscription with purchase token
+      - name: verify
+        kind: function
+        description: POST /api/subscriptions/verify - Verify purchase with platform (supports webhook)
+      - name: cancel
+        kind: function
+        description: POST /api/subscriptions/cancel - Cancel premium subscription (keeps access until expires_at)
+      - name: downgradeSelectGroup
+        kind: function
+        description: POST /api/subscriptions/downgrade/select-group - User in over_limit state selects group to keep
+    imports:
+      - from: database/index
+        items: [db]
+      - from: services/subscription.service
+        items: [createOrRenewPremiumSubscription, cancelSubscription, selectGroupOnDowngrade, verifyPurchase]

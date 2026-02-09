@@ -1,0 +1,380 @@
+# app-models structure detail
+module: pursue-app
+directory: models/, utils/
+description: Data models for API responses, UI models, and utility functions
+
+files:
+  models/Group.kt:
+    description: Data models for group list responses
+    exports:
+      - name: GroupsResponse
+        kind: dataclass
+        properties:
+          - {name: groups, type: List<Group>}
+          - {name: total, type: Int}
+      - name: Group
+        kind: dataclass
+        properties:
+          - {name: id, type: String}
+          - {name: name, type: String}
+          - {name: description, type: String?}
+          - {name: icon_emoji, type: String?}
+          - {name: icon_color, type: String?}
+          - {name: has_icon, type: Boolean}
+          - {name: member_count, type: Int}
+          - {name: role, type: String}
+          - {name: joined_at, type: String}
+          - {name: updated_at, type: String?}
+          - {name: is_read_only, type: Boolean}
+
+  models/GroupDetailResponse.kt:
+    description: Data model for group detail endpoint response
+    exports:
+      - name: GroupDetailResponse
+        kind: dataclass
+        properties:
+          - {name: id, type: String}
+          - {name: name, type: String}
+          - {name: description, type: String?}
+          - {name: icon_emoji, type: String?}
+          - {name: icon_color, type: String?}
+          - {name: has_icon, type: Boolean}
+          - {name: creator_user_id, type: String}
+          - {name: member_count, type: Int}
+          - {name: created_at, type: String}
+          - {name: user_role, type: String}
+
+  models/GroupActivity.kt:
+    description: Data models for group activity feed
+    exports:
+      - name: GroupActivityResponse
+        kind: dataclass
+        properties:
+          - {name: activities, type: List<GroupActivity>}
+          - {name: total, type: Int}
+      - name: GroupActivity
+        kind: dataclass
+        properties:
+          - {name: id, type: String?}
+          - {name: activity_type, type: String}
+          - {name: user, type: ActivityUser}
+          - {name: metadata, type: Map<String, Any>?}
+          - {name: created_at, type: String}
+      - name: ActivityUser
+        kind: dataclass
+        properties:
+          - {name: id, type: String}
+          - {name: display_name, type: String}
+
+  models/GroupGoal.kt:
+    description: Data models for group goal with progress
+    exports:
+      - name: GroupGoal
+        kind: dataclass
+        properties:
+          - {name: id, type: String}
+          - {name: group_id, type: String}
+          - {name: title, type: String}
+          - {name: description, type: String?}
+          - {name: cadence, type: String}
+          - {name: metric_type, type: String}
+          - {name: target_value, type: Double?}
+          - {name: unit, type: String?}
+          - {name: created_at, type: String}
+          - {name: completed, type: Boolean}
+          - {name: progress_value, type: Double?}
+          - {name: member_progress, type: List<MemberProgress>}
+      - name: MemberProgress
+        kind: dataclass
+        properties:
+          - {name: user_id, type: String}
+          - {name: display_name, type: String}
+          - {name: completed, type: Boolean}
+          - {name: progress_value, type: Double?}
+
+  models/GroupGoalsResponse.kt:
+    description: Data models for group goals endpoint with progress details
+    exports:
+      - name: GroupGoalsResponse
+        kind: dataclass
+        properties:
+          - {name: goals, type: List<GroupGoalResponse>}
+          - {name: total, type: Int}
+      - name: GroupGoalResponse
+        kind: dataclass
+        properties:
+          - {name: id, type: String}
+          - {name: group_id, type: String}
+          - {name: title, type: String}
+          - {name: description, type: String?}
+          - {name: cadence, type: String}
+          - {name: metric_type, type: String}
+          - {name: target_value, type: Double?}
+          - {name: unit, type: String?}
+          - {name: created_by_user_id, type: String}
+          - {name: created_at, type: String}
+          - {name: archived_at, type: String?}
+          - {name: current_period_progress, type: CurrentPeriodProgress?}
+      - name: CurrentPeriodProgress
+        kind: dataclass
+        properties:
+          - {name: start_date, type: String}
+          - {name: end_date, type: String}
+          - {name: period_type, type: String}
+          - {name: user_progress, type: UserProgress}
+          - {name: member_progress, type: List<MemberProgressResponse>}
+      - name: UserProgress
+        kind: dataclass
+        properties:
+          - {name: completed, type: Double}
+          - {name: total, type: Double}
+          - {name: percentage, type: Int}
+          - {name: entries, type: List<ProgressEntry>}
+      - name: ProgressEntry
+        kind: dataclass
+        properties:
+          - {name: date, type: String}
+          - {name: value, type: Double}
+      - name: MemberProgressResponse
+        kind: dataclass
+        properties:
+          - {name: user_id, type: String}
+          - {name: display_name, type: String}
+          - {name: avatar_url, type: String?}
+          - {name: completed, type: Double}
+          - {name: percentage, type: Int}
+
+  models/GroupMember.kt:
+    description: Data models for group members endpoint
+    exports:
+      - name: GroupMembersResponse
+        kind: dataclass
+        properties:
+          - {name: members, type: List<GroupMember>}
+      - name: GroupMember
+        kind: dataclass
+        properties:
+          - {name: user_id, type: String}
+          - {name: display_name, type: String}
+          - {name: has_avatar, type: Boolean}
+          - {name: role, type: String}
+          - {name: joined_at, type: String}
+
+  models/PendingMember.kt:
+    description: Data models for pending join requests
+    exports:
+      - name: PendingMembersResponse
+        kind: dataclass
+        properties:
+          - {name: pending_members, type: List<PendingMember>}
+      - name: PendingMember
+        kind: dataclass
+        properties:
+          - {name: user_id, type: String}
+          - {name: display_name, type: String}
+          - {name: has_avatar, type: Boolean}
+          - {name: requested_at, type: String}
+
+  models/MyProgressResponse.kt:
+    description: Data models for user progress endpoint (streak, heatmap, goal breakdown)
+    exports:
+      - name: MyProgressResponse
+        kind: dataclass
+        properties:
+          - {name: streak, type: StreakData}
+          - {name: weekly_activity, type: WeeklyActivity}
+          - {name: heatmap, type: HeatmapData}
+          - {name: goal_breakdown, type: List<GoalBreakdown>}
+      - name: StreakData
+        kind: dataclass
+        properties:
+          - {name: current_streak_days, type: Int}
+          - {name: longest_streak_days, type: Int}
+          - {name: streak_goal_days, type: Int?}
+      - name: WeeklyActivity
+        kind: dataclass
+        properties:
+          - {name: week_start_date, type: String}
+          - {name: completion_data, type: List<DayCompletion>}
+      - name: DayCompletion
+        kind: dataclass
+        properties:
+          - {name: date, type: String}
+          - {name: completed, type: Boolean}
+          - {name: completion_percent, type: Int}
+      - name: HeatmapData
+        kind: dataclass
+        properties:
+          - {name: start_date, type: String}
+          - {name: end_date, type: String}
+          - {name: days, type: List<HeatmapDay>}
+      - name: HeatmapDay
+        kind: dataclass
+        properties:
+          - {name: date, type: String}
+          - {name: completion_percent, type: Int}
+      - name: GoalBreakdown
+        kind: dataclass
+        properties:
+          - {name: goal_id, type: String}
+          - {name: goal_title, type: String}
+          - {name: completed_count, type: Int}
+          - {name: total_count, type: Int}
+          - {name: completion_percent, type: Int}
+
+  models/TodayGoalsResponse.kt:
+    description: Data models for today's goals aggregated by group
+    exports:
+      - name: TodayGoalsResponse
+        kind: dataclass
+        properties:
+          - {name: date, type: String}
+          - {name: overall_completion_percent, type: Int}
+          - {name: groups, type: List<TodayGroup>}
+      - name: TodayGroup
+        kind: dataclass
+        properties:
+          - {name: group_id, type: String}
+          - {name: group_name, type: String}
+          - {name: has_icon, type: Boolean}
+          - {name: icon_emoji, type: String?}
+          - {name: completed_count, type: Int}
+          - {name: total_count, type: Int}
+          - {name: goals, type: List<TodayGoal>}
+      - name: TodayGoal
+        kind: dataclass
+        properties:
+          - {name: goal_id, type: String}
+          - {name: title, type: String}
+          - {name: completed, type: Boolean}
+          - {name: progress_value, type: Int?}
+          - {name: target_value, type: Int?}
+          - {name: metric_type, type: String?}
+          - {name: unit, type: String?}
+          - {name: icon_emoji, type: String?}
+
+  models/GoalDetailUiModel.kt:
+    description: UI models for goal detail screen
+    exports:
+      - name: GoalDetailUiModel
+        kind: dataclass
+        properties:
+          - {name: goal, type: GoalDetailGoal}
+          - {name: currentPeriodProgress, type: CurrentPeriodProgressUiModel?}
+          - {name: streak, type: StreakUiModel?}
+      - name: GoalDetailGoal
+        kind: dataclass
+        properties:
+          - {name: id, type: String}
+          - {name: group_id, type: String}
+          - {name: title, type: String}
+          - {name: description, type: String?}
+          - {name: cadence, type: String}
+          - {name: metric_type, type: String}
+          - {name: target_value, type: Double?}
+          - {name: unit, type: String?}
+          - {name: created_at, type: String}
+      - name: CurrentPeriodProgressUiModel
+        kind: dataclass
+        properties:
+          - {name: start_date, type: String}
+          - {name: end_date, type: String}
+          - {name: period_type, type: String}
+          - {name: user_completed, type: Double}
+          - {name: user_total, type: Double}
+          - {name: user_percentage, type: Int}
+          - {name: display_text, type: String}
+      - name: StreakUiModel
+        kind: dataclass
+        properties:
+          - {name: current_streak, type: Int}
+          - {name: best_streak, type: Int}
+          - {name: unit, type: String}
+
+  models/GoalEntryUiModel.kt:
+    description: UI model for progress entry in goal detail
+    exports:
+      - name: GoalEntryUiModel
+        kind: dataclass
+        properties:
+          - {name: id, type: String}
+          - {name: user_id, type: String}
+          - {name: display_name, type: String}
+          - {name: is_current_user, type: Boolean}
+          - {name: value, type: Double}
+          - {name: note, type: String?}
+          - {name: period_start, type: String}
+          - {name: logged_at, type: String}
+          - {name: date_header, type: String?}
+          - {name: formatted_timestamp, type: String}
+
+  models/GoalForLogging.kt:
+    description: Minimal goal data for shared log-progress handler
+    exports:
+      - name: GoalForLogging
+        kind: dataclass
+        description: Used by GoalLogProgressHandler shared between GoalsTabFragment and TodayFragment
+        properties:
+          - {name: id, type: String}
+          - {name: groupId, type: String}
+          - {name: title, type: String}
+          - {name: metricType, type: String}
+          - {name: targetValue, type: Double?}
+          - {name: unit, type: String?}
+          - {name: completed, type: Boolean}
+          - {name: progressValue, type: Double?}
+          - {name: cadence, type: String}
+
+  utils/ImageUtils.kt:
+    description: Image utilities for avatar handling and EXIF orientation
+    exports:
+      - name: ImageUtils
+        kind: object
+        description: Utility functions for image handling
+        methods:
+          - name: createLetterAvatar
+            params: [{name: context, type: Context}, {name: name, type: String}, {name: backgroundColor, type: Int}, {name: size, type: Int}]
+            returns: Drawable
+            description: Create letter avatar from first character of name
+          - name: uriToFileWithNormalizedOrientation
+            params: [{name: context, type: Context}, {name: uri, type: Uri}]
+            returns: File?
+            description: Convert URI to File with EXIF orientation normalized
+          - name: uriToFile
+            params: [{name: context, type: Context}, {name: uri, type: Uri}]
+            returns: File?
+            description: Convert URI to File for multipart upload
+          - name: createImagePart
+            params: [{name: imageFile, type: File}, {name: partName, type: String}]
+            returns: MultipartBody.Part
+            description: Create MultipartBody.Part from image file
+          - name: createImagePartFromUri
+            params: [{name: context, type: Context}, {name: uri, type: Uri}, {name: partName, type: String}]
+            returns: MultipartBody.Part?
+            description: Create MultipartBody.Part from URI
+    imports:
+      - androidx.exifinterface.media.ExifInterface
+      - okhttp3 (Multipart)
+
+  utils/RelativeTimeUtils.kt:
+    description: Utility for parsing ISO 8601 timestamps and formatting as relative time
+    exports:
+      - name: RelativeTimeUtils
+        kind: object
+        description: Parse ISO timestamps and format as relative time strings
+        methods:
+          - name: parseIsoTimestamp
+            params: [{name: isoTimestamp, type: String}]
+            returns: Date?
+            description: Parse ISO 8601 timestamp (with or without milliseconds) as UTC
+          - name: formatRelativeTime
+            params: [{name: context, type: Context}, {name: isoTimestamp, type: String}]
+            returns: String
+            description: Format ISO timestamp as relative time (e.g., "2 hours ago")
+
+  utils/GrayscaleTransformation.kt:
+    description: Glide transformation for grayscale image effect
+    exports:
+      - name: GrayscaleTransformation
+        kind: class
+        implements: Transformation<Drawable>

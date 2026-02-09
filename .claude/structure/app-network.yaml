@@ -1,0 +1,622 @@
+# app-network structure detail
+module: pursue-app
+directory: data/network/, data/auth/, data/fcm/, data/notifications/
+description: Data layer - network API client, authentication token management, Firebase Cloud Messaging, and notification preferences
+
+files:
+  GlideModule.kt:
+    description: Custom Glide module for authenticated image requests with Bearer token
+    exports:
+      - name: PursueGlideModule
+        kind: class
+        extends: AppGlideModule
+        methods:
+          - name: registerComponents
+            params: [{name: context, type: Context}, {name: glide, type: Glide}, {name: registry, type: Registry}]
+            returns: void
+            description: Register OkHttpClient with auth header for image requests
+          - name: isManifestParsingEnabled
+            params: []
+            returns: Boolean
+            description: Disable manifest parsing
+    imports:
+      - app.getpursue.data.auth.SecureTokenManager
+      - com.bumptech.glide (Glide integration)
+
+  PursueApplication.kt:
+    description: Application class initializing ApiClient with OkHttpClient
+    exports:
+      - name: PursueApplication
+        kind: class
+        extends: Application
+        methods:
+          - name: onCreate
+            params: []
+            returns: void
+            description: Initialize ApiClient with configured OkHttpClient
+    imports:
+      - app.getpursue.data.network.ApiClient
+
+  data/network/ApiClient.kt:
+    description: Singleton API client with 50+ suspend functions for all backend endpoints
+    exports:
+      - name: ApiClient
+        kind: object
+        description: Singleton HTTP client for all API endpoints
+        methods:
+          # Auth endpoints
+          - name: register
+            params: [{name: displayName, type: String}, {name: email, type: String}, {name: password, type: String}]
+            returns: RegistrationResponse
+            description: POST /auth/register - Register new user account
+          - name: login
+            params: [{name: email, type: String}, {name: password, type: String}]
+            returns: LoginResponse
+            description: POST /auth/login - Sign in with email and password
+          - name: refreshToken
+            params: [{name: refreshToken, type: String}]
+            returns: RefreshTokenResponse
+            description: POST /auth/refresh - Refresh access token
+          - name: signInWithGoogle
+            params: [{name: idToken, type: String}]
+            returns: GoogleSignInResponse
+            description: POST /auth/google - Sign in or register with Google OAuth
+          # Device endpoints
+          - name: registerDevice
+            params: [{name: accessToken, type: String}, {name: fcmToken, type: String}, {name: deviceName, type: String}, {name: platform, type: String}]
+            returns: DeviceRegistrationResponse
+            description: POST /devices/register - Register device for push notifications
+          # User endpoints
+          - name: getMyUser
+            params: [{name: accessToken, type: String}]
+            returns: User
+            description: GET /users/me - Get current user profile
+          - name: getMyGroups
+            params: [{name: accessToken, type: String}, {name: limit, type: Int}, {name: offset, type: Int}]
+            returns: GroupsResponse
+            description: GET /users/me/groups - Get user's groups
+          - name: getMyProgress
+            params: [{name: accessToken, type: String}, {name: startDate, type: String}, {name: endDate, type: String}]
+            returns: MyProgressResponse
+            description: GET /users/me/progress - Get user's progress data (streak, heatmap, goal breakdown)
+          - name: getTodayGoals
+            params: [{name: accessToken, type: String}]
+            returns: TodayGoalsResponse
+            description: Aggregates group goals for today via client-side logic
+          # Subscription endpoints
+          - name: getSubscription
+            params: [{name: accessToken, type: String}]
+            returns: SubscriptionState
+            description: GET /users/me/subscription - Get subscription tier and limits
+          - name: getSubscriptionEligibility
+            params: [{name: accessToken, type: String}]
+            returns: SubscriptionEligibility
+            description: GET /users/me/subscription/eligibility - Check group create/join eligibility
+          - name: upgradeSubscription
+            params: [{name: accessToken, type: String}, {name: platform, type: String}, {name: purchaseToken, type: String}, {name: productId, type: String}]
+            returns: UpgradeSubscriptionResponse
+            description: POST /subscriptions/upgrade - Upgrade to premium
+          - name: downgradeSelectGroup
+            params: [{name: accessToken, type: String}, {name: keepGroupId, type: String}]
+            returns: DowngradeSelectGroupResponse
+            description: POST /subscriptions/downgrade/select-group - Select group to keep on downgrade
+          # Avatar endpoints
+          - name: uploadAvatar
+            params: [{name: accessToken, type: String}, {name: imageFile, type: File}]
+            returns: UploadAvatarResponse
+            description: POST /users/me/avatar - Upload user avatar image
+          - name: getAvatar
+            params: [{name: accessToken, type: String}, {name: userId, type: String}]
+            returns: ResponseBody?
+            description: GET /users/{userId}/avatar - Get user avatar as binary data
+          - name: deleteAvatar
+            params: [{name: accessToken, type: String}]
+            returns: DeleteAvatarResponse
+            description: DELETE /users/me/avatar - Delete user avatar
+          # Group endpoints
+          - name: createGroup
+            params: [{name: accessToken, type: String}, {name: name, type: String}, {name: description, type: String}, {name: iconEmoji, type: String}, {name: iconColor, type: String}]
+            returns: CreateGroupResponse
+            description: POST /groups - Create new group
+          - name: getGroupDetails
+            params: [{name: accessToken, type: String}, {name: groupId, type: String}]
+            returns: GroupDetailResponse
+            description: GET /groups/{groupId} - Get group details
+          - name: patchGroup
+            params: [{name: accessToken, type: String}, {name: groupId, type: String}, {name: name, type: String}, {name: description, type: String}, {name: iconEmoji, type: String}, {name: iconColor, type: String}]
+            returns: PatchGroupResponse
+            description: PATCH /groups/{groupId} - Update group metadata
+          - name: deleteGroup
+            params: [{name: accessToken, type: String}, {name: groupId, type: String}]
+            returns: void
+            description: DELETE /groups/{groupId} - Delete group
+          - name: leaveGroup
+            params: [{name: accessToken, type: String}, {name: groupId, type: String}]
+            returns: void
+            description: DELETE /groups/{groupId}/members/me - Leave group
+          # Group icon endpoints
+          - name: getGroupIcon
+            params: [{name: accessToken, type: String}, {name: groupId, type: String}]
+            returns: ResponseBody?
+            description: GET /groups/{groupId}/icon - Get group icon image as binary
+          - name: uploadGroupIcon
+            params: [{name: accessToken, type: String}, {name: groupId, type: String}, {name: imageFile, type: File}]
+            returns: PatchGroupIconResponse
+            description: PATCH /groups/{groupId}/icon - Upload group icon image
+          # Invite endpoints
+          - name: getGroupInviteCode
+            params: [{name: accessToken, type: String}, {name: groupId, type: String}]
+            returns: GetInviteCodeResponse
+            description: GET /groups/{groupId}/invite - Get current invite code
+          - name: regenerateInviteCode
+            params: [{name: accessToken, type: String}, {name: groupId, type: String}]
+            returns: RegenerateInviteResponse
+            description: POST /groups/{groupId}/invite/regenerate - Generate new invite code
+          - name: joinGroup
+            params: [{name: accessToken, type: String}, {name: inviteCode, type: String}]
+            returns: JoinGroupResponse
+            description: POST /groups/join - Join group via invite code
+          - name: getInviteBaseUrl
+            params: []
+            returns: String
+            description: Get app invite base URL for join links
+          # Members endpoints
+          - name: getGroupMembers
+            params: [{name: accessToken, type: String}, {name: groupId, type: String}]
+            returns: GroupMembersResponse
+            description: GET /groups/{groupId}/members - Get group members
+          - name: getPendingMembers
+            params: [{name: accessToken, type: String}, {name: groupId, type: String}]
+            returns: PendingMembersResponse
+            description: GET /groups/{groupId}/members/pending - Get pending join requests
+          - name: approveMember
+            params: [{name: accessToken, type: String}, {name: groupId, type: String}, {name: userId, type: String}]
+            returns: void
+            description: POST /groups/{groupId}/members/{userId}/approve - Approve pending member
+          - name: declineMember
+            params: [{name: accessToken, type: String}, {name: groupId, type: String}, {name: userId, type: String}]
+            returns: void
+            description: POST /groups/{groupId}/members/{userId}/decline - Decline pending member
+          - name: updateMemberRole
+            params: [{name: accessToken, type: String}, {name: groupId, type: String}, {name: userId, type: String}, {name: role, type: String}]
+            returns: void
+            description: PATCH /groups/{groupId}/members/{userId} - Update member role
+          - name: removeMember
+            params: [{name: accessToken, type: String}, {name: groupId, type: String}, {name: userId, type: String}]
+            returns: void
+            description: DELETE /groups/{groupId}/members/{userId} - Remove member from group
+          # Goals endpoints
+          - name: getGroupGoals
+            params: [{name: accessToken, type: String}, {name: groupId, type: String}, {name: cadence, type: String}, {name: archived, type: Boolean}, {name: includeProgress, type: Boolean}, {name: userTimezone, type: String}]
+            returns: GroupGoalsResponse
+            description: GET /groups/{groupId}/goals - Get group goals with optional progress
+          - name: createGoal
+            params: [{name: accessToken, type: String}, {name: groupId, type: String}, {name: title, type: String}, {name: description, type: String}, {name: cadence, type: String}, {name: metricType, type: String}, {name: targetValue, type: Double}, {name: unit, type: String}]
+            returns: CreateGoalResponse
+            description: POST /groups/{groupId}/goals - Create goal
+          - name: getGoal
+            params: [{name: accessToken, type: String}, {name: goalId, type: String}]
+            returns: GetGoalResponse
+            description: GET /goals/{goalId} - Get goal details
+          - name: updateGoal
+            params: [{name: accessToken, type: String}, {name: goalId, type: String}, {name: title, type: String}, {name: description, type: String}]
+            returns: UpdateGoalResponse
+            description: PATCH /goals/{goalId} - Update goal
+          - name: deleteGoal
+            params: [{name: accessToken, type: String}, {name: goalId, type: String}]
+            returns: void
+            description: DELETE /goals/{goalId} - Soft-delete goal
+          # Progress endpoints
+          - name: getGoalProgress
+            params: [{name: accessToken, type: String}, {name: goalId, type: String}, {name: startDate, type: String}, {name: endDate, type: String}]
+            returns: GoalProgressResponse
+            description: GET /goals/{goalId}/progress - Get all users' progress for goal
+          - name: getGoalProgressMe
+            params: [{name: accessToken, type: String}, {name: goalId, type: String}, {name: startDate, type: String}, {name: endDate, type: String}]
+            returns: GoalProgressMeResponse
+            description: GET /goals/{goalId}/progress/me - Get current user's progress for goal
+          - name: logProgress
+            params: [{name: accessToken, type: String}, {name: goalId, type: String}, {name: value, type: Double}, {name: note, type: String}, {name: userDate, type: String}, {name: userTimezone, type: String}]
+            returns: LogProgressResponse
+            description: POST /progress - Log progress entry
+          - name: deleteProgressEntry
+            params: [{name: accessToken, type: String}, {name: entryId, type: String}]
+            returns: void
+            description: DELETE /progress/{entryId} - Delete progress entry
+          # Activity endpoints
+          - name: getGroupActivity
+            params: [{name: accessToken, type: String}, {name: groupId, type: String}, {name: limit, type: Int}, {name: offset, type: Int}]
+            returns: GroupActivityResponse
+            description: GET /groups/{groupId}/activity - Get group activity feed
+          # Export endpoints
+          - name: exportGroupProgress
+            params: [{name: accessToken, type: String}, {name: groupId, type: String}, {name: startDate, type: String}, {name: endDate, type: String}, {name: userTimezone, type: String}]
+            returns: ByteArray
+            description: GET /groups/{groupId}/export-progress - Export group progress as Excel
+          - name: validateExportRange
+            params: [{name: accessToken, type: String}, {name: groupId, type: String}, {name: startDate, type: String}, {name: endDate, type: String}]
+            returns: ValidateExportRangeResponse
+            description: GET /groups/{groupId}/export-progress/validate-range - Validate export date range
+          # Base URL management
+          - name: getBaseUrl
+            params: []
+            returns: String
+            description: Get current API base URL
+          - name: setBaseUrlForE2E
+            params: [{name: url, type: String}]
+            returns: void
+            description: Override base URL for E2E tests
+          - name: resetBaseUrlForE2E
+            params: []
+            returns: void
+            description: Restore default base URL after E2E
+          - name: buildClient
+            params: [{name: context, type: Context}]
+            returns: OkHttpClient
+            description: Build OkHttpClient with interceptors and authenticator
+          - name: initialize
+            params: [{name: client, type: OkHttpClient}]
+            returns: void
+            description: Initialize ApiClient with pre-built OkHttpClient
+      - name: RegistrationResponse
+        kind: dataclass
+        properties:
+          - {name: access_token, type: String}
+          - {name: refresh_token, type: String}
+          - {name: user, type: User?}
+      - name: LoginResponse
+        kind: dataclass
+        properties:
+          - {name: access_token, type: String}
+          - {name: refresh_token, type: String}
+          - {name: user, type: User?}
+      - name: GoogleSignInResponse
+        kind: dataclass
+        properties:
+          - {name: access_token, type: String}
+          - {name: refresh_token, type: String}
+          - {name: is_new_user, type: Boolean}
+          - {name: user, type: User?}
+      - name: User
+        kind: dataclass
+        properties:
+          - {name: id, type: String}
+          - {name: email, type: String}
+          - {name: display_name, type: String}
+          - {name: has_avatar, type: Boolean}
+          - {name: updated_at, type: String?}
+      - name: ApiException
+        kind: class
+        description: Custom exception for API errors with error code
+        properties:
+          - {name: code, type: Int}
+          - {name: message, type: String}
+          - {name: errorCode, type: String?}
+    imports:
+      - app.getpursue.data.auth.SecureTokenManager
+      - okhttp3 (HTTP client)
+      - com.google.gson.Gson (JSON serialization)
+
+  data/network/AuthInterceptor.kt:
+    description: Adds Authorization header with Bearer token to authenticated API requests
+    exports:
+      - name: AuthInterceptor
+        kind: class
+        implements: Interceptor
+        methods:
+          - name: intercept
+            params: [{name: chain, type: Interceptor.Chain}]
+            returns: Response
+            description: Intercept requests and add Authorization header
+          - name: shouldSkipAuth
+            params: [{name: url, type: String}]
+            returns: Boolean
+            description: Check if request should skip auth (public endpoints)
+    imports:
+      - app.getpursue.data.auth.SecureTokenManager
+      - okhttp3 (HTTP interceptor)
+
+  data/network/TokenAuthenticator.kt:
+    description: Automatically refreshes access token on 401 responses
+    exports:
+      - name: TokenAuthenticator
+        kind: class
+        implements: Authenticator
+        methods:
+          - name: authenticate
+            params: [{name: route, type: Route?}, {name: response, type: Response}]
+            returns: Request?
+            description: Handle 401 response by refreshing token and retrying request
+    imports:
+      - app.getpursue.data.auth.SecureTokenManager
+      - app.getpursue.data.auth.AuthRepository
+      - app.getpursue.data.network.ApiClient
+      - okhttp3 (HTTP authenticator)
+      - kotlinx.coroutines (Mutex, runBlocking)
+
+  data/network/UserNotFoundSignOutInterceptor.kt:
+    description: Signs out user when backend returns 404 for current user endpoint
+    exports:
+      - name: UserNotFoundSignOutInterceptor
+        kind: class
+        implements: Interceptor
+        methods:
+          - name: intercept
+            params: [{name: chain, type: Interceptor.Chain}]
+            returns: Response
+            description: Intercept 404 responses for /users/me and trigger sign-out
+    imports:
+      - app.getpursue.data.auth.SecureTokenManager
+      - app.getpursue.data.auth.AuthRepository
+      - okhttp3 (HTTP interceptor)
+
+  data/auth/SecureTokenManager.kt:
+    description: Singleton managing JWT token storage using Android Keystore and EncryptedSharedPreferences
+    exports:
+      - name: SecureTokenManager
+        kind: class
+        description: Thread-safe singleton for secure token storage with fallback to in-memory for E2E tests
+        methods:
+          - name: storeTokens
+            params: [{name: accessToken, type: String}, {name: refreshToken, type: String}]
+            returns: void
+            description: Store access and refresh tokens securely
+          - name: getAccessToken
+            params: []
+            returns: String?
+            description: Retrieve access token or null
+          - name: getRefreshToken
+            params: []
+            returns: String?
+            description: Retrieve refresh token or null
+          - name: updateAccessToken
+            params: [{name: accessToken, type: String}]
+            returns: void
+            description: Update only access token after refresh
+          - name: hasTokens
+            params: []
+            returns: Boolean
+            description: Check if tokens are stored
+          - name: clearTokens
+            params: []
+            returns: void
+            description: Clear all stored tokens (logout)
+          - name: getInstance
+            params: [{name: context, type: Context}]
+            returns: SecureTokenManager
+            description: Get singleton instance (thread-safe)
+          - name: setTestOverride
+            params: [{name: accessToken, type: String}, {name: refreshToken, type: String}]
+            returns: void
+            description: Set in-memory tokens for E2E testing
+          - name: clearTestOverride
+            params: []
+            returns: void
+            description: Clear in-memory test override
+    imports:
+      - androidx.security.crypto (Encrypted SharedPreferences, Android Keystore)
+
+  data/auth/AuthRepository.kt:
+    description: Repository for managing authentication state with StateFlow
+    exports:
+      - name: AuthRepository
+        kind: class
+        description: Singleton managing auth state and sign out
+        methods:
+          - name: signOut
+            params: []
+            returns: void
+            description: Clear tokens and emit SignedOut state
+          - name: isSignedIn
+            params: []
+            returns: Boolean
+            description: Check if user is currently signed in
+          - name: setSignedIn
+            params: []
+            returns: void
+            description: Update state to SignedIn after successful auth
+          - name: getInstance
+            params: [{name: context, type: Context}]
+            returns: AuthRepository
+            description: Get singleton instance (thread-safe)
+        properties:
+          - {name: authState, type: StateFlow<AuthState>, description: Observable auth state}
+      - name: AuthState
+        kind: sealedclass
+        description: Authentication state enum
+        values:
+          - SignedIn
+          - SignedOut
+    imports:
+      - kotlinx.coroutines.flow (StateFlow)
+
+  data/auth/GoogleSignInHelper.kt:
+    description: Helper for Google Sign-In integration using Google Play Services
+    exports:
+      - name: GoogleSignInHelper
+        kind: class
+        methods:
+          - name: getSignInIntent
+            params: []
+            returns: Intent
+            description: Get Intent to start Google Sign-In flow
+          - name: signOut
+            params: []
+            returns: void
+            description: Sign out from Google for account selection on next sign-in
+          - name: handleSignInResult
+            params: [{name: data, type: Intent?}]
+            returns: GoogleSignInResult
+            description: Handle result from Google Sign-In activity
+      - name: GoogleSignInResult
+        kind: sealedclass
+        description: Result of Google Sign-In operation
+        values:
+          - {name: Success, properties: [{name: account, type: GoogleSignInAccount}]}
+          - {name: Error, properties: [{name: message, type: String}]}
+          - {name: Cancelled}
+    imports:
+      - com.google.android.gms.auth (Google Sign-In)
+
+  data/fcm/FcmTokenManager.kt:
+    description: Singleton managing FCM token retrieval, caching, and registration status
+    exports:
+      - name: FcmTokenManager
+        kind: class
+        description: Thread-safe singleton for FCM token management
+        methods:
+          - name: getToken
+            params: []
+            returns: String?
+            description: Get FCM token, retrieving from Firebase if not cached
+          - name: cacheToken
+            params: [{name: token, type: String}]
+            returns: void
+            description: Cache token directly (e.g., from onNewToken callback)
+          - name: isTokenRegistered
+            params: []
+            returns: Boolean
+            description: Check if token is registered with server
+          - name: markTokenRegistered
+            params: []
+            returns: void
+            description: Mark token as registered with server
+          - name: markTokenUnregistered
+            params: []
+            returns: void
+            description: Mark token as not registered (for retry on token refresh)
+          - name: clearToken
+            params: []
+            returns: void
+            description: Clear cached token and registration status (logout)
+          - name: getDeviceName
+            params: []
+            returns: String
+            description: Get human-readable device name for registration
+          - name: getInstance
+            params: [{name: context, type: Context}]
+            returns: FcmTokenManager
+            description: Get singleton instance (thread-safe)
+    imports:
+      - com.google.firebase.messaging.FirebaseMessaging
+      - kotlinx.coroutines.tasks.await
+
+  data/fcm/FcmTopicManager.kt:
+    description: Singleton managing FCM topic subscriptions for group notifications
+    exports:
+      - name: FcmTopicManager
+        kind: object
+        description: Manages topic subscriptions for progress logs and group events
+        properties:
+          - {name: TOPIC_PROGRESS_LOGS, type: String, value: progress_logs}
+          - {name: TOPIC_GROUP_EVENTS, type: String, value: group_events}
+        methods:
+          - name: buildTopicName
+            params: [{name: groupId, type: String}, {name: type, type: String}]
+            returns: String
+            description: Build topic name in format {groupId}_{topicType}
+          - name: subscribeToTopic
+            params: [{name: topic, type: String}]
+            returns: Boolean
+            description: Subscribe to specific topic
+          - name: unsubscribeFromTopic
+            params: [{name: topic, type: String}]
+            returns: Boolean
+            description: Unsubscribe from specific topic
+          - name: subscribeToGroupTopics
+            params: [{name: context, type: Context}, {name: groupId, type: String}]
+            returns: void
+            description: Subscribe to group topics based on notification preferences
+          - name: unsubscribeFromGroupTopics
+            params: [{name: groupId, type: String}]
+            returns: void
+            description: Unsubscribe from all topics for a group (on leave)
+          - name: updatePreferenceForAllGroups
+            params: [{name: groupIds, type: List<String>}, {name: topicType, type: String}, {name: enabled, type: Boolean}]
+            returns: void
+            description: Update topic subscription across all groups on preference change
+          - name: resubscribeToAllTopics
+            params: [{name: context, type: Context}, {name: groupIds, type: List<String>}]
+            returns: void
+            description: Resubscribe to all topics after token refresh
+    imports:
+      - com.google.firebase.messaging.FirebaseMessaging
+      - app.getpursue.data.notifications.NotificationPreferences
+
+  data/fcm/FcmRegistrationHelper.kt:
+    description: Helper for registering FCM token with backend server
+    exports:
+      - name: FcmRegistrationHelper
+        kind: object
+        description: Centralized logic for FCM token registration and retry
+        methods:
+          - name: registerFcmTokenIfNeeded
+            params: [{name: context, type: Context}, {name: accessToken, type: String}]
+            returns: Boolean
+            description: Register FCM token if not already registered; idempotent
+    imports:
+      - app.getpursue.data.fcm.FcmTokenManager
+      - app.getpursue.data.network.ApiClient
+      - kotlinx.coroutines (Dispatchers)
+
+  data/fcm/PursueFirebaseMessagingService.kt:
+    description: Firebase Cloud Messaging service handling push notifications and token refresh
+    exports:
+      - name: PursueFirebaseMessagingService
+        kind: class
+        extends: FirebaseMessagingService
+        methods:
+          - name: onNewToken
+            params: [{name: token, type: String}]
+            returns: void
+            description: Called when FCM generates new token; re-registers and resubscribes to topics
+          - name: onMessageReceived
+            params: [{name: remoteMessage, type: RemoteMessage}]
+            returns: void
+            description: Called on incoming push notification; shows notification if preferences allow
+    imports:
+      - com.google.firebase.messaging (FCM)
+      - app.getpursue.data.fcm.FcmTokenManager
+      - app.getpursue.data.fcm.FcmTopicManager
+      - app.getpursue.data.fcm.FcmRegistrationHelper
+      - app.getpursue.data.notifications.NotificationPreferences
+      - app.getpursue.ui.activities (MainActivity, GroupDetailActivity)
+
+  data/notifications/NotificationPreferences.kt:
+    description: Singleton managing notification preferences with FCM topic integration
+    exports:
+      - name: NotificationPreferences
+        kind: object
+        description: Store and expose notification filtering preferences
+        methods:
+          - name: getNotifyProgressLogs
+            params: [{name: context, type: Context}]
+            returns: Boolean
+            description: Check if progress log notifications are enabled
+          - name: setNotifyProgressLogs
+            params: [{name: context, type: Context}, {name: enabled, type: Boolean}]
+            returns: void
+            description: Set progress log notification preference
+          - name: getNotifyGroupEvents
+            params: [{name: context, type: Context}]
+            returns: Boolean
+            description: Check if group event notifications are enabled
+          - name: setNotifyGroupEvents
+            params: [{name: context, type: Context}, {name: enabled, type: Boolean}]
+            returns: void
+            description: Set group event notification preference
+          - name: setNotifyProgressLogsWithTopics
+            params: [{name: context, type: Context}, {name: enabled, type: Boolean}, {name: groupIds, type: List<String>}]
+            returns: void
+            description: Update progress logs preference and manage FCM subscriptions
+          - name: setNotifyGroupEventsWithTopics
+            params: [{name: context, type: Context}, {name: enabled, type: Boolean}, {name: groupIds, type: List<String>}]
+            returns: void
+            description: Update group events preference and manage FCM subscriptions
+          - name: shouldShowNotification
+            params: [{name: context, type: Context}, {name: type, type: String?}]
+            returns: Boolean
+            description: Check if notification should be displayed based on type and preferences
+    imports:
+      - app.getpursue.data.fcm.FcmTopicManager
+      - kotlinx.coroutines

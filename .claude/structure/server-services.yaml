@@ -1,0 +1,183 @@
+# server-services structure detail
+module: pursue-server
+directory: services/
+description: Business logic including auth, subscriptions, FCM, and utilities
+
+files:
+
+  authorization.ts:
+    description: Authorization checks for group membership, roles, and goal access
+    exports:
+      - name: ensureGoalExists
+        kind: function
+        params: [{name: goalId, type: string}]
+        returns: Promise<GoalRow>
+        description: Verify goal exists and is not soft-deleted; throws 404
+      - name: ensureGroupExists
+        kind: function
+        params: [{name: groupId, type: string}]
+        returns: Promise<void>
+        description: Verify group exists; throws 404
+      - name: getGroupMembership
+        kind: function
+        params: [{name: userId, type: string}, {name: groupId, type: string}]
+        returns: Promise<GroupMembershipResult | null>
+        description: Get user's membership record or null if not member
+      - name: requireGroupMember
+        kind: function
+        description: Ensure user is member of group; throws 403
+      - name: requireActiveGroupMember
+        kind: function
+        description: Ensure user is active member (not pending/declined); throws 403 or PENDING_APPROVAL
+      - name: requireGroupAdmin
+        kind: function
+        description: Ensure user is admin or creator; throws 403
+      - name: requireGroupCreator
+        kind: function
+        description: Ensure user is creator; throws 403
+
+  subscription.service.ts:
+    description: Subscription tier logic, group limits, export date validation, downgrade handling
+    exports:
+      - name: getActiveGroupCount
+        kind: function
+        params: [{name: userId, type: string}]
+        returns: Promise<number>
+        description: Count active group memberships
+      - name: getUserSubscriptionState
+        kind: function
+        params: [{name: userId, type: string}]
+        returns: Promise<UserSubscriptionState | null>
+        description: Get user's tier, status, group_limit, current_group_count
+      - name: updateSubscriptionStatus
+        kind: function
+        params: [{name: userId, type: string}]
+        returns: Promise<void>
+        description: Sync user subscription state from user_subscriptions table
+      - name: canUserJoinOrCreateGroup
+        kind: function
+        params: [{name: userId, type: string}]
+        returns: Promise<{allowed: boolean, reason?: string}>
+        description: Check if user can join/create group (tier + limits)
+      - name: canUserWriteInGroup
+        kind: function
+        params: [{name: userId, type: string}, {name: groupId, type: string}]
+        returns: Promise<CanUserWriteInGroupResult>
+        description: Check if user can write (not in read-only/over_limit state)
+      - name: getSubscriptionEligibility
+        kind: function
+        params: [{name: userId, type: string}]
+        returns: Promise<SubscriptionEligibility | null>
+        description: Get group creation/joining eligibility info
+      - name: validateExportDateRange
+        kind: function
+        params: [{name: userId, type: string}, {name: startDate, type: string}, {name: endDate, type: string}]
+        returns: Promise<ExportRangeValidation | null>
+        description: Validate export range respects tier limits (30 days free, 365 premium)
+      - name: createOrRenewPremiumSubscription
+        kind: function
+        description: Create or renew premium subscription from platform purchase
+      - name: verifyPurchase
+        kind: function
+        description: Verify purchase with platform (Google Play or App Store)
+      - name: cancelSubscription
+        kind: function
+        params: [{name: userId, type: string}]
+        returns: Promise<{status, access_until, auto_renew, message}>
+        description: Cancel premium subscription (access available until expires_at)
+      - name: selectGroupOnDowngrade
+        kind: function
+        params: [{name: userId, type: string}, {name: keepGroupId, type: string}]
+        returns: Promise<{status, kept_group, removed_groups, read_only_access_until}>
+        description: User in over_limit selects one group to keep, others become read-only
+
+  fcm.service.ts:
+    description: Firebase Cloud Messaging for push notifications and group topics
+    exports:
+      - name: sendPushNotification
+        kind: function
+        params: [{name: deviceToken, type: string}, {name: title, type: string}, {name: body, type: string}, {name: data, type: Record<string, string>}]
+        returns: Promise<void>
+        description: Send push notification to single device; removes invalid tokens
+      - name: sendGroupNotification
+        kind: function
+        params: [{name: groupId, type: string}, {name: notification, type: GroupNotificationPayload}, {name: data, type: Record<string, string>}, {name: options, type: SendGroupNotificationOptions}]
+        returns: Promise<void>
+        description: Send push notification to all group members
+      - name: sendNotificationToUser
+        kind: function
+        description: Send push notification to all user's devices
+      - name: sendToTopic
+        kind: function
+        params: [{name: topicName, type: string}, {name: notification, type: {title, body}}, {name: data, type: Record<string, string>}]
+        returns: Promise<void>
+        description: Send message to FCM topic (e.g., group_events, progress_logs)
+      - name: buildTopicName
+        kind: function
+        params: [{name: groupId, type: string}, {name: topicType, type: string}]
+        returns: string
+        description: Build standardized topic name (e.g., group_{id}_group_events)
+
+  activity.service.ts:
+    description: Group activity logging for feeds
+    exports:
+      - name: ACTIVITY_TYPES
+        kind: export
+        type: const object
+        description: Activity type constants (group_created, member_joined, goal_added, progress_logged, etc.)
+      - name: createGroupActivity
+        kind: function
+        params: [{name: groupId, type: string}, {name: activityType, type: string}, {name: userId, type: string | null}, {name: metadata, type: Record<string, unknown>}]
+        returns: Promise<void>
+        description: Create group_activities entry for feed
+
+  googleAuth.ts:
+    description: Google OAuth token verification with multi-client support
+    exports:
+      - name: verifyGoogleIdToken
+        kind: function
+        params: [{name: idToken, type: string}]
+        returns: Promise<GoogleUserInfo>
+        description: Verify Google ID token and extract user info (sub, email, name, picture)
+      - name: GoogleUserInfo
+        kind: interface
+        description: Verified Google user data
+
+  storage.service.ts:
+    description: Image storage (upload/delete avatars and group icons)
+    exports:
+      - name: uploadUserAvatar
+        kind: function
+        description: Upload and process user avatar (resize to 256x256, convert to WebP)
+      - name: deleteUserAvatar
+        kind: function
+        description: Delete user avatar from database
+      - name: uploadGroupIcon
+        kind: function
+        description: Upload and process group icon (similar to avatar)
+      - name: deleteGroupIcon
+        kind: function
+        description: Delete group icon from database
+
+  exportProgress.service.ts:
+    description: Excel workbook generation for progress exports
+    exports:
+      - name: sanitizeSheetName
+        kind: function
+        description: Clean sheet names for Excel compatibility
+      - name: sanitizeFilename
+        kind: function
+        description: Clean filenames for download headers
+      - name: addLetterhead
+        kind: function
+        description: Add letterhead image to worksheet
+      - name: generateSummarySection
+        kind: function
+        description: Create summary table with member progress stats
+      - name: generateCalendarSection
+        kind: function
+        description: Create calendar grid showing progress over date range
+      - name: ExportGoal
+        kind: type
+      - name: ExportProgressEntry
+        kind: type

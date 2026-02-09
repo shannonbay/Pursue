@@ -5,7 +5,7 @@
         "hooks": [
           {
             "type": "prompt",
-            "prompt": "A task is being completed: $ARGUMENTS. Check if the task_subject or task_description suggests source code was modified (new files, classes, methods, refactoring, bug fixes in code). If code was likely changed, respond {\"ok\": false, \"reason\": \"Update .claude/structure/ to reflect any added, modified, or removed files, classes, or methods before completing this task.\"}. If the task is purely research, documentation, discussion, or non-code, respond {\"ok\": true}."
+            "prompt": "A task is being completed: $ARGUMENTS. Check if the task involved adding, removing, or renaming source files, public classes, or public functions. If so, respond {\"ok\": false, \"reason\": \"Update the CLAUDE.md file map and .claude/structure/ YAML to reflect added, removed, or renamed files/classes/functions.\"}. If the task only modified existing function bodies, fixed bugs without structural changes, or was non-code work, respond {\"ok\": true}."
           }
         ]
       }

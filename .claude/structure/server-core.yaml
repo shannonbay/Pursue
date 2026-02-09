@@ -1,0 +1,435 @@
+# server-core structure detail
+module: pursue-server
+directory: src/
+description: Core app setup, database, middleware, routes, utilities, types, and validations
+
+files:
+
+  # Core app setup
+  app.ts:
+    description: Express app factory with middleware setup, CORS, health check endpoint
+    exports:
+      - name: app
+        kind: export
+        type: Express Application instance
+    imports:
+      - from: database/index
+        items: [db]
+      - from: middleware/errorHandler
+        items: [errorHandler]
+      - from: middleware/rateLimiter
+        items: [apiLimiter]
+      - from: routes/*
+        items: [all route handlers]
+
+  server.ts:
+    description: Server startup with environment validation and port configuration
+    imports:
+      - from: app
+        items: [app]
+
+  # Database layer
+  database/index.ts:
+    description: Kysely database connection and type-safe query builder initialization
+    exports:
+      - name: db
+        kind: export
+        type: Kysely<Database> instance
+    imports:
+      - from: database/types
+        items: [Database type]
+
+  database/types.ts:
+    description: Kysely table interfaces (Users, Groups, Goals, Progress, etc.) and type utilities
+    exports:
+      - name: Database
+        kind: interface
+        description: Root database schema mapping all tables
+      - name: User
+        kind: type
+        description: Selectable user row
+      - name: NewUser
+        kind: type
+        description: Insertable user (omits generated fields)
+      - name: UserUpdate
+        kind: type
+        description: Updatable user fields
+      - name: Group
+        kind: type
+      - name: GroupMembership
+        kind: type
+      - name: Goal
+        kind: type
+      - name: ProgressEntry
+        kind: type
+      - name: Device
+        kind: type
+      - name: UserSubscription
+        kind: type
+      - name: GroupActivity
+        kind: type
+      - name: InviteCode
+        kind: type
+      - name: PasswordResetToken
+        kind: type
+      - name: RefreshToken
+        kind: type
+      - name: AuthProvider
+        kind: type
+      - name: SubscriptionDowngradeHistory
+        kind: type
+      - name: SubscriptionTransaction
+        kind: type
+
+  # Middleware
+  middleware/authenticate.ts:
+    description: JWT bearer token verification middleware
+    exports:
+      - name: authenticate
+        kind: function
+        params: [{name: req, type: AuthRequest}, {name: res, type: Response}, {name: next, type: NextFunction}]
+        returns: Promise<void>
+        description: Extract and verify JWT from Authorization header; attach req.user
+    imports:
+      - from: utils/logger
+        items: [logger]
+
+  middleware/errorHandler.ts:
+    description: Global error handler for ApplicationError, Zod, Multer, Sharp, and generic errors
+    exports:
+      - name: ApplicationError
+        kind: class
+        params: [{name: message, type: string}, {name: statusCode, type: number}, {name: code, type: string}]
+        description: Custom error class with status code and error code
+      - name: errorHandler
+        kind: function
+        params: [{name: error, type: Error}, {name: req, type: Request}, {name: res, type: Response}, {name: _next, type: NextFunction}]
+        returns: void
+        description: Global error middleware; handles ApplicationError, Zod, Multer, Sharp, DB constraint errors
+
+  middleware/rateLimiter.ts:
+    description: Rate limiting for auth endpoints and general API
+    exports:
+      - name: apiLimiter
+        kind: export
+        description: Rate limiter for general API endpoints
+      - name: authLimiter
+        kind: export
+        description: Stricter rate limiter for auth (register/login/google)
+      - name: passwordResetLimiter
+        kind: export
+        description: Rate limiter for password reset endpoints
+
+  middleware/index.ts:
+    description: Middleware barrel export
+    imports:
+      - from: authenticate
+        items: [authenticate]
+      - from: errorHandler
+        items: [errorHandler, ApplicationError]
+      - from: rateLimiter
+        items: [apiLimiter, authLimiter, passwordResetLimiter]
+
+  # Routes (Endpoint Definitions)
+  routes/auth.ts:
+    description: Auth route definitions with controller mappings and rate limiting
+    exports:
+      - name: default (router)
+        kind: export
+        type: Express Router
+    imports:
+      - from: controllers/auth
+        items: [register, login, googleAuth, refresh, logout, forgotPassword, resetPassword, linkGoogle, unlinkProvider]
+      - from: middleware/authenticate
+        items: [authenticate]
+      - from: middleware/rateLimiter
+        items: [authLimiter, passwordResetLimiter]
+
+  routes/users.ts:
+    description: User routes (profile, avatar, subscription)
+    imports:
+      - from: controllers/users
+        items: [all user handlers]
+      - from: middleware/authenticate
+        items: [authenticate]
+
+  routes/groups.ts:
+    description: Group routes (CRUD, members, invites, activity, exports)
+    imports:
+      - from: controllers/groups
+        items: [all group handlers]
+      - from: middleware/authenticate
+        items: [authenticate]
+
+  routes/goals.ts:
+    description: Goal routes (CRUD, progress tracking)
+    imports:
+      - from: controllers/goals
+        items: [all goal handlers]
+      - from: middleware/authenticate
+        items: [authenticate]
+
+  routes/progress.ts:
+    description: Progress entry routes
+    imports:
+      - from: controllers/progress
+        items: [createProgress, getProgress, deleteProgress]
+      - from: middleware/authenticate
+        items: [authenticate]
+
+  routes/devices.ts:
+    description: Device registration routes for FCM
+    imports:
+      - from: controllers/devices
+        items: [registerDevice, listDevices, unregisterDevice]
+      - from: middleware/authenticate
+        items: [authenticate]
+
+  routes/subscriptions.ts:
+    description: Subscription management routes
+    imports:
+      - from: controllers/subscriptions
+        items: [upgrade, verify, cancel, downgradeSelectGroup]
+      - from: middleware/authenticate
+        items: [authenticate]
+
+  # Utilities
+  utils/jwt.ts:
+    description: JWT token generation and verification
+    exports:
+      - name: generateAccessToken
+        kind: function
+        params: [{name: userId, type: string}, {name: email, type: string}]
+        returns: string
+        description: Create 1h expiry access token
+      - name: generateRefreshToken
+        kind: function
+        params: [{name: userId, type: string}, {name: tokenId, type: string}]
+        returns: string
+        description: Create 30d expiry refresh token
+      - name: verifyAccessToken
+        kind: function
+        params: [{name: token, type: string}]
+        returns: AccessTokenPayload
+        description: Verify and decode access token
+      - name: verifyRefreshToken
+        kind: function
+        params: [{name: token, type: string}]
+        returns: RefreshTokenPayload
+        description: Verify and decode refresh token
+      - name: hashToken
+        kind: function
+        params: [{name: token, type: string}]
+        returns: string
+        description: SHA256 hash token for database storage
+      - name: generateRandomToken
+        kind: function
+        returns: string
+        description: Generate 32-byte random hex token
+      - name: getRefreshTokenExpiryDate
+        kind: function
+        returns: Date
+        description: Calculate expiry date 30 days from now
+      - name: getPasswordResetExpiryDate
+        kind: function
+        returns: Date
+        description: Calculate expiry date 1 hour from now
+
+  utils/password.ts:
+    description: Password hashing and verification
+    exports:
+      - name: hashPassword
+        kind: function
+        params: [{name: password, type: string}]
+        returns: Promise<string>
+        description: Hash password with bcrypt (10 salt rounds)
+      - name: verifyPassword
+        kind: function
+        params: [{name: password, type: string}, {name: hash, type: string}]
+        returns: Promise<boolean>
+        description: Compare password with bcrypt hash
+
+  utils/logger.ts:
+    description: Winston logger configuration for development and production
+    exports:
+      - name: logger
+        kind: export
+        type: Winston Logger instance
+        description: Configured logger with console and file transports
+
+  # Type Definitions
+  types/express.ts:
+    description: Express request type extensions
+    exports:
+      - name: AuthUser
+        kind: interface
+        description: User attached to request (id, email)
+      - name: AuthRequest
+        kind: interface
+        description: Extended Express Request with optional user property
+
+  # Validation Schemas (Zod)
+  validations/auth.ts:
+    description: Zod validation schemas for auth endpoints
+    exports:
+      - name: RegisterSchema
+        kind: export
+        type: Zod schema
+      - name: LoginSchema
+        kind: export
+        type: Zod schema
+      - name: GoogleAuthSchema
+        kind: export
+        type: Zod schema
+      - name: RefreshTokenSchema
+        kind: export
+        type: Zod schema
+      - name: ForgotPasswordSchema
+        kind: export
+        type: Zod schema
+      - name: ResetPasswordSchema
+        kind: export
+        type: Zod schema
+      - name: LinkGoogleSchema
+        kind: export
+        type: Zod schema
+
+  validations/users.ts:
+    description: Zod validation schemas for user endpoints
+    exports:
+      - name: UpdateUserSchema
+        kind: export
+        type: Zod schema
+      - name: ChangePasswordSchema
+        kind: export
+        type: Zod schema
+      - name: DeleteUserSchema
+        kind: export
+        type: Zod schema
+      - name: GetGroupsQuerySchema
+        kind: export
+        type: Zod schema
+
+  validations/groups.ts:
+    description: Zod validation schemas for group endpoints
+    exports:
+      - name: CreateGroupSchema
+        kind: export
+        type: Zod schema
+      - name: UpdateGroupSchema
+        kind: export
+        type: Zod schema
+      - name: UpdateMemberRoleSchema
+        kind: export
+        type: Zod schema
+      - name: JoinGroupSchema
+        kind: export
+        type: Zod schema
+      - name: ExportProgressQuerySchema
+        kind: export
+        type: Zod schema
+
+  validations/goals.ts:
+    description: Zod validation schemas for goal endpoints
+    exports:
+      - name: CreateGoalSchema
+        kind: export
+        type: Zod schema
+      - name: UpdateGoalSchema
+        kind: export
+        type: Zod schema
+      - name: ProgressQuerySchema
+        kind: export
+        type: Zod schema
+      - name: ListGoalsQuerySchema
+        kind: export
+        type: Zod schema
+
+  validations/progress.ts:
+    description: Zod validation schemas for progress endpoints
+    exports:
+      - name: CreateProgressSchema
+        kind: export
+        type: Zod schema
+
+  validations/devices.ts:
+    description: Zod validation schemas for device endpoints
+    exports:
+      - name: RegisterDeviceSchema
+        kind: export
+        type: Zod schema
+
+  validations/subscriptions.ts:
+    description: Zod validation schemas for subscription endpoints
+    exports:
+      - name: UpgradeSubscriptionSchema
+        kind: export
+        type: Zod schema
+      - name: VerifySubscriptionSchema
+        kind: export
+        type: Zod schema
+      - name: DowngradeSelectGroupSchema
+        kind: export
+        type: Zod schema
+      - name: ValidateExportRangeQuerySchema
+        kind: export
+        type: Zod schema
+
+# Key patterns and conventions
+patterns:
+  authentication:
+    - Bearer token JWT in Authorization header (verified by authenticate middleware)
+    - Access tokens (1h expiry) in memory, refresh tokens (30d expiry) hashed in database
+    - req.user contains {id, email} after authentication
+    - Throws 401/UNAUTHORIZED if missing or invalid token
+
+  database:
+    - Kysely query builder with type-safe SQL
+    - DATE columns parsed as YYYY-MM-DD strings (not Date objects)
+    - Soft deletes on users, groups, goals (filter with deleted_at IS NULL)
+    - DB triggers enforce hard caps on groups/members/goals
+
+  authorization:
+    - requireGroupMember: checks membership (any status)
+    - requireActiveGroupMember: checks status='active' (pending/declined excluded)
+    - requireGroupAdmin: checks role='admin' OR role='creator'
+    - requireGroupCreator: checks role='creator' only
+    - Throws 403/FORBIDDEN or PENDING_APPROVAL
+
+  errors:
+    - All errors caught by global errorHandler middleware
+    - ApplicationError(message, statusCode, code) for business logic
+    - Zod validation errors return 400 with details array
+    - Multer file errors return 400/FILE_TOO_LARGE
+    - Sharp image errors return 400/INVALID_IMAGE
+    - DB constraint errors return 429/RESOURCE_LIMIT_EXCEEDED
+
+  rate_limiting:
+    - apiLimiter on all /api routes (default window)
+    - authLimiter stricter on auth endpoints (register, login, google)
+    - passwordResetLimiter on password endpoints
+    - Automatically disabled when NODE_ENV=test
+
+  subscriptions:
+    - FREE_GROUP_LIMIT = 1, PREMIUM_GROUP_LIMIT = 10
+    - FREE_EXPORT_DAYS = 30, PREMIUM_EXPORT_DAYS = 365
+    - Tiers: free, premium
+    - Statuses: active, cancelled, expired, grace_period, over_limit
+    - Free users with >1 group enter over_limit state (must select group to keep)
+
+  fcm_notifications:
+    - Topics: {group_id}_group_events, {group_id}_progress_logs
+    - Sends to all devices of group members
+    - Removes invalid tokens automatically on send failure
+    - Does not throw if Firebase not configured
+
+  images:
+    - Processed to WebP 256x256 with Sharp
+    - Stored as BYTEA in database
+    - ETag caching with If-None-Match support
+    - Cache-Control: public, max-age=86400
+
+  transactions:
+    - Used in createGroup (group + membership + invite + goals + activity)
+    - Used in regenerateInviteCode (revoke old + create new + activity)
+    - Used in subscription/downgrade flows
