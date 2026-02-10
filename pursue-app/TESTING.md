@@ -29,7 +29,7 @@ The test suite uses:
 
 ### 1. Robolectric
 
-`@Config(sdk = [28], application = android.app.Application::class, packageName = "com.github.shannonbay.pursue")` and `testOptions { unitTests { isIncludeAndroidResources = true } }` in `build.gradle.kts`. Fixes "No package ID 7f found".
+`@Config(sdk = [28], application = android.app.Application::class, packageName = "app.getpursue")` and `testOptions { unitTests { isIncludeAndroidResources = true } }` in `build.gradle.kts`. Fixes "No package ID 7f found".
 
 ### 2. Fragment and lifecycleScope
 
@@ -292,8 +292,8 @@ Instrumented tests (SecureTokenManager); Espresso; >80% coverage; performance te
 ```bash
 ./gradlew compileDebugUnitTestKotlin --no-daemon
 ./gradlew testDebugUnitTest --no-daemon
-./gradlew testDebugUnitTest --tests "com.github.shannonbay.pursue.HomeFragmentTest" --no-daemon
-./gradlew testDebugUnitTest --tests "com.github.shannonbay.pursue.HomeFragmentTest.test loading state shows skeleton" --no-daemon
+./gradlew testDebugUnitTest --tests "app.getpursue.ui.fragments.home.HomeFragmentTest" --no-daemon
+./gradlew testDebugUnitTest --tests "app.getpursue.ui.fragments.home.HomeFragmentTest.test loading state shows skeleton" --no-daemon
 # Reports: app/build/reports/tests/testDebugUnitTest/index.html
 ```
 

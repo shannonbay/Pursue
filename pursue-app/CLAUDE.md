@@ -76,7 +76,16 @@ For E2E testing, `ApiClient.setBaseUrlForE2E()` overrides the base URL.
 - `HomeFragment` → group tap → `GroupDetailActivity` → `GroupDetailFragment` (Goals, Members, Activity tabs)
 - FCM notifications deep link through `MainActivity` intent filters → `GroupDetailActivity`
 
-## Testing Patterns
+## Testing
+
+After making code edits, run the full test suite before committing. All tests must pass.
+
+```powershell
+$env:JAVA_HOME = [System.Environment]::GetEnvironmentVariable("JAVA_HOME", "Machine")
+./gradlew testDebugUnitTest --no-daemon
+```
+
+### Testing Patterns
 
 See [TESTING.md](TESTING.md) for detailed unit test patterns and [E2ETESTING.md](E2ETESTING.md) for E2E patterns.
 
@@ -95,3 +104,7 @@ See [TESTING.md](TESTING.md) for detailed unit test patterns and [E2ETESTING.md]
 - Use `getOrCreateSharedUser()` for test user reuse
 - Use `trackGroup()`/`trackUser()` for cleanup
 - E2E tests are excluded from `testDebugUnitTest` in CI (`CI=true` env var)
+
+## Android-Specific Conventions
+
+When working on Android layouts and fragments: (1) Check which Activity hosts the fragment before casting — fragments may be in GroupDetailActivity, not MainAppActivity. (2) Verify LinearLayout and other imports aren't accidentally removed during edits. (3) Test visibility of UI elements after layout changes.

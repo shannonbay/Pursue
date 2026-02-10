@@ -11,7 +11,7 @@ import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import androidx.test.core.app.ApplicationProvider
-import com.github.shannonbay.pursue.R
+import app.getpursue.R
 import app.getpursue.models.GroupGoal
 import app.getpursue.models.MemberProgress
 import io.mockk.every
@@ -36,7 +36,7 @@ import org.robolectric.shadows.ShadowToast
 @Config(
     sdk = [28],
     application = Application::class,
-    packageName = "com.github.shannonbay.pursue"
+    packageName = "app.getpursue"
 )
 class GroupGoalsAdapterTest {
 

@@ -28,7 +28,7 @@ import java.io.IOException
 @Config(
     sdk = [28],
     application = Application::class,
-    packageName = "com.github.shannonbay.pursue"
+    packageName = "app.getpursue"
 )
 class ImageUtilsTest {
 

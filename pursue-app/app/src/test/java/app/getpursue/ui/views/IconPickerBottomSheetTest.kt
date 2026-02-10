@@ -10,7 +10,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.recyclerview.widget.RecyclerView
 import androidx.test.core.app.ApplicationProvider
 import androidx.viewpager2.widget.ViewPager2
-import com.github.shannonbay.pursue.R
+import app.getpursue.R
 import app.getpursue.ui.fragments.groups.CreateGroupFragment
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.tabs.TabLayout
@@ -42,7 +42,7 @@ import org.robolectric.annotation.LooperMode
 @Config(
     sdk = [28],
     application = Application::class,
-    packageName = "com.github.shannonbay.pursue"
+    packageName = "app.getpursue"
 )
 @LooperMode(LooperMode.Mode.PAUSED)
 @OptIn(ExperimentalCoroutinesApi::class)

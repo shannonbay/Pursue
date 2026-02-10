@@ -25,7 +25,7 @@ import android.os.Looper
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.Lifecycle
 import app.getpursue.MockApiClient
-import com.github.shannonbay.pursue.R
+import app.getpursue.R
 import app.getpursue.data.auth.SecureTokenManager
 import app.getpursue.data.fcm.FcmRegistrationHelper
 import app.getpursue.data.fcm.FcmTokenManager
@@ -45,7 +45,7 @@ import app.getpursue.data.network.ApiClient
 @Config(
     sdk = [28],
     application = Application::class,
-    packageName = "com.github.shannonbay.pursue"
+    packageName = "app.getpursue"
 )
 @OptIn(ExperimentalCoroutinesApi::class)
 class SignUpEmailFragmentTest {

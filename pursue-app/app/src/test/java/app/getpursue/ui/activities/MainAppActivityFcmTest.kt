@@ -47,7 +47,7 @@ import org.robolectric.shadows.ShadowApplication
 @Config(
     sdk = [28],
     application = Application::class,
-    packageName = "com.github.shannonbay.pursue"
+    packageName = "app.getpursue"
 )
 @OptIn(ExperimentalCoroutinesApi::class)
 class MainAppActivityFcmTest {

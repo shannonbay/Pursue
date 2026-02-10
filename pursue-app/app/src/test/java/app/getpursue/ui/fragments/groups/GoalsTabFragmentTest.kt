@@ -22,7 +22,7 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import androidx.test.core.app.ApplicationProvider
 import app.getpursue.MockApiClient
-import com.github.shannonbay.pursue.R
+import app.getpursue.R
 import app.getpursue.data.auth.SecureTokenManager
 import app.getpursue.data.network.ApiClient
 import app.getpursue.data.network.ApiException
@@ -73,7 +73,7 @@ import java.time.Duration
 @Config(
     sdk = [28],
     application = Application::class,
-    packageName = "com.github.shannonbay.pursue"
+    packageName = "app.getpursue"
 )
 @LooperMode(LooperMode.Mode.PAUSED)
 @OptIn(ExperimentalCoroutinesApi::class)

@@ -1,6 +1,6 @@
 ---
 name: unit-testing
-description: This skill should be used when the user asks to "write unit tests", "create unit tests", "test fragments", "test Android components", or needs to write unit tests for the Pursue Android app following project-specific conventions documented in TESTING.md.
+description: This skill should be used when the user asks to "write unit tests", "create unit tests", "test fragments", "test Android components", "fix tests" or needs to write unit tests for the Pursue Android app following project-specific conventions documented in TESTING.md.
 ---
 
 # Unit Testing for Pursue Android App
@@ -28,7 +28,7 @@ Always include these annotations and configuration:
 @Config(
     sdk = [28],
     application = android.app.Application::class,
-    packageName = "com.github.shannonbay.pursue"  // Required for resource loading
+    packageName = "app.getpursue"  // Required for resource loading
 )
 ```
 
@@ -261,7 +261,7 @@ fun `test flaky test`() = runTest(testDispatcher) {
 @Config(
     sdk = [28],
     application = android.app.Application::class,
-    packageName = "com.github.shannonbay.pursue"
+    packageName = "app.getpursue"
 )
 @OptIn(ExperimentalCoroutinesApi::class)
 class MyFragmentTest {
@@ -516,7 +516,7 @@ When running Gradle commands in PowerShell, use this pattern:
 # Set JAVA_HOME and run tests
 $env:JAVA_HOME = [System.Environment]::GetEnvironmentVariable("JAVA_HOME", "Machine")
 if (Test-Path ".\gradlew.bat") {
-    & ".\gradlew.bat" testDebugUnitTest --tests "com.github.shannonbay.pursue.GroupDetailFragmentTest" --no-daemon 2>&1 | Select-Object -First 250
+    & ".\gradlew.bat" testDebugUnitTest --tests "app.getpursue.ui.fragments.groups.GroupDetailFragmentTest" --no-daemon 2>&1 | Select-Object -First 250
 } else {
     Write-Host "gradlew.bat not found"
 }
@@ -537,7 +537,7 @@ if (Test-Path ".\gradlew.bat") {
 ### Unix/macOS
 
 ```bash
-./gradlew testDebugUnitTest --tests "com.github.shannonbay.pursue.GroupDetailFragmentTest" --no-daemon
+./gradlew testDebugUnitTest --tests "app.getpursue.ui.fragments.groups.GroupDetailFragmentTest" --no-daemon
 ```
 
 ## References

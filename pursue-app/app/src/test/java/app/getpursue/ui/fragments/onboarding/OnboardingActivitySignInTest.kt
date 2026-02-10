@@ -8,7 +8,7 @@ import android.widget.Button
 import androidx.fragment.app.commit
 import androidx.test.core.app.ApplicationProvider
 import app.getpursue.MockApiClient
-import com.github.shannonbay.pursue.R
+import app.getpursue.R
 import app.getpursue.data.auth.SecureTokenManager
 import app.getpursue.data.fcm.FcmRegistrationHelper
 import app.getpursue.data.fcm.FcmTokenManager
@@ -55,7 +55,7 @@ import org.robolectric.shadows.ShadowToast
 @Config(
     sdk = [28],
     application = Application::class,
-    packageName = "com.github.shannonbay.pursue"
+    packageName = "app.getpursue"
 )
 @LooperMode(LooperMode.Mode.PAUSED)
 @OptIn(ExperimentalCoroutinesApi::class)
