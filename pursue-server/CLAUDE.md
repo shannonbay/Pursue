@@ -68,6 +68,12 @@ The project uses **ES modules** (`"type": "module"` in package.json). All intern
 
 ## Testing
 
+After making code edits, run the full test suite before committing. All tests must pass.
+
+```bash
+npm test
+```
+
 - Tests use a real PostgreSQL database (`pursue_test`). No mocking of the database layer.
 - `tests/setup.ts` creates schema in `beforeAll`, cleans all tables in `beforeEach`.
 - Test helpers in `tests/helpers.ts`: `createAuthenticatedUser()` (via API, returns tokens), `createTestUser()` (direct DB insert), `createGroupWithGoal()`, `addMemberToGroup()`, `setUserPremium()`.

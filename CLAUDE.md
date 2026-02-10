@@ -52,7 +52,7 @@ $env:JAVA_HOME = [System.Environment]::GetEnvironmentVariable("JAVA_HOME", "Mach
 ./gradlew testDebugUnitTest --no-daemon
 
 # Run specific test class
-./gradlew testDebugUnitTest --tests "com.github.shannonbay.pursue.SomeTest" --no-daemon
+./gradlew testDebugUnitTest --tests "app.getpursue.SomeTest" --no-daemon
 
 # Run E2E tests (requires backend running)
 ./gradlew :app:testE2e --no-daemon
@@ -315,3 +315,7 @@ Detailed specs are in `specs/` and `pursue-app/specs/`:
 - `Spec.md` - System architecture, API design, data model
 - `Pursue-UI-Spec.md` - UI/UX specification
 - `specs/backend/` - Backend-specific specs (rate limiting, etc.)
+
+## Repository Structure 
+
+This project has three separate git repos under the pursue/ directory (Android, backend, and one more). Always cd into the correct sub-repo before running git commands. Never run git commands from the parent folder.

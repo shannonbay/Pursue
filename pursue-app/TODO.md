@@ -84,14 +84,16 @@ My TODOs
 - Subscriptions
 - Ads - What would Regan do
 - Upload custom images for group icons
-- Red teaming
+- Red teaming - completed up to bash password retry loop
 - Create new group -> Back -> Fix activity toolbar title
 - Join group -> Back -> not in any groups yet
 - Caching
 - Ads
+
+- Subscriptions
+- Context menu for ignoring goals (should be stored in frontend)
 - Invite Deep links don't work yet
 - Unit tests for plan pending_approvals_screen
-
 - Go through Backend-Spec-Approval-Queue-Updates.md and implement and test
 - E2E tests for Backend-Spec-Approval-Queue-Updates.md including declines and E2E tests group count shouldn't change til approved, can't see goals or log progress until approved
 - Unit test for Speed dial FAB for join group and create group
@@ -99,6 +101,12 @@ My TODOs
 
 - My Progress and other Profile sub-screens from UI Spec
 - When join request notification comes in, add join queue button to members list
+- Put join requests on TodayFragment as well so they don't get overlooked
+- test notifications again
+- implementing sign out button with claude code
+- blank space on goal creation and group creation screen after save button
+- Site should merge features page with homepage
+- app announcements
 
 TODO: Redis-backed sliding-window limits
 
