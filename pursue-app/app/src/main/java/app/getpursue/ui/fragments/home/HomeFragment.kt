@@ -47,6 +47,7 @@ class HomeFragment : Fragment() {
         fun onGroupSelected(group: Group)
         fun onCreateGroup()
         fun onJoinGroup()
+        fun onGroupsLoaded(groups: List<Group>)
     }
 
     enum class GroupsUiState {
@@ -288,6 +289,9 @@ class HomeFragment : Fragment() {
                 } else {
                     updateUiState(GroupsUiState.SUCCESS_WITH_DATA)
                 }
+
+                // Notify activity that groups have loaded (used for over-limit check)
+                callbacks?.onGroupsLoaded(cachedGroups)
 
             } catch (e: ApiException) {
                 // Determine error type

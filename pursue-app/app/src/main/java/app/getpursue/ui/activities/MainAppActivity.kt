@@ -11,6 +11,8 @@ import android.net.Network
 import android.net.NetworkCapabilities
 import android.net.NetworkRequest
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import android.graphics.Typeface
 import android.view.LayoutInflater
@@ -176,8 +178,8 @@ class MainAppActivity : AppCompatActivity(),
             .build()
         connectivityManager.registerNetworkCallback(networkRequest, networkCallback)
 
-        // Retry FCM registration on app startup if needed
-        retryFcmRegistrationIfNeeded()
+        // Retry FCM registration after a delay so the first frame can render
+        Handler(Looper.getMainLooper()).postDelayed({ retryFcmRegistrationIfNeeded() }, 2000)
 
         // Request notification permission once per install (Android 13+)
         requestNotificationPermissionIfNeeded()
@@ -206,15 +208,27 @@ class MainAppActivity : AppCompatActivity(),
         supportFragmentManager.addOnBackStackChangedListener { syncToolbarWithFragment() }
         syncToolbarWithFragment()
 
-        // Billing: connect and query subscription product
+        // Billing: build client (lightweight, no IPC). Connection deferred to first use.
         billingClient = BillingClient.newBuilder(this)
             .setListener(purchasesUpdatedListener)
             .enablePendingPurchases()
             .build()
-        billingClient?.startConnection(object : BillingClientStateListener {
+    }
+
+    /**
+     * Connect BillingClient on first use and invoke the callback when ready.
+     */
+    private fun ensureBillingConnected(onReady: () -> Unit) {
+        val client = billingClient ?: return
+        if (client.isReady) {
+            onReady()
+            return
+        }
+        client.startConnection(object : BillingClientStateListener {
             override fun onBillingSetupFinished(billingResult: BillingResult) {
                 if (billingResult.responseCode == BillingClient.BillingResponseCode.OK) {
                     queryPremiumProduct()
+                    onReady()
                 }
             }
             override fun onBillingServiceDisconnected() {}
@@ -309,7 +323,6 @@ class MainAppActivity : AppCompatActivity(),
 
     override fun onResume() {
         super.onResume()
-        checkOverLimitAndShowDialog()
     }
 
     override fun onDestroy() {
@@ -325,10 +338,12 @@ class MainAppActivity : AppCompatActivity(),
 
     /**
      * If user is over_limit (subscription expired, multiple groups), show dialog to select one group to keep.
+     * Called with already-fetched groups from HomeFragment to avoid a duplicate getMyGroups call.
      */
-    private fun checkOverLimitAndShowDialog() {
+    private fun checkOverLimitAndShowDialog(groups: List<Group>) {
         if (overLimitDialogShowing) return
         if (overLimitSelectionCompletedThisSession) return
+        if (groups.size <= 1) return
         lifecycleScope.launch {
             val token = SecureTokenManager.Companion.getInstance(this@MainAppActivity).getAccessToken() ?: return@launch
             val subscription = try {
@@ -339,14 +354,6 @@ class MainAppActivity : AppCompatActivity(),
             if (!subscription.is_over_limit) {
                 return@launch
             }
-            val groupsResponse = try {
-                withContext(Dispatchers.IO) { ApiClient.getMyGroups(token) }
-            } catch (e: ApiException) {
-                runOnUiThread { Toast.makeText(this@MainAppActivity, e.message, Toast.LENGTH_SHORT).show() }
-                return@launch
-            }
-            val groups = groupsResponse.groups
-            if (groups.isEmpty()) return@launch
             runOnUiThread { showOverLimitDialog(token, groups) }
         }
     }
@@ -513,6 +520,10 @@ class MainAppActivity : AppCompatActivity(),
         groupDetailLauncher.launch(intent)
     }
 
+    override fun onGroupsLoaded(groups: List<Group>) {
+        checkOverLimitAndShowDialog(groups)
+    }
+
     override fun onCreateGroup() {
         lifecycleScope.launch {
             val token = SecureTokenManager.Companion.getInstance(this@MainAppActivity).getAccessToken()
@@ -579,6 +590,8 @@ class MainAppActivity : AppCompatActivity(),
      * Opens the Pursue Premium screen. Called from group-limit dialog, over-limit dialog, profile, export-limit dialog.
      */
     fun showPremiumScreen() {
+        // Start BillingClient connection lazily so product details are ready by the time the user taps Subscribe
+        ensureBillingConnected {}
         supportActionBar?.title = getString(R.string.pursue_premium_title)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         supportFragmentManager.commit {
@@ -591,26 +604,34 @@ class MainAppActivity : AppCompatActivity(),
      * Launch Google Play Billing purchase flow for Premium. Called from PremiumFragment.
      */
     fun launchPremiumPurchaseFlow() {
-        val productDetails = premiumProductDetails
-        if (productDetails == null) {
-            Toast.makeText(this, getString(R.string.pursue_premium_subscribe), Toast.LENGTH_SHORT).show()
-            return
-        }
-        val offerToken = productDetails.subscriptionOfferDetails?.firstOrNull()?.offerToken
-        if (offerToken == null) {
-            Toast.makeText(this, "Subscription offer not available", Toast.LENGTH_SHORT).show()
-            return
-        }
-        val productDetailsParamsList = listOf(
-            BillingFlowParams.ProductDetailsParams.newBuilder()
-                .setProductDetails(productDetails)
-                .setOfferToken(offerToken)
+        ensureBillingConnected {
+            val productDetails = premiumProductDetails
+            if (productDetails == null) {
+                runOnUiThread {
+                    Toast.makeText(this, getString(R.string.pursue_premium_subscribe), Toast.LENGTH_SHORT).show()
+                }
+                return@ensureBillingConnected
+            }
+            val offerToken = productDetails.subscriptionOfferDetails?.firstOrNull()?.offerToken
+            if (offerToken == null) {
+                runOnUiThread {
+                    Toast.makeText(this, "Subscription offer not available", Toast.LENGTH_SHORT).show()
+                }
+                return@ensureBillingConnected
+            }
+            val productDetailsParamsList = listOf(
+                BillingFlowParams.ProductDetailsParams.newBuilder()
+                    .setProductDetails(productDetails)
+                    .setOfferToken(offerToken)
+                    .build()
+            )
+            val params = BillingFlowParams.newBuilder()
+                .setProductDetailsParamsList(productDetailsParamsList)
                 .build()
-        )
-        val params = BillingFlowParams.newBuilder()
-            .setProductDetailsParamsList(productDetailsParamsList)
-            .build()
-        billingClient?.launchBillingFlow(this, params)
+            runOnUiThread {
+                billingClient?.launchBillingFlow(this, params)
+            }
+        }
     }
 
     // endregion
