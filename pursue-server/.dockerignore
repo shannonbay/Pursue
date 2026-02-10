@@ -2,6 +2,12 @@ node_modules
 npm-debug.log
 .git
 .env
+# Windows reserved names (cause "operation not permitted" in Docker/Cloud Build)
+nul
+CON
+PRN
+AUX
+NUL
 .env.test
 specs
 .chunkhound.json
@@ -14,3 +20,5 @@ coverage
 .mcp.json
 migrations
 logs
+tests
+.vscode
