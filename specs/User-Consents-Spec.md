@@ -37,7 +37,7 @@ Version strings use the format `MMM dd, yyyy` (e.g., `Feb 11, 2026`). This is a 
 
 | Consumer | How | When |
 |----------|-----|------|
-| Backend (`policyConfig.ts`) | `fs.readFileSync` from `../pursue-web/public/config.json` relative to server CWD | On first use (cached in memory) |
+| Backend (`policyConfig.ts`) | HTTP GET `https://getpursue.app/config.json`, falls back to local `../pursue-web/public/config.json` | On first use (cached in memory for process lifetime) |
 | Android (`PolicyConfigManager`) | HTTP GET `https://getpursue.app/config.json`, falls back to SharedPreferences cache | On app launch (background thread) |
 
 ---
@@ -300,7 +300,7 @@ Old consent records are never deleted or overwritten. Each re-consent adds new r
 | File | Role |
 |------|------|
 | `pursue-web/public/config.json` | Single source of truth for policy versions |
-| `pursue-server/src/utils/policyConfig.ts` | Server-side config reader (cached) |
+| `pursue-server/src/utils/policyConfig.ts` | Async config reader — fetches from public site, local file fallback (cached for process lifetime) |
 | `pursue-server/src/controllers/auth.ts` | Records consent during registration (email + Google) |
 | `pursue-server/src/controllers/users.ts` | GET/POST consent endpoints, ghost link on deletion |
 | `pursue-server/src/validations/auth.ts` | `consent_agreed`, version fields on register/google schemas |
