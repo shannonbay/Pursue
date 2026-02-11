@@ -259,7 +259,7 @@ async function createSchema(db: Kysely<Database>) {
       id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
       group_id UUID NOT NULL REFERENCES groups(id) ON DELETE CASCADE,
       code VARCHAR(50) UNIQUE NOT NULL,
-      created_by_user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      created_by_user_id UUID REFERENCES users(id) ON DELETE SET NULL,
       created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
       revoked_at TIMESTAMP WITH TIME ZONE
     )

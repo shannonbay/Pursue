@@ -238,21 +238,20 @@ describe('DELETE /api/users/me', () => {
     expect(loginRes.status).toBe(401);
   });
 
-  it('should cascade delete invite codes created by user', async () => {
+  it('should preserve invite codes with null creator after user deletion', async () => {
     const creator = await createAuthenticatedUser(randomEmail(), 'Test123!@#', 'Creator');
     const { groupId } = await createGroupWithGoal(creator.accessToken, { includeGoal: false });
     const { memberAccessToken, memberUserId } = await addMemberToGroup(creator.accessToken, groupId);
 
-    // Create an invite code by the creator (addMemberToGroup already created one, but add another explicitly)
-    await createTestInviteCode(groupId, creator.userId, { revoked_at: new Date() });
-
-    // Verify invite codes exist for creator
+    // Verify active invite code exists for group
     const beforeCodes = await testDb
       .selectFrom('invite_codes')
-      .select('id')
-      .where('created_by_user_id', '=', creator.userId)
+      .select(['id', 'created_by_user_id'])
+      .where('group_id', '=', groupId)
+      .where('revoked_at', 'is', null)
       .execute();
-    expect(beforeCodes.length).toBeGreaterThan(0);
+    expect(beforeCodes.length).toBe(1);
+    expect(beforeCodes[0].created_by_user_id).toBe(creator.userId);
 
     // Delete the creator (group transfers to member)
     await request(app)
@@ -260,13 +259,15 @@ describe('DELETE /api/users/me', () => {
       .set('Authorization', `Bearer ${creator.accessToken}`)
       .send({ confirmation: 'delete' });
 
-    // Invite codes created by deleted user should be cascade-deleted
+    // Invite code should still exist with created_by_user_id set to null
     const afterCodes = await testDb
       .selectFrom('invite_codes')
-      .select('id')
-      .where('created_by_user_id', '=', creator.userId)
+      .select(['id', 'created_by_user_id'])
+      .where('group_id', '=', groupId)
+      .where('revoked_at', 'is', null)
       .execute();
-    expect(afterCodes.length).toBe(0);
+    expect(afterCodes.length).toBe(1);
+    expect(afterCodes[0].created_by_user_id).toBeNull();
 
     // Group should still exist (transferred to member)
     const group = await testDb

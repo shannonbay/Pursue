@@ -115,7 +115,7 @@ CREATE TABLE invite_codes (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   group_id UUID NOT NULL REFERENCES groups(id) ON DELETE CASCADE,
   code VARCHAR(50) UNIQUE NOT NULL,
-  created_by_user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  created_by_user_id UUID REFERENCES users(id) ON DELETE SET NULL,
   max_uses INTEGER, -- NULL = unlimited
   current_uses INTEGER DEFAULT 0,
   expires_at TIMESTAMP WITH TIME ZONE, -- NULL = never expires
@@ -306,9 +306,9 @@ FOR EACH ROW EXECUTE FUNCTION enforce_invite_max_uses();
 -- Deletes the user row; FK constraints handle all related data:
 --   CASCADE: auth_providers, refresh_tokens, password_reset_tokens, devices,
 --            group_memberships, progress_entries, user_subscriptions,
---            subscription_downgrade_history, invite_codes
+--            subscription_downgrade_history
 --   SET NULL: goals.created_by_user_id, goals.deleted_by_user_id,
---             group_activities.user_id
+--             group_activities.user_id, invite_codes.created_by_user_id
 CREATE OR REPLACE FUNCTION delete_user_data(p_user_id UUID)
 RETURNS VOID AS $$
 BEGIN

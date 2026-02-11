@@ -111,7 +111,7 @@ export interface InviteCodesTable {
   id: Generated<string>;
   group_id: string;
   code: string;
-  created_by_user_id: string;
+  created_by_user_id: string | null;
   created_at: ColumnType<Date, string | undefined, never>;
   revoked_at: Date | null;
 }

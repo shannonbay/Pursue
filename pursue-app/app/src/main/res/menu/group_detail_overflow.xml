@@ -16,7 +16,12 @@
         android:id="@+id/menu_invite_members"
         android:title="@string/menu_invite_members"
         app:showAsAction="never" />
-    
+
+    <item
+        android:id="@+id/menu_regenerate_invite"
+        android:title="@string/menu_regenerate_invite"
+        app:showAsAction="never" />
+
     <item
         android:id="@+id/menu_export_progress"
         android:title="@string/menu_export_progress"

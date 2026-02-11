@@ -487,6 +487,7 @@ class GroupDetailFragment : Fragment() {
                     menu.findItem(R.id.menu_edit_group).isVisible = isAdmin
                     menu.findItem(R.id.menu_manage_members).isVisible = isAdmin
                     menu.findItem(R.id.menu_invite_members).isVisible = isAdmin
+                    menu.findItem(R.id.menu_regenerate_invite).isVisible = isAdmin
                     menu.findItem(R.id.menu_delete_group).isVisible = isCreator
                 }
             }
@@ -520,6 +521,10 @@ class GroupDetailFragment : Fragment() {
                     }
                     R.id.menu_invite_members -> {
                         showInviteMembersSheet()
+                        true
+                    }
+                    R.id.menu_regenerate_invite -> {
+                        showRegenerateInviteConfirmation()
                         true
                     }
                     R.id.menu_export_progress -> {
@@ -588,6 +593,54 @@ class GroupDetailFragment : Fragment() {
                 positiveButton?.isEnabled = (editText.text?.toString()?.trim() == "delete")
             }
         })
+    }
+
+    private fun showRegenerateInviteConfirmation() {
+        val gid = groupId ?: return
+        val view = layoutInflater.inflate(R.layout.dialog_regenerate_invite_confirm, null)
+        val dialog = MaterialAlertDialogBuilder(requireContext())
+            .setTitle(getString(R.string.regenerate_invite_title))
+            .setView(view)
+            .setNegativeButton(getString(R.string.cancel), null)
+            .setPositiveButton(getString(R.string.regenerate_invite_confirm_button)) { _, _ ->
+                performRegenerateInvite(gid)
+            }
+            .create()
+        dialog.show()
+        val positiveButton = dialog.getButton(AlertDialog.BUTTON_POSITIVE)
+        positiveButton?.isEnabled = false
+        positiveButton?.setTextColor(ContextCompat.getColor(requireContext(), R.color.secondary))
+        val editText = view.findViewById<TextInputEditText>(R.id.regenerate_confirm_input)
+        editText.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+            override fun afterTextChanged(s: Editable?) {
+                positiveButton?.isEnabled = (editText.text?.toString()?.trim()?.equals("regenerate", ignoreCase = true) == true)
+            }
+        })
+    }
+
+    private fun performRegenerateInvite(gid: String) {
+        lifecycleScope.launch {
+            try {
+                if (!isAdded) return@launch
+                val tokenManager = SecureTokenManager.Companion.getInstance(requireContext())
+                val token = tokenManager.getAccessToken()
+                if (token == null) {
+                    Toast.makeText(requireContext(), getString(R.string.error_unauthorized_message), Toast.LENGTH_SHORT).show()
+                    return@launch
+                }
+                withContext(Dispatchers.IO) { ApiClient.regenerateInviteCode(token, gid) }
+                if (!isAdded) return@launch
+                Toast.makeText(requireContext(), getString(R.string.regenerate_code_success), Toast.LENGTH_SHORT).show()
+            } catch (e: ApiException) {
+                if (!isAdded) return@launch
+                Toast.makeText(requireContext(), e.message ?: getString(R.string.regenerate_code_failed), Toast.LENGTH_SHORT).show()
+            } catch (e: Exception) {
+                if (!isAdded) return@launch
+                Toast.makeText(requireContext(), getString(R.string.regenerate_code_failed), Toast.LENGTH_SHORT).show()
+            }
+        }
     }
 
     private fun showLeaveGroupConfirmation(gid: String) {

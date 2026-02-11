@@ -324,6 +324,12 @@
     <string name="regenerate_code_confirm">Regenerate invite code? The old code will stop working.</string>
     <string name="regenerate_code_success">Invite code regenerated</string>
     <string name="regenerate_code_failed">Failed to regenerate invite code</string>
+    <string name="menu_regenerate_invite">Regenerate Invite Link</string>
+    <string name="regenerate_invite_title">Regenerate Invite Link?</string>
+    <string name="regenerate_invite_message">This will create a new invite link and invalidate all existing invite links for this group. Anyone with the old link will no longer be able to join.</string>
+    <string name="regenerate_invite_type_to_confirm">Type \"regenerate\" below to confirm.</string>
+    <string name="regenerate_invite_hint">Type \"regenerate\" to confirm</string>
+    <string name="regenerate_invite_confirm_button">Regenerate</string>
     <string name="done">Done</string>
     <string name="invite_code_copied">Invite code copied</string>
     <string name="invite_generate_failed">Failed to load invite code. Please try again.</string>
