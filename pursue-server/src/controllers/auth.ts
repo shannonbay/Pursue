@@ -101,7 +101,7 @@ export async function register(
         })
         .execute();
 
-      const { termsVersion, privacyVersion } = getPolicyVersions();
+      const { termsVersion, privacyVersion } = await getPolicyVersions();
       await trx.insertInto('user_consents').values([
         { user_id: user.id, consent_type: `terms ${termsVersion}`, ip_address: req.ip || null },
         { user_id: user.id, consent_type: `privacy policy ${privacyVersion}`, ip_address: req.ip || null },
@@ -358,7 +358,7 @@ export async function googleAuth(
             })
             .execute();
 
-          const { termsVersion, privacyVersion } = getPolicyVersions();
+          const { termsVersion, privacyVersion } = await getPolicyVersions();
           await trx.insertInto('user_consents').values([
             { user_id: newUser.id, consent_type: `terms ${termsVersion}`, ip_address: req.ip || null },
             { user_id: newUser.id, consent_type: `privacy policy ${privacyVersion}`, ip_address: req.ip || null },
