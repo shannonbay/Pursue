@@ -1,4 +1,5 @@
 import request from 'supertest';
+import crypto from 'crypto';
 import { app } from '../../../src/app';
 import { testDb } from '../../setup';
 import {
@@ -276,6 +277,43 @@ describe('DELETE /api/users/me', () => {
       .where('id', '=', groupId)
       .executeTakeFirst();
     expect(group).toBeDefined();
+  });
+
+  it('should retain consent records with null user_id and email_hash after deletion', async () => {
+    const email = randomEmail();
+    const { accessToken, userId } = await createAuthenticatedUser(email);
+
+    // Verify consent entries exist
+    const beforeConsents = await testDb
+      .selectFrom('user_consents')
+      .select(['id', 'user_id', 'consent_type', 'email_hash'])
+      .where('user_id', '=', userId)
+      .execute();
+    expect(beforeConsents.length).toBe(2);
+    expect(beforeConsents[0].email_hash).toBeNull();
+
+    await request(app)
+      .delete('/api/users/me')
+      .set('Authorization', `Bearer ${accessToken}`)
+      .send({ confirmation: 'delete' });
+
+    // Consent rows should still exist with user_id set to null and email_hash populated
+    const afterConsents = await testDb
+      .selectFrom('user_consents')
+      .select(['id', 'user_id', 'consent_type', 'email_hash'])
+      .where('id', 'in', beforeConsents.map(c => c.id))
+      .execute();
+    expect(afterConsents.length).toBe(2);
+    expect(afterConsents[0].user_id).toBeNull();
+    expect(afterConsents[1].user_id).toBeNull();
+
+    // Verify email_hash matches expected SHA-256 output
+    const expectedHash = crypto
+      .createHash('sha256')
+      .update(email + process.env.CONSENT_HASH_SALT!)
+      .digest('hex');
+    expect(afterConsents[0].email_hash).toBe(expectedHash);
+    expect(afterConsents[1].email_hash).toBe(expectedHash);
   });
 
   it('should cascade delete auth providers', async () => {

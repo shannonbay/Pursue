@@ -16,6 +16,7 @@ import {
 import { verifyGoogleIdToken } from '../services/googleAuth.js';
 import { ApplicationError } from '../middleware/errorHandler.js';
 import type { AuthRequest } from '../types/express.js';
+import { getPolicyVersions } from '../utils/policyConfig.js';
 import {
   RegisterSchema,
   LoginSchema,
@@ -78,53 +79,60 @@ export async function register(
     // Hash password
     const passwordHash = await hashPassword(data.password);
 
-    // Create user
-    const user = await db
-      .insertInto('users')
-      .values({
-        email: data.email.toLowerCase(),
-        display_name: data.display_name,
-        password_hash: passwordHash,
-      })
-      .returning(['id', 'email', 'display_name', 'created_at'])
-      .executeTakeFirstOrThrow();
+    // Create user, auth provider, consent, and refresh token atomically
+    const result = await db.transaction().execute(async (trx) => {
+      const user = await trx
+        .insertInto('users')
+        .values({
+          email: data.email.toLowerCase(),
+          display_name: data.display_name,
+          password_hash: passwordHash,
+        })
+        .returning(['id', 'email', 'display_name', 'created_at'])
+        .executeTakeFirstOrThrow();
 
-    // Create auth_providers entry for email
-    await db
-      .insertInto('auth_providers')
-      .values({
-        user_id: user.id,
-        provider: 'email',
-        provider_user_id: user.email,
-        provider_email: user.email,
-      })
-      .execute();
+      await trx
+        .insertInto('auth_providers')
+        .values({
+          user_id: user.id,
+          provider: 'email',
+          provider_user_id: user.email,
+          provider_email: user.email,
+        })
+        .execute();
 
-    // Generate tokens
-    const accessToken = generateAccessToken(user.id, user.email);
-    const refreshTokenId = crypto.randomUUID();
-    const refreshToken = generateRefreshToken(user.id, refreshTokenId);
+      const { termsVersion, privacyVersion } = getPolicyVersions();
+      await trx.insertInto('user_consents').values([
+        { user_id: user.id, consent_type: `terms ${termsVersion}`, ip_address: req.ip || null },
+        { user_id: user.id, consent_type: `privacy policy ${privacyVersion}`, ip_address: req.ip || null },
+      ]).execute();
 
-    // Store refresh token hash
-    await db
-      .insertInto('refresh_tokens')
-      .values({
-        id: refreshTokenId,
-        user_id: user.id,
-        token_hash: hashToken(refreshToken),
-        expires_at: getRefreshTokenExpiryDate(),
-      })
-      .execute();
+      const accessToken = generateAccessToken(user.id, user.email);
+      const refreshTokenId = crypto.randomUUID();
+      const refreshToken = generateRefreshToken(user.id, refreshTokenId);
+
+      await trx
+        .insertInto('refresh_tokens')
+        .values({
+          id: refreshTokenId,
+          user_id: user.id,
+          token_hash: hashToken(refreshToken),
+          expires_at: getRefreshTokenExpiryDate(),
+        })
+        .execute();
+
+      return { user, accessToken, refreshToken };
+    });
 
     res.status(201).json({
-      access_token: accessToken,
-      refresh_token: refreshToken,
+      access_token: result.accessToken,
+      refresh_token: result.refreshToken,
       user: {
-        id: user.id,
-        email: user.email,
-        display_name: user.display_name,
+        id: result.user.id,
+        email: result.user.email,
+        display_name: result.user.display_name,
         has_avatar: false, // New user, no avatar yet
-        created_at: user.created_at,
+        created_at: result.user.created_at,
       },
     });
   } catch (error) {
@@ -250,6 +258,8 @@ export async function googleAuth(
 
     let user: { id: string; email: string; display_name: string; has_avatar: boolean };
     let isNewUser = false;
+    let accessToken: string;
+    let refreshToken: string;
 
     if (existingProvider) {
       // Case 1: Google account already linked - sign in existing user
@@ -309,66 +319,102 @@ export async function googleAuth(
         }
       } else {
         // Case 2b: New user - create account and link Google
+        // Require consent for new users
+        if (!data.consent_agreed) {
+          throw new ApplicationError(
+            'You must agree to the Terms of Service and Privacy Policy',
+            422,
+            'CONSENT_REQUIRED'
+          );
+        }
+
         // Download and process Google avatar if available
         let avatarData: Buffer | null = null;
         if (googleUser.picture) {
           avatarData = await downloadAndProcessGoogleAvatar(googleUser.picture);
         }
 
-        const newUser = await db
-          .insertInto('users')
-          .values({
-            email: googleUser.email.toLowerCase(),
-            display_name: googleUser.name,
-            avatar_data: avatarData,
-            avatar_mime_type: avatarData ? 'image/webp' : null,
-            password_hash: null, // Google-authenticated users don't have passwords
-          })
-          .returning(['id', 'email', 'display_name'])
-          .executeTakeFirstOrThrow();
+        // Create user, auth provider, consent, and refresh token atomically
+        const txResult = await db.transaction().execute(async (trx) => {
+          const newUser = await trx
+            .insertInto('users')
+            .values({
+              email: googleUser.email.toLowerCase(),
+              display_name: googleUser.name,
+              avatar_data: avatarData,
+              avatar_mime_type: avatarData ? 'image/webp' : null,
+              password_hash: null, // Google-authenticated users don't have passwords
+            })
+            .returning(['id', 'email', 'display_name'])
+            .executeTakeFirstOrThrow();
 
-        // Create auth_providers entry for Google
-        await db
-          .insertInto('auth_providers')
-          .values({
-            user_id: newUser.id,
-            provider: 'google',
-            provider_user_id: googleUser.sub,
-            provider_email: googleUser.email,
-          })
-          .execute();
+          await trx
+            .insertInto('auth_providers')
+            .values({
+              user_id: newUser.id,
+              provider: 'google',
+              provider_user_id: googleUser.sub,
+              provider_email: googleUser.email,
+            })
+            .execute();
+
+          const { termsVersion, privacyVersion } = getPolicyVersions();
+          await trx.insertInto('user_consents').values([
+            { user_id: newUser.id, consent_type: `terms ${termsVersion}`, ip_address: req.ip || null },
+            { user_id: newUser.id, consent_type: `privacy policy ${privacyVersion}`, ip_address: req.ip || null },
+          ]).execute();
+
+          const accessToken = generateAccessToken(newUser.id, newUser.email);
+          const refreshTokenId = crypto.randomUUID();
+          const refreshToken = generateRefreshToken(newUser.id, refreshTokenId);
+
+          await trx
+            .insertInto('refresh_tokens')
+            .values({
+              id: refreshTokenId,
+              user_id: newUser.id,
+              token_hash: hashToken(refreshToken),
+              expires_at: getRefreshTokenExpiryDate(),
+            })
+            .execute();
+
+          return { newUser, accessToken, refreshToken };
+        });
 
         user = {
-          id: newUser.id,
-          email: newUser.email,
-          display_name: newUser.display_name,
+          id: txResult.newUser.id,
+          email: txResult.newUser.email,
+          display_name: txResult.newUser.display_name,
           has_avatar: avatarData !== null,
         };
         isNewUser = true;
+        accessToken = txResult.accessToken;
+        refreshToken = txResult.refreshToken;
       }
     }
 
-    // Generate JWT tokens
-    const accessToken = generateAccessToken(user.id, user.email);
-    const refreshTokenId = crypto.randomUUID();
-    const refreshToken = generateRefreshToken(user.id, refreshTokenId);
+    if (!isNewUser) {
+      // Generate JWT tokens for existing users (Cases 1 and 2a)
+      accessToken = generateAccessToken(user.id, user.email);
+      const refreshTokenId = crypto.randomUUID();
+      refreshToken = generateRefreshToken(user.id, refreshTokenId);
 
-    // Store refresh token hash in database (for revocation support)
-    await db
-      .insertInto('refresh_tokens')
-      .values({
-        id: refreshTokenId,
-        user_id: user.id,
-        token_hash: hashToken(refreshToken),
-        expires_at: getRefreshTokenExpiryDate(),
-      })
-      .execute();
+      await db
+        .insertInto('refresh_tokens')
+        .values({
+          id: refreshTokenId,
+          user_id: user.id,
+          token_hash: hashToken(refreshToken),
+          expires_at: getRefreshTokenExpiryDate(),
+        })
+        .execute();
+    }
 
     // Return success response
     // Use 201 Created for new users, 200 OK for existing users
     res.status(isNewUser ? 201 : 200).json({
-      access_token: accessToken,
-      refresh_token: refreshToken,
+      access_token: accessToken!,
+      refresh_token: refreshToken!,
       is_new_user: isNewUser,
       user: {
         id: user.id,

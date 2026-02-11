@@ -4,6 +4,11 @@ export const RegisterSchema = z.object({
   email: z.string().email('Invalid email format').max(255),
   password: z.string().min(8, 'Password must be at least 8 characters').max(100),
   display_name: z.string().min(1, 'Display name is required').max(100),
+  consent_agreed: z.literal(true, {
+    error: 'You must agree to the Terms of Service and Privacy Policy',
+  }),
+  consent_terms_version: z.string().max(30).optional(),
+  consent_privacy_version: z.string().max(30).optional(),
 }).strict();
 
 export const LoginSchema = z.object({
@@ -13,6 +18,9 @@ export const LoginSchema = z.object({
 
 export const GoogleAuthSchema = z.object({
   id_token: z.string().min(1, 'ID token is required'),
+  consent_agreed: z.boolean().optional(),
+  consent_terms_version: z.string().max(30).optional(),
+  consent_privacy_version: z.string().max(30).optional(),
 }).strict();
 
 export const RefreshTokenSchema = z.object({

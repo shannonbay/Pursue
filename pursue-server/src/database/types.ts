@@ -221,6 +221,19 @@ export interface SubscriptionTransactionsTable {
 export type SubscriptionTransaction = Selectable<SubscriptionTransactionsTable>;
 export type NewSubscriptionTransaction = Insertable<SubscriptionTransactionsTable>;
 
+// User consents table
+export interface UserConsentsTable {
+  id: Generated<string>;
+  user_id: string | null;
+  consent_type: string;
+  agreed_at: ColumnType<Date, string | undefined, never>;
+  ip_address: string | null;
+  email_hash: string | null;
+}
+
+export type UserConsent = Selectable<UserConsentsTable>;
+export type NewUserConsent = Insertable<UserConsentsTable>;
+
 // Database interface combining all tables
 export interface Database {
   users: UsersTable;
@@ -237,4 +250,5 @@ export interface Database {
   user_subscriptions: UserSubscriptionsTable;
   subscription_downgrade_history: SubscriptionDowngradeHistoryTable;
   subscription_transactions: SubscriptionTransactionsTable;
+  user_consents: UserConsentsTable;
 }

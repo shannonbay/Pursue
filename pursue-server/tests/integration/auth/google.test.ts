@@ -23,7 +23,8 @@ describe('POST /api/auth/google', () => {
     const response = await request(app)
       .post('/api/auth/google')
       .send({
-        id_token: 'valid-google-id-token'
+        id_token: 'valid-google-id-token',
+        consent_agreed: true
       });
 
     expect(response.status).toBe(201);
@@ -138,7 +139,8 @@ describe('POST /api/auth/google', () => {
     const response = await request(app)
       .post('/api/auth/google')
       .send({
-        id_token: 'valid-google-id-token'
+        id_token: 'valid-google-id-token',
+        consent_agreed: true
       });
 
     const provider = await testDb
@@ -230,7 +232,8 @@ describe('POST /api/auth/google', () => {
     const response = await request(app)
       .post('/api/auth/google')
       .send({
-        id_token: 'valid-google-id-token'
+        id_token: 'valid-google-id-token',
+        consent_agreed: true
       });
 
     const refreshToken = await testDb
@@ -254,9 +257,95 @@ describe('POST /api/auth/google', () => {
     const response = await request(app)
       .post('/api/auth/google')
       .send({
-        id_token: 'valid-google-id-token'
+        id_token: 'valid-google-id-token',
+        consent_agreed: true
       });
 
     expect(response.body.user.email).toBe('uppercase@gmail.com');
+  });
+
+  it('should return 422 CONSENT_REQUIRED for new Google user without consent', async () => {
+    mockedGoogleAuth.verifyGoogleIdToken.mockResolvedValue({
+      sub: 'google-no-consent',
+      email: 'noconsent@gmail.com',
+      name: 'No Consent User',
+      picture: undefined
+    });
+
+    const response = await request(app)
+      .post('/api/auth/google')
+      .send({
+        id_token: 'valid-google-id-token'
+      });
+
+    expect(response.status).toBe(422);
+    expect(response.body.error.code).toBe('CONSENT_REQUIRED');
+  });
+
+  it('should create two versioned consent entries for new Google user from server config', async () => {
+    mockedGoogleAuth.verifyGoogleIdToken.mockResolvedValue({
+      sub: 'google-consent-test',
+      email: 'consent@gmail.com',
+      name: 'Consent Test User',
+      picture: undefined
+    });
+
+    const response = await request(app)
+      .post('/api/auth/google')
+      .send({
+        id_token: 'valid-google-id-token',
+        consent_agreed: true
+      });
+
+    expect(response.status).toBe(201);
+
+    const consents = await testDb
+      .selectFrom('user_consents')
+      .selectAll()
+      .where('user_id', '=', response.body.user.id)
+      .execute();
+
+    expect(consents).toHaveLength(2);
+    const types = consents.map(c => c.consent_type).sort();
+    expect(types).toEqual(['privacy policy Feb 11, 2026', 'terms Feb 11, 2026']);
+  });
+
+  it('should not require consent for returning Google user', async () => {
+    // Create existing Google user
+    const existingUser = await testDb
+      .insertInto('users')
+      .values({
+        email: 'returning@gmail.com',
+        display_name: 'Returning User',
+        password_hash: null,
+      })
+      .returning(['id'])
+      .executeTakeFirstOrThrow();
+
+    await testDb
+      .insertInto('auth_providers')
+      .values({
+        user_id: existingUser.id,
+        provider: 'google',
+        provider_user_id: 'google-returning',
+        provider_email: 'returning@gmail.com',
+      })
+      .execute();
+
+    mockedGoogleAuth.verifyGoogleIdToken.mockResolvedValue({
+      sub: 'google-returning',
+      email: 'returning@gmail.com',
+      name: 'Returning User',
+      picture: undefined
+    });
+
+    const response = await request(app)
+      .post('/api/auth/google')
+      .send({
+        id_token: 'valid-google-id-token'
+      });
+
+    expect(response.status).toBe(200);
+    expect(response.body.is_new_user).toBe(false);
   });
 });

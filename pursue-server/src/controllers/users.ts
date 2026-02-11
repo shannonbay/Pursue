@@ -1,4 +1,5 @@
 import type { Response, NextFunction, Request } from 'express';
+import crypto from 'crypto';
 import multer, { type FileFilterCallback } from 'multer';
 import { sql } from 'kysely';
 import { db } from '../database/index.js';
@@ -12,6 +13,7 @@ import {
   ChangePasswordSchema,
   DeleteUserSchema,
   GetGroupsQuerySchema,
+  RecordConsentsSchema,
 } from '../validations/users.js';
 import {
   getUserSubscriptionState,
@@ -688,6 +690,57 @@ export async function getUserGroups(
   }
 }
 
+// GET /api/users/me/consents
+export async function getUserConsents(
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    if (!req.user) {
+      throw new ApplicationError('Unauthorized', 401, 'UNAUTHORIZED');
+    }
+
+    const consents = await db
+      .selectFrom('user_consents')
+      .select(['consent_type', 'agreed_at'])
+      .where('user_id', '=', req.user.id)
+      .orderBy('agreed_at', 'desc')
+      .execute();
+
+    res.status(200).json({ consents });
+  } catch (error) {
+    next(error);
+  }
+}
+
+// POST /api/users/me/consents
+export async function recordConsents(
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    if (!req.user) {
+      throw new ApplicationError('Unauthorized', 401, 'UNAUTHORIZED');
+    }
+
+    const data = RecordConsentsSchema.parse(req.body);
+
+    await db.insertInto('user_consents').values(
+      data.consent_types.map(ct => ({
+        user_id: req.user!.id,
+        consent_type: ct,
+        ip_address: req.ip || null,
+      }))
+    ).execute();
+
+    res.status(201).json({ success: true });
+  } catch (error) {
+    next(error);
+  }
+}
+
 // DELETE /api/users/me
 export async function deleteCurrentUser(
   req: AuthRequest,
@@ -774,12 +827,25 @@ export async function deleteCurrentUser(
         }
       }
 
-      // 2. Hard delete user via SQL function — FK constraints handle all cleanup:
+      // 2. Ghost-link: hash user email into consent records before deletion
+      const emailHash = crypto
+        .createHash('sha256')
+        .update(req.user!.email + process.env.CONSENT_HASH_SALT!)
+        .digest('hex');
+
+      await trx
+        .updateTable('user_consents')
+        .set({ email_hash: emailHash })
+        .where('user_id', '=', userId)
+        .execute();
+
+      // 3. Hard delete user via SQL function — FK constraints handle all cleanup:
       //    CASCADE: auth_providers, refresh_tokens, password_reset_tokens, devices,
       //             group_memberships, progress_entries, user_subscriptions,
       //             subscription_downgrade_history
       //    SET NULL: goals.created_by_user_id, goals.deleted_by_user_id,
-      //              group_activities.user_id, invite_codes.created_by_user_id
+      //              group_activities.user_id, invite_codes.created_by_user_id,
+      //              user_consents.user_id
       await sql`SELECT delete_user_data(${userId}::uuid)`.execute(trx);
     });
 

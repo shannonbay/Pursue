@@ -21,9 +21,12 @@ import android.view.ViewGroup
 import android.view.Menu
 import android.view.MenuInflater
 import android.view.MenuItem
+import android.text.method.LinkMovementMethod
 import android.widget.RadioButton
 import android.widget.RadioGroup
+import android.widget.TextView
 import android.widget.Toast
+import androidx.core.text.HtmlCompat
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -36,10 +39,13 @@ import app.getpursue.data.auth.AuthRepository
 import app.getpursue.data.auth.AuthState
 import app.getpursue.data.auth.GoogleSignInHelper
 import app.getpursue.data.auth.SecureTokenManager
+import app.getpursue.data.config.PolicyConfig
+import app.getpursue.data.config.PolicyConfigManager
 import app.getpursue.data.fcm.FcmRegistrationHelper
 import app.getpursue.data.fcm.FcmTokenManager
 import app.getpursue.data.network.ApiClient
 import app.getpursue.data.network.ApiException
+import app.getpursue.utils.PolicyDateUtils
 import app.getpursue.models.Group
 import app.getpursue.ui.fragments.groups.CreateGroupFragment
 import app.getpursue.ui.fragments.home.HomeFragment
@@ -85,6 +91,7 @@ class MainAppActivity : AppCompatActivity(),
 
     private var overLimitDialogShowing = false
     private var overLimitSelectionCompletedThisSession = false
+    private var consentDialogShowing = false
 
     private var billingClient: BillingClient? = null
     private var premiumProductDetails: ProductDetails? = null
@@ -213,6 +220,9 @@ class MainAppActivity : AppCompatActivity(),
             .setListener(purchasesUpdatedListener)
             .enablePendingPurchases()
             .build()
+
+        // Check if user needs to re-consent to updated policies
+        checkPolicyConsent()
     }
 
     /**
@@ -673,6 +683,86 @@ class MainAppActivity : AppCompatActivity(),
             return true
         }
         return super.onSupportNavigateUp()
+    }
+
+    private fun checkPolicyConsent() {
+        lifecycleScope.launch {
+            try {
+                val config = withContext(Dispatchers.IO) {
+                    PolicyConfigManager.getConfig(this@MainAppActivity)
+                } ?: return@launch
+
+                val token = SecureTokenManager.getInstance(this@MainAppActivity)
+                    .getAccessToken() ?: return@launch
+
+                val consents = withContext(Dispatchers.IO) {
+                    ApiClient.getMyConsents(token)
+                }
+
+                val types = consents.consents.map { it.consent_type }
+                val needsTerms = PolicyDateUtils.needsReconsent(config.min_required_terms_version, types, "terms ")
+                val needsPrivacy = PolicyDateUtils.needsReconsent(config.min_required_privacy_version, types, "privacy policy ")
+                val hasOnlyLegacy = types.isNotEmpty() && types.all { it == "privacy_and_terms" }
+
+                if (needsTerms || needsPrivacy || hasOnlyLegacy) {
+                    runOnUiThread { showPolicyConsentDialog(config, token) }
+                }
+            } catch (e: Exception) {
+                Log.w("MainAppActivity", "Policy consent check failed, allowing access", e)
+            }
+        }
+    }
+
+    private fun showPolicyConsentDialog(config: PolicyConfig, token: String) {
+        if (consentDialogShowing) return
+        consentDialogShowing = true
+
+        val view = LayoutInflater.from(this).inflate(R.layout.dialog_consent_confirm, null as ViewGroup?)
+        val consentCheckbox = view.findViewById<com.google.android.material.checkbox.MaterialCheckBox>(R.id.consent_checkbox)
+        val consentText = view.findViewById<TextView>(R.id.consent_text)
+
+        consentText.text = HtmlCompat.fromHtml(
+            getString(R.string.policy_reconsent_text),
+            HtmlCompat.FROM_HTML_MODE_LEGACY
+        )
+        consentText.movementMethod = LinkMovementMethod.getInstance()
+
+        val dialog = MaterialAlertDialogBuilder(this)
+            .setTitle(getString(R.string.policy_update_title))
+            .setView(view)
+            .setCancelable(false)
+            .setPositiveButton(getString(R.string.consent_continue)) { _, _ ->
+                consentDialogShowing = false
+                recordPolicyConsent(config, token)
+            }
+            .create()
+
+        dialog.show()
+
+        val positiveButton = dialog.getButton(AlertDialog.BUTTON_POSITIVE)
+        positiveButton?.isEnabled = false
+
+        consentCheckbox.setOnCheckedChangeListener { _, isChecked ->
+            positiveButton?.isEnabled = isChecked
+        }
+    }
+
+    private fun recordPolicyConsent(config: PolicyConfig, token: String) {
+        lifecycleScope.launch {
+            try {
+                withContext(Dispatchers.IO) {
+                    ApiClient.recordConsents(
+                        token,
+                        listOf(
+                            "terms ${config.min_required_terms_version}",
+                            "privacy policy ${config.min_required_privacy_version}"
+                        )
+                    )
+                }
+            } catch (e: Exception) {
+                Log.w("MainAppActivity", "Failed to record policy consent", e)
+            }
+        }
     }
 
     companion object {

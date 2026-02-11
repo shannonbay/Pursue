@@ -2,15 +2,20 @@ package app.getpursue.ui.activities
 
 import android.content.Intent
 import android.os.Bundle
+import android.text.method.LinkMovementMethod
 import android.util.Log
+import android.widget.TextView
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.text.HtmlCompat
 import androidx.fragment.app.commit
 import androidx.lifecycle.lifecycleScope
 import app.getpursue.data.auth.AuthRepository
 import app.getpursue.data.auth.GoogleSignInHelper
 import app.getpursue.data.auth.GoogleSignInResult
 import app.getpursue.data.auth.SecureTokenManager
+import app.getpursue.data.config.PolicyConfigManager
 import app.getpursue.data.fcm.FcmRegistrationHelper
 import app.getpursue.data.network.ApiClient
 import app.getpursue.data.network.ApiException
@@ -18,6 +23,8 @@ import app.getpursue.ui.fragments.onboarding.SignInEmailFragment
 import app.getpursue.ui.fragments.onboarding.SignUpEmailFragment
 import app.getpursue.ui.fragments.onboarding.WelcomeFragment
 import app.getpursue.R
+import com.google.android.material.checkbox.MaterialCheckBox
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -243,13 +250,23 @@ class OnboardingActivity : AppCompatActivity(),
         }
     }
 
-    private fun handleGoogleSignInSuccess(idToken: String) {
+    private fun handleGoogleSignInSuccess(idToken: String, consentAgreed: Boolean = false) {
         Log.d("OnboardingActivity", "Handling Google sign-in success, calling backend API")
         lifecycleScope.launch {
             try {
+                // Fetch policy config for version strings (best-effort)
+                val config = try {
+                    withContext(Dispatchers.IO) { PolicyConfigManager.getConfig(this@OnboardingActivity) }
+                } catch (e: Exception) { null }
+
                 // Call Google Sign-In API
                 val response = withContext(Dispatchers.IO) {
-                    ApiClient.signInWithGoogle(idToken)
+                    ApiClient.signInWithGoogle(
+                        idToken,
+                        if (consentAgreed) true else null,
+                        consentTermsVersion = if (consentAgreed) config?.min_required_terms_version else null,
+                        consentPrivacyVersion = if (consentAgreed) config?.min_required_privacy_version else null
+                    )
                 }
                 Log.d("OnboardingActivity", "Backend API call successful, is_new_user: ${response.is_new_user}")
 
@@ -296,6 +313,12 @@ class OnboardingActivity : AppCompatActivity(),
                 }
 
             } catch (e: ApiException) {
+                // Handle consent required for new Google users
+                if (e.code == 422 && e.errorCode == "CONSENT_REQUIRED") {
+                    runOnUiThread { showGoogleConsentDialog(idToken) }
+                    return@launch
+                }
+
                 // Handle API errors (ensure UI operations run on main thread)
                 Log.e("OnboardingActivity", "Google sign-in API error: ${e.code} - ${e.message}")
                 val errorMessage = when (e.code) {
@@ -315,6 +338,36 @@ class OnboardingActivity : AppCompatActivity(),
                     Toast.makeText(this@OnboardingActivity, errorMessage, Toast.LENGTH_LONG).show()
                 }
             }
+        }
+    }
+
+    private fun showGoogleConsentDialog(idToken: String) {
+        val view = layoutInflater.inflate(R.layout.dialog_consent_confirm, null)
+        val consentCheckbox = view.findViewById<MaterialCheckBox>(R.id.consent_checkbox)
+        val consentText = view.findViewById<TextView>(R.id.consent_text)
+
+        consentText.text = HtmlCompat.fromHtml(
+            getString(R.string.consent_checkbox_text),
+            HtmlCompat.FROM_HTML_MODE_LEGACY
+        )
+        consentText.movementMethod = LinkMovementMethod.getInstance()
+
+        val dialog = MaterialAlertDialogBuilder(this)
+            .setTitle(getString(R.string.consent_dialog_title))
+            .setView(view)
+            .setNegativeButton(getString(R.string.cancel), null)
+            .setPositiveButton(getString(R.string.consent_continue)) { _, _ ->
+                handleGoogleSignInSuccess(idToken, consentAgreed = true)
+            }
+            .create()
+
+        dialog.show()
+
+        val positiveButton = dialog.getButton(AlertDialog.BUTTON_POSITIVE)
+        positiveButton?.isEnabled = false
+
+        consentCheckbox.setOnCheckedChangeListener { _, isChecked ->
+            positiveButton?.isEnabled = isChecked
         }
     }
 

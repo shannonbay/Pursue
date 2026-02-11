@@ -10,6 +10,8 @@ import {
   getSubscription,
   getSubscriptionEligibilityHandler,
   getUserGroups,
+  getUserConsents,
+  recordConsents,
   deleteCurrentUser,
 } from '../controllers/users.js';
 import { authenticate } from '../middleware/authenticate.js';
@@ -26,6 +28,8 @@ router.get('/me/providers', authenticate, getAuthProviders);
 router.get('/me/subscription', authenticate, getSubscription);
 router.get('/me/subscription/eligibility', authenticate, getSubscriptionEligibilityHandler);
 router.get('/me/groups', authenticate, getUserGroups);
+router.get('/me/consents', authenticate, getUserConsents);
+router.post('/me/consents', authenticate, recordConsents);
 router.delete('/me', authenticate, deleteCurrentUser);
 
 // Avatar routes

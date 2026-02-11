@@ -17,7 +17,8 @@ export async function createAuthenticatedUser(
     .send({
       email,
       password,
-      display_name: displayName
+      display_name: displayName,
+      consent_agreed: true
     });
 
   if (response.status !== 201) {

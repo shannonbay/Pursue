@@ -20,6 +20,7 @@ import app.getpursue.data.network.RegistrationResponse
 import app.getpursue.data.network.UpdateGoalResponse
 import app.getpursue.data.network.UploadAvatarResponse
 import app.getpursue.data.network.User
+import app.getpursue.data.network.UserConsentsResponse
 import app.getpursue.models.GroupsResponse
 import app.getpursue.models.GroupDetailResponse
 import app.getpursue.models.GroupMembersResponse
@@ -49,8 +50,15 @@ class E2EApiClient(private val context: Context) {
     suspend fun register(
         displayName: String,
         email: String,
-        password: String
-    ): RegistrationResponse = ApiClient.register(displayName, email, password)
+        password: String,
+        consentTermsVersion: String? = null,
+        consentPrivacyVersion: String? = null
+    ): RegistrationResponse = ApiClient.register(
+        displayName, email, password,
+        consentAgreed = true,
+        consentTermsVersion = consentTermsVersion,
+        consentPrivacyVersion = consentPrivacyVersion
+    )
 
     suspend fun login(email: String, password: String): LoginResponse =
         ApiClient.login(email, password)
@@ -255,6 +263,11 @@ class E2EApiClient(private val context: Context) {
         return ApiClient.deleteAvatar("")
     }
 
+    suspend fun deleteAccount(accessToken: String, confirmation: String) {
+        storeTokenIfPresent(accessToken)
+        ApiClient.deleteAccount("", confirmation)
+    }
+
     suspend fun getAvatar(userId: String, accessToken: String? = null): ByteArray? {
         storeTokenIfPresent(accessToken)
         return ApiClient.getAvatar(accessToken ?: "", userId)?.bytes()
@@ -278,5 +291,15 @@ class E2EApiClient(private val context: Context) {
         } finally {
             tempFile.delete()
         }
+    }
+
+    suspend fun getMyConsents(accessToken: String): UserConsentsResponse {
+        storeTokenIfPresent(accessToken)
+        return ApiClient.getMyConsents("")
+    }
+
+    suspend fun recordConsents(accessToken: String, consentTypes: List<String>) {
+        storeTokenIfPresent(accessToken)
+        ApiClient.recordConsents("", consentTypes)
     }
 }

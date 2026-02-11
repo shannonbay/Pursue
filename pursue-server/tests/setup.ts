@@ -21,6 +21,9 @@ if (!process.env.JWT_REFRESH_SECRET) {
 if (!process.env.GOOGLE_CLIENT_ID) {
   process.env.GOOGLE_CLIENT_ID = 'test-google-client-id';
 }
+if (!process.env.CONSENT_HASH_SALT) {
+  process.env.CONSENT_HASH_SALT = 'test-consent-hash-salt-for-testing';
+}
 
 const TEST_DATABASE_URL = process.env.TEST_DATABASE_URL ||
   'postgresql://postgres:postgres@localhost:5432/pursue_test';
@@ -326,6 +329,45 @@ async function createSchema(db: Kysely<Database>) {
   `.execute(db);
   await sql`CREATE INDEX IF NOT EXISTS idx_subscription_transactions_subscription_id ON subscription_transactions(subscription_id)`.execute(db);
 
+  // Create user_consents table
+  await sql`
+    CREATE TABLE IF NOT EXISTS user_consents (
+      id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+      user_id UUID REFERENCES users(id) ON DELETE SET NULL,
+      consent_type VARCHAR(50) NOT NULL,
+      agreed_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+      ip_address VARCHAR(45),
+      email_hash VARCHAR(64)
+    )
+  `.execute(db);
+  await sql`CREATE INDEX IF NOT EXISTS idx_user_consents_user_id ON user_consents(user_id)`.execute(db);
+  // Migrate: make user_id nullable with SET NULL (was NOT NULL CASCADE)
+  await sql`ALTER TABLE user_consents ALTER COLUMN user_id DROP NOT NULL`.execute(db);
+  // Replace FK constraint if it still uses CASCADE
+  await sql`
+    DO $$ BEGIN
+      IF EXISTS (
+        SELECT 1 FROM information_schema.table_constraints
+        WHERE table_name = 'user_consents' AND constraint_name = 'user_consents_user_id_fkey'
+      ) THEN
+        ALTER TABLE user_consents DROP CONSTRAINT user_consents_user_id_fkey;
+        ALTER TABLE user_consents ADD CONSTRAINT user_consents_user_id_fkey
+          FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL;
+      END IF;
+    END $$
+  `.execute(db);
+  // Add email_hash column if not exists (for existing test databases)
+  await sql`
+    DO $$ BEGIN
+      IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = 'user_consents' AND column_name = 'email_hash'
+      ) THEN
+        ALTER TABLE user_consents ADD COLUMN email_hash VARCHAR(64);
+      END IF;
+    END $$
+  `.execute(db);
+
   // Create goals table
   await sql`
     CREATE TABLE IF NOT EXISTS goals (
@@ -411,6 +453,7 @@ async function cleanDatabase(db: Kysely<Database>) {
   await db.deleteFrom('password_reset_tokens').execute();
   await db.deleteFrom('refresh_tokens').execute();
   await db.deleteFrom('auth_providers').execute();
+  await db.deleteFrom('user_consents').execute();
   await db.deleteFrom('users').execute();
 }
 

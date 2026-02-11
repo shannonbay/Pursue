@@ -63,6 +63,18 @@ CREATE TABLE password_reset_tokens (
 CREATE INDEX idx_password_reset_user ON password_reset_tokens(user_id);
 CREATE INDEX idx_password_reset_token ON password_reset_tokens(token_hash);
 
+-- User consents (Terms of Service, Privacy Policy)
+CREATE TABLE user_consents (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID REFERENCES users(id) ON DELETE SET NULL,
+  consent_type VARCHAR(50) NOT NULL,
+  agreed_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+  ip_address VARCHAR(45),
+  email_hash VARCHAR(64)  -- SHA-256 of email + salt, set on account deletion
+);
+
+CREATE INDEX idx_user_consents_user_id ON user_consents(user_id);
+
 -- Devices (for FCM push notifications)
 CREATE TABLE devices (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -308,7 +320,8 @@ FOR EACH ROW EXECUTE FUNCTION enforce_invite_max_uses();
 --            group_memberships, progress_entries, user_subscriptions,
 --            subscription_downgrade_history
 --   SET NULL: goals.created_by_user_id, goals.deleted_by_user_id,
---             group_activities.user_id, invite_codes.created_by_user_id
+--             group_activities.user_id, invite_codes.created_by_user_id,
+--             user_consents.user_id
 CREATE OR REPLACE FUNCTION delete_user_data(p_user_id UUID)
 RETURNS VOID AS $$
 BEGIN

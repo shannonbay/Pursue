@@ -27,6 +27,7 @@ import androidx.lifecycle.Lifecycle
 import app.getpursue.MockApiClient
 import app.getpursue.R
 import app.getpursue.data.auth.SecureTokenManager
+import app.getpursue.data.config.PolicyConfigManager
 import app.getpursue.data.fcm.FcmRegistrationHelper
 import app.getpursue.data.fcm.FcmTokenManager
 import app.getpursue.data.network.ApiClient
@@ -82,6 +83,10 @@ class SignUpEmailFragmentTest {
         
         // Mock ApiClient
         mockkObject(ApiClient)
+
+        // Mock PolicyConfigManager to skip config fetch in tests
+        mockkObject(PolicyConfigManager)
+        every { PolicyConfigManager.getConfig(any()) } returns null
         
         // Mock SharedPreferences
         val mockPrefs = mockk<SharedPreferences>(relaxed = true)
@@ -146,11 +151,13 @@ class SignUpEmailFragmentTest {
         val emailInput = fragment.view?.findViewById<TextInputEditText>(R.id.input_email)
         val passwordInput = fragment.view?.findViewById<TextInputEditText>(R.id.input_password)
         val confirmPasswordInput = fragment.view?.findViewById<TextInputEditText>(R.id.input_confirm_password)
-        
+        val consentCheckbox = fragment.view?.findViewById<com.google.android.material.checkbox.MaterialCheckBox>(R.id.checkbox_consent)
+
         displayNameInput?.setText(displayName)
         emailInput?.setText(email)
         passwordInput?.setText(password)
         confirmPasswordInput?.setText(confirmPassword)
+        consentCheckbox?.isChecked = true
     }
     
     private fun clickCreateAccountButton() {
@@ -169,7 +176,7 @@ class SignUpEmailFragmentTest {
             accessToken = testAccessToken,
             refreshToken = testRefreshToken
         )
-        coEvery { ApiClient.register(any(), any(), any()) } returns response
+        coEvery { ApiClient.register(any(), any(), any(), any(), any(), any()) } returns response
         coEvery { FcmRegistrationHelper.registerFcmTokenIfNeeded(any(), any()) } returns true
         
         launchFragment()
@@ -200,7 +207,7 @@ class SignUpEmailFragmentTest {
             accessToken = testAccessToken,
             refreshToken = testRefreshToken
         )
-        coEvery { ApiClient.register(any(), any(), any()) } returns response
+        coEvery { ApiClient.register(any(), any(), any(), any(), any(), any()) } returns response
         coEvery { FcmRegistrationHelper.registerFcmTokenIfNeeded(any(), testAccessToken) } returns true
         
         launchFragment()
@@ -255,7 +262,7 @@ class SignUpEmailFragmentTest {
             accessToken = testAccessToken,
             refreshToken = testRefreshToken
         )
-        coEvery { ApiClient.register(any(), any(), any()) } returns response
+        coEvery { ApiClient.register(any(), any(), any(), any(), any(), any()) } returns response
         coEvery { FcmRegistrationHelper.registerFcmTokenIfNeeded(any(), any()) } throws Exception("FCM registration failed")
         // Mock getMyGroups to prevent HomeFragment from showing error toast when MainAppActivity starts
         coEvery { ApiClient.getMyGroups(any()) } returns MockApiClient.createGroupsResponse(emptyList())
@@ -284,7 +291,7 @@ class SignUpEmailFragmentTest {
     fun `test network error 400 shows appropriate error message`() = runTest {
         // Given
         val apiException = MockApiClient.createBadRequestException("Invalid registration data")
-        coEvery { ApiClient.register(any(), any(), any()) } throws apiException
+        coEvery { ApiClient.register(any(), any(), any(), any(), any(), any()) } throws apiException
         
         launchFragment()
         fillForm()
@@ -310,7 +317,7 @@ class SignUpEmailFragmentTest {
     fun `test network error 409 shows email exists message`() = runTest {
         // Given
         val apiException = MockApiClient.createConflictException("An account with this email already exists")
-        coEvery { ApiClient.register(any(), any(), any()) } throws apiException
+        coEvery { ApiClient.register(any(), any(), any(), any(), any(), any()) } throws apiException
         
         launchFragment()
         fillForm()
@@ -330,7 +337,7 @@ class SignUpEmailFragmentTest {
     fun `test network error 500 shows server error message`() = runTest {
         // Given
         val apiException = MockApiClient.createServerErrorException("Internal server error")
-        coEvery { ApiClient.register(any(), any(), any()) } throws apiException
+        coEvery { ApiClient.register(any(), any(), any(), any(), any(), any()) } throws apiException
         
         launchFragment()
         fillForm()
@@ -353,7 +360,7 @@ class SignUpEmailFragmentTest {
     fun `test generic network exception shows network error message`() = runTest {
         // Given
         val networkException = MockApiClient.createNetworkException("Network error: Connection timeout")
-        coEvery { ApiClient.register(any(), any(), any()) } throws networkException
+        coEvery { ApiClient.register(any(), any(), any(), any(), any(), any()) } throws networkException
         
         launchFragment()
         fillForm()
@@ -381,7 +388,7 @@ class SignUpEmailFragmentTest {
             accessToken = testAccessToken,
             refreshToken = testRefreshToken
         )
-        coEvery { ApiClient.register(any(), any(), any()) } returns response
+        coEvery { ApiClient.register(any(), any(), any(), any(), any(), any()) } returns response
         coEvery { FcmRegistrationHelper.registerFcmTokenIfNeeded(any(), any()) } returns true
         
         launchFragment()
@@ -407,7 +414,7 @@ class SignUpEmailFragmentTest {
             accessToken = customAccessToken,
             refreshToken = customRefreshToken
         )
-        coEvery { ApiClient.register(any(), any(), any()) } returns response
+        coEvery { ApiClient.register(any(), any(), any(), any(), any(), any()) } returns response
         coEvery { FcmRegistrationHelper.registerFcmTokenIfNeeded(any(), any()) } returns true
         
         launchFragment()
@@ -427,7 +434,7 @@ class SignUpEmailFragmentTest {
     fun `test success toast appears with correct message`() = runTest {
         // Given
         val response = MockApiClient.createSuccessRegistrationResponse()
-        coEvery { ApiClient.register(any(), any(), any()) } returns response
+        coEvery { ApiClient.register(any(), any(), any(), any(), any(), any()) } returns response
         coEvery { FcmRegistrationHelper.registerFcmTokenIfNeeded(any(), any()) } returns true
         // Mock getMyGroups to prevent HomeFragment from showing error toast when MainAppActivity starts
         coEvery { ApiClient.getMyGroups(any()) } returns MockApiClient.createGroupsResponse(emptyList())
@@ -454,7 +461,7 @@ class SignUpEmailFragmentTest {
     fun `test success toast has correct duration`() = runTest {
         // Given
         val response = MockApiClient.createSuccessRegistrationResponse()
-        coEvery { ApiClient.register(any(), any(), any()) } returns response
+        coEvery { ApiClient.register(any(), any(), any(), any(), any(), any()) } returns response
         coEvery { FcmRegistrationHelper.registerFcmTokenIfNeeded(any(), any()) } returns true
         
         launchFragment()

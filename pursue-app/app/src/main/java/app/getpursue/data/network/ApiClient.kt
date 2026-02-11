@@ -110,9 +110,12 @@ object ApiClient {
     suspend fun register(
         displayName: String,
         email: String,
-        password: String
+        password: String,
+        consentAgreed: Boolean,
+        consentTermsVersion: String? = null,
+        consentPrivacyVersion: String? = null
     ): RegistrationResponse {
-        val requestBody = gson.toJson(RegisterRequest(displayName, email, password))
+        val requestBody = gson.toJson(RegisterRequest(displayName, email, password, consentAgreed, consentTermsVersion, consentPrivacyVersion))
             .toRequestBody(jsonMediaType)
         
         val request = Request.Builder()
@@ -215,9 +218,12 @@ object ApiClient {
      * @throws ApiException on error
      */
     suspend fun signInWithGoogle(
-        idToken: String
+        idToken: String,
+        consentAgreed: Boolean? = null,
+        consentTermsVersion: String? = null,
+        consentPrivacyVersion: String? = null
     ): GoogleSignInResponse {
-        val requestBody = gson.toJson(GoogleSignInRequest(idToken))
+        val requestBody = gson.toJson(GoogleSignInRequest(idToken, consentAgreed, consentTermsVersion, consentPrivacyVersion))
             .toRequestBody(jsonMediaType)
         
         val request = Request.Builder()
@@ -1380,6 +1386,29 @@ object ApiClient {
         executeRequest<Unit>(request, getClient()) { Unit }
     }
 
+    suspend fun getMyConsents(accessToken: String): UserConsentsResponse {
+        val request = Request.Builder()
+            .url("$baseUrl/users/me/consents")
+            .get()
+            .build()
+
+        return executeRequest(request, getClient()) { responseBody ->
+            gson.fromJson(responseBody, UserConsentsResponse::class.java)
+        }
+    }
+
+    suspend fun recordConsents(accessToken: String, consentTypes: List<String>) {
+        val requestBody = gson.toJson(RecordConsentsRequest(consentTypes))
+            .toRequestBody(jsonMediaType)
+        val request = Request.Builder()
+            .url("$baseUrl/users/me/consents")
+            .post(requestBody)
+            .addHeader("Content-Type", "application/json")
+            .build()
+
+        executeRequest<Unit>(request, getClient()) { Unit }
+    }
+
     /**
      * Execute an HTTP request and parse the response.
      */
@@ -1431,7 +1460,10 @@ object ApiClient {
 data class RegisterRequest(
     val display_name: String,
     val email: String,
-    val password: String
+    val password: String,
+    val consent_agreed: Boolean,
+    val consent_terms_version: String? = null,
+    val consent_privacy_version: String? = null
 )
 
 /**
@@ -1464,7 +1496,10 @@ data class LoginResponse(
  * Request model for Google Sign-In.
  */
 data class GoogleSignInRequest(
-    val id_token: String
+    val id_token: String,
+    val consent_agreed: Boolean? = null,
+    val consent_terms_version: String? = null,
+    val consent_privacy_version: String? = null
 )
 
 /**
@@ -1595,6 +1630,12 @@ data class UpgradeSubscriptionResponse(
     val expires_at: String,
     val group_limit: Int
 )
+
+// --- Consents ---
+
+data class UserConsentsResponse(val consents: List<UserConsentEntry>)
+data class UserConsentEntry(val consent_type: String, val agreed_at: String)
+data class RecordConsentsRequest(val consent_types: List<String>)
 
 /**
  * Request model for token refresh.

@@ -7,6 +7,7 @@ const requiredEnvVars = [
   'JWT_SECRET',
   'JWT_REFRESH_SECRET',
   'DATABASE_URL',
+  'CONSENT_HASH_SALT',
 ];
 
 // Google Client IDs for OAuth

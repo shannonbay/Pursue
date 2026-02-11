@@ -9,7 +9,8 @@ describe('POST /api/auth/register', () => {
       .send({
         email: 'test@example.com',
         password: 'Test123!@#',
-        display_name: 'Test User'
+        display_name: 'Test User',
+        consent_agreed: true
       });
 
     expect(response.status).toBe(201);
@@ -31,7 +32,8 @@ describe('POST /api/auth/register', () => {
       .send({
         email: 'test@example.com',
         password: password,
-        display_name: 'Test User'
+        display_name: 'Test User',
+        consent_agreed: true
       });
 
     const user = await testDb
@@ -51,7 +53,8 @@ describe('POST /api/auth/register', () => {
       .send({
         email: 'test@example.com',
         password: 'Test123!@#',
-        display_name: 'Test User'
+        display_name: 'Test User',
+        consent_agreed: true
       });
 
     const provider = await testDb
@@ -71,7 +74,8 @@ describe('POST /api/auth/register', () => {
       .send({
         email: 'test@example.com',
         password: 'Test123!@#',
-        display_name: 'Test User'
+        display_name: 'Test User',
+        consent_agreed: true
       });
 
     const refreshToken = await testDb
@@ -92,7 +96,8 @@ describe('POST /api/auth/register', () => {
       .send({
         email: 'test@example.com',
         password: 'Test123!@#',
-        display_name: 'First User'
+        display_name: 'First User',
+        consent_agreed: true
       });
 
     // Try to register with same email
@@ -101,7 +106,8 @@ describe('POST /api/auth/register', () => {
       .send({
         email: 'test@example.com',
         password: 'Different123!@#',
-        display_name: 'Second User'
+        display_name: 'Second User',
+        consent_agreed: true
       });
 
     expect(response.status).toBe(409);
@@ -114,7 +120,8 @@ describe('POST /api/auth/register', () => {
       .send({
         email: 'test@example.com',
         password: 'Test123!@#',
-        display_name: 'First User'
+        display_name: 'First User',
+        consent_agreed: true
       });
 
     const response = await request(app)
@@ -122,7 +129,8 @@ describe('POST /api/auth/register', () => {
       .send({
         email: 'TEST@EXAMPLE.COM',
         password: 'Different123!@#',
-        display_name: 'Second User'
+        display_name: 'Second User',
+        consent_agreed: true
       });
 
     expect(response.status).toBe(409);
@@ -230,10 +238,61 @@ describe('POST /api/auth/register', () => {
       .send({
         email: 'TEST@EXAMPLE.COM',
         password: 'Test123!@#',
-        display_name: 'Test User'
+        display_name: 'Test User',
+        consent_agreed: true
       });
 
     expect(response.status).toBe(201);
     expect(response.body.user.email).toBe('test@example.com');
+  });
+
+  it('should reject registration without consent_agreed', async () => {
+    const response = await request(app)
+      .post('/api/auth/register')
+      .send({
+        email: 'test@example.com',
+        password: 'Test123!@#',
+        display_name: 'Test User'
+      });
+
+    expect(response.status).toBe(400);
+    expect(response.body.error.code).toBe('VALIDATION_ERROR');
+  });
+
+  it('should reject registration with consent_agreed: false', async () => {
+    const response = await request(app)
+      .post('/api/auth/register')
+      .send({
+        email: 'test@example.com',
+        password: 'Test123!@#',
+        display_name: 'Test User',
+        consent_agreed: false
+      });
+
+    expect(response.status).toBe(400);
+    expect(response.body.error.code).toBe('VALIDATION_ERROR');
+  });
+
+  it('should create two versioned consent entries from server config', async () => {
+    const response = await request(app)
+      .post('/api/auth/register')
+      .send({
+        email: 'test@example.com',
+        password: 'Test123!@#',
+        display_name: 'Test User',
+        consent_agreed: true
+      });
+
+    expect(response.status).toBe(201);
+
+    const consents = await testDb
+      .selectFrom('user_consents')
+      .selectAll()
+      .where('user_id', '=', response.body.user.id)
+      .execute();
+
+    expect(consents).toHaveLength(2);
+    const types = consents.map(c => c.consent_type).sort();
+    expect(types).toEqual(['privacy policy Feb 11, 2026', 'terms Feb 11, 2026']);
   });
 });

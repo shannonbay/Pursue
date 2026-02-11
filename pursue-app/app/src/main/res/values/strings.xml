@@ -517,4 +517,13 @@
     <string name="keep_editing">Keep Editing</string>
     <string name="validation_error_title">Please fix the following:</string>
 
+    <!-- Consent -->
+    <string name="consent_checkbox_text">I agree to the &lt;a href="https://getpursue.app/terms/"&gt;Terms of Service&lt;/a&gt; and &lt;a href="https://getpursue.app/privacy/"&gt;Privacy Policy&lt;/a&gt;, and I understand that my goal progress will be visible to members of the groups I join.</string>
+    <string name="consent_dialog_title">Terms &amp; Privacy</string>
+    <string name="consent_continue">Continue</string>
+
+    <!-- Policy Version Enforcement -->
+    <string name="policy_update_title">Updated Terms &amp; Privacy Policy</string>
+    <string name="policy_reconsent_text">We\'ve updated our &lt;a href="https://getpursue.app/terms/"&gt;Terms of Service&lt;/a&gt; and &lt;a href="https://getpursue.app/privacy/"&gt;Privacy Policy&lt;/a&gt;. Please review and agree to continue using Pursue.</string>
+
 </resources>

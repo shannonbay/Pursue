@@ -4,6 +4,7 @@ import android.content.Context
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
+import android.text.method.LinkMovementMethod
 import android.util.Log
 import android.util.Patterns
 import android.view.LayoutInflater
@@ -12,12 +13,15 @@ import android.view.ViewGroup
 import android.widget.Button
 import android.widget.TextView
 import android.widget.Toast
+import androidx.core.text.HtmlCompat
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
+import com.google.android.material.checkbox.MaterialCheckBox
 import com.google.android.material.textfield.TextInputEditText
 import androidx.lifecycle.lifecycleScope
 import app.getpursue.data.auth.AuthRepository
 import app.getpursue.data.auth.SecureTokenManager
+import app.getpursue.data.config.PolicyConfigManager
 import app.getpursue.data.fcm.FcmRegistrationHelper
 import app.getpursue.data.network.ApiClient
 import app.getpursue.data.network.ApiException
@@ -51,6 +55,7 @@ class SignUpEmailFragment : Fragment() {
     private lateinit var emailError: View
     private lateinit var passwordStrength: TextView
     private lateinit var passwordMismatch: View
+    private lateinit var consentCheckbox: MaterialCheckBox
     private lateinit var createAccountButton: Button
     private lateinit var googleSignInButton: Button
 
@@ -84,8 +89,19 @@ class SignUpEmailFragment : Fragment() {
         emailError = view.findViewById(R.id.text_email_error)
         passwordStrength = view.findViewById(R.id.text_password_strength)
         passwordMismatch = view.findViewById(R.id.text_password_mismatch)
+        consentCheckbox = view.findViewById(R.id.checkbox_consent)
         createAccountButton = view.findViewById(R.id.button_create_account)
         googleSignInButton = view.findViewById(R.id.button_google_signin)
+
+        // Set consent text with clickable links
+        val consentText = view.findViewById<TextView>(R.id.text_consent)
+        consentText.text = HtmlCompat.fromHtml(
+            getString(R.string.consent_checkbox_text),
+            HtmlCompat.FROM_HTML_MODE_LEGACY
+        )
+        consentText.movementMethod = LinkMovementMethod.getInstance()
+
+        consentCheckbox.setOnCheckedChangeListener { _, _ -> validate() }
 
         // Initialize character counter
         charCounter.text = getString(R.string.display_name_char_counter, 0)
@@ -208,21 +224,32 @@ class SignUpEmailFragment : Fragment() {
         val confirmPassword = confirmPasswordInput.text?.toString() ?: ""
         val confirmPasswordEntered = confirmPassword.isNotEmpty()
         val passwordMatchValid = if (confirmPasswordEntered) validatePasswordMatch() else false
-        
-        createAccountButton.isEnabled = displayNameValid && emailValid && passwordValid && confirmPasswordEntered && passwordMatchValid
-        return displayNameValid && emailValid && passwordValid && confirmPasswordEntered && passwordMatchValid
+        val consentChecked = consentCheckbox.isChecked
+
+        createAccountButton.isEnabled = displayNameValid && emailValid && passwordValid && confirmPasswordEntered && passwordMatchValid && consentChecked
+        return displayNameValid && emailValid && passwordValid && confirmPasswordEntered && passwordMatchValid && consentChecked
     }
 
     private fun registerUser(displayName: String, email: String, password: String) {
         // Disable button during request
         createAccountButton.isEnabled = false
         createAccountButton.text = getString(R.string.creating_account)
-        
+
         lifecycleScope.launch {
             try {
+                // Fetch policy config for version strings (best-effort)
+                val config = try {
+                    withContext(Dispatchers.IO) { PolicyConfigManager.getConfig(requireContext()) }
+                } catch (e: Exception) { null }
+
                 // Send plain text password - server will hash with bcrypt
                 val response = withContext(Dispatchers.IO) {
-                    ApiClient.register(displayName, email, password)
+                    ApiClient.register(
+                        displayName, email, password,
+                        consentAgreed = true,
+                        consentTermsVersion = config?.min_required_terms_version,
+                        consentPrivacyVersion = config?.min_required_privacy_version
+                    )
                 }
                 
                 // Store JWT tokens securely using Android Keystore

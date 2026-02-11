@@ -176,6 +176,36 @@
             android:layout_marginBottom="24dp"
             android:visibility="gone" />
 
+        <!-- Consent checkbox with clickable Terms/Privacy links -->
+        <LinearLayout
+            android:id="@+id/consent_container"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginBottom="16dp"
+            android:minHeight="48dp">
+
+            <com.google.android.material.checkbox.MaterialCheckBox
+                android:id="@+id/checkbox_consent"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="top"
+                android:layout_marginTop="2dp"
+                android:minWidth="48dp"
+                android:minHeight="48dp" />
+
+            <TextView
+                android:id="@+id/text_consent"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_gravity="center_vertical"
+                android:textAppearance="?attr/textAppearanceBodyMedium"
+                android:textColor="@color/on_surface"
+                android:linksClickable="true" />
+
+        </LinearLayout>
+
         <com.google.android.material.button.MaterialButton
             android:id="@+id/button_create_account"
             android:layout_width="match_parent"
