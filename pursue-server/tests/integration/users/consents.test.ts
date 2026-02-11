@@ -1,7 +1,8 @@
 import request from 'supertest';
+import crypto from 'crypto';
 import { app } from '../../../src/app';
 import { testDb } from '../../setup';
-import { createAuthenticatedUser } from '../../helpers';
+import { createAuthenticatedUser, randomEmail } from '../../helpers';
 
 describe('User Consents API', () => {
   describe('GET /api/users/me/consents', () => {
@@ -112,6 +113,78 @@ describe('User Consents API', () => {
           consent_types: ['terms Feb 11, 2026'],
           extra_field: 'should fail',
         });
+
+      expect(response.status).toBe(400);
+    });
+  });
+
+  describe('POST /api/users/consent-hash', () => {
+    it('should return 200 with correct hash for a given email', async () => {
+      const email = 'lookup@example.com';
+      const response = await request(app)
+        .post('/api/users/consent-hash')
+        .send({ email });
+
+      expect(response.status).toBe(200);
+      expect(response.body.email_hash).toBeDefined();
+      expect(typeof response.body.email_hash).toBe('string');
+      expect(response.body.email_hash).toHaveLength(64);
+
+      // Verify it matches the expected hash
+      const expectedHash = crypto
+        .createHash('sha256')
+        .update(email.toLowerCase() + process.env.CONSENT_HASH_SALT!)
+        .digest('hex');
+      expect(response.body.email_hash).toBe(expectedHash);
+    });
+
+    it('should produce a hash matching the one stored after account deletion', async () => {
+      const email = randomEmail();
+      const { accessToken: deleteToken } = await createAuthenticatedUser(email);
+
+      // Delete the user — ghost link hashes the email into consent records
+      await request(app)
+        .delete('/api/users/me')
+        .set('Authorization', `Bearer ${deleteToken}`)
+        .send({ confirmation: 'delete' });
+
+      // Look up the hash via the consent-hash endpoint (no auth needed)
+      const response = await request(app)
+        .post('/api/users/consent-hash')
+        .send({ email });
+
+      expect(response.status).toBe(200);
+
+      // Verify the ghost-linked consent record matches
+      const consents = await testDb
+        .selectFrom('user_consents')
+        .select(['email_hash'])
+        .where('email_hash', '=', response.body.email_hash)
+        .where('user_id', 'is', null)
+        .execute();
+
+      expect(consents.length).toBeGreaterThanOrEqual(1);
+    });
+
+    it('should return 404 when NODE_ENV is not test', async () => {
+      const originalEnv = process.env.NODE_ENV;
+      process.env.NODE_ENV = 'production';
+
+      try {
+        const response = await request(app)
+          .post('/api/users/consent-hash')
+          .send({ email: 'test@example.com' });
+
+        expect(response.status).toBe(404);
+      } finally {
+        process.env.NODE_ENV = originalEnv;
+      }
+    });
+
+    it('should return 400 for invalid email', async () => {
+      const response = await request(app)
+        .post('/api/users/consent-hash')
+        .send({ email: 'not-an-email' });
 
       expect(response.status).toBe(400);
     });

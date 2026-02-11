@@ -22,8 +22,13 @@ export const RecordConsentsSchema = z.object({
   consent_types: z.array(z.string().max(50)).min(1).max(10),
 }).strict();
 
+export const ConsentHashLookupSchema = z.object({
+  email: z.string().email().max(255),
+}).strict();
+
 export type UpdateUserInput = z.infer<typeof UpdateUserSchema>;
 export type ChangePasswordInput = z.infer<typeof ChangePasswordSchema>;
 export type DeleteUserInput = z.infer<typeof DeleteUserSchema>;
 export type GetGroupsQueryInput = z.infer<typeof GetGroupsQuerySchema>;
 export type RecordConsentsInput = z.infer<typeof RecordConsentsSchema>;
+export type ConsentHashLookupInput = z.infer<typeof ConsentHashLookupSchema>;

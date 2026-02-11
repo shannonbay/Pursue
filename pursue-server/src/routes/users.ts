@@ -12,6 +12,7 @@ import {
   getUserGroups,
   getUserConsents,
   recordConsents,
+  getConsentEmailHash,
   deleteCurrentUser,
 } from '../controllers/users.js';
 import { authenticate } from '../middleware/authenticate.js';
@@ -30,6 +31,7 @@ router.get('/me/subscription/eligibility', authenticate, getSubscriptionEligibil
 router.get('/me/groups', authenticate, getUserGroups);
 router.get('/me/consents', authenticate, getUserConsents);
 router.post('/me/consents', authenticate, recordConsents);
+router.post('/consent-hash', getConsentEmailHash);
 router.delete('/me', authenticate, deleteCurrentUser);
 
 // Avatar routes

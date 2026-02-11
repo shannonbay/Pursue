@@ -14,6 +14,7 @@ import {
   DeleteUserSchema,
   GetGroupsQuerySchema,
   RecordConsentsSchema,
+  ConsentHashLookupSchema,
 } from '../validations/users.js';
 import {
   getUserSubscriptionState,
@@ -736,6 +737,30 @@ export async function recordConsents(
     ).execute();
 
     res.status(201).json({ success: true });
+  } catch (error) {
+    next(error);
+  }
+}
+
+// POST /api/users/consent-hash (test-only)
+export async function getConsentEmailHash(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    if (process.env.NODE_ENV !== 'test') {
+      throw new ApplicationError('Not found', 404, 'NOT_FOUND');
+    }
+
+    const data = ConsentHashLookupSchema.parse(req.body);
+
+    const emailHash = crypto
+      .createHash('sha256')
+      .update(data.email.toLowerCase() + process.env.CONSENT_HASH_SALT!)
+      .digest('hex');
+
+    res.status(200).json({ email_hash: emailHash });
   } catch (error) {
     next(error);
   }

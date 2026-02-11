@@ -183,6 +183,50 @@ Records new consent entries for the authenticated user.
 
 **Response:** `201 { "success": true }`
 
+### `POST /api/users/consent-hash` (test-only)
+
+Computes the SHA-256 ghost link hash for a given email address. Used to look up consent records after account deletion (e.g., when handling a complaint).
+
+**Guard:** Returns `404 NOT_FOUND` unless `NODE_ENV=test`. This endpoint is never exposed in production. To use it, run a local server instance with `NODE_ENV=test` and the same `CONSENT_HASH_SALT` as production, then call the endpoint without authentication.
+
+**Request:**
+
+```json
+{
+  "email": "user@example.com"
+}
+```
+
+**Validation:** Valid email, max 255 characters. Strict mode (no extra fields).
+
+**Response:**
+
+```json
+{
+  "email_hash": "a1b2c3d4..."
+}
+```
+
+**Usage:**
+
+```bash
+# Start a local server with NODE_ENV=test and production CONSENT_HASH_SALT
+NODE_ENV=test CONSENT_HASH_SALT=<production-salt> npm start
+
+# Look up the hash (no auth required)
+curl -X POST http://localhost:3000/api/users/consent-hash \
+  -H "Content-Type: application/json" \
+  -d '{"email": "user@example.com"}'
+```
+
+The returned hash can be used to query orphaned consent records:
+
+```sql
+SELECT * FROM user_consents
+WHERE email_hash = '<returned_hash>'
+  AND user_id IS NULL;
+```
+
 ---
 
 ## Ghost Link on Account Deletion
@@ -218,11 +262,11 @@ The FK constraint `ON DELETE SET NULL` nullifies `user_id` on all consent rows. 
 
 ### Verification use case
 
-To check whether a given email address ever consented:
+To check whether a given email address ever consented, use the `POST /api/users/consent-hash` endpoint (test-only) to compute the hash, then query:
 
 ```sql
 SELECT * FROM user_consents
-WHERE email_hash = encode(sha256(email || salt), 'hex')
+WHERE email_hash = '<hash from endpoint>'
   AND user_id IS NULL;
 ```
 
