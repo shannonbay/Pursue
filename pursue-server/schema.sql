@@ -115,7 +115,7 @@ CREATE TABLE invite_codes (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   group_id UUID NOT NULL REFERENCES groups(id) ON DELETE CASCADE,
   code VARCHAR(50) UNIQUE NOT NULL,
-  created_by_user_id UUID NOT NULL REFERENCES users(id),
+  created_by_user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   max_uses INTEGER, -- NULL = unlimited
   current_uses INTEGER DEFAULT 0,
   expires_at TIMESTAMP WITH TIME ZONE, -- NULL = never expires
@@ -135,10 +135,10 @@ CREATE TABLE goals (
   metric_type VARCHAR(20) NOT NULL, -- 'binary', 'numeric', 'duration'
   target_value DECIMAL(10,2), -- For numeric goals
   unit VARCHAR(50), -- e.g., 'km', 'pages', 'minutes'
-  created_by_user_id UUID REFERENCES users(id),
+  created_by_user_id UUID REFERENCES users(id) ON DELETE SET NULL,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   deleted_at TIMESTAMP WITH TIME ZONE, -- Soft delete: NULL if active, timestamp if deleted
-  deleted_by_user_id UUID REFERENCES users(id) -- Who deleted it (for audit)
+  deleted_by_user_id UUID REFERENCES users(id) ON DELETE SET NULL -- Who deleted it (for audit)
 );
 
 CREATE INDEX idx_goals_group ON goals(group_id);
@@ -298,4 +298,24 @@ FOR EACH ROW EXECUTE FUNCTION enforce_invite_max_uses();
 -- These triggers enforce absolute caps. Time-windowed or sliding-window limits
 -- (e.g., X creations per day) should be implemented using Redis or a similar
 -- fast counter store and are not covered by these DB triggers.
+
+-- =========================
+-- User deletion (privacy-critical)
+-- =========================
+
+-- Deletes the user row; FK constraints handle all related data:
+--   CASCADE: auth_providers, refresh_tokens, password_reset_tokens, devices,
+--            group_memberships, progress_entries, user_subscriptions,
+--            subscription_downgrade_history, invite_codes
+--   SET NULL: goals.created_by_user_id, goals.deleted_by_user_id,
+--             group_activities.user_id
+CREATE OR REPLACE FUNCTION delete_user_data(p_user_id UUID)
+RETURNS VOID AS $$
+BEGIN
+  DELETE FROM users WHERE id = p_user_id;
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'USER_NOT_FOUND: %', p_user_id;
+  END IF;
+END;
+$$ LANGUAGE plpgsql;
 

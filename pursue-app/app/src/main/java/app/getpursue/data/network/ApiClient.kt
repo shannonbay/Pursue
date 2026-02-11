@@ -1362,6 +1362,25 @@ object ApiClient {
     }
 
     /**
+     * Delete the current user's account (hard delete).
+     *
+     * @param accessToken JWT access token for authentication
+     * @param confirmation Must be "delete" (case-insensitive)
+     * @throws ApiException on error (400, 401)
+     */
+    suspend fun deleteAccount(accessToken: String, confirmation: String) {
+        val json = """{"confirmation":"$confirmation"}"""
+        val body = json.toRequestBody(jsonMediaType)
+        val request = Request.Builder()
+            .url("$baseUrl/users/me")
+            .delete(body)
+            .addHeader("Content-Type", "application/json")
+            .build()
+
+        executeRequest<Unit>(request, getClient()) { Unit }
+    }
+
+    /**
      * Execute an HTTP request and parse the response.
      */
     private suspend fun <T> executeRequest(

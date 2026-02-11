@@ -701,34 +701,87 @@ export async function deleteCurrentUser(
 
     const data = DeleteUserSchema.parse(req.body);
 
-    // Get user to verify password
-    const user = await db
-      .selectFrom('users')
-      .select(['password_hash'])
-      .where('id', '=', req.user.id)
-      .where('deleted_at', 'is', null)
-      .executeTakeFirst();
-
-    if (!user) {
-      throw new ApplicationError('User not found', 404, 'NOT_FOUND');
+    // Validate confirmation string
+    if (data.confirmation.toLowerCase() !== 'delete') {
+      throw new ApplicationError('Confirmation must be "delete"', 400, 'INVALID_CONFIRMATION');
     }
 
-    // Verify password
-    if (!user.password_hash) {
-      throw new ApplicationError('Password is required for account deletion', 400, 'PASSWORD_REQUIRED');
-    }
+    const userId = req.user.id;
 
-    const validPassword = await verifyPassword(data.password, user.password_hash);
-    if (!validPassword) {
-      throw new ApplicationError('Invalid password', 400, 'INVALID_PASSWORD');
-    }
+    await db.transaction().execute(async (trx) => {
+      // Check user exists
+      const user = await trx
+        .selectFrom('users')
+        .select(['id'])
+        .where('id', '=', userId)
+        .where('deleted_at', 'is', null)
+        .executeTakeFirst();
 
-    // Soft delete: set deleted_at timestamp
-    await db
-      .updateTable('users')
-      .set({ deleted_at: sql`NOW()` })
-      .where('id', '=', req.user.id)
-      .execute();
+      if (!user) {
+        throw new ApplicationError('User not found', 404, 'NOT_FOUND');
+      }
+
+      // 1. Find groups where user is creator → transfer or delete
+      const createdGroups = await trx
+        .selectFrom('groups')
+        .select(['id'])
+        .where('creator_user_id', '=', userId)
+        .execute();
+
+      for (const group of createdGroups) {
+        const memberCount = await trx
+          .selectFrom('group_memberships')
+          .select(trx.fn.count('id').as('count'))
+          .where('group_id', '=', group.id)
+          .where('status', '=', 'active')
+          .executeTakeFirst();
+
+        const count = Number(memberCount?.count ?? 0);
+
+        if (count <= 1) {
+          // Sole member (or no members) — delete the group (CASCADE handles children)
+          await trx.deleteFrom('groups').where('id', '=', group.id).execute();
+        } else {
+          // Other members exist — transfer creator to oldest admin, or oldest member
+          const newCreator = await trx
+            .selectFrom('group_memberships')
+            .select(['user_id', 'role', 'joined_at'])
+            .where('group_id', '=', group.id)
+            .where('user_id', '!=', userId)
+            .where('status', '=', 'active')
+            .orderBy(sql`CASE WHEN role = 'admin' THEN 0 ELSE 1 END`, 'asc')
+            .orderBy('joined_at', 'asc')
+            .limit(1)
+            .executeTakeFirst();
+
+          if (newCreator) {
+            await trx
+              .updateTable('groups')
+              .set({ creator_user_id: newCreator.user_id })
+              .where('id', '=', group.id)
+              .execute();
+
+            // Promote to admin if not already
+            if (newCreator.role !== 'admin' && newCreator.role !== 'creator') {
+              await trx
+                .updateTable('group_memberships')
+                .set({ role: 'admin' })
+                .where('group_id', '=', group.id)
+                .where('user_id', '=', newCreator.user_id)
+                .execute();
+            }
+          }
+        }
+      }
+
+      // 2. Hard delete user via SQL function — FK constraints handle all cleanup:
+      //    CASCADE: auth_providers, refresh_tokens, password_reset_tokens, devices,
+      //             group_memberships, progress_entries, user_subscriptions,
+      //             subscription_downgrade_history, invite_codes
+      //    SET NULL: goals.created_by_user_id, goals.deleted_by_user_id,
+      //              group_activities.user_id
+      await sql`SELECT delete_user_data(${userId}::uuid)`.execute(trx);
+    });
 
     res.status(204).end();
   } catch (error) {

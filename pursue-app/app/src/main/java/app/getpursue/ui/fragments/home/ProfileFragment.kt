@@ -10,6 +10,8 @@ import android.os.Environment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.text.Editable
+import android.text.TextWatcher
 import android.widget.ImageView
 import android.widget.ProgressBar
 import android.widget.TextView
@@ -33,7 +35,9 @@ import app.getpursue.data.network.ApiException
 import app.getpursue.data.network.User
 import app.getpursue.data.notifications.NotificationPreferences
 import com.google.android.material.button.MaterialButton
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.materialswitch.MaterialSwitch
+import com.google.android.material.textfield.TextInputEditText
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -141,7 +145,11 @@ class ProfileFragment : Fragment() {
         view.findViewById<MaterialButton>(R.id.button_sign_out).setOnClickListener {
             callbacks?.onSignOut()
         }
-        
+
+        view.findViewById<MaterialButton>(R.id.button_delete_account).setOnClickListener {
+            showDeleteAccountDialog()
+        }
+
         // Load user data and fetch group IDs for topic management
         loadUserData()
         fetchUserGroupIds()
@@ -462,6 +470,74 @@ class ProfileFragment : Fragment() {
                 Log.e("ProfileFragment", "Error deleting avatar", e)
                 Handler(Looper.getMainLooper()).post {
                     Toast.makeText(requireContext(), getString(R.string.profile_picture_delete_failed), Toast.LENGTH_SHORT).show()
+                }
+            } finally {
+                showLoading(false)
+            }
+        }
+    }
+
+    private fun showDeleteAccountDialog() {
+        val view = layoutInflater.inflate(R.layout.dialog_delete_account_confirm, null)
+        val dialog = MaterialAlertDialogBuilder(requireContext())
+            .setTitle(R.string.delete_account_title)
+            .setView(view)
+            .setPositiveButton(R.string.delete_account_confirm, null)
+            .setNegativeButton(R.string.cancel, null)
+            .create()
+
+        dialog.show()
+
+        val positiveButton = dialog.getButton(AlertDialog.BUTTON_POSITIVE)
+        positiveButton.setTextColor(ContextCompat.getColor(requireContext(), R.color.error))
+        positiveButton.isEnabled = false
+        positiveButton.setOnClickListener {
+            dialog.dismiss()
+            performDeleteAccount()
+        }
+
+        val editText = view.findViewById<TextInputEditText>(R.id.delete_confirm_input)
+        editText.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+            override fun afterTextChanged(s: Editable?) {
+                positiveButton.isEnabled = editText.text?.toString()?.trim().equals("delete", ignoreCase = true)
+            }
+        })
+    }
+
+    private fun performDeleteAccount() {
+        lifecycleScope.launch {
+            try {
+                showLoading(true)
+
+                val tokenManager = SecureTokenManager.Companion.getInstance(requireContext())
+                val accessToken = tokenManager.getAccessToken()
+
+                if (accessToken == null) {
+                    Handler(Looper.getMainLooper()).post {
+                        Toast.makeText(requireContext(), "Please sign in", Toast.LENGTH_SHORT).show()
+                    }
+                    return@launch
+                }
+
+                withContext(Dispatchers.IO) {
+                    ApiClient.deleteAccount(accessToken, "delete")
+                }
+
+                Handler(Looper.getMainLooper()).post {
+                    Toast.makeText(requireContext(), getString(R.string.delete_account_success), Toast.LENGTH_SHORT).show()
+                    callbacks?.onSignOut()
+                }
+            } catch (e: ApiException) {
+                Log.e("ProfileFragment", "Failed to delete account", e)
+                Handler(Looper.getMainLooper()).post {
+                    Toast.makeText(requireContext(), getString(R.string.delete_account_failed), Toast.LENGTH_SHORT).show()
+                }
+            } catch (e: Exception) {
+                Log.e("ProfileFragment", "Error deleting account", e)
+                Handler(Looper.getMainLooper()).post {
+                    Toast.makeText(requireContext(), getString(R.string.delete_account_failed), Toast.LENGTH_SHORT).show()
                 }
             } finally {
                 showLoading(false)

@@ -259,7 +259,7 @@ async function createSchema(db: Kysely<Database>) {
       id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
       group_id UUID NOT NULL REFERENCES groups(id) ON DELETE CASCADE,
       code VARCHAR(50) UNIQUE NOT NULL,
-      created_by_user_id UUID NOT NULL REFERENCES users(id),
+      created_by_user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
       created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
       revoked_at TIMESTAMP WITH TIME ZONE
     )
@@ -369,6 +369,30 @@ async function createSchema(db: Kysely<Database>) {
       metadata JSONB,
       created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
     )
+  `.execute(db);
+
+  // Fix FK constraints for goals (CREATE TABLE IF NOT EXISTS won't update existing constraints)
+  await sql`
+    ALTER TABLE goals DROP CONSTRAINT IF EXISTS goals_created_by_user_id_fkey;
+    ALTER TABLE goals ADD CONSTRAINT goals_created_by_user_id_fkey
+      FOREIGN KEY (created_by_user_id) REFERENCES users(id) ON DELETE SET NULL;
+
+    ALTER TABLE goals DROP CONSTRAINT IF EXISTS goals_deleted_by_user_id_fkey;
+    ALTER TABLE goals ADD CONSTRAINT goals_deleted_by_user_id_fkey
+      FOREIGN KEY (deleted_by_user_id) REFERENCES users(id) ON DELETE SET NULL;
+  `.execute(db);
+
+  // SQL function for user deletion (privacy-critical path)
+  await sql`
+    CREATE OR REPLACE FUNCTION delete_user_data(p_user_id UUID)
+    RETURNS VOID AS $$
+    BEGIN
+      DELETE FROM users WHERE id = p_user_id;
+      IF NOT FOUND THEN
+        RAISE EXCEPTION 'USER_NOT_FOUND: %', p_user_id;
+      END IF;
+    END;
+    $$ LANGUAGE plpgsql
   `.execute(db);
 }
 

@@ -866,26 +866,24 @@ describe('GET /api/users/me/groups', () => {
 });
 
 describe('DELETE /api/users/me', () => {
-  it('should soft delete user successfully', async () => {
+  it('should hard delete user and return 204', async () => {
     const { accessToken, userId, user } = await createAuthenticatedUser();
 
     const response = await request(app)
       .delete('/api/users/me')
       .set('Authorization', `Bearer ${accessToken}`)
-      .send({
-        password: 'Test123!@#',
-      });
+      .send({ confirmation: 'delete' });
 
     expect(response.status).toBe(204);
 
-    // Verify deleted_at is set
+    // Verify user row is gone (hard delete)
     const deletedUser = await testDb
       .selectFrom('users')
-      .select(['deleted_at'])
+      .select(['id'])
       .where('id', '=', userId)
       .executeTakeFirst();
 
-    expect(deletedUser?.deleted_at).not.toBeNull();
+    expect(deletedUser).toBeUndefined();
 
     // Verify user cannot access /me after deletion
     const getResponse = await request(app)
@@ -905,7 +903,7 @@ describe('DELETE /api/users/me', () => {
     expect(loginResponse.status).toBe(401);
   });
 
-  it('should return 400 for missing password', async () => {
+  it('should return 400 for missing confirmation', async () => {
     const { accessToken } = await createAuthenticatedUser();
 
     const response = await request(app)
@@ -916,49 +914,30 @@ describe('DELETE /api/users/me', () => {
     expect(response.status).toBe(400);
   });
 
-  it('should return 400 for invalid password', async () => {
+  it('should return 400 for wrong confirmation string', async () => {
     const { accessToken } = await createAuthenticatedUser();
 
     const response = await request(app)
       .delete('/api/users/me')
       .set('Authorization', `Bearer ${accessToken}`)
-      .send({
-        password: 'WrongPassword123!',
-      });
+      .send({ confirmation: 'wrong' });
 
     expect(response.status).toBe(400);
-    expect(response.body.error.code).toBe('INVALID_PASSWORD');
-  });
-
-  it('should return 400 for Google-only user (no password)', async () => {
-    const googleUser = await createGoogleUser('google4@example.com', 'google-999', 'Google User 4');
-    const accessToken = generateAccessToken(googleUser.id, googleUser.email);
-
-    const response = await request(app)
-      .delete('/api/users/me')
-      .set('Authorization', `Bearer ${accessToken}`)
-      .send({
-        password: 'SomePassword123!',
-      });
-
-    expect(response.status).toBe(400);
-    expect(response.body.error.code).toBe('PASSWORD_REQUIRED');
+    expect(response.body.error.code).toBe('INVALID_CONFIRMATION');
   });
 
   it('should return 401 without token', async () => {
     const response = await request(app)
       .delete('/api/users/me')
-      .send({
-        password: 'Test123!@#',
-      });
+      .send({ confirmation: 'delete' });
 
     expect(response.status).toBe(401);
   });
 
-  it('should return 404 for already deleted user', async () => {
+  it('should return 404 for already soft-deleted user', async () => {
     const { accessToken, userId } = await createAuthenticatedUser();
 
-    // Soft delete the user
+    // Soft delete the user (set deleted_at)
     await testDb
       .updateTable('users')
       .set({ deleted_at: sql`NOW()` })
@@ -968,33 +947,8 @@ describe('DELETE /api/users/me', () => {
     const response = await request(app)
       .delete('/api/users/me')
       .set('Authorization', `Bearer ${accessToken}`)
-      .send({
-        password: 'Test123!@#',
-      });
+      .send({ confirmation: 'delete' });
 
     expect(response.status).toBe(404);
-  });
-
-  it('should preserve user data after soft delete', async () => {
-    const { accessToken, userId, user } = await createAuthenticatedUser();
-
-    await request(app)
-      .delete('/api/users/me')
-      .set('Authorization', `Bearer ${accessToken}`)
-      .send({
-        password: 'Test123!@#',
-      });
-
-    // Verify user still exists in database
-    const deletedUser = await testDb
-      .selectFrom('users')
-      .selectAll()
-      .where('id', '=', userId)
-      .executeTakeFirst();
-
-    expect(deletedUser).toBeDefined();
-    expect(deletedUser?.email).toBe(user.email);
-    expect(deletedUser?.display_name).toBe(user.display_name);
-    expect(deletedUser?.deleted_at).not.toBeNull();
   });
 });

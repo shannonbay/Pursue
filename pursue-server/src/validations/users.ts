@@ -10,7 +10,7 @@ export const ChangePasswordSchema = z.object({
 }).strict();
 
 export const DeleteUserSchema = z.object({
-  password: z.string().min(1, 'Password is required for confirmation'),
+  confirmation: z.string().min(1, 'Confirmation is required'),
 }).strict();
 
 export const GetGroupsQuerySchema = z.object({
