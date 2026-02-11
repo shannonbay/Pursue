@@ -17,6 +17,19 @@ import {
   subDays,
 } from 'date-fns';
 
+const TEST_TIMEZONE = 'America/New_York';
+
+/** Today's date in the test timezone (matches validation logic so "today" is not in the future). */
+function todayInTz(tz: string = TEST_TIMEZONE): string {
+  const formatter = new Intl.DateTimeFormat('en-CA', {
+    timeZone: tz,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  });
+  return formatter.format(new Date());
+}
+
 jest.mock('../../../src/services/fcm.service', () => ({
   sendGroupNotification: jest.fn().mockResolvedValue(undefined),
   buildTopicName: (groupId: string, type: 'progress_logs' | 'group_events') => `${groupId}_${type}`,
@@ -112,7 +125,7 @@ describe('POST /api/progress', () => {
           unit: 'pages',
         },
       });
-      const userDate = format(new Date(), 'yyyy-MM-dd');
+      const userDate = todayInTz();
 
       const response = await request(app)
         .post('/api/progress')
@@ -145,7 +158,7 @@ describe('POST /api/progress', () => {
           target_value: 1800,
         },
       });
-      const userDate = format(new Date(), 'yyyy-MM-dd');
+      const userDate = todayInTz();
 
       const response = await request(app)
         .post('/api/progress')
@@ -265,7 +278,7 @@ describe('POST /api/progress', () => {
         .send({
           goal_id: 'not-a-uuid',
           value: 1,
-          user_date: format(new Date(), 'yyyy-MM-dd'),
+          user_date: todayInTz(),
           user_timezone: 'America/New_York',
         });
 
@@ -285,7 +298,7 @@ describe('POST /api/progress', () => {
         .send({
           goal_id: fakeGoalId,
           value: 1,
-          user_date: format(new Date(), 'yyyy-MM-dd'),
+          user_date: todayInTz(),
           user_timezone: 'America/New_York',
         });
 
@@ -304,7 +317,7 @@ describe('POST /api/progress', () => {
         .send({
           goal_id: goalId,
           value: 2,
-          user_date: format(new Date(), 'yyyy-MM-dd'),
+          user_date: todayInTz(),
           user_timezone: 'America/New_York',
         });
 
@@ -324,7 +337,7 @@ describe('POST /api/progress', () => {
         .send({
           goal_id: goalId,
           value: -1,
-          user_date: format(new Date(), 'yyyy-MM-dd'),
+          user_date: todayInTz(),
           user_timezone: 'America/New_York',
         });
 
@@ -344,7 +357,7 @@ describe('POST /api/progress', () => {
         .send({
           goal_id: goalId,
           value: 1000000,
-          user_date: format(new Date(), 'yyyy-MM-dd'),
+          user_date: todayInTz(),
           user_timezone: 'America/New_York',
         });
 
@@ -364,7 +377,7 @@ describe('POST /api/progress', () => {
         .send({
           goal_id: goalId,
           value: -100,
-          user_date: format(new Date(), 'yyyy-MM-dd'),
+          user_date: todayInTz(),
           user_timezone: 'America/New_York',
         });
 
@@ -384,7 +397,7 @@ describe('POST /api/progress', () => {
         .send({
           goal_id: goalId,
           value: 1800.5,
-          user_date: format(new Date(), 'yyyy-MM-dd'),
+          user_date: todayInTz(),
           user_timezone: 'America/New_York',
         });
 
@@ -442,7 +455,7 @@ describe('POST /api/progress', () => {
         .send({
           goal_id: goalId,
           value: 1,
-          user_date: format(new Date(), 'yyyy-MM-dd'),
+          user_date: todayInTz(),
           user_timezone: '',
         });
 
@@ -461,7 +474,7 @@ describe('POST /api/progress', () => {
           goal_id: goalId,
           value: 1,
           note: 'a'.repeat(501),
-          user_date: format(new Date(), 'yyyy-MM-dd'),
+          user_date: todayInTz(),
           user_timezone: 'America/New_York',
         });
 
@@ -480,7 +493,7 @@ describe('POST /api/progress', () => {
           goal_id: goalId,
           value: 1,
           note: 'a'.repeat(700),
-          user_date: format(new Date(), 'yyyy-MM-dd'),
+          user_date: todayInTz(),
           user_timezone: 'America/New_York',
         });
 
@@ -517,7 +530,7 @@ describe('POST /api/progress', () => {
         .send({
           goal_id: goalId,
           value: 1,
-          user_date: format(new Date(), 'yyyy-MM-dd'),
+          user_date: todayInTz(),
           user_timezone: 'America/New_York',
         });
 
@@ -536,7 +549,7 @@ describe('POST /api/progress', () => {
         .send({
           goal_id: goalId,
           value: 1,
-          user_date: format(new Date(), 'yyyy-MM-dd'),
+          user_date: todayInTz(),
           user_timezone: 'America/New_York',
         });
 
@@ -555,7 +568,7 @@ describe('POST /api/progress', () => {
         .send({
           goal_id: goalId,
           value: 1,
-          user_date: format(new Date(), 'yyyy-MM-dd'),
+          user_date: todayInTz(),
           user_timezone: 'America/New_York',
         });
 
@@ -568,7 +581,7 @@ describe('POST /api/progress', () => {
     it('should reject duplicate progress for same period', async () => {
       const { accessToken, userId } = await createAuthenticatedUser();
       const { goalId } = await createGroupWithGoal(accessToken);
-      const userDate = format(new Date(), 'yyyy-MM-dd');
+      const userDate = todayInTz();
 
       await request(app)
         .post('/api/progress')
@@ -600,7 +613,7 @@ describe('POST /api/progress', () => {
     it('should create progress_entries row and group_activity on success', async () => {
       const { accessToken, userId } = await createAuthenticatedUser();
       const { groupId, goalId } = await createGroupWithGoal(accessToken);
-      const userDate = format(new Date(), 'yyyy-MM-dd');
+      const userDate = todayInTz();
 
       const response = await request(app)
         .post('/api/progress')
@@ -642,7 +655,7 @@ describe('GET /api/progress/:entry_id', () => {
   it('should return entry when owner requests', async () => {
     const { accessToken, userId } = await createAuthenticatedUser();
     const { groupId, goalId } = await createGroupWithGoal(accessToken);
-    const userDate = format(new Date(), 'yyyy-MM-dd');
+    const userDate = todayInTz();
 
     const postResponse = await request(app)
       .post('/api/progress')
@@ -677,7 +690,7 @@ describe('GET /api/progress/:entry_id', () => {
     const creator = await createAuthenticatedUser();
     const { groupId, goalId } = await createGroupWithGoal(creator.accessToken);
     const { memberAccessToken } = await addMemberToGroup(creator.accessToken, groupId);
-    const userDate = format(new Date(), 'yyyy-MM-dd');
+    const userDate = todayInTz();
 
     const postResponse = await request(app)
       .post('/api/progress')
@@ -703,7 +716,7 @@ describe('GET /api/progress/:entry_id', () => {
   it('should return 401 without auth', async () => {
     const { accessToken } = await createAuthenticatedUser();
     const { goalId } = await createGroupWithGoal(accessToken);
-    const userDate = format(new Date(), 'yyyy-MM-dd');
+    const userDate = todayInTz();
     const postResponse = await request(app)
       .post('/api/progress')
       .set('Authorization', `Bearer ${accessToken}`)
@@ -746,7 +759,7 @@ describe('GET /api/progress/:entry_id', () => {
       goalId!,
       creator.userId,
       1,
-      format(new Date(), 'yyyy-MM-dd')
+      todayInTz()
     );
     const entry = await testDb
       .selectFrom('progress_entries')
@@ -769,7 +782,7 @@ describe('DELETE /api/progress/:entry_id', () => {
   it('should delete own entry and return 204', async () => {
     const { accessToken, userId } = await createAuthenticatedUser();
     const { groupId, goalId } = await createGroupWithGoal(accessToken);
-    const userDate = format(new Date(), 'yyyy-MM-dd');
+    const userDate = todayInTz();
 
     const postResponse = await request(app)
       .post('/api/progress')
@@ -800,7 +813,7 @@ describe('DELETE /api/progress/:entry_id', () => {
   it('should return 401 without auth', async () => {
     const { accessToken } = await createAuthenticatedUser();
     const { goalId } = await createGroupWithGoal(accessToken);
-    const userDate = format(new Date(), 'yyyy-MM-dd');
+    const userDate = todayInTz();
     const postResponse = await request(app)
       .post('/api/progress')
       .set('Authorization', `Bearer ${accessToken}`)
@@ -832,7 +845,7 @@ describe('DELETE /api/progress/:entry_id', () => {
     const creator = await createAuthenticatedUser();
     const { groupId, goalId } = await createGroupWithGoal(creator.accessToken);
     const { memberAccessToken } = await addMemberToGroup(creator.accessToken, groupId);
-    const userDate = format(new Date(), 'yyyy-MM-dd');
+    const userDate = todayInTz();
 
     const postResponse = await request(app)
       .post('/api/progress')

@@ -5,15 +5,21 @@ const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be YYYY-MM-DD
 
 // Helper to check if date is not in the future (relative to user's timezone)
 function isNotFutureDateInTimezone(dateStr: string, timezone: string): boolean {
-  // Get today's date in the user's timezone
-  const formatter = new Intl.DateTimeFormat('en-CA', {
-    timeZone: timezone,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  });
-  const todayInUserTz = formatter.format(new Date()); // "YYYY-MM-DD" format
-  return dateStr <= todayInUserTz;
+  if (!timezone || typeof timezone !== 'string') {
+    return true; // Let schema .min(1) catch empty/invalid; avoid throwing in refine
+  }
+  try {
+    const formatter = new Intl.DateTimeFormat('en-CA', {
+      timeZone: timezone,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    });
+    const todayInUserTz = formatter.format(new Date()); // "YYYY-MM-DD" format
+    return dateStr <= todayInUserTz;
+  } catch {
+    return true; // Invalid timezone; let other validation handle it
+  }
 }
 
 export const CreateProgressSchema = z
