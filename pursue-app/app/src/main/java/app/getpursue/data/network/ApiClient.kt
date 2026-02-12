@@ -1862,7 +1862,16 @@ data class GoalProgressEntry(
     val value: Double,
     val note: String?,
     val period_start: String,
-    val logged_at: String
+    val logged_at: String,
+    val photo: GoalProgressEntryPhoto? = null
+)
+
+data class GoalProgressEntryPhoto(
+    val id: String,
+    val url: String,
+    val width: Int,
+    val height: Int,
+    val expires_at: String
 )
 
 data class GoalProgressMeResponse(

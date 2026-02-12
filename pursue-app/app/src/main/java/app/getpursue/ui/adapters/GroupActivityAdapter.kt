@@ -23,7 +23,8 @@ import java.util.concurrent.TimeUnit
  */
 class GroupActivityAdapter(
     private val activities: List<GroupActivity>,
-    private val currentUserId: String? = null
+    private val currentUserId: String? = null,
+    private val onPhotoClick: ((photoUrl: String) -> Unit)? = null
 ) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     companion object {
@@ -72,7 +73,7 @@ class GroupActivityAdapter(
             is Item -> {
                 when (holder) {
                     is DateHeaderViewHolder -> holder.bind(item.dateLabel!!)
-                    is ActivityViewHolder -> holder.bind(item.activity!!, currentUserId)
+                    is ActivityViewHolder -> holder.bind(item.activity!!, currentUserId, onPhotoClick)
                 }
             }
         }
@@ -121,7 +122,7 @@ class GroupActivityAdapter(
         private val activityTimestamp: TextView = itemView.findViewById(R.id.activity_timestamp)
         private val activityPhoto: ImageView = itemView.findViewById(R.id.activity_photo)
 
-        fun bind(activity: GroupActivity, currentUserId: String?) {
+        fun bind(activity: GroupActivity, currentUserId: String?, onPhotoClick: ((photoUrl: String) -> Unit)?) {
             // Format activity text based on type
             val activityMessage = formatActivityMessage(activity, currentUserId)
             activityText.text = activityMessage
@@ -140,8 +141,10 @@ class GroupActivityAdapter(
                     .fitCenter()
                     .transition(DrawableTransitionOptions.withCrossFade())
                     .into(activityPhoto)
+                activityPhoto.setOnClickListener { onPhotoClick?.invoke(photo.url) }
             } else {
                 activityPhoto.visibility = View.GONE
+                activityPhoto.setOnClickListener(null)
                 Glide.with(itemView.context).clear(activityPhoto)
             }
         }

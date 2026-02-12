@@ -19,6 +19,7 @@ import app.getpursue.data.network.ApiClient
 import app.getpursue.data.network.ApiException
 import app.getpursue.models.GroupActivity
 import app.getpursue.ui.adapters.GroupActivityAdapter
+import app.getpursue.ui.dialogs.FullscreenPhotoDialog
 import app.getpursue.ui.views.ErrorStateView
 import app.getpursue.R
 import com.google.android.material.button.MaterialButton
@@ -91,7 +92,7 @@ class ActivityTabFragment : Fragment() {
 
         // Setup RecyclerView
         activityRecyclerView.layoutManager = LinearLayoutManager(requireContext())
-        adapter = GroupActivityAdapter(emptyList(), currentUserId)
+        adapter = GroupActivityAdapter(emptyList(), currentUserId, onPhotoClick = ::showFullscreenPhoto)
         activityRecyclerView.adapter = adapter
 
         // Setup pull-to-refresh
@@ -143,11 +144,11 @@ class ActivityTabFragment : Fragment() {
                         updateUiState(ActivityUiState.SUCCESS_EMPTY)
                     } else {
                         adapter?.let { currentAdapter ->
-                            val newAdapter = GroupActivityAdapter(response.activities, currentUserId)
+                            val newAdapter = GroupActivityAdapter(response.activities, currentUserId, onPhotoClick = ::showFullscreenPhoto)
                             activityRecyclerView.adapter = newAdapter
                             adapter = newAdapter
                         } ?: run {
-                            adapter = GroupActivityAdapter(response.activities, currentUserId)
+                            adapter = GroupActivityAdapter(response.activities, currentUserId, onPhotoClick = ::showFullscreenPhoto)
                             activityRecyclerView.adapter = adapter
                         }
                         updateUiState(ActivityUiState.SUCCESS_WITH_DATA)
@@ -232,5 +233,10 @@ class ActivityTabFragment : Fragment() {
                 updateUiState(ActivityUiState.SUCCESS_WITH_DATA)
             }
         }
+    }
+
+    private fun showFullscreenPhoto(photoUrl: String) {
+        FullscreenPhotoDialog.newInstance(photoUrl)
+            .show(childFragmentManager, "FullscreenPhotoDialog")
     }
 }

@@ -32,6 +32,7 @@ import app.getpursue.models.GoalDetailUiModel
 import app.getpursue.models.GoalEntryUiModel
 import app.getpursue.models.StreakUiModel
 import app.getpursue.ui.adapters.GoalEntryAdapter
+import app.getpursue.ui.dialogs.FullscreenPhotoDialog
 import app.getpursue.R
 import app.getpursue.ui.views.ErrorStateView
 import com.google.android.material.button.MaterialButton
@@ -513,7 +514,8 @@ class GoalDetailFragment : Fragment() {
                     period_start = entry.period_start,
                     logged_at = entry.logged_at,
                     date_header = dateHeader,
-                    formatted_timestamp = formattedTimestamp
+                    formatted_timestamp = formattedTimestamp,
+                    photoUrl = entry.photo?.url
                 )
             )
             
@@ -607,12 +609,18 @@ class GoalDetailFragment : Fragment() {
         adapter = GoalEntryAdapter(
             entries = entries,
             currentUserId = currentUserId ?: "",
-            onLongPress = { entry -> handleEntryLongPress(entry) }
+            onLongPress = { entry -> handleEntryLongPress(entry) },
+            onPhotoClick = ::showFullscreenPhoto
         )
         entriesRecyclerView.adapter = adapter
         
         // Show/hide "View All History" button
         viewAllHistoryButton.visibility = if (allEntriesLoaded || entries.isEmpty()) View.GONE else View.VISIBLE
+    }
+
+    private fun showFullscreenPhoto(photoUrl: String) {
+        FullscreenPhotoDialog.newInstance(photoUrl)
+            .show(childFragmentManager, "FullscreenPhotoDialog")
     }
 
     private fun handleEntryLongPress(entry: GoalEntryUiModel) {

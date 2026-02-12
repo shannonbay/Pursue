@@ -105,6 +105,9 @@ dependencies {
     implementation(libs.androidx.exifinterface)
     implementation(libs.compressor)
     
+    // Image loading - zoomable fullscreen viewer
+    implementation(libs.photoview)
+
     // Image cropping
     implementation(libs.imageCropper)
     implementation(libs.zxing)

@@ -82,6 +82,19 @@
             tools:text="Great morning run! 5.2 miles"
             tools:visibility="visible" />
 
+        <!-- Progress photo (shown when present) -->
+        <com.google.android.material.imageview.ShapeableImageView
+            android:id="@+id/entry_photo"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:visibility="gone"
+            android:adjustViewBounds="true"
+            android:contentDescription="@string/progress_photo_content_description"
+            app:shapeAppearanceOverlay="@style/ShapeAppearance.App.Corner.Small"
+            tools:visibility="visible"
+            tools:src="@android:drawable/ic_menu_gallery" />
+
     </LinearLayout>
 
 </com.google.android.material.card.MaterialCardView>

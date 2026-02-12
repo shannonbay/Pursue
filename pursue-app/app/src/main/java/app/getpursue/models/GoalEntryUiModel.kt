@@ -13,5 +13,6 @@ data class GoalEntryUiModel(
     val period_start: String, // ISO date (YYYY-MM-DD)
     val logged_at: String, // ISO 8601 timestamp
     val date_header: String?, // Formatted date header (e.g., "Mon Jan 27") - null if same as previous entry
-    val formatted_timestamp: String // Formatted timestamp (e.g., "Logged at 6:30 AM")
+    val formatted_timestamp: String, // Formatted timestamp (e.g., "Logged at 6:30 AM")
+    val photoUrl: String? = null // Signed URL for progress photo; null when no photo
 )

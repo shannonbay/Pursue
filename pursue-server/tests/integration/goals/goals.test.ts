@@ -7,6 +7,7 @@ import {
   createGroupWithGoal,
   addMemberToGroup,
   createProgressEntry,
+  createTestPhoto,
   randomEmail,
 } from '../../helpers';
 import {
@@ -31,6 +32,14 @@ jest.mock('../../../src/services/fcm.service', () => ({
   sendToTopic: jest.fn().mockResolvedValue(undefined),
   sendPushNotification: jest.fn().mockResolvedValue(undefined),
   sendNotificationToUser: jest.fn().mockResolvedValue(undefined),
+}));
+
+jest.mock('../../../src/services/gcs.service.js', () => ({
+  buildObjectPath: jest.fn((userId: string, entryId: string) => `${userId}/2026/02/${entryId}.jpg`),
+  uploadPhoto: jest.fn().mockResolvedValue(undefined),
+  getSignedUrl: jest.fn().mockResolvedValue('https://storage.googleapis.com/signed-url-mock'),
+  deleteUserPhotos: jest.fn().mockResolvedValue(undefined),
+  deletePhoto: jest.fn().mockResolvedValue(undefined),
 }));
 
 describe('Pending member restrictions', () => {
@@ -1374,6 +1383,31 @@ describe('GET /api/goals/:goal_id/progress', () => {
     });
     expect(myProgress.entries[0]).toHaveProperty('id');
     expect(myProgress.entries[0]).toHaveProperty('logged_at');
+  });
+
+  it('should include photo in entries when progress entry has a photo', async () => {
+    const { accessToken, userId } = await createAuthenticatedUser();
+    const { goalId } = await createGroupWithGoal(accessToken);
+    const userDate = format(new Date(), 'yyyy-MM-dd');
+    const entryId = await createProgressEntry(goalId!, userId, 1, userDate, 'With photo');
+    await createTestPhoto(entryId, userId, { width: 400, height: 300 });
+
+    const response = await request(app)
+      .get(`/api/goals/${goalId}/progress`)
+      .set('Authorization', `Bearer ${accessToken}`);
+
+    expect(response.status).toBe(200);
+    const myProgress = response.body.progress.find((p: any) => p.user_id === userId);
+    expect(myProgress).toBeDefined();
+    expect(myProgress.entries).toHaveLength(1);
+    expect(myProgress.entries[0].photo).toBeDefined();
+    expect(myProgress.entries[0].photo).toMatchObject({
+      id: expect.any(String),
+      url: 'https://storage.googleapis.com/signed-url-mock',
+      width: 400,
+      height: 300,
+    });
+    expect(myProgress.entries[0].photo.expires_at).toBeDefined();
   });
 
   it('should filter by start_date and end_date when provided', async () => {

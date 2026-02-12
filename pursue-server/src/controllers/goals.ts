@@ -30,6 +30,7 @@ import {
 import { canUserWriteInGroup } from '../services/subscription.service.js';
 import { createGroupActivity, ACTIVITY_TYPES } from '../services/activity.service.js';
 import { sendToTopic, buildTopicName } from '../services/fcm.service.js';
+import { getSignedUrl } from '../services/gcs.service.js';
 
 function formatPeriodStart(ps: string | Date): string {
   if (typeof ps === 'string') return ps.slice(0, 10);
@@ -673,14 +674,66 @@ export async function getProgress(
 
     const rows = await query.orderBy('progress_entries.user_id').orderBy('progress_entries.period_start', 'asc').execute();
 
-    const byUser = new Map<string, { user_id: string; display_name: string; entries: Array<{ id: string; value: number; note: string | null; period_start: string; logged_at: Date }> }>();
+    const entryIds = rows.map((r) => r.id);
+
+    // Batch fetch photos for all progress entries
+    const now = new Date();
+    const photosMap = new Map<string, {
+      id: string;
+      gcs_object_path: string;
+      width_px: number;
+      height_px: number;
+      expires_at: Date;
+    }>();
+
+    if (entryIds.length > 0) {
+      const photos = await db
+        .selectFrom('progress_photos')
+        .select(['id', 'progress_entry_id', 'gcs_object_path', 'width_px', 'height_px', 'expires_at', 'gcs_deleted_at'])
+        .where('progress_entry_id', 'in', entryIds)
+        .execute();
+
+      for (const photo of photos) {
+        const expiresAt = new Date(photo.expires_at);
+        if (expiresAt > now && !photo.gcs_deleted_at) {
+          photosMap.set(photo.progress_entry_id, {
+            id: photo.id,
+            gcs_object_path: photo.gcs_object_path,
+            width_px: photo.width_px,
+            height_px: photo.height_px,
+            expires_at: expiresAt,
+          });
+        }
+      }
+    }
+
+    // Generate signed URLs for all photos
+    const signedUrls = new Map<string, string>();
+    const urlPromises = Array.from(photosMap.entries()).map(async ([entryId, photo]) => {
+      try {
+        const url = await getSignedUrl(photo.gcs_object_path);
+        signedUrls.set(entryId, url);
+      } catch (err) {
+        // Log but don't fail - entry will have photo: null
+      }
+    });
+    await Promise.all(urlPromises);
+
+    const byUser = new Map<string, { user_id: string; display_name: string; entries: Array<{ id: string; value: number; note: string | null; period_start: string; logged_at: Date; photo: { id: string; url: string; width: number; height: number; expires_at: Date } | null }> }>();
     for (const r of rows) {
+      const photoMeta = photosMap.get(r.id);
+      const signedUrl = signedUrls.get(r.id);
+      const photo = photoMeta && signedUrl
+        ? { id: photoMeta.id, url: signedUrl, width: photoMeta.width_px, height: photoMeta.height_px, expires_at: photoMeta.expires_at }
+        : null;
+
       const ent = {
         id: r.id,
         value: Number(r.value),
         note: r.note,
         period_start: formatPeriodStart(r.period_start),
         logged_at: r.logged_at,
+        photo,
       };
       const existing = byUser.get(r.user_id);
       if (existing) {
