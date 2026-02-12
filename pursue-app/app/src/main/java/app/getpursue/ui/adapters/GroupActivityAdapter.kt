@@ -37,6 +37,7 @@ class GroupActivityAdapter(
     companion object {
         private const val TYPE_DATE_HEADER = 0
         private const val TYPE_ACTIVITY = 1
+        private const val TYPE_FOOTER_SPACER = 2
     }
 
     private data class Item(
@@ -49,11 +50,11 @@ class GroupActivityAdapter(
         val activitiesByDate = activities.groupBy { activity ->
             formatDateLabel(activity.created_at)
         }
-        
-        activitiesByDate.entries.flatMap { (dateLabel, dateActivities) ->
+        val contentItems = activitiesByDate.entries.flatMap { (dateLabel, dateActivities) ->
             listOf(Item(TYPE_DATE_HEADER, dateLabel = dateLabel)) +
             dateActivities.map { activity -> Item(TYPE_ACTIVITY, activity = activity) }
         }
+        contentItems + Item(TYPE_FOOTER_SPACER)
     }
 
     override fun getItemViewType(position: Int): Int {
@@ -66,6 +67,11 @@ class GroupActivityAdapter(
                 val view = LayoutInflater.from(parent.context)
                     .inflate(android.R.layout.simple_list_item_1, parent, false)
                 DateHeaderViewHolder(view)
+            }
+            TYPE_FOOTER_SPACER -> {
+                val view = LayoutInflater.from(parent.context)
+                    .inflate(R.layout.item_activity_footer_spacer, parent, false)
+                FooterViewHolder(view)
             }
             else -> {
                 val view = LayoutInflater.from(parent.context)
@@ -86,6 +92,7 @@ class GroupActivityAdapter(
                         onPhotoClick,
                         reactionListener
                     )
+                    else -> { /* Footer spacer: nothing to bind */ }
                 }
             }
         }
@@ -128,6 +135,8 @@ class GroupActivityAdapter(
             textView.setPadding(16, 16, 16, 8)
         }
     }
+
+    class FooterViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView)
 
     class ActivityViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         private val activityText: TextView = itemView.findViewById(R.id.activity_text)
