@@ -1094,6 +1094,79 @@ object ApiClient {
         }
     }
 
+    // --- Reaction Endpoints ---
+
+    /**
+     * Add or replace a reaction on an activity.
+     *
+     * PUT /api/activities/:activity_id/reactions
+     * Replaces any existing reaction from the current user with the new emoji.
+     *
+     * @param accessToken JWT access token for authentication
+     * @param activityId Activity ID to react to
+     * @param emoji Reaction emoji (one of: 🔥, 💪, ❤️, 👏, 🤩, 😂)
+     * @return AddReactionResponse with reaction details and replaced flag
+     * @throws ApiException on error (400 invalid emoji, 403 not member, 404 activity not found)
+     */
+    suspend fun addOrReplaceReaction(
+        accessToken: String,
+        activityId: String,
+        emoji: String
+    ): AddReactionResponse {
+        val body = mapOf("emoji" to emoji)
+        val request = Request.Builder()
+            .url("$baseUrl/activities/$activityId/reactions")
+            .put(gson.toJson(body).toRequestBody(jsonMediaType))
+            .addHeader("Content-Type", "application/json")
+            .build()
+        return executeRequest(request, getClient()) { responseBody ->
+            gson.fromJson(responseBody, AddReactionResponse::class.java)
+        }
+    }
+
+    /**
+     * Remove the current user's reaction from an activity.
+     *
+     * DELETE /api/activities/:activity_id/reactions
+     * Returns 204 No Content on success.
+     *
+     * @param accessToken JWT access token for authentication
+     * @param activityId Activity ID to remove reaction from
+     * @throws ApiException on error (403 not member, 404 no reaction or activity not found)
+     */
+    suspend fun removeReaction(accessToken: String, activityId: String) {
+        val request = Request.Builder()
+            .url("$baseUrl/activities/$activityId/reactions")
+            .delete()
+            .addHeader("Content-Type", "application/json")
+            .build()
+        executeRequest<Unit>(request, getClient()) { Unit }
+    }
+
+    /**
+     * Get all reactions for an activity.
+     *
+     * GET /api/activities/:activity_id/reactions
+     *
+     * @param accessToken JWT access token for authentication
+     * @param activityId Activity ID to get reactions for
+     * @return GetReactionsResponse with list of all reactors
+     * @throws ApiException on error (403 not member, 404 activity not found)
+     */
+    suspend fun getReactions(
+        accessToken: String,
+        activityId: String
+    ): GetReactionsResponse {
+        val request = Request.Builder()
+            .url("$baseUrl/activities/$activityId/reactions")
+            .get()
+            .addHeader("Content-Type", "application/json")
+            .build()
+        return executeRequest(request, getClient()) { responseBody ->
+            gson.fromJson(responseBody, GetReactionsResponse::class.java)
+        }
+    }
+
     /**
      * Export group progress as Excel workbook.
      * GET /api/groups/:group_id/export-progress?start_date=YYYY-MM-DD&end_date=YYYY-MM-DD&user_timezone=IANA
@@ -1910,6 +1983,38 @@ data class GetProgressPhotoResponse(
     val width: Int,
     val height: Int,
     val expires_at: String
+)
+
+// --- Reaction DTOs ---
+
+data class AddReactionResponse(
+    val reaction: ReactionDetail,
+    val replaced: Boolean
+)
+
+data class ReactionDetail(
+    val activity_id: String,
+    val user_id: String,
+    val emoji: String,
+    val created_at: String
+)
+
+data class GetReactionsResponse(
+    val activity_id: String,
+    val reactions: List<ReactorEntry>,
+    val total: Int
+)
+
+data class ReactorEntry(
+    val emoji: String,
+    val user: ReactorUser,
+    val created_at: String
+)
+
+data class ReactorUser(
+    val id: String,
+    val display_name: String,
+    val avatar_url: String?
 )
 
 /**

@@ -25,6 +25,8 @@ import app.getpursue.data.network.UpgradeSubscriptionResponse
 import app.getpursue.data.network.UploadAvatarResponse
 import app.getpursue.data.network.User
 import app.getpursue.data.network.UserConsentsResponse
+import app.getpursue.data.network.AddReactionResponse
+import app.getpursue.data.network.GetReactionsResponse
 import app.getpursue.models.GroupsResponse
 import app.getpursue.models.GroupDetailResponse
 import app.getpursue.models.GroupMembersResponse
@@ -362,5 +364,29 @@ class E2EApiClient(private val context: Context) {
     ): UpgradeSubscriptionResponse {
         storeTokenIfPresent(accessToken)
         return ApiClient.upgradeSubscription("", platform, purchaseToken, productId)
+    }
+
+    // --- Reaction Endpoints ---
+
+    suspend fun addOrReplaceReaction(
+        accessToken: String,
+        activityId: String,
+        emoji: String
+    ): AddReactionResponse {
+        storeTokenIfPresent(accessToken)
+        return ApiClient.addOrReplaceReaction("", activityId, emoji)
+    }
+
+    suspend fun removeReaction(accessToken: String, activityId: String) {
+        storeTokenIfPresent(accessToken)
+        ApiClient.removeReaction("", activityId)
+    }
+
+    suspend fun getReactions(
+        accessToken: String,
+        activityId: String
+    ): GetReactionsResponse {
+        storeTokenIfPresent(accessToken)
+        return ApiClient.getReactions("", activityId)
     }
 }
