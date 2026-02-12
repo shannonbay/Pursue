@@ -1104,7 +1104,7 @@ object ApiClient {
      *
      * @param accessToken JWT access token for authentication
      * @param activityId Activity ID to react to
-     * @param emoji Reaction emoji (one of: 🔥, 💪, ❤️, 👏, 🤩, 😂)
+     * @param emoji Reaction emoji (one of: 🔥, 💪, ❤️, 👏, 🤩, 🎉)
      * @return AddReactionResponse with reaction details and replaced flag
      * @throws ApiException on error (400 invalid emoji, 403 not member, 404 activity not found)
      */

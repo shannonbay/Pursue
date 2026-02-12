@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-export const ALLOWED_REACTIONS = ['🔥', '💪', '❤️', '👏', '🤩', '😂'] as const;
+export const ALLOWED_REACTIONS = ['🔥', '💪', '❤️', '👏', '🤩', '🎉'] as const;
 export type ReactionEmoji = (typeof ALLOWED_REACTIONS)[number];
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;

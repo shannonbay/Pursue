@@ -28,7 +28,7 @@ class ReactionPickerPopup(
     true
 ) {
     companion object {
-        val REACTION_EMOJIS = listOf("🔥", "💪", "❤️", "👏", "🤩", "😂")
+        val REACTION_EMOJIS = listOf("🔥", "💪", "❤️", "👏", "🤩", "🎉")
     }
 
     private val pickerView: View
@@ -45,7 +45,7 @@ class ReactionPickerPopup(
             R.id.emoji_heart,
             R.id.emoji_clap,
             R.id.emoji_star,
-            R.id.emoji_laugh
+            R.id.emoji_celebrate
         )
 
         REACTION_EMOJIS.forEachIndexed { index, emoji ->

@@ -68,11 +68,11 @@
             android:background="?attr/selectableItemBackground" />
 
         <TextView
-            android:id="@+id/emoji_laugh"
+            android:id="@+id/emoji_celebrate"
             android:layout_width="40dp"
             android:layout_height="40dp"
             android:layout_marginStart="4dp"
-            android:text="😂"
+            android:text="🎉"
             android:textSize="28sp"
             android:gravity="center"
             android:background="?attr/selectableItemBackground" />
