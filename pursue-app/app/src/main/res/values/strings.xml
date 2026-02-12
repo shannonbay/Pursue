@@ -465,6 +465,16 @@
     <string name="activity_member_approved">%1$s was approved to join the group</string>
     <string name="activity_member_declined">Join request from %1$s was declined</string>
     
+    <!-- Reactions -->
+    <string name="reactions_you">You</string>
+    <string name="reactions_you_and_one">You and %1$s</string>
+    <string name="reactions_you_and_others">You and %1$d others</string>
+    <string name="reactions_one_and_one">%1$s and %2$s</string>
+    <string name="reactions_one_and_others">%1$s and %2$d others</string>
+    <string name="reactions_title">Reactions</string>
+    <string name="reactions_tab_all">All %1$d</string>
+    <string name="reaction_failed">Couldn\'t react — try again</string>
+    
     <!-- Time Formatting -->
     <string name="yesterday_at">Yesterday at %1$s</string>
     <string name="at_time">%1$s at %2$s</string>

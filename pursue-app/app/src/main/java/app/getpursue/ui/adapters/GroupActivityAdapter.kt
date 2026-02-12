@@ -7,6 +7,7 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import app.getpursue.models.GroupActivity
+import app.getpursue.models.ReactionSummary
 import app.getpursue.utils.RelativeTimeUtils
 import app.getpursue.R
 import com.bumptech.glide.Glide
@@ -21,10 +22,16 @@ import java.util.concurrent.TimeUnit
  * RecyclerView adapter for displaying activity feed grouped by date.
  * Shows date header (Today, Yesterday, or date), then activities under each date.
  */
+interface ReactionListener {
+    fun onLongPress(activity: GroupActivity, anchorView: View)
+    fun onReactionSummaryClick(activityId: String)
+}
+
 class GroupActivityAdapter(
     private val activities: List<GroupActivity>,
     private val currentUserId: String? = null,
-    private val onPhotoClick: ((photoUrl: String) -> Unit)? = null
+    private val onPhotoClick: ((photoUrl: String) -> Unit)? = null,
+    private val reactionListener: ReactionListener? = null
 ) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     companion object {
@@ -73,7 +80,12 @@ class GroupActivityAdapter(
             is Item -> {
                 when (holder) {
                     is DateHeaderViewHolder -> holder.bind(item.dateLabel!!)
-                    is ActivityViewHolder -> holder.bind(item.activity!!, currentUserId, onPhotoClick)
+                    is ActivityViewHolder -> holder.bind(
+                        item.activity!!,
+                        currentUserId,
+                        onPhotoClick,
+                        reactionListener
+                    )
                 }
             }
         }
@@ -120,15 +132,44 @@ class GroupActivityAdapter(
     class ActivityViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         private val activityText: TextView = itemView.findViewById(R.id.activity_text)
         private val activityTimestamp: TextView = itemView.findViewById(R.id.activity_timestamp)
+        private val reactionsContainer: View = itemView.findViewById(R.id.reactions_container)
+        private val reactionsEmojis: TextView = itemView.findViewById(R.id.reactions_emojis)
+        private val reactionsLabel: TextView = itemView.findViewById(R.id.reactions_label)
         private val activityPhoto: ImageView = itemView.findViewById(R.id.activity_photo)
 
-        fun bind(activity: GroupActivity, currentUserId: String?, onPhotoClick: ((photoUrl: String) -> Unit)?) {
+        fun bind(
+            activity: GroupActivity,
+            currentUserId: String?,
+            onPhotoClick: ((photoUrl: String) -> Unit)?,
+            reactionListener: ReactionListener?
+        ) {
             // Format activity text based on type
             val activityMessage = formatActivityMessage(activity, currentUserId)
             activityText.text = activityMessage
 
             // Format timestamp
             activityTimestamp.text = formatRelativeTime(activity.created_at)
+
+            // Reactions summary
+            val reactions = activity.reactions
+            val summary = activity.reaction_summary
+            if (!reactions.isNullOrEmpty() && summary != null && summary.total_count > 0) {
+                reactionsContainer.visibility = View.VISIBLE
+                reactionsEmojis.text = reactions.take(3).joinToString("") { it.emoji }
+                reactionsLabel.text = formatReactionLabel(summary, currentUserId)
+                reactionsContainer.setOnClickListener {
+                    activity.id?.let { id -> reactionListener?.onReactionSummaryClick(id) }
+                }
+                reactionsContainer.isClickable = true
+            } else {
+                reactionsContainer.visibility = View.GONE
+                reactionsContainer.setOnClickListener(null)
+                reactionsContainer.isClickable = false
+            }
+
+            // Store activity data in view tag for retrieval by RecyclerViewLongPressHelper
+            itemView.setTag(R.id.activity_data_tag, activity)
+            itemView.setTag(R.id.reaction_listener_tag, reactionListener)
 
             // Show progress photo when present
             val photo = activity.photo
@@ -146,6 +187,33 @@ class GroupActivityAdapter(
                 activityPhoto.visibility = View.GONE
                 activityPhoto.setOnClickListener(null)
                 Glide.with(itemView.context).clear(activityPhoto)
+            }
+        }
+
+        private fun formatReactionLabel(summary: ReactionSummary, currentUserId: String?): String {
+            val topReactors = summary.top_reactors
+            if (topReactors.isEmpty()) return ""
+
+            val names = topReactors.map { t ->
+                if (currentUserId != null && t.user_id == currentUserId) {
+                    itemView.context.getString(R.string.reactions_you)
+                } else {
+                    t.display_name
+                }
+            }
+
+            return when {
+                summary.total_count == 1 -> names[0]
+                summary.total_count == 2 -> itemView.context.getString(
+                    R.string.reactions_one_and_one,
+                    names[0],
+                    names[1]
+                )
+                else -> itemView.context.getString(
+                    R.string.reactions_one_and_others,
+                    names[0],
+                    summary.total_count - 1
+                )
             }
         }
 

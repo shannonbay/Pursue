@@ -17,23 +17,32 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import app.getpursue.data.auth.SecureTokenManager
 import app.getpursue.data.network.ApiClient
 import app.getpursue.data.network.ApiException
+import app.getpursue.models.ActivityReaction
 import app.getpursue.models.GroupActivity
+import app.getpursue.models.ReactionSummary
+import app.getpursue.models.TopReactor
 import app.getpursue.ui.adapters.GroupActivityAdapter
+import app.getpursue.ui.adapters.ReactionListener
 import app.getpursue.ui.dialogs.FullscreenPhotoDialog
+import app.getpursue.ui.helpers.RecyclerViewLongPressHelper
 import app.getpursue.ui.views.ErrorStateView
+import app.getpursue.ui.views.ReactionPickerPopup
+import app.getpursue.ui.views.ReactorsBottomSheet
 import app.getpursue.R
 import com.google.android.material.button.MaterialButton
+import com.google.android.material.snackbar.Snackbar
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 /**
  * Activity Tab Fragment for Group Detail (UI spec section 4.3.3).
- * 
+ *
  * Displays activity feed grouped by date
  * with pull-to-refresh and 5-state pattern.
+ * Supports reactions: long-press to add, tap summary to view reactors.
  */
-class ActivityTabFragment : Fragment() {
+class ActivityTabFragment : Fragment(), ReactionListener {
 
     companion object {
         private const val ARG_GROUP_ID = "group_id"
@@ -92,8 +101,16 @@ class ActivityTabFragment : Fragment() {
 
         // Setup RecyclerView
         activityRecyclerView.layoutManager = LinearLayoutManager(requireContext())
-        adapter = GroupActivityAdapter(emptyList(), currentUserId, onPhotoClick = ::showFullscreenPhoto)
+        adapter = GroupActivityAdapter(
+            emptyList(),
+            currentUserId,
+            onPhotoClick = ::showFullscreenPhoto,
+            reactionListener = this@ActivityTabFragment
+        )
         activityRecyclerView.adapter = adapter
+        
+        // Attach long-press helper to handle reactions (works around RecyclerView touch interception)
+        RecyclerViewLongPressHelper.attach(activityRecyclerView)
 
         // Setup pull-to-refresh
         swipeRefreshLayout.setOnRefreshListener {
@@ -144,11 +161,21 @@ class ActivityTabFragment : Fragment() {
                         updateUiState(ActivityUiState.SUCCESS_EMPTY)
                     } else {
                         adapter?.let { currentAdapter ->
-                            val newAdapter = GroupActivityAdapter(response.activities, currentUserId, onPhotoClick = ::showFullscreenPhoto)
+                            val newAdapter = GroupActivityAdapter(
+                                response.activities,
+                                currentUserId,
+                                onPhotoClick = ::showFullscreenPhoto,
+                                reactionListener = this@ActivityTabFragment
+                            )
                             activityRecyclerView.adapter = newAdapter
                             adapter = newAdapter
                         } ?: run {
-                            adapter = GroupActivityAdapter(response.activities, currentUserId, onPhotoClick = ::showFullscreenPhoto)
+                            adapter = GroupActivityAdapter(
+                                response.activities,
+                                currentUserId,
+                                onPhotoClick = ::showFullscreenPhoto,
+                                reactionListener = this@ActivityTabFragment
+                            )
                             activityRecyclerView.adapter = adapter
                         }
                         updateUiState(ActivityUiState.SUCCESS_WITH_DATA)
@@ -238,5 +265,158 @@ class ActivityTabFragment : Fragment() {
     private fun showFullscreenPhoto(photoUrl: String) {
         FullscreenPhotoDialog.newInstance(photoUrl)
             .show(childFragmentManager, "FullscreenPhotoDialog")
+    }
+
+    override fun onLongPress(activity: GroupActivity, anchorView: View) {
+        val activityId = activity.id ?: return
+        val currentUserEmoji = activity.reactions?.firstOrNull { it.current_user_reacted }?.emoji
+
+        val popup = ReactionPickerPopup(
+            context = requireContext(),
+            currentUserEmoji = currentUserEmoji,
+            onSelect = { emoji -> handleReactionSelect(activity, activityId, emoji) },
+            onDismiss = { }
+        )
+        popup.show(anchorView)
+    }
+
+    override fun onReactionSummaryClick(activityId: String) {
+        ReactorsBottomSheet.show(childFragmentManager, activityId)
+    }
+
+    private fun handleReactionSelect(activity: GroupActivity, activityId: String, emoji: String) {
+        val accessToken = SecureTokenManager.getInstance(requireContext()).getAccessToken() ?: return
+        val currentUserEmoji = activity.reactions?.firstOrNull { it.current_user_reacted }?.emoji
+
+        val previousActivities = cachedActivities.toList()
+        val updatedActivity = if (emoji == currentUserEmoji) {
+            applyReactionRemove(activity)
+        } else {
+            applyReactionAdd(activity, emoji)
+        }
+
+        cachedActivities = cachedActivities.map { if (it.id == activityId) updatedActivity else it }
+        refreshAdapterWithCachedActivities()
+
+        lifecycleScope.launch {
+            try {
+                if (emoji == currentUserEmoji) {
+                    withContext(Dispatchers.IO) {
+                        ApiClient.removeReaction(accessToken, activityId)
+                    }
+                } else {
+                    withContext(Dispatchers.IO) {
+                        ApiClient.addOrReplaceReaction(accessToken, activityId, emoji)
+                    }
+                }
+            } catch (e: Exception) {
+                Handler(Looper.getMainLooper()).post {
+                    cachedActivities = previousActivities
+                    refreshAdapterWithCachedActivities()
+                    view?.let { v ->
+                        Snackbar.make(v, getString(R.string.reaction_failed), Snackbar.LENGTH_SHORT).show()
+                    }
+                }
+            }
+        }
+    }
+
+    private fun applyReactionRemove(activity: GroupActivity): GroupActivity {
+        val currentReaction = activity.reactions?.firstOrNull { it.current_user_reacted } ?: return activity
+        val updatedReactions = activity.reactions!!.map { r ->
+            if (r.emoji == currentReaction.emoji) {
+                val newCount = (r.count - 1).coerceAtLeast(0)
+                val newReactorIds = r.reactor_ids.filter { it != currentUserId }
+                r.copy(count = newCount, reactor_ids = newReactorIds, current_user_reacted = false)
+            } else r
+        }.filter { it.count > 0 }
+
+        val newTotal = (activity.reaction_summary?.total_count ?: 0) - 1
+        val newTopReactors = activity.reaction_summary?.top_reactors
+            ?.filter { it.user_id != currentUserId }
+            ?.take(3)
+            ?: emptyList()
+
+        return activity.copy(
+            reactions = if (updatedReactions.isEmpty()) null else updatedReactions,
+            reaction_summary = if (newTotal <= 0) null else ReactionSummary(
+                total_count = newTotal.coerceAtLeast(0),
+                top_reactors = newTopReactors
+            )
+        )
+    }
+
+    private fun applyReactionAdd(activity: GroupActivity, emoji: String): GroupActivity {
+        val currentReaction = activity.reactions?.firstOrNull { it.current_user_reacted }
+        val existingReactions = activity.reactions?.toMutableList() ?: mutableListOf()
+
+        if (currentReaction != null && currentReaction.emoji != emoji) {
+            val idx = existingReactions.indexOfFirst { it.emoji == currentReaction.emoji }
+            if (idx >= 0) {
+                val r = existingReactions[idx]
+                val newCount = (r.count - 1).coerceAtLeast(0)
+                val newReactorIds = r.reactor_ids.filter { it != currentUserId }
+                if (newCount > 0) {
+                    existingReactions[idx] = r.copy(count = newCount, reactor_ids = newReactorIds, current_user_reacted = false)
+                } else {
+                    existingReactions.removeAt(idx)
+                }
+            }
+        }
+
+        val emojiIdx = existingReactions.indexOfFirst { it.emoji == emoji }
+        if (emojiIdx >= 0) {
+            val r = existingReactions[emojiIdx]
+            existingReactions[emojiIdx] = r.copy(
+                count = r.count + 1,
+                reactor_ids = listOfNotNull(currentUserId) + r.reactor_ids.filter { it != currentUserId },
+                current_user_reacted = true
+            )
+        } else {
+            existingReactions.add(
+                ActivityReaction(
+                    emoji = emoji,
+                    count = 1,
+                    reactor_ids = listOfNotNull(currentUserId),
+                    current_user_reacted = true
+                )
+            )
+        }
+
+        val newTotal = (activity.reaction_summary?.total_count ?: 0) +
+            if (currentReaction != null) 0 else 1
+        val newTopReactors = listOf(TopReactor(currentUserId ?: "", "You")) +
+            (activity.reaction_summary?.top_reactors?.filter { it.user_id != currentUserId } ?: emptyList()).take(2)
+
+        return activity.copy(
+            reactions = existingReactions.sortedByDescending { it.count },
+            reaction_summary = ReactionSummary(
+                total_count = newTotal.coerceAtLeast(1),
+                top_reactors = newTopReactors.take(3)
+            )
+        )
+    }
+
+    private fun refreshAdapterWithCachedActivities() {
+        if (cachedActivities.isEmpty()) {
+            updateUiState(ActivityUiState.SUCCESS_EMPTY)
+        } else {
+            // Save scroll position before updating adapter
+            val layoutManager = activityRecyclerView.layoutManager as? LinearLayoutManager
+            val scrollState = layoutManager?.onSaveInstanceState()
+            
+            adapter = GroupActivityAdapter(
+                cachedActivities,
+                currentUserId,
+                onPhotoClick = ::showFullscreenPhoto,
+                reactionListener = this@ActivityTabFragment
+            )
+            activityRecyclerView.adapter = adapter
+            
+            // Restore scroll position after adapter is set
+            scrollState?.let { layoutManager?.onRestoreInstanceState(it) }
+            
+            updateUiState(ActivityUiState.SUCCESS_WITH_DATA)
+        }
     }
 }

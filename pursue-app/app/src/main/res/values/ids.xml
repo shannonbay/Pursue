@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <item name="activity_data_tag" type="id" />
+    <item name="reaction_listener_tag" type="id" />
+</resources>

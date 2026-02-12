@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:paddingHorizontal="16dp"
+    android:paddingVertical="12dp"
+    android:minHeight="48dp">
+
+    <!-- Avatar -->
+    <ImageView
+        android:id="@+id/reactor_avatar"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:scaleType="centerCrop"
+        android:background="@drawable/circle_background"
+        android:contentDescription="@null"
+        tools:src="@android:drawable/ic_menu_gallery" />
+
+    <!-- Avatar fallback (initials) -->
+    <TextView
+        android:id="@+id/reactor_avatar_fallback"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:textSize="16sp"
+        android:gravity="center"
+        android:background="@drawable/circle_background"
+        android:textColor="@color/on_primary"
+        android:visibility="gone"
+        tools:text="R"
+        tools:visibility="visible" />
+
+    <!-- Display name -->
+    <TextView
+        android:id="@+id/reactor_name"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:layout_marginStart="12dp"
+        android:textAppearance="?attr/textAppearanceBodyMedium"
+        android:textColor="@color/on_surface"
+        tools:text="Robert Johnson" />
+
+    <!-- Emoji -->
+    <TextView
+        android:id="@+id/reactor_emoji"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="20sp"
+        tools:text="🔥" />
+</LinearLayout>
