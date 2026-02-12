@@ -26,62 +26,15 @@
             android:textColor="@color/on_surface"
             tools:text="✓ Alex completed '30 min run'" />
 
-        <!-- Timestamp and react button row -->
-        <LinearLayout
-            android:layout_width="match_parent"
+        <!-- Timestamp -->
+        <TextView
+            android:id="@+id/activity_timestamp"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
-            android:orientation="horizontal"
-            android:gravity="center_vertical">
-
-            <TextView
-                android:id="@+id/activity_timestamp"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:textAppearance="?attr/textAppearanceBodySmall"
-                android:textColor="@color/on_surface_variant"
-                tools:text="2 hours ago" />
-
-            <ImageButton
-                android:id="@+id/activity_react_button"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:contentDescription="@string/reaction_button_content_description"
-                android:src="@drawable/ic_heart_plus"
-                android:padding="12dp"
-                android:focusable="true"
-                android:clickable="true" />
-        </LinearLayout>
-
-        <!-- Reactions summary (shown when activity has reactions) -->
-        <LinearLayout
-            android:id="@+id/reactions_container"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:visibility="gone"
-            android:minHeight="48dp">
-
-            <TextView
-                android:id="@+id/reactions_emojis"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:textSize="16sp"
-                tools:text="🔥💪❤️" />
-
-            <TextView
-                android:id="@+id/reactions_label"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="6dp"
-                android:textAppearance="?attr/textAppearanceBodySmall"
-                android:textColor="@color/on_surface_variant"
-                tools:text="Robert J. and 2 others" />
-        </LinearLayout>
+            android:textAppearance="?attr/textAppearanceBodySmall"
+            android:textColor="@color/on_surface_variant"
+            tools:text="2 hours ago" />
 
         <!-- Progress photo (shown for progress_logged with photo) -->
         <com.google.android.material.imageview.ShapeableImageView
@@ -95,6 +48,60 @@
             app:shapeAppearanceOverlay="@style/ShapeAppearance.App.Corner.Small"
             tools:visibility="visible"
             tools:src="@android:drawable/ic_menu_gallery" />
+
+        <!-- Reactions row: summary (when present) + react button -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:minHeight="48dp">
+
+            <!-- Reactions summary (shown when activity has reactions) -->
+            <LinearLayout
+                android:id="@+id/reactions_container"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:visibility="gone">
+
+                <TextView
+                    android:id="@+id/reactions_emojis"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textSize="16sp"
+                    tools:text="🔥💪❤️" />
+
+                <TextView
+                    android:id="@+id/reactions_label"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="6dp"
+                    android:textAppearance="?attr/textAppearanceBodySmall"
+                    android:textColor="@color/on_surface_variant"
+                    tools:text="Robert J. and 2 others" />
+            </LinearLayout>
+
+            <!-- Spacer to push button to the right -->
+            <View
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:layout_weight="1" />
+
+            <!-- React button (always right-aligned) -->
+            <ImageButton
+                android:id="@+id/activity_react_button"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/reaction_button_content_description"
+                android:src="@drawable/ic_heart_plus"
+                android:padding="12dp"
+                android:focusable="true"
+                android:clickable="true" />
+        </LinearLayout>
 
     </LinearLayout>
 
