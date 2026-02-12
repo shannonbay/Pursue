@@ -142,6 +142,7 @@ class PursueFirebaseMessagingService : FirebaseMessagingService() {
         val (initialTab, openPendingApprovals) = when (type) {
             "join_request" -> 1 to true
             "progress_logged" -> 2 to false
+            "nudge_received" -> 0 to false  // Goals tab
             "member_joined", "member_left", "member_promoted", "member_approved",
             "member_removed", "member_declined", "group_renamed", "invite_code_regenerated", "group_created" -> 1 to false
             else -> -1 to false

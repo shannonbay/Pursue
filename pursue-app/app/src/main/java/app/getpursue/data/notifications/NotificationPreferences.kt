@@ -18,6 +18,7 @@ object NotificationPreferences {
     private const val PREFS_NAME = "notification_prefs"
     private const val KEY_NOTIFY_PROGRESS_LOGS = "notify_progress_logs"
     private const val KEY_NOTIFY_GROUP_EVENTS = "notify_group_events"
+    private const val KEY_NOTIFY_NUDGES = "notify_nudges"
 
     private fun prefs(context: Context): SharedPreferences =
         context.applicationContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
@@ -34,6 +35,13 @@ object NotificationPreferences {
 
     fun setNotifyGroupEvents(context: Context, enabled: Boolean) {
         prefs(context).edit().putBoolean(KEY_NOTIFY_GROUP_EVENTS, enabled).apply()
+    }
+
+    fun getNotifyNudges(context: Context): Boolean =
+        prefs(context).getBoolean(KEY_NOTIFY_NUDGES, true)
+
+    fun setNotifyNudges(context: Context, enabled: Boolean) {
+        prefs(context).edit().putBoolean(KEY_NOTIFY_NUDGES, enabled).apply()
     }
 
     /**
@@ -85,6 +93,9 @@ object NotificationPreferences {
     /** FCM data type for progress / goal completions (can be spammy). */
     private const val TYPE_PROGRESS_LOGGED = "progress_logged"
 
+    /** FCM data type for nudge notifications (when someone nudges you). */
+    private const val TYPE_NUDGE_RECEIVED = "nudge_received"
+
     /** FCM data types that map to "group events" (joins, leaves, promotions, renames, etc.). */
     private val GROUP_EVENT_TYPES = setOf(
         "member_joined",
@@ -106,6 +117,7 @@ object NotificationPreferences {
     fun shouldShowNotification(context: Context, type: String?): Boolean {
         when (type) {
             TYPE_PROGRESS_LOGGED -> return getNotifyProgressLogs(context)
+            TYPE_NUDGE_RECEIVED -> return getNotifyNudges(context)
             in GROUP_EVENT_TYPES -> return getNotifyGroupEvents(context)
             else -> return true
         }

@@ -64,6 +64,7 @@ class ProfileFragment : Fragment() {
     private lateinit var displayName: TextView
     private lateinit var switchNotifyProgressLogs: MaterialSwitch
     private lateinit var switchNotifyGroupEvents: MaterialSwitch
+    private lateinit var switchNotifyNudges: MaterialSwitch
     private lateinit var loadingIndicator: ProgressBar
     private lateinit var subscriptionStatus: TextView
     private lateinit var subscriptionRenews: TextView
@@ -121,6 +122,7 @@ class ProfileFragment : Fragment() {
         displayName = view.findViewById(R.id.display_name)
         switchNotifyProgressLogs = view.findViewById(R.id.switch_notify_progress_logs)
         switchNotifyGroupEvents = view.findViewById(R.id.switch_notify_group_events)
+        switchNotifyNudges = view.findViewById(R.id.switch_notify_nudges)
         loadingIndicator = view.findViewById(R.id.loading_indicator)
         subscriptionStatus = view.findViewById(R.id.subscription_status)
         subscriptionRenews = view.findViewById(R.id.subscription_renews)
@@ -130,11 +132,15 @@ class ProfileFragment : Fragment() {
 
         switchNotifyProgressLogs.isChecked = NotificationPreferences.getNotifyProgressLogs(requireContext())
         switchNotifyGroupEvents.isChecked = NotificationPreferences.getNotifyGroupEvents(requireContext())
+        switchNotifyNudges.isChecked = NotificationPreferences.getNotifyNudges(requireContext())
         switchNotifyProgressLogs.setOnCheckedChangeListener { _, isChecked ->
             NotificationPreferences.setNotifyProgressLogsWithTopics(requireContext(), isChecked, userGroupIds)
         }
         switchNotifyGroupEvents.setOnCheckedChangeListener { _, isChecked ->
             NotificationPreferences.setNotifyGroupEventsWithTopics(requireContext(), isChecked, userGroupIds)
+        }
+        switchNotifyNudges.setOnCheckedChangeListener { _, isChecked ->
+            NotificationPreferences.setNotifyNudges(requireContext(), isChecked)
         }
         
         // Set up click listeners

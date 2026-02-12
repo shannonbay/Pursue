@@ -14,117 +14,124 @@
     app:cardElevation="1dp"
     app:strokeWidth="0dp">
 
-    <!-- Two-touch-zone layout: 85% main body, 15% arrow -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
+        android:orientation="vertical"
         android:padding="16dp">
 
-        <!-- Main Card Body (85% width) - for logging progress -->
+        <!-- Row 1: 85% body (title + progress) and 15% arrow - same as status icon / arrow alignment -->
         <LinearLayout
-            android:id="@+id/card_body"
-            android:layout_width="0dp"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="0.85"
-            android:orientation="vertical">
+            android:orientation="horizontal">
 
-            <!-- Goal Title Row -->
+            <!-- Main Card Body (85% width) -->
             <LinearLayout
-                android:layout_width="match_parent"
+                android:id="@+id/card_body"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical">
+                android:layout_weight="0.85"
+                android:orientation="vertical">
 
-                <!-- Status Icon (✓ or ○) -->
-                <TextView
-                    android:id="@+id/status_icon"
-                    android:layout_width="24dp"
-                    android:layout_height="24dp"
-                    android:textSize="20sp"
-                    android:gravity="center"
-                    android:textColor="@color/primary"
-                    tools:text="✓" />
-
-                <!-- Goal Title -->
-                <TextView
-                    android:id="@+id/goal_title"
-                    android:layout_width="0dp"
+                <!-- Goal Title Row: status icon aligns with member row circles -->
+                <LinearLayout
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:layout_marginStart="12dp"
-                    android:textAppearance="?attr/textAppearanceBodyLarge"
-                    android:textStyle="bold"
-                    android:textColor="@color/on_surface"
-                    android:maxLines="2"
-                    android:ellipsize="end"
-                    tools:text="30 min run" />
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
 
-            </LinearLayout>
+                    <TextView
+                        android:id="@+id/status_icon"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:textSize="20sp"
+                        android:gravity="center"
+                        android:textColor="@color/primary"
+                        tools:text="✓" />
 
-            <!-- Progress Bar (for numeric goals) -->
-            <ProgressBar
-                android:id="@+id/progress_bar"
-                style="?android:attr/progressBarStyleHorizontal"
-                android:layout_width="match_parent"
-                android:layout_height="8dp"
-                android:layout_marginTop="8dp"
-                android:visibility="gone"
-                android:progressTint="@color/primary"
-                android:progressBackgroundTint="@color/surface_variant"
-                android:max="100"
-                tools:progress="50"
-                tools:visibility="visible" />
+                    <TextView
+                        android:id="@+id/goal_title"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:layout_marginStart="12dp"
+                        android:textAppearance="?attr/textAppearanceBodyLarge"
+                        android:textStyle="bold"
+                        android:textColor="@color/on_surface"
+                        android:maxLines="2"
+                        android:ellipsize="end"
+                        tools:text="30 min run" />
 
-            <!-- Progress Text (for numeric goals) -->
-            <TextView
-                android:id="@+id/progress_text"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:textAppearance="?attr/textAppearanceBodySmall"
-                android:textColor="@color/on_surface_variant"
-                android:visibility="gone"
-                tools:text="50% (1/2)"
-                tools:visibility="visible" />
+                </LinearLayout>
 
-            <!-- Member Status Dots -->
-            <LinearLayout
-                android:id="@+id/member_status_container"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:orientation="horizontal"
-                android:gravity="center_vertical">
+                <ProgressBar
+                    android:id="@+id/progress_bar"
+                    style="?android:attr/progressBarStyleHorizontal"
+                    android:layout_width="match_parent"
+                    android:layout_height="8dp"
+                    android:layout_marginTop="8dp"
+                    android:visibility="gone"
+                    android:progressTint="@color/primary"
+                    android:progressBackgroundTint="@color/surface_variant"
+                    android:max="100"
+                    tools:progress="50"
+                    tools:visibility="visible" />
 
-                <!-- Member status dots will be added programmatically -->
                 <TextView
-                    android:id="@+id/member_status_text"
+                    android:id="@+id/progress_text"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
                     android:textAppearance="?attr/textAppearanceBodySmall"
                     android:textColor="@color/on_surface_variant"
-                    tools:text="Shannon ✓ Alex ✓ Jamie ○" />
+                    android:visibility="gone"
+                    tools:text="50% (1/2)"
+                    tools:visibility="visible" />
 
             </LinearLayout>
+
+            <ImageButton
+                android:id="@+id/arrow_button"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_weight="0.15"
+                android:minWidth="48dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/view_goal_details"
+                android:src="@drawable/ic_chevron_right"
+                android:scaleType="centerInside"
+                android:padding="12dp"
+                android:clickable="true"
+                android:focusable="true"
+                android:duplicateParentState="false" />
 
         </LinearLayout>
 
-        <!-- Arrow Button (15% width) - for navigating to Goal Detail -->
-        <ImageButton
-            android:id="@+id/arrow_button"
-            android:layout_width="0dp"
-            android:layout_height="48dp"
-            android:layout_weight="0.15"
-            android:minWidth="48dp"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="@string/view_goal_details"
-            android:src="@drawable/ic_chevron_right"
-            android:scaleType="centerInside"
-            android:padding="12dp"
-            android:clickable="true"
-            android:focusable="true"
-            android:duplicateParentState="false" />
+        <!-- Row 2: Member list (85%) and nudge column (15%) - circles align with title row, bells align with arrow -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:orientation="horizontal">
+
+            <LinearLayout
+                android:id="@+id/member_status_container"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="0.85"
+                android:orientation="vertical" />
+
+            <LinearLayout
+                android:id="@+id/member_nudge_column"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="0.15"
+                android:minWidth="48dp"
+                android:gravity="top|end"
+                android:orientation="vertical" />
+
+        </LinearLayout>
 
     </LinearLayout>
 

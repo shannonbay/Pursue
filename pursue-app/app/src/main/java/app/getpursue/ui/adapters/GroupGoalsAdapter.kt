@@ -7,6 +7,7 @@ import android.widget.ImageButton
 import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
+import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import app.getpursue.models.GroupGoal
 import app.getpursue.R
@@ -121,7 +122,7 @@ class GroupGoalsAdapter(
         private val progressBar: ProgressBar = itemView.findViewById(R.id.progress_bar)
         private val progressText: TextView = itemView.findViewById(R.id.progress_text)
         private val memberStatusContainer: LinearLayout = itemView.findViewById(R.id.member_status_container)
-        private val memberStatusText: TextView = itemView.findViewById(R.id.member_status_text)
+        private val memberNudgeColumn: LinearLayout? = itemView.findViewById(R.id.member_nudge_column)
 
         fun bind(goal: GroupGoal) {
             // Clear any existing listeners to prevent duplicates
@@ -170,16 +171,26 @@ class GroupGoalsAdapter(
                 progressText.visibility = View.GONE
             }
 
-            // Member status dots
+            // Member status (adapter shows simplified view: circle + name only, no nudge column)
+            memberNudgeColumn?.visibility = View.GONE
+            memberStatusContainer.removeAllViews()
             if (goal.member_progress.isNotEmpty()) {
-                memberStatusText.visibility = View.VISIBLE
-                val statusText = goal.member_progress.joinToString(" ") { member ->
-                    val status = if (member.completed) "✓" else "○"
-                    "${member.display_name} $status"
+                memberStatusContainer.visibility = View.VISIBLE
+                goal.member_progress.forEach { member ->
+                    val memberView = LayoutInflater.from(itemView.context)
+                        .inflate(R.layout.item_member_status, memberStatusContainer, false)
+                    val nameView = memberView.findViewById<TextView>(R.id.member_status_name)
+                    val statusIconView = memberView.findViewById<TextView>(R.id.member_status_icon)
+                    nameView.text = member.display_name
+                    statusIconView.text = if (member.completed) "✓" else "○"
+                    statusIconView.setTextColor(
+                        if (member.completed) ContextCompat.getColor(itemView.context, R.color.primary)
+                        else ContextCompat.getColor(itemView.context, R.color.on_surface_variant)
+                    )
+                    memberStatusContainer.addView(memberView)
                 }
-                memberStatusText.text = statusText
             } else {
-                memberStatusText.visibility = View.GONE
+                memberStatusContainer.visibility = View.GONE
             }
         }
 

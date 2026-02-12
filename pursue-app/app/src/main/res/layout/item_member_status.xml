@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Left column of member row: status circle (aligns with goal status icon) + name -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="48dp"
+    android:orientation="horizontal"
+    android:gravity="center_vertical">
+
+    <!-- Status indicator (✓ or ○) - same 24dp as goal status_icon for alignment -->
+    <TextView
+        android:id="@+id/member_status_icon"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:layout_marginEnd="12dp"
+        android:textSize="14sp"
+        android:gravity="center"
+        android:textColor="@color/on_surface_variant"
+        tools:text="○" />
+
+    <!-- Display name -->
+    <TextView
+        android:id="@+id/member_status_name"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:textAppearance="?attr/textAppearanceBodySmall"
+        android:textColor="@color/on_surface_variant"
+        android:maxLines="1"
+        android:ellipsize="end"
+        tools:text="Alex" />
+
+</LinearLayout>

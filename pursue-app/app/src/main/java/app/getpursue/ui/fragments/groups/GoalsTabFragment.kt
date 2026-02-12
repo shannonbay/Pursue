@@ -35,13 +35,16 @@ import app.getpursue.data.auth.SecureTokenManager
 import app.getpursue.models.GroupGoal
 import app.getpursue.models.MemberProgress
 import app.getpursue.ui.handlers.GoalLogProgressHandler
+import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.card.MaterialCardView
 import androidx.core.content.ContextCompat
 import app.getpursue.models.GroupGoalResponse
+import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.coroutineScope
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -124,6 +127,8 @@ class GoalsTabFragment : Fragment() {
 
     private var currentState: GoalsUiState = GoalsUiState.LOADING
     private var cachedGoals: List<GroupGoal> = emptyList()
+    private var nudgedUserIds: MutableSet<String> = mutableSetOf()
+    private var loadingNudgeUserIds: MutableSet<String> = mutableSetOf()
 
     private var logProgressHandler: GoalLogProgressHandler? = null
 
@@ -242,16 +247,35 @@ class GoalsTabFragment : Fragment() {
                     }
                 }
 
-                // Fetch goals with progress from API
-                val response = withContext(Dispatchers.IO) {
-                    ApiClient.getGroupGoals(
-                        accessToken = accessToken,
-                        groupId = groupId,
-                        archived = false,
-                        includeProgress = true,
-                        userTimezone = ZoneId.systemDefault().id
-                    )
+                // Fetch goals and nudges sent today in parallel
+                val senderLocalDate = LocalDate.now().format(DateTimeFormatter.ISO_DATE)
+                val (response, nudgesResponse) = withContext(Dispatchers.IO) {
+                    coroutineScope {
+                        val goalsDeferred = async {
+                            ApiClient.getGroupGoals(
+                                accessToken = accessToken,
+                                groupId = groupId,
+                                archived = false,
+                                includeProgress = true,
+                                userTimezone = ZoneId.systemDefault().id
+                            )
+                        }
+                        val nudgesDeferred = async {
+                            try {
+                                ApiClient.getNudgesSentToday(
+                                    accessToken = accessToken,
+                                    groupId = groupId,
+                                    senderLocalDate = senderLocalDate
+                                )
+                            } catch (e: Exception) {
+                                null
+                            }
+                        }
+                        Pair(goalsDeferred.await(), nudgesDeferred.await())
+                    }
                 }
+
+                nudgedUserIds = (nudgesResponse?.nudged_user_ids ?: emptyList()).toMutableSet()
 
                 // Map API response to GroupGoal model
                 val goals = response.goals.map { goalResponse ->
@@ -385,7 +409,7 @@ class GoalsTabFragment : Fragment() {
         val goalTitle = view.findViewById<TextView>(R.id.goal_title)
         val progressBar = view.findViewById<ProgressBar>(R.id.progress_bar)
         val progressText = view.findViewById<TextView>(R.id.progress_text)
-        val memberStatusText = view.findViewById<TextView>(R.id.member_status_text)
+        val memberStatusContainer = view.findViewById<LinearLayout>(R.id.member_status_container)
 
         // Status icon (✓ for completed, ○ for incomplete)
         if (goal.completed) {
@@ -415,16 +439,146 @@ class GoalsTabFragment : Fragment() {
             progressText.visibility = View.GONE
         }
 
-        // Member status dots
-        if (goal.member_progress.isNotEmpty()) {
-            memberStatusText.visibility = View.VISIBLE
-            val statusText = goal.member_progress.joinToString(" ") { member ->
-                val status = if (member.completed) "✓" else "○"
-                "${member.display_name} $status"
+        // Member status: show (You), completed members, and incomplete not-yet-nudged. Hide incomplete + already nudged until they complete.
+        val memberNudgeColumn = view.findViewById<LinearLayout>(R.id.member_nudge_column)
+        memberStatusContainer.removeAllViews()
+        memberNudgeColumn.removeAllViews()
+
+        val visibleMembers = goal.member_progress.filter { member ->
+            val isCurrentUser = member.user_id == currentUserId
+            val isCompleted = member.completed
+            val alreadyNudged = member.user_id in nudgedUserIds
+            isCurrentUser || isCompleted || !alreadyNudged
+        }
+
+        if (visibleMembers.isNotEmpty()) {
+            memberStatusContainer.visibility = View.VISIBLE
+            memberNudgeColumn.visibility = View.VISIBLE
+            val gId = groupId ?: return
+            visibleMembers.forEach { member ->
+                val memberRowView = LayoutInflater.from(requireContext())
+                    .inflate(R.layout.item_member_status, memberStatusContainer, false)
+                val nudgeCellView = LayoutInflater.from(requireContext())
+                    .inflate(R.layout.item_member_nudge_cell, memberNudgeColumn, false)
+                bindMemberStatusRow(memberRowView, nudgeCellView, member, goal, gId)
+                memberStatusContainer.addView(memberRowView)
+                memberNudgeColumn.addView(nudgeCellView)
             }
-            memberStatusText.text = statusText
         } else {
-            memberStatusText.visibility = View.GONE
+            memberStatusContainer.visibility = View.GONE
+            memberNudgeColumn.visibility = View.GONE
+        }
+    }
+
+    /**
+     * Bind a member row (left: circle + name) and nudge cell (right: bell or progress).
+     */
+    private fun bindMemberStatusRow(
+        rowView: View,
+        nudgeCellView: View,
+        member: MemberProgress,
+        goal: GroupGoal,
+        groupId: String
+    ) {
+        val nameView = rowView.findViewById<TextView>(R.id.member_status_name)
+        val statusIconView = rowView.findViewById<TextView>(R.id.member_status_icon)
+        val nudgeButton = nudgeCellView.findViewById<ImageButton>(R.id.nudge_button)
+        val nudgeProgress = nudgeCellView.findViewById<ProgressBar>(R.id.nudge_progress)
+
+        val displayName = if (member.user_id == currentUserId) {
+            "${member.display_name} ${getString(R.string.you)}"
+        } else {
+            member.display_name
+        }
+        nameView.text = displayName
+
+        statusIconView.text = if (member.completed) "✓" else "○"
+        statusIconView.setTextColor(
+            if (member.completed) ContextCompat.getColor(requireContext(), R.color.primary)
+            else ContextCompat.getColor(requireContext(), R.color.on_surface_variant)
+        )
+
+        val isCurrentUser = member.user_id == currentUserId
+        val isCompleted = member.completed
+        val alreadyNudged = member.user_id in nudgedUserIds
+        val isLoading = member.user_id in loadingNudgeUserIds
+
+        when {
+            isCurrentUser || isCompleted -> {
+                nudgeButton.visibility = View.GONE
+                nudgeProgress.visibility = View.GONE
+            }
+            isLoading -> {
+                nudgeButton.visibility = View.GONE
+                nudgeProgress.visibility = View.VISIBLE
+            }
+            else -> {
+                nudgeButton.visibility = View.VISIBLE
+                nudgeProgress.visibility = View.GONE
+                nudgeButton.isEnabled = !alreadyNudged
+                nudgeButton.alpha = if (alreadyNudged) 0.5f else 1f
+                nudgeButton.setOnClickListener {
+                    sendNudge(member.user_id, member.display_name, goal.id, groupId)
+                }
+            }
+        }
+    }
+
+    /**
+     * Send a nudge to a group member. Updates UI optimistically and handles errors.
+     */
+    private fun sendNudge(
+        recipientUserId: String,
+        recipientDisplayName: String,
+        goalId: String,
+        groupId: String
+    ) {
+        val tokenManager = SecureTokenManager.Companion.getInstance(requireContext())
+        val accessToken = tokenManager.getAccessToken() ?: return
+
+        loadingNudgeUserIds.add(recipientUserId)
+        populateGoalsScrollView(cachedGoals)
+
+        lifecycleScope.launch {
+            try {
+                val senderLocalDate = LocalDate.now().format(DateTimeFormatter.ISO_DATE)
+                withContext(Dispatchers.IO) {
+                    ApiClient.sendNudge(
+                        accessToken = accessToken,
+                        recipientUserId = recipientUserId,
+                        groupId = groupId,
+                        goalId = goalId,
+                        senderLocalDate = senderLocalDate
+                    )
+                }
+                nudgedUserIds.add(recipientUserId)
+                loadingNudgeUserIds.remove(recipientUserId)
+                Handler(Looper.getMainLooper()).post {
+                    populateGoalsScrollView(cachedGoals)
+                    Snackbar.make(getSnackbarParentView(), getString(R.string.nudge_sent, recipientDisplayName), Snackbar.LENGTH_SHORT).show()
+                }
+            } catch (e: ApiException) {
+                loadingNudgeUserIds.remove(recipientUserId)
+                Handler(Looper.getMainLooper()).post {
+                    populateGoalsScrollView(cachedGoals)
+                    val message = when (e.errorCode) {
+                        "ALREADY_NUDGED_TODAY" -> getString(R.string.already_nudged_today, recipientDisplayName)
+                        "DAILY_SEND_LIMIT" -> getString(R.string.nudge_daily_limit)
+                        else -> getString(R.string.nudge_failed)
+                    }
+                    Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
+                    if (e.errorCode == "ALREADY_NUDGED_TODAY") {
+                        nudgedUserIds.add(recipientUserId)
+                        populateGoalsScrollView(cachedGoals)
+                    }
+                }
+            } catch (e: Exception) {
+                loadingNudgeUserIds.remove(recipientUserId)
+                Handler(Looper.getMainLooper()).post {
+                    populateGoalsScrollView(cachedGoals)
+                    Toast.makeText(requireContext(), R.string.nudge_failed, Toast.LENGTH_SHORT).show()
+                }
+            }
         }
     }
 

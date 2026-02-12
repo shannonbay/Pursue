@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Right column cell: nudge button or progress, aligned with arrow (48dp) -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="48dp"
+    android:minWidth="48dp"
+    android:gravity="center">
+
+    <ImageButton
+        android:id="@+id/nudge_button"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="@string/nudge_button_description"
+        android:src="@drawable/ic_nudge"
+        android:scaleType="centerInside"
+        android:padding="12dp"
+        android:visibility="gone"
+        tools:visibility="visible" />
+
+    <ProgressBar
+        android:id="@+id/nudge_progress"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:layout_gravity="center"
+        android:visibility="gone"
+        android:indeterminateTint="@color/primary"
+        tools:visibility="visible" />
+
+</FrameLayout>

@@ -8,6 +8,15 @@
     <string name="notify_progress_logs_summary">When someone logs progress on a goal</string>
     <string name="notify_group_events_label">Group events</string>
     <string name="notify_group_events_summary">Joins, leaves, promotions, renames</string>
+    <string name="notify_nudges_label">Nudge notifications</string>
+    <string name="notify_nudges_summary">Get notified when someone nudges you</string>
+
+    <!-- Nudge feature -->
+    <string name="nudge_sent">Nudge sent to %1$s! 👊</string>
+    <string name="already_nudged_today">You already nudged %1$s today</string>
+    <string name="nudge_daily_limit">You\'ve reached your daily nudge limit</string>
+    <string name="nudge_failed">Couldn\'t send nudge. Try again.</string>
+    <string name="nudge_button_description">Nudge member</string>
 
     <!-- Onboarding: Welcome (4.1.1) -->
     <string name="welcome_tagline">Achieve goals together</string>

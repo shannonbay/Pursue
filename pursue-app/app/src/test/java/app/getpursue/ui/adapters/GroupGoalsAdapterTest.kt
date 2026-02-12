@@ -284,10 +284,14 @@ class GroupGoalsAdapterTest {
         adapter.onBindViewHolder(goalHolder, 1)
 
         // Then
-        val memberStatusText = goalHolder.itemView.findViewById<TextView>(R.id.member_status_text)
-        assertEquals("Member status should be visible", View.VISIBLE, memberStatusText.visibility)
-        assertTrue("Member status should contain Alice", memberStatusText.text.toString().contains("Alice"))
-        assertTrue("Member status should contain Bob", memberStatusText.text.toString().contains("Bob"))
+        val memberStatusContainer = goalHolder.itemView.findViewById<LinearLayout>(R.id.member_status_container)
+        assertEquals("Member status container should be visible", View.VISIBLE, memberStatusContainer.visibility)
+        assertEquals("Should have 2 member status items", 2, memberStatusContainer.childCount)
+        val memberNames = (0 until memberStatusContainer.childCount).map { i ->
+            memberStatusContainer.getChildAt(i).findViewById<TextView>(R.id.member_status_name).text.toString()
+        }
+        assertTrue("Member status should contain Alice", memberNames.any { it.contains("Alice") })
+        assertTrue("Member status should contain Bob", memberNames.any { it.contains("Bob") })
     }
 
     // ========== Two-Touch Zone Tests ==========
