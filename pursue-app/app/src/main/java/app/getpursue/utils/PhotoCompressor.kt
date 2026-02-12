@@ -34,11 +34,25 @@ data class CompressedPhoto(
 suspend fun compressPhotoForUpload(context: Context, uri: Uri): CompressedPhoto? = withContext(Dispatchers.IO) {
     try {
         val sourceFile = ImageUtils.uriToFileWithNormalizedOrientation(context, uri) ?: return@withContext null
-        val compressedFile = Compressor.compress(context, sourceFile) {
+        var compressedFile = Compressor.compress(context, sourceFile) {
             resolution(1080, 1080)
             quality(80)
             format(android.graphics.Bitmap.CompressFormat.JPEG)
             size(200_000)
+        }
+        // Hard ceiling: backend rejects > 500 KB.
+        // If Compressor couldn't reach 200 KB, retry with lower quality.
+        if (compressedFile.length() > 500_000) {
+            compressedFile = Compressor.compress(context, sourceFile) {
+                resolution(1080, 1080)
+                quality(60)
+                format(android.graphics.Bitmap.CompressFormat.JPEG)
+                size(500_000)
+            }
+        }
+        if (compressedFile.length() > 500_000) {
+            Log.w("PhotoCompressor", "Compressed file still exceeds 500 KB (${compressedFile.length()} bytes)")
+            return@withContext null
         }
         val (width, height) = getImageDimensions(compressedFile) ?: return@withContext null
         CompressedPhoto(file = compressedFile, width = width, height = height)
