@@ -1550,6 +1550,77 @@ object ApiClient {
     }
 
     /**
+     * Send a nudge to a group member.
+     *
+     * POST /api/nudges
+     * Sender must be an approved member of the group. Recipient must be an approved member.
+     * One nudge per sender-recipient pair per calendar day (sender's local date).
+     *
+     * @param accessToken JWT access token for authentication
+     * @param recipientUserId User ID of the recipient
+     * @param groupId Group ID
+     * @param goalId Optional goal ID to reference in the notification
+     * @param senderLocalDate Sender's local date (YYYY-MM-DD)
+     * @return SendNudgeResponse with created nudge details
+     * @throws ApiException on error (400 CANNOT_NUDGE_SELF, 403 NOT_A_MEMBER, 403 RECIPIENT_NOT_IN_GROUP, 409 ALREADY_NUDGED_TODAY, 429 DAILY_SEND_LIMIT)
+     */
+    suspend fun sendNudge(
+        accessToken: String,
+        recipientUserId: String,
+        groupId: String,
+        goalId: String? = null,
+        senderLocalDate: String
+    ): SendNudgeResponse {
+        val requestBody = gson.toJson(
+            SendNudgeRequest(
+                recipient_user_id = recipientUserId,
+                group_id = groupId,
+                goal_id = goalId,
+                sender_local_date = senderLocalDate
+            )
+        ).toRequestBody(jsonMediaType)
+
+        val request = Request.Builder()
+            .url("$baseUrl/nudges")
+            .post(requestBody)
+            .addHeader("Content-Type", "application/json")
+            .build()
+
+        return executeRequest(request, getClient()) { responseBody ->
+            gson.fromJson(responseBody, SendNudgeResponse::class.java)
+        }
+    }
+
+    /**
+     * Get nudged user IDs sent today by the current user in a group.
+     *
+     * GET /api/groups/:group_id/nudges/sent-today?sender_local_date=YYYY-MM-DD
+     * Used to disable nudge buttons on load without round-tripping for each member.
+     *
+     * @param accessToken JWT access token for authentication
+     * @param groupId Group ID
+     * @param senderLocalDate Sender's local date (YYYY-MM-DD)
+     * @return NudgesSentTodayResponse with nudged_user_ids list
+     * @throws ApiException on error (403 NOT_A_MEMBER)
+     */
+    suspend fun getNudgesSentToday(
+        accessToken: String,
+        groupId: String,
+        senderLocalDate: String
+    ): NudgesSentTodayResponse {
+        val url = "$baseUrl/groups/$groupId/nudges/sent-today?sender_local_date=${URLEncoder.encode(senderLocalDate, "UTF-8")}"
+        val request = Request.Builder()
+            .url(url)
+            .get()
+            .addHeader("Content-Type", "application/json")
+            .build()
+
+        return executeRequest(request, getClient()) { responseBody ->
+            gson.fromJson(responseBody, NudgesSentTodayResponse::class.java)
+        }
+    }
+
+    /**
      * Execute an HTTP request and parse the response.
      */
     private suspend fun <T> executeRequest(
@@ -2015,6 +2086,34 @@ data class ReactorUser(
     val id: String,
     val display_name: String,
     val avatar_url: String?
+)
+
+// --- Nudge DTOs ---
+
+/** POST /api/nudges request */
+data class SendNudgeRequest(
+    val recipient_user_id: String,
+    val group_id: String,
+    val goal_id: String? = null,
+    val sender_local_date: String
+)
+
+/** POST /api/nudges response */
+data class SendNudgeResponse(
+    val nudge: NudgeDetail
+)
+
+data class NudgeDetail(
+    val id: String,
+    val recipient_user_id: String,
+    val group_id: String,
+    val goal_id: String?,
+    val sent_at: String
+)
+
+/** GET /api/groups/:group_id/nudges/sent-today response */
+data class NudgesSentTodayResponse(
+    val nudged_user_ids: List<String>
 )
 
 /**

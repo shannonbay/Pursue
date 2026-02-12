@@ -27,6 +27,8 @@ import app.getpursue.data.network.User
 import app.getpursue.data.network.UserConsentsResponse
 import app.getpursue.data.network.AddReactionResponse
 import app.getpursue.data.network.GetReactionsResponse
+import app.getpursue.data.network.NudgesSentTodayResponse
+import app.getpursue.data.network.SendNudgeResponse
 import app.getpursue.models.GroupsResponse
 import app.getpursue.models.GroupDetailResponse
 import app.getpursue.models.GroupMembersResponse
@@ -388,5 +390,27 @@ class E2EApiClient(private val context: Context) {
     ): GetReactionsResponse {
         storeTokenIfPresent(accessToken)
         return ApiClient.getReactions("", activityId)
+    }
+
+    // --- Nudge Endpoints ---
+
+    suspend fun sendNudge(
+        accessToken: String,
+        recipientUserId: String,
+        groupId: String,
+        goalId: String? = null,
+        senderLocalDate: String
+    ): SendNudgeResponse {
+        storeTokenIfPresent(accessToken)
+        return ApiClient.sendNudge("", recipientUserId, groupId, goalId, senderLocalDate)
+    }
+
+    suspend fun getNudgesSentToday(
+        accessToken: String,
+        groupId: String,
+        senderLocalDate: String
+    ): NudgesSentTodayResponse {
+        storeTokenIfPresent(accessToken)
+        return ApiClient.getNudgesSentToday("", groupId, senderLocalDate)
     }
 }
