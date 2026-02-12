@@ -5,8 +5,6 @@ import com.github.shannonbay.pursue.e2e.config.E2ETest
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
-import java.time.LocalDate
-import java.time.format.DateTimeFormatter
 
 /**
  * E2E tests for goal progress logging, retrieval, and deletion.
@@ -20,8 +18,7 @@ class GoalProgressE2ETest : E2ETest() {
     fun `log progress entry stores in database`() = runTest {
         // Arrange - Create user, group, binary daily goal
         val authResponse = getOrCreateSharedUser()
-        val group = testDataHelper.createTestGroup(api, authResponse.access_token)
-        trackGroup(group.id)
+        val group = getOrCreateSharedGroup()
         val goal = testDataHelper.createTestGoal(
             api,
             authResponse.access_token,
@@ -30,7 +27,8 @@ class GoalProgressE2ETest : E2ETest() {
             cadence = "daily",
             metricType = "binary"
         )
-        val userDate = LocalDate.now().format(DateTimeFormatter.ISO_LOCAL_DATE)
+        // Use a fixed past date to avoid timezone mismatch (server validates "date cannot be in the future")
+        val userDate = "2026-02-01"
         val userTimezone = "America/New_York"
 
         // Act - Log progress (binary: value 1 = completed)
@@ -63,14 +61,13 @@ class GoalProgressE2ETest : E2ETest() {
     fun `cannot log progress for other user's goal`() = runTest {
         // Arrange - User A creates group and goal; User B is not in group
         val authA = getOrCreateSharedUser()
-        val group = testDataHelper.createTestGroup(api, authA.access_token)
-        trackGroup(group.id)
+        val group = getOrCreateSharedGroup()
         val goal = testDataHelper.createTestGoal(api, authA.access_token, group.id)
 
         val authB = testDataHelper.createTestUser(api, displayName = "Other User")
         trackUser(authB.user!!.id)
 
-        val userDate = LocalDate.now().format(DateTimeFormatter.ISO_LOCAL_DATE)
+        val userDate = "2026-02-01"
 
         // Act - User B tries to log progress for goal in group they are not in
         var exception: Exception? = null
@@ -96,8 +93,7 @@ class GoalProgressE2ETest : E2ETest() {
     fun `delete progress entry removes entry`() = runTest {
         // Arrange - Create user, group, goal, log progress
         val authResponse = getOrCreateSharedUser()
-        val group = testDataHelper.createTestGroup(api, authResponse.access_token)
-        trackGroup(group.id)
+        val group = getOrCreateSharedGroup()
         val goal = testDataHelper.createTestGoal(
             api,
             authResponse.access_token,
@@ -106,7 +102,8 @@ class GoalProgressE2ETest : E2ETest() {
             cadence = "daily",
             metricType = "binary"
         )
-        val userDate = LocalDate.now().format(DateTimeFormatter.ISO_LOCAL_DATE)
+        // Use a fixed past date to avoid timezone mismatch (server validates "date cannot be in the future")
+        val userDate = "2026-02-01"
         val userTimezone = "America/New_York"
 
         val logResponse = api.logProgress(

@@ -19,8 +19,7 @@ class GroupMembersE2ETest : E2ETest() {
         // Arrange
         val authResponse = getOrCreateSharedUser()
         
-        val group = testDataHelper.createTestGroup(api, authResponse.access_token)
-        trackGroup(group.id)
+        val group = getOrCreateSharedGroup()
         
         // Act
         val response = api.getGroupMembers(authResponse.access_token, group.id)
@@ -42,8 +41,7 @@ class GroupMembersE2ETest : E2ETest() {
         // Arrange
         val authResponse = getOrCreateSharedUser()
         
-        val group = testDataHelper.createTestGroup(api, authResponse.access_token)
-        trackGroup(group.id)
+        val group = getOrCreateSharedGroup()
         
         // Act
         val response = api.getGroupMembers(authResponse.access_token, group.id)
@@ -59,8 +57,7 @@ class GroupMembersE2ETest : E2ETest() {
         // Arrange
         val authResponse = getOrCreateSharedUser()
         
-        val group = testDataHelper.createTestGroup(api, authResponse.access_token)
-        trackGroup(group.id)
+        val group = getOrCreateSharedGroup()
         
         // Act
         val response = api.getGroupMembers(authResponse.access_token, group.id)
@@ -101,8 +98,7 @@ class GroupMembersE2ETest : E2ETest() {
         // and the request would still carry it; the backend may not return 401.
         val authResponse = getOrCreateSharedUser()
 
-        val group = testDataHelper.createTestGroup(api, authResponse.access_token)
-        trackGroup(group.id)
+        val group = getOrCreateSharedGroup()
 
         SecureTokenManager.getInstance(context).clearTokens()
 
@@ -130,8 +126,7 @@ class GroupMembersE2ETest : E2ETest() {
         trackUser(nonMemberAuth.user!!.id)
         
         // Create group with first user
-        val group = testDataHelper.createTestGroup(api, creatorAuth.access_token)
-        trackGroup(group.id)
+        val group = getOrCreateSharedGroup()
         
         // Act - Try to get members as non-member
         var exception: Exception? = null
@@ -156,8 +151,7 @@ class GroupMembersE2ETest : E2ETest() {
     @Test
     fun `updateMemberRole promotes member to admin`() = runTest {
         val creator = getOrCreateSharedUser()
-        val group = testDataHelper.createTestGroup(api, creator.access_token)
-        trackGroup(group.id)
+        val group = getOrCreateSharedGroup()
 
         val invite = api.getGroupInviteCode(creator.access_token, group.id)
         val memberAuth = testDataHelper.createTestUser(api, displayName = "Member User")
@@ -177,8 +171,7 @@ class GroupMembersE2ETest : E2ETest() {
     @Test
     fun `removeMember removes member from group`() = runTest {
         val creator = getOrCreateSharedUser()
-        val group = testDataHelper.createTestGroup(api, creator.access_token)
-        trackGroup(group.id)
+        val group = getOrCreateSharedGroup()
 
         val invite = api.getGroupInviteCode(creator.access_token, group.id)
         val memberAuth = testDataHelper.createTestUser(api, displayName = "Member To Remove")

@@ -26,6 +26,11 @@ export async function upgrade(
     if (data.product_id !== 'pursue_premium_annual') {
       throw new ApplicationError('Invalid product_id', 400, 'INVALID_PRODUCT');
     }
+    // Mock token only accepted when NODE_ENV=test and not running under Jest (E2E dev server)
+    const isE2EMode = process.env.NODE_ENV === 'test' && !process.env.JEST_WORKER_ID;
+    if (data.purchase_token === 'mock-token-e2e' && !isE2EMode) {
+      throw new ApplicationError('Invalid purchase token', 400, 'INVALID_TOKEN');
+    }
     const result = await createOrRenewPremiumSubscription(req.user.id, {
       platform: data.platform,
       purchase_token: data.purchase_token,

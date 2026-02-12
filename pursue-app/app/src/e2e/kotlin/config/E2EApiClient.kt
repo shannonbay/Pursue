@@ -10,6 +10,9 @@ import app.getpursue.data.network.GetInviteCodeResponse
 import app.getpursue.data.network.JoinGroupResponse
 import app.getpursue.data.network.RegenerateInviteResponse
 import app.getpursue.data.network.PatchGroupIconResponse
+import app.getpursue.data.network.UploadProgressPhotoResponse
+import app.getpursue.data.network.GetProgressPhotoResponse
+import app.getpursue.data.network.ApiException
 import app.getpursue.data.network.GetGoalResponse
 import app.getpursue.data.network.GoalProgressMeResponse
 import app.getpursue.data.network.GoalProgressResponse
@@ -18,6 +21,7 @@ import app.getpursue.data.network.LogProgressResponse
 import app.getpursue.data.network.RefreshTokenResponse
 import app.getpursue.data.network.RegistrationResponse
 import app.getpursue.data.network.UpdateGoalResponse
+import app.getpursue.data.network.UpgradeSubscriptionResponse
 import app.getpursue.data.network.UploadAvatarResponse
 import app.getpursue.data.network.User
 import app.getpursue.data.network.UserConsentsResponse
@@ -293,6 +297,53 @@ class E2EApiClient(private val context: Context) {
         }
     }
 
+    // --- Progress Photo Endpoints ---
+
+    /**
+     * Upload progress photo with ByteArray (creates temp file).
+     */
+    suspend fun uploadProgressPhoto(
+        accessToken: String,
+        progressEntryId: String,
+        imageBytes: ByteArray,
+        width: Int = 256,
+        height: Int = 256
+    ): UploadProgressPhotoResponse {
+        storeTokenIfPresent(accessToken)
+        val tempFile = File.createTempFile("e2e_progress_photo_", ".jpg")
+        tempFile.writeBytes(imageBytes)
+        return try {
+            ApiClient.uploadProgressPhoto("", progressEntryId, tempFile, width, height)
+        } finally {
+            tempFile.delete()
+        }
+    }
+
+    /**
+     * Get progress photo signed URL.
+     */
+    suspend fun getProgressPhoto(
+        accessToken: String,
+        progressEntryId: String
+    ): GetProgressPhotoResponse {
+        storeTokenIfPresent(accessToken)
+        return ApiClient.getProgressPhoto("", progressEntryId)
+    }
+
+    /**
+     * Get progress photo returning null on 404/410 (for expired/missing).
+     */
+    suspend fun getProgressPhotoOrNull(
+        accessToken: String,
+        progressEntryId: String
+    ): GetProgressPhotoResponse? {
+        return try {
+            getProgressPhoto(accessToken, progressEntryId)
+        } catch (e: ApiException) {
+            if (e.code == 404 || e.code == 410) null else throw e
+        }
+    }
+
     suspend fun getMyConsents(accessToken: String): UserConsentsResponse {
         storeTokenIfPresent(accessToken)
         return ApiClient.getMyConsents("")
@@ -301,5 +352,15 @@ class E2EApiClient(private val context: Context) {
     suspend fun recordConsents(accessToken: String, consentTypes: List<String>) {
         storeTokenIfPresent(accessToken)
         ApiClient.recordConsents("", consentTypes)
+    }
+
+    suspend fun upgradeSubscription(
+        accessToken: String,
+        platform: String = "google_play",
+        purchaseToken: String,
+        productId: String = "pursue_premium_annual"
+    ): UpgradeSubscriptionResponse {
+        storeTokenIfPresent(accessToken)
+        return ApiClient.upgradeSubscription("", platform, purchaseToken, productId)
     }
 }

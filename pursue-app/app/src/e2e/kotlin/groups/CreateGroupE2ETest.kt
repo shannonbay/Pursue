@@ -360,6 +360,7 @@ class CreateGroupE2ETest : E2ETest() {
         // Use a fresh user so we start with 0 groups (shared user may already have groups).
         val authResponse = testDataHelper.createTestUser(api, displayName = "Limit Test User")
         trackUser(authResponse.user!!.id)
+        testDataHelper.upgradeToPremium(api, authResponse.access_token)
 
         // Fire more than the limit concurrently to ensure the backend enforces the cap.
         val attempts = maxGroupsPerUser + 2

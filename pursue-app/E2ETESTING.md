@@ -20,8 +20,10 @@ val group = testDataHelper.createTestGroup(api, auth.access_token)
 ```
 
 - **One user per class**: `E2ETest.getOrCreateSharedUser()` caches by `javaClass`. First test in class creates; others reuse.
-- **No cleanup**: Shared users are not tracked/deleted; unique emails prevent collisions.
+- **One group per class**: `E2ETest.getOrCreateSharedGroup()` caches a shared group per test class to avoid hitting the 10 groups per user limit.
+- **No cleanup**: Shared users and groups are not tracked/deleted; unique emails prevent collisions.
 - **When to use `createTestUser()`**: Tests requiring a second user (e.g., non-member 403 checks) or testing registration itself.
+- **When to use `createTestGroup()`**: Tests that need a fresh group (e.g., LeaveGroupE2ETest where the group is deleted when the user leaves) or a group with specific params (e.g., iconEmoji/iconColor).
 
 Impact: ~15 registrations (vs ~70 before) across the full suite.
 
@@ -57,6 +59,7 @@ Robolectric doesn't mock Bitmap/Color. Use minimal valid JPEG bytes (SOI, APP0, 
 - **500s**: If an endpoint isn't implemented, `@Ignore("Backend X not implemented")` until ready.
 - **Server**: E2ETest uses `@BeforeClass` + `LocalServerConfig.isServerAvailable()` and `assumeTrue`; skips class if server down.
 - **Cleanup**: `deleteUser`/`deleteGroup` are no-ops if backend has no DELETE. `@After` still invokes them; use `trackUser`/`trackGroup`.
+- **Premium for E2E:** Start the backend with `NODE_ENV=test` so the mock token is accepted. The shared test user is upgraded to premium via `POST /api/subscriptions/upgrade` with `purchase_token: 'mock-token-e2e'`. Example: `NODE_ENV=test npm run dev` (PowerShell: `$env:NODE_ENV='test'; npm run dev`).
 
 ### Rate Limiting (429)
 

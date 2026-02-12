@@ -5,6 +5,7 @@ import androidx.test.core.app.ApplicationProvider
 import app.getpursue.data.network.ApiClient
 import app.getpursue.data.network.ApiException
 import app.getpursue.data.network.RegistrationResponse
+import app.getpursue.models.Group
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assume.assumeTrue
@@ -59,6 +60,7 @@ abstract class E2ETest {
     companion object {
         private var serverChecked = false
         private val sharedUserCache = mutableMapOf<Class<*>, RegistrationResponse>()
+        private val sharedGroupCache = mutableMapOf<Class<*>, Group>()
 
         @BeforeClass
         @JvmStatic
@@ -133,7 +135,20 @@ abstract class E2ETest {
      */
     protected suspend fun getOrCreateSharedUser(): RegistrationResponse {
         return sharedUserCache.getOrPut(javaClass) {
-            testDataHelper.createTestUser(api)
+            val auth = testDataHelper.createTestUser(api)
+            testDataHelper.upgradeToPremium(api, auth.access_token)
+            auth
+        }
+    }
+
+    /**
+     * Get or create a shared group for this test class. Reuses the same group across
+     * tests to avoid hitting the 10 groups per user limit. Do not track for cleanup.
+     */
+    protected suspend fun getOrCreateSharedGroup(): Group {
+        return sharedGroupCache.getOrPut(javaClass) {
+            val auth = getOrCreateSharedUser()
+            testDataHelper.createTestGroup(api, auth.access_token)
         }
     }
 

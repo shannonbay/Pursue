@@ -88,10 +88,59 @@ object TestImageHelper {
     
     /**
      * Create a small test image (for normal uploads).
-     * 
+     *
      * @return ByteArray containing a small valid JPEG image
      */
     fun createSmallTestImage(): ByteArray {
         return createTestImage(256, 256)
+    }
+
+    /**
+     * Create an oversized progress photo (for testing 500KB limit).
+     *
+     * Creates a valid JPEG just over 500KB by adding valid APP segments.
+     *
+     * @return ByteArray containing a ~600KB valid JPEG image
+     */
+    fun createOversizedProgressPhoto(): ByteArray {
+        val targetSize = 600 * 1024 // 600KB (over the 500KB limit)
+        val minimalJpeg = createTestImage()
+
+        // Find position before EOI marker (last 2 bytes)
+        val eoiPosition = minimalJpeg.size - 2
+        val result = ByteArray(targetSize)
+
+        // Copy minimal JPEG up to (but not including) EOI marker
+        minimalJpeg.copyInto(result, 0, 0, eoiPosition)
+
+        // Add APP segments for padding
+        var pos = eoiPosition
+        while (pos < targetSize - 2) {
+            val remaining = targetSize - pos - 4
+            if (remaining <= 0) break
+
+            val segmentDataSize = remaining.coerceAtMost(65533)
+
+            // APP1 marker (0xFF 0xE1)
+            result[pos++] = 0xFF.toByte()
+            result[pos++] = 0xE1.toByte()
+
+            // Length (big-endian)
+            val length = segmentDataSize + 2
+            result[pos++] = ((length shr 8) and 0xFF).toByte()
+            result[pos++] = (length and 0xFF).toByte()
+
+            // Fill segment data
+            for (i in 0 until segmentDataSize) {
+                if (pos >= targetSize - 2) break
+                result[pos++] = 0x00
+            }
+        }
+
+        // EOI marker at the end
+        result[targetSize - 2] = 0xFF.toByte()
+        result[targetSize - 1] = 0xD9.toByte()
+
+        return result
     }
 }

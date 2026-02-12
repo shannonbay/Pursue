@@ -696,6 +696,73 @@ object ApiClient {
     }
 
     /**
+     * Upload a photo attachment to a progress entry.
+     *
+     * POST /api/progress/:progress_entry_id/photo
+     * Server constraints: 800 KB max, JPEG/WebP only, 15-min edit window, one photo per entry.
+     *
+     * @param accessToken JWT access token for authentication
+     * @param progressEntryId Progress entry ID to attach photo to
+     * @param imageFile Image file (JPEG or WebP, max 800 KB)
+     * @param width Image width in pixels (metadata)
+     * @param height Image height in pixels (metadata)
+     * @return UploadProgressPhotoResponse with photo_id and expires_at
+     * @throws ApiException on error (400 file too large, 404 entry not found, 409 photo exists)
+     */
+    suspend fun uploadProgressPhoto(
+        accessToken: String,
+        progressEntryId: String,
+        imageFile: File,
+        width: Int,
+        height: Int
+    ): UploadProgressPhotoResponse {
+        val requestBody = MultipartBody.Builder()
+            .setType(MultipartBody.FORM)
+            .addFormDataPart(
+                "photo",
+                "photo.jpg",
+                imageFile.asRequestBody("image/jpeg".toMediaType())
+            )
+            .addFormDataPart("width", width.toString())
+            .addFormDataPart("height", height.toString())
+            .build()
+
+        val request = Request.Builder()
+            .url("$baseUrl/progress/$progressEntryId/photo")
+            .post(requestBody)
+            .build()
+
+        return executeRequest(request, getClient()) { responseBody ->
+            gson.fromJson(responseBody, UploadProgressPhotoResponse::class.java)
+        }
+    }
+
+    /**
+     * Get progress entry photo signed URL.
+     *
+     * GET /api/progress/:progress_entry_id/photo
+     * User must be a member of the goal's group.
+     *
+     * @param accessToken JWT access token for authentication
+     * @param progressEntryId Progress entry ID
+     * @return GetProgressPhotoResponse with signed URL and dimensions
+     * @throws ApiException on error (403 not member, 404 no photo)
+     */
+    suspend fun getProgressPhoto(
+        accessToken: String,
+        progressEntryId: String
+    ): GetProgressPhotoResponse {
+        val request = Request.Builder()
+            .url("$baseUrl/progress/$progressEntryId/photo")
+            .get()
+            .build()
+
+        return executeRequest(request, getClient()) { responseBody ->
+            gson.fromJson(responseBody, GetProgressPhotoResponse::class.java)
+        }
+    }
+
+    /**
      * Create a new group.
      * 
      * @param accessToken JWT access token for authentication
@@ -1819,6 +1886,21 @@ data class LogProgressResponse(
     val note: String?,
     val period_start: String, // ISO date YYYY-MM-DD
     val logged_at: String // ISO 8601 timestamp
+)
+
+// --- Progress Photo DTOs ---
+
+data class UploadProgressPhotoResponse(
+    val photo_id: String,
+    val expires_at: String
+)
+
+data class GetProgressPhotoResponse(
+    val photo_id: String,
+    val url: String,
+    val width: Int,
+    val height: Int,
+    val expires_at: String
 )
 
 /**

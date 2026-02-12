@@ -79,21 +79,21 @@ implementation("id.zelory:compressor:3.0.1")
 suspend fun compressForUpload(context: Context, imageFile: File): File {
     return Compressor.compress(context, imageFile) {
         resolution(1080, 1080)       // Max dimension; aspect ratio preserved
-        quality(72)                   // JPEG quality — sweet spot for size vs. fidelity
+        quality(80)                   // JPEG quality — higher baseline preserves text/edge detail
         format(Bitmap.CompressFormat.JPEG)
-        size(350_000)                 // Target ≤ 350 KB; Compressor iterates to hit this
+        size(200_000)                 // Target ≤ 200 KB; Compressor iterates to hit this
     }
 }
 ```
 
-**Target output:** ≤ 350 KB per image at up to 1080px on the long edge. At 350 KB average and 70 uploads/week for premium users across the full user base, storage growth remains very manageable until you have a meaningful number of active premium users.
+**Target output:** ≤ 200 KB per image at up to 1080px on the long edge. At 200 KB average and 70 uploads/week for premium users across the full user base, storage growth remains very manageable — roughly 25,000 photos fit within a 5 GB budget, and with 7-day rolling deletion, that's substantial headroom.
 
 ### 3.2 Backend Size Gate
 
 The backend enforces a hard ceiling regardless of client-side compression:
 
-- **Max accepted size:** 800 KB (provides headroom above the 350 KB target for edge cases like screenshots with lots of detail)
-- Requests over 800 KB receive `413 Payload Too Large` with a user-friendly error message: *"Photo is too large. Please try a different image."*
+- **Max accepted size:** 500 KB (provides headroom above the 200 KB target for edge cases like text-heavy screenshots)
+- Requests over 500 KB receive `413 Payload Too Large` with a user-friendly error message: *"Photo is too large. Please try a different image."*
 - EXIF data is stripped server-side using `sharp` before the image is written to GCS (privacy, and additional size reduction).
 
 ---
@@ -292,7 +292,7 @@ height: 810
 - Entry must have been created within the last 15 minutes (edit window)
 - Entry must not already have a photo (one photo per entry)
 - File content-type must be `image/jpeg` or `image/webp`
-- File size must be ≤ 800 KB (after client compression)
+- File size must be ≤ 500 KB (after client compression)
 - User must be within upload quota
 
 **Response (201 Created):**
@@ -307,7 +307,7 @@ height: 810
 - `400 Bad Request` — Invalid file type or missing fields
 - `403 Forbidden` — Entry does not belong to user, or edit window expired
 - `409 Conflict` — Entry already has a photo
-- `413 Payload Too Large` — Image exceeds 800 KB
+- `413 Payload Too Large` — Image exceeds 500 KB
 - `422 Unprocessable Entity` — Quota exceeded (includes `upgrade_required: true` for free users)
 
 #### Step 3 (Internal): Backend GCS Upload
@@ -345,7 +345,7 @@ async function handlePhotoUpload(req, res) {
     .jpeg({ quality: 85 }) // Re-encode (standardize format, minor additional compression)
     .toBuffer();
 
-  if (processedBuffer.byteLength > 800_000) return res.status(413).json(...);
+  if (processedBuffer.byteLength > 500_000) return res.status(413).json(...);
 
   // 4. Upload to GCS
   const objectPath = `${user.id}/${year}/${month}/${entryId}.jpg`;

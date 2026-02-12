@@ -18,8 +18,7 @@ class GroupGoalsListE2ETest : E2ETest() {
     @Test
     fun `get group goals returns list`() = runTest {
         val auth = getOrCreateSharedUser()
-        val group = testDataHelper.createTestGroup(api, auth.access_token)
-        trackGroup(group.id)
+        val group = getOrCreateSharedGroup()
 
         val response = api.getGroupGoals(auth.access_token, group.id)
 
@@ -30,8 +29,7 @@ class GroupGoalsListE2ETest : E2ETest() {
     @Test
     fun `get group goals includes created goals`() = runTest {
         val auth = getOrCreateSharedUser()
-        val group = testDataHelper.createTestGroup(api, auth.access_token)
-        trackGroup(group.id)
+        val group = getOrCreateSharedGroup()
         val goal1 = testDataHelper.createTestGoal(
             api,
             auth.access_token,
@@ -67,8 +65,7 @@ class GroupGoalsListE2ETest : E2ETest() {
     @Test
     fun `get group goals without auth returns 401`() = runTest {
         val auth = getOrCreateSharedUser()
-        val group = testDataHelper.createTestGroup(api, auth.access_token)
-        trackGroup(group.id)
+        val group = getOrCreateSharedGroup()
         SecureTokenManager.getInstance(context).clearTokens()
 
         var exception: Exception? = null
@@ -86,8 +83,7 @@ class GroupGoalsListE2ETest : E2ETest() {
     @Test
     fun `get group goals when not member returns 403`() = runTest {
         val authA = getOrCreateSharedUser()
-        val group = testDataHelper.createTestGroup(api, authA.access_token)
-        trackGroup(group.id)
+        val group = getOrCreateSharedGroup()
         testDataHelper.createTestGoal(api, authA.access_token, group.id)
 
         val authB = testDataHelper.createTestUser(api, displayName = "Non-member")
@@ -125,8 +121,7 @@ class GroupGoalsListE2ETest : E2ETest() {
     @Test
     fun `get group goals with includeProgress false returns goals without progress`() = runTest {
         val auth = getOrCreateSharedUser()
-        val group = testDataHelper.createTestGroup(api, auth.access_token)
-        trackGroup(group.id)
+        val group = getOrCreateSharedGroup()
         testDataHelper.createTestGoal(api, auth.access_token, group.id, title = "No progress ${System.currentTimeMillis()}")
 
         val response = api.getGroupGoals(auth.access_token, group.id, includeProgress = false)
@@ -140,8 +135,7 @@ class GroupGoalsListE2ETest : E2ETest() {
     @Test
     fun `get group goals with includeProgress true returns goals`() = runTest {
         val auth = getOrCreateSharedUser()
-        val group = testDataHelper.createTestGroup(api, auth.access_token)
-        trackGroup(group.id)
+        val group = getOrCreateSharedGroup()
         testDataHelper.createTestGoal(api, auth.access_token, group.id, title = "With progress ${System.currentTimeMillis()}")
 
         val response = api.getGroupGoals(auth.access_token, group.id, includeProgress = true)
@@ -160,8 +154,7 @@ class GroupGoalsListE2ETest : E2ETest() {
     @Test
     fun `get group goals with cadence filter returns only matching cadence`() = runTest {
         val auth = getOrCreateSharedUser()
-        val group = testDataHelper.createTestGroup(api, auth.access_token)
-        trackGroup(group.id)
+        val group = getOrCreateSharedGroup()
         testDataHelper.createTestGoal(
             api,
             auth.access_token,
@@ -190,8 +183,7 @@ class GroupGoalsListE2ETest : E2ETest() {
     @Test
     fun `get group goals with archived true includes archived goals`() = runTest {
         val auth = getOrCreateSharedUser()
-        val group = testDataHelper.createTestGroup(api, auth.access_token)
-        trackGroup(group.id)
+        val group = getOrCreateSharedGroup()
         val goal = testDataHelper.createTestGoal(
             api,
             auth.access_token,

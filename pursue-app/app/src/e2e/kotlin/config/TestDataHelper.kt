@@ -145,6 +145,19 @@ class TestDataHelper(private val context: Context) {
     }
     
     /**
+     * Upgrade user to premium using mock token (backend must be started with NODE_ENV=test).
+     * Call after createTestUser or getOrCreateSharedUser to allow creating multiple groups.
+     */
+    suspend fun upgradeToPremium(api: E2EApiClient, accessToken: String) {
+        api.upgradeSubscription(
+            accessToken = accessToken,
+            platform = "google_play",
+            purchaseToken = "mock-token-e2e",
+            productId = "pursue_premium_annual"
+        )
+    }
+
+    /**
      * Create a test goal in a group (POST /api/groups/:group_id/goals).
      * Caller must be admin or creator of the group.
      *

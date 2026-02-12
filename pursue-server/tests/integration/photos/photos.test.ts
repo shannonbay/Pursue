@@ -157,21 +157,21 @@ describe('POST /api/progress/:progress_entry_id/photo', () => {
       expect(response.body.error.code).toBe('MISSING_FILE');
     });
 
-    it('should reject file over 800 KB', async () => {
+    it('should reject file over 500 KB', async () => {
       const { accessToken } = await createAuthenticatedUser();
       const { goalId } = await createGroupWithGoal(accessToken);
       const entryId = await createProgressEntry(accessToken, goalId!);
 
-      // Create a valid JPEG image first, then pad it to be over 800KB
+      // Create a valid JPEG image first, then pad it to be over 500KB
       const baseImage = await sharp({
         create: { width: 100, height: 100, channels: 3, background: { r: 128, g: 64, b: 32 } },
       }).jpeg().toBuffer();
 
-      // Create a buffer that's definitely over 800KB by padding
+      // Create a buffer that's definitely over 500KB by padding
       // Multer checks size before processing, so this will trigger FILE_TOO_LARGE
       const largeImage = Buffer.concat([
         baseImage,
-        Buffer.alloc(850 * 1024 - baseImage.length),
+        Buffer.alloc(550 * 1024 - baseImage.length),
       ]);
 
       const response = await request(app)

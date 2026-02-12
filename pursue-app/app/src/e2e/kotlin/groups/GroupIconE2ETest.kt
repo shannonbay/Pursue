@@ -19,8 +19,7 @@ class GroupIconE2ETest : E2ETest() {
     fun `upload group icon stores image`() = runTest {
         // Arrange
         val authResponse = getOrCreateSharedUser()
-        val group = testDataHelper.createTestGroup(api, authResponse.access_token)
-        trackGroup(group.id)
+        val group = getOrCreateSharedGroup()
         val testImage = TestImageHelper.createSmallTestImage()
 
         // Act - Upload icon

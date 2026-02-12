@@ -9,7 +9,7 @@ import { buildObjectPath, uploadPhoto, getSignedUrl } from '../services/gcs.serv
 import { logger } from '../utils/logger.js';
 
 // Constants
-const MAX_FILE_SIZE = 800 * 1024; // 800 KB
+const MAX_FILE_SIZE = 500 * 1024; // 500 KB
 const EDIT_WINDOW_MINUTES = 15;
 const FREE_QUOTA_PER_WEEK = 3;
 const PREMIUM_QUOTA_PER_WEEK = 70;

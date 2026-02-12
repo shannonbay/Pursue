@@ -19,8 +19,7 @@ class GroupDetailE2ETest : E2ETest() {
         // Arrange
         val authResponse = getOrCreateSharedUser()
         
-        val group = testDataHelper.createTestGroup(api, authResponse.access_token)
-        trackGroup(group.id)
+        val group = getOrCreateSharedGroup()
         
         // Act
         val response = api.getGroupDetails(authResponse.access_token, group.id)
@@ -67,8 +66,7 @@ class GroupDetailE2ETest : E2ETest() {
         // and the request would still carry it; the backend may not return 401.
         val authResponse = getOrCreateSharedUser()
 
-        val group = testDataHelper.createTestGroup(api, authResponse.access_token)
-        trackGroup(group.id)
+        val group = getOrCreateSharedGroup()
 
         SecureTokenManager.getInstance(context).clearTokens()
 
@@ -92,8 +90,7 @@ class GroupDetailE2ETest : E2ETest() {
         // Arrange
         val authResponse = getOrCreateSharedUser()
         
-        val group = testDataHelper.createTestGroup(api, authResponse.access_token)
-        trackGroup(group.id)
+        val group = getOrCreateSharedGroup()
         
         // Act
         val response = api.getGroupDetails(authResponse.access_token, group.id)
@@ -107,8 +104,7 @@ class GroupDetailE2ETest : E2ETest() {
         // Arrange
         val authResponse = getOrCreateSharedUser()
         
-        val group = testDataHelper.createTestGroup(api, authResponse.access_token)
-        trackGroup(group.id)
+        val group = getOrCreateSharedGroup()
         
         // Act - Try to get icon (may not exist for newly created group)
         val iconBytes = api.getGroupIcon(group.id, authResponse.access_token)
@@ -126,8 +122,7 @@ class GroupDetailE2ETest : E2ETest() {
         val authResponse = getOrCreateSharedUser()
         
         // Create group without icon (default behavior)
-        val group = testDataHelper.createTestGroup(api, authResponse.access_token)
-        trackGroup(group.id)
+        val group = getOrCreateSharedGroup()
         
         // Act
         val iconBytes = api.getGroupIcon(group.id, authResponse.access_token)
@@ -144,8 +139,7 @@ class GroupDetailE2ETest : E2ETest() {
         // Arrange
         val authResponse = getOrCreateSharedUser()
         
-        val group = testDataHelper.createTestGroup(api, authResponse.access_token)
-        trackGroup(group.id)
+        val group = getOrCreateSharedGroup()
         
         // Act - Get icon without access token
         var iconBytes: ByteArray? = null

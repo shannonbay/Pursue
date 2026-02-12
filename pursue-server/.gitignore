@@ -31,3 +31,5 @@ coverage/
 
 .chunkhound/
 .chunkhound.json
+
+secrets/

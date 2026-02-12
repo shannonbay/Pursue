@@ -19,8 +19,7 @@ class GroupActivityE2ETest : E2ETest() {
         // Arrange
         val authResponse = getOrCreateSharedUser()
         
-        val group = testDataHelper.createTestGroup(api, authResponse.access_token)
-        trackGroup(group.id)
+        val group = getOrCreateSharedGroup()
         
         // Act
         val response = api.getGroupActivity(authResponse.access_token, group.id)
@@ -45,8 +44,7 @@ class GroupActivityE2ETest : E2ETest() {
         // Arrange
         val authResponse = getOrCreateSharedUser()
         
-        val group = testDataHelper.createTestGroup(api, authResponse.access_token)
-        trackGroup(group.id)
+        val group = getOrCreateSharedGroup()
         
         // Act
         val response = api.getGroupActivity(authResponse.access_token, group.id)
@@ -61,8 +59,7 @@ class GroupActivityE2ETest : E2ETest() {
         // Arrange
         val authResponse = getOrCreateSharedUser()
         
-        val group = testDataHelper.createTestGroup(api, authResponse.access_token)
-        trackGroup(group.id)
+        val group = getOrCreateSharedGroup()
         
         // Act - Request with limit of 5
         val response = api.getGroupActivity(authResponse.access_token, group.id, limit = 5)
@@ -76,8 +73,7 @@ class GroupActivityE2ETest : E2ETest() {
         // Arrange
         val authResponse = getOrCreateSharedUser()
         
-        val group = testDataHelper.createTestGroup(api, authResponse.access_token)
-        trackGroup(group.id)
+        val group = getOrCreateSharedGroup()
         
         // Act - Get first page
         val firstPage = api.getGroupActivity(authResponse.access_token, group.id, limit = 10, offset = 0)
@@ -102,8 +98,7 @@ class GroupActivityE2ETest : E2ETest() {
         // Arrange
         val authResponse = getOrCreateSharedUser()
         
-        val group = testDataHelper.createTestGroup(api, authResponse.access_token)
-        trackGroup(group.id)
+        val group = getOrCreateSharedGroup()
         
         // Act - Request with limit over 100
         val response = api.getGroupActivity(authResponse.access_token, group.id, limit = 200)
@@ -141,8 +136,7 @@ class GroupActivityE2ETest : E2ETest() {
         // and the request would still carry it; the backend may not return 401.
         val authResponse = getOrCreateSharedUser()
 
-        val group = testDataHelper.createTestGroup(api, authResponse.access_token)
-        trackGroup(group.id)
+        val group = getOrCreateSharedGroup()
 
         SecureTokenManager.getInstance(context).clearTokens()
 
@@ -167,8 +161,7 @@ class GroupActivityE2ETest : E2ETest() {
         val authResponse = getOrCreateSharedUser()
         
         // Create new group (should have minimal activity)
-        val group = testDataHelper.createTestGroup(api, authResponse.access_token)
-        trackGroup(group.id)
+        val group = getOrCreateSharedGroup()
         
         // Act
         val response = api.getGroupActivity(authResponse.access_token, group.id)
