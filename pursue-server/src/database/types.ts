@@ -168,6 +168,18 @@ export interface GroupActivitiesTable {
 export type GroupActivity = Selectable<GroupActivitiesTable>;
 export type NewGroupActivity = Insertable<GroupActivitiesTable>;
 
+// Activity reactions table
+export interface ActivityReactionsTable {
+  id: Generated<string>;
+  activity_id: string;
+  user_id: string;
+  emoji: string;
+  created_at: ColumnType<Date, string | undefined, never>;
+}
+
+export type ActivityReaction = Selectable<ActivityReactionsTable>;
+export type NewActivityReaction = Insertable<ActivityReactionsTable>;
+
 // User subscriptions table
 export interface UserSubscriptionsTable {
   id: Generated<string>;
@@ -274,6 +286,7 @@ export interface Database {
   goals: GoalsTable;
   progress_entries: ProgressEntriesTable;
   group_activities: GroupActivitiesTable;
+  activity_reactions: ActivityReactionsTable;
   user_subscriptions: UserSubscriptionsTable;
   subscription_downgrade_history: SubscriptionDowngradeHistoryTable;
   subscription_transactions: SubscriptionTransactionsTable;

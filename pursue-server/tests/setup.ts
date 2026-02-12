@@ -413,6 +413,20 @@ async function createSchema(db: Kysely<Database>) {
     )
   `.execute(db);
 
+  // Create activity_reactions table
+  await sql`
+    CREATE TABLE IF NOT EXISTS activity_reactions (
+      id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+      activity_id UUID NOT NULL REFERENCES group_activities(id) ON DELETE CASCADE,
+      user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      emoji VARCHAR(10) NOT NULL,
+      created_at TIMESTAMPTZ DEFAULT NOW(),
+      CONSTRAINT uq_reaction_user_activity UNIQUE (activity_id, user_id)
+    )
+  `.execute(db);
+  await sql`CREATE INDEX IF NOT EXISTS idx_reactions_activity ON activity_reactions(activity_id)`.execute(db);
+  await sql`CREATE INDEX IF NOT EXISTS idx_reactions_user ON activity_reactions(user_id)`.execute(db);
+
   // Create progress_photos table
   await sql`
     CREATE TABLE IF NOT EXISTS progress_photos (
@@ -472,6 +486,7 @@ async function cleanDatabase(db: Kysely<Database>) {
   await db.deleteFrom('progress_photos').execute();
   await db.deleteFrom('progress_entries').execute();
   await db.deleteFrom('goals').execute();
+  await db.deleteFrom('activity_reactions').execute();
   await db.deleteFrom('group_activities').execute();
   await db.deleteFrom('invite_codes').execute();
   await db.deleteFrom('group_memberships').execute();

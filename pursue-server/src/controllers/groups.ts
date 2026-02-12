@@ -68,6 +68,18 @@ function generateInviteCode(): string {
   return `PURSUE-${randomPart()}-${randomPart()}`;
 }
 
+/**
+ * Format display name as "First L." for reaction summary (first name + last initial).
+ */
+function formatDisplayNameShort(displayName: string): string {
+  const parts = displayName.trim().split(/\s+/);
+  if (parts.length === 1) return parts[0] ?? '';
+  const first = parts[0] ?? '';
+  const last = parts[parts.length - 1] ?? '';
+  const lastInitial = last.charAt(0).toUpperCase();
+  return `${first} ${lastInitial}.`;
+}
+
 // POST /api/groups
 export async function createGroup(
   req: AuthRequest,
@@ -1487,6 +1499,78 @@ export async function getActivity(
       .where('group_id', '=', group_id)
       .executeTakeFirstOrThrow();
 
+    // Batch fetch reactions for all activities
+    const activityIds = activities.map((a) => a.id);
+    const currentUserId = req.user.id;
+
+    type ReactionRow = { activity_id: string; emoji: string; user_id: string; created_at: Date; display_name: string };
+    let reactionRows: ReactionRow[] = [];
+
+    if (activityIds.length > 0) {
+      reactionRows = await db
+        .selectFrom('activity_reactions')
+        .innerJoin('users', 'activity_reactions.user_id', 'users.id')
+        .select([
+          'activity_reactions.activity_id',
+          'activity_reactions.emoji',
+          'activity_reactions.user_id',
+          'activity_reactions.created_at',
+          'users.display_name',
+        ])
+        .where('activity_reactions.activity_id', 'in', activityIds)
+        .orderBy('activity_reactions.activity_id')
+        .orderBy('activity_reactions.created_at', 'desc')
+        .execute() as ReactionRow[];
+    }
+
+    // Build reactions map: activity_id -> { byEmoji, topReactors }
+    const reactionsByActivity = new Map<string, {
+      byEmoji: Map<string, { count: number; reactorIds: string[]; currentUserReacted: boolean }>;
+      topReactors: Array<{ user_id: string; display_name: string; created_at: Date }>;
+    }>();
+
+    for (const activityId of activityIds) {
+      reactionsByActivity.set(activityId, {
+        byEmoji: new Map(),
+        topReactors: [],
+      });
+    }
+
+    const seenForTop = new Map<string, Set<string>>();
+    for (const r of reactionRows) {
+      const entry = reactionsByActivity.get(r.activity_id)!;
+      const emojiEntry = entry.byEmoji.get(r.emoji);
+      if (!emojiEntry) {
+        entry.byEmoji.set(r.emoji, {
+          count: 1,
+          reactorIds: [r.user_id],
+          currentUserReacted: r.user_id === currentUserId,
+        });
+      } else {
+        emojiEntry.count += 1;
+        emojiEntry.reactorIds.push(r.user_id);
+        emojiEntry.currentUserReacted = emojiEntry.currentUserReacted || r.user_id === currentUserId;
+      }
+
+      // Build top_reactors: current user first if reacted, then most recent others (unique), max 3
+      const seen = seenForTop.get(r.activity_id) ?? new Set<string>();
+      if (seen.size < 3 && !seen.has(r.user_id)) {
+        seen.add(r.user_id);
+        seenForTop.set(r.activity_id, seen);
+        const formatted = formatDisplayNameShort(r.display_name);
+        entry.topReactors.push({ user_id: r.user_id, display_name: formatted, created_at: r.created_at });
+      }
+    }
+
+    // Reorder top_reactors: put current user first if they reacted
+    for (const [, entry] of reactionsByActivity) {
+      const currentUserIdx = entry.topReactors.findIndex((t) => t.user_id === currentUserId);
+      if (currentUserIdx > 0) {
+        const [curr] = entry.topReactors.splice(currentUserIdx, 1);
+        entry.topReactors.unshift(curr);
+      }
+    }
+
     res.status(200).json({
       activities: activities.map((a) => {
         const progressEntryId =
@@ -1499,6 +1583,18 @@ export async function getActivity(
 
         const photo = progressEntryId ? photosMap.get(progressEntryId) : null;
         const signedUrl = progressEntryId ? signedUrls.get(progressEntryId) : null;
+
+        const reactionData = reactionsByActivity.get(a.id)!;
+        const byEmoji = reactionData.byEmoji;
+        const reactions = Array.from(byEmoji.entries())
+          .sort(([, a], [, b]) => b.count - a.count)
+          .map(([emoji, data]) => ({
+            emoji,
+            count: data.count,
+            reactor_ids: data.reactorIds,
+            current_user_reacted: data.currentUserReacted,
+          }));
+        const totalCount = Array.from(byEmoji.values()).reduce((sum, e) => sum + e.count, 0);
 
         return {
           id: a.id,
@@ -1520,6 +1616,11 @@ export async function getActivity(
               }
             : null,
           created_at: a.created_at,
+          reactions,
+          reaction_summary: {
+            total_count: totalCount,
+            top_reactors: reactionData.topReactors.map((t) => ({ user_id: t.user_id, display_name: t.display_name })),
+          },
         };
       }),
       total: Number(totalResult.count),

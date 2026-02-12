@@ -114,3 +114,41 @@ export const exportProgressLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
 });
+
+// Reactions (PUT/DELETE - 30 per minute per user)
+export const reactionLimiter = rateLimit({
+  skip: () => isTest,
+  windowMs: 60 * 1000, // 1 minute
+  max: 30,
+  keyGenerator: (req) => {
+    const authReq = req as any;
+    return authReq.user?.id || 'unknown';
+  },
+  message: {
+    error: {
+      message: 'Too many reactions, please try again later',
+      code: 'REACTION_RATE_LIMIT_EXCEEDED',
+    },
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// Reactions read (GET full list - 60 per minute per user)
+export const reactionReadLimiter = rateLimit({
+  skip: () => isTest,
+  windowMs: 60 * 1000, // 1 minute
+  max: 60,
+  keyGenerator: (req) => {
+    const authReq = req as any;
+    return authReq.user?.id || 'unknown';
+  },
+  message: {
+    error: {
+      message: 'Too many requests, please try again later',
+      code: 'REACTION_READ_RATE_LIMIT_EXCEEDED',
+    },
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});

@@ -210,6 +210,28 @@ export async function createTestGroupActivity(
 }
 
 /**
+ * Create a test group activity and return its id
+ */
+export async function createTestGroupActivityWithId(
+  groupId: string,
+  userId: string | null,
+  activityType: string,
+  metadata?: Record<string, unknown>
+): Promise<string> {
+  const row = await testDb
+    .insertInto('group_activities')
+    .values({
+      group_id: groupId,
+      user_id: userId,
+      activity_type: activityType,
+      metadata: metadata ?? null,
+    })
+    .returning('id')
+    .executeTakeFirstOrThrow();
+  return row.id;
+}
+
+/**
  * Create a group, optionally with one initial goal. Used to obtain groupId and/or goalId for Goal endpoint tests.
  * - includeGoal: false -> group only, returns { groupId }. Use for POST /api/groups/:group_id/goals.
  * - includeGoal: true (default) -> group with one goal, returns { groupId, goalId }.
