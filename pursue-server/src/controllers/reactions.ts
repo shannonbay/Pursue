@@ -5,16 +5,18 @@ import { ApplicationError } from '../middleware/errorHandler.js';
 import type { AuthRequest } from '../types/express.js';
 import { AddReactionSchema } from '../validations/reactions.js';
 import { requireActiveGroupMember } from '../services/authorization.js';
+import { sendNotificationToUser } from '../services/fcm.service.js';
+import { logger } from '../utils/logger.js';
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
-async function getActivityWithGroup(activityId: string): Promise<{ id: string; group_id: string } | null> {
+async function getActivityWithGroup(activityId: string): Promise<{ id: string; group_id: string; user_id: string | null } | null> {
   if (!UUID_REGEX.test(activityId)) {
     return null;
   }
   const activity = await db
     .selectFrom('group_activities')
-    .select(['id', 'group_id'])
+    .select(['id', 'group_id', 'user_id'])
     .where('id', '=', activityId)
     .executeTakeFirst();
   return activity ?? null;
@@ -67,6 +69,24 @@ export async function addOrReplaceReaction(
       .where('activity_id', '=', activity_id)
       .where('user_id', '=', req.user.id)
       .executeTakeFirstOrThrow();
+
+    // Send FCM notification to activity owner (skip if self-reaction)
+    const activityOwnerId = activity.user_id;
+    if (activityOwnerId && activityOwnerId !== req.user.id) {
+      const reactor = await db
+        .selectFrom('users')
+        .select('display_name')
+        .where('id', '=', req.user.id)
+        .executeTakeFirst();
+      const reactorDisplayName = reactor?.display_name ?? 'Someone';
+      sendNotificationToUser(
+        activityOwnerId,
+        { title: 'New Reaction', body: `${reactorDisplayName} reacted ${data.emoji} to your activity` },
+        { type: 'activity_reaction', activity_id: activity_id, group_id: activity.group_id, emoji: data.emoji }
+      ).catch((error) => {
+        logger.error('Failed to send reaction notification', { error, activity_id, activityOwnerId });
+      });
+    }
 
     res.status(200).json({
       reaction: {
