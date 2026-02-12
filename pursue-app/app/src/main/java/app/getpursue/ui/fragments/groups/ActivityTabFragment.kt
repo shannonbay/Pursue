@@ -267,7 +267,7 @@ class ActivityTabFragment : Fragment(), ReactionListener {
             .show(childFragmentManager, "FullscreenPhotoDialog")
     }
 
-    override fun onLongPress(activity: GroupActivity, anchorView: View) {
+    override fun onLongPress(activity: GroupActivity, anchorView: View, touchX: Float, touchY: Float) {
         val activityId = activity.id ?: return
         val currentUserEmoji = activity.reactions?.firstOrNull { it.current_user_reacted }?.emoji
 
@@ -277,7 +277,7 @@ class ActivityTabFragment : Fragment(), ReactionListener {
             onSelect = { emoji -> handleReactionSelect(activity, activityId, emoji) },
             onDismiss = { }
         )
-        popup.show(anchorView)
+        popup.show(anchorView, touchX, touchY)
     }
 
     override fun onReactionSummaryClick(activityId: String) {

@@ -1,6 +1,7 @@
 package app.getpursue.ui.views
 
 import android.content.Context
+import android.util.TypedValue
 import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
@@ -64,21 +65,28 @@ class ReactionPickerPopup(
     }
 
     /**
-     * Show the popup above the anchor view.
+     * Show the popup above the touch point.
+     * @param anchor Root view for showAtLocation; also used for haptic feedback
+     * @param touchX Screen X of the long-press (e.g. MotionEvent.rawX)
+     * @param touchY Screen Y of the long-press (e.g. MotionEvent.rawY)
      */
-    fun show(anchor: View) {
+    fun show(anchor: View, touchX: Float, touchY: Float) {
         pickerView.measure(View.MeasureSpec.UNSPECIFIED, View.MeasureSpec.UNSPECIFIED)
         val width = pickerView.measuredWidth
         val height = pickerView.measuredHeight
 
-        val anchorLocation = IntArray(2)
-        anchor.getLocationOnScreen(anchorLocation)
         val rootLocation = IntArray(2)
         anchor.rootView.getLocationOnScreen(rootLocation)
 
-        val anchorCenterX = anchorLocation[0] + anchor.width / 2
-        val x = anchorCenterX - rootLocation[0] - width / 2
-        val y = anchorLocation[1] - rootLocation[1] - height - 24 // 24px above anchor
+        val offsetAboveTouchDp = 40f
+        val offsetAboveTouchPx = TypedValue.applyDimension(
+            TypedValue.COMPLEX_UNIT_DIP,
+            offsetAboveTouchDp,
+            anchor.context.resources.displayMetrics
+        ).toInt()
+
+        val x = (touchX - rootLocation[0] - width / 2).toInt()
+        val y = (touchY - rootLocation[1] - height - offsetAboveTouchPx).toInt()
 
         showAtLocation(anchor.rootView, Gravity.NO_GRAVITY, x, y)
         anchor.performHapticFeedback(android.view.HapticFeedbackConstants.LONG_PRESS)

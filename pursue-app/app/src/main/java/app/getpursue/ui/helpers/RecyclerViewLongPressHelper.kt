@@ -28,7 +28,7 @@ class RecyclerViewLongPressHelper(
                     val listener = childView.getTag(R.id.reaction_listener_tag) as? ReactionListener
                     if (activity?.id != null && listener != null) {
                         childView.performHapticFeedback(android.view.HapticFeedbackConstants.LONG_PRESS)
-                        listener.onLongPress(activity, childView)
+                        listener.onLongPress(activity, childView, e.rawX, e.rawY)
                     }
                 }
             }

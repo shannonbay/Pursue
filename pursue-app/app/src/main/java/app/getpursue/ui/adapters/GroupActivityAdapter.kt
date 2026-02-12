@@ -23,7 +23,7 @@ import java.util.concurrent.TimeUnit
  * Shows date header (Today, Yesterday, or date), then activities under each date.
  */
 interface ReactionListener {
-    fun onLongPress(activity: GroupActivity, anchorView: View)
+    fun onLongPress(activity: GroupActivity, anchorView: View, touchX: Float, touchY: Float)
     fun onReactionSummaryClick(activityId: String)
 }
 
