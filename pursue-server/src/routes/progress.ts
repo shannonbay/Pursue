@@ -4,8 +4,12 @@ import {
   getProgress,
   deleteProgress,
 } from '../controllers/progress.js';
+import {
+  uploadProgressPhoto,
+  getProgressPhoto,
+} from '../controllers/photos.js';
 import { authenticate } from '../middleware/authenticate.js';
-import { progressLimiter } from '../middleware/rateLimiter.js';
+import { progressLimiter, uploadLimiter } from '../middleware/rateLimiter.js';
 
 const router = Router();
 
@@ -20,5 +24,11 @@ router.get('/:entry_id', getProgress);
 
 // DELETE /api/progress/:entry_id - Delete progress entry
 router.delete('/:entry_id', deleteProgress);
+
+// POST /api/progress/:progress_entry_id/photo - Upload photo to progress entry
+router.post('/:progress_entry_id/photo', uploadLimiter, ...uploadProgressPhoto);
+
+// GET /api/progress/:progress_entry_id/photo - Get photo for progress entry
+router.get('/:progress_entry_id/photo', getProgressPhoto);
 
 export default router;

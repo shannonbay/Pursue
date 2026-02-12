@@ -84,6 +84,7 @@ controllers/users.ts - GET/PATCH/DELETE profile, avatar, subscription, groups li
 controllers/groups.ts - Group CRUD, members, invites, activity, icon, export
 controllers/goals.ts - Goal CRUD, progress retrieval, period aggregation
 controllers/progress.ts - POST/GET/DELETE progress entries
+controllers/photos.ts - POST/GET progress entry photo attachments
 controllers/devices.ts - POST/GET/DELETE FCM device registration
 controllers/subscriptions.ts - POST upgrade, verify, cancel, downgrade
 
@@ -94,6 +95,7 @@ services/fcm.service.ts - Push notifications, topic messaging, invalid token cle
 services/activity.service.ts - Group activity event logging
 services/googleAuth.ts - Google OAuth token verification
 services/storage.service.ts - Avatar/icon upload (WebP 256x256), deletion
+services/gcs.service.ts - GCS photo upload, signed URLs, user photo deletion
 services/exportProgress.service.ts - Excel workbook generation for progress export
 
 # Database
@@ -110,7 +112,7 @@ routes/auth.ts - Auth route definitions with rate limiting
 routes/users.ts - User routes (profile, avatar, subscription)
 routes/groups.ts - Group routes (CRUD, members, invites, activity, export)
 routes/goals.ts - Goal routes (CRUD, progress)
-routes/progress.ts - Progress entry routes
+routes/progress.ts - Progress entry routes, photo upload/retrieval
 routes/devices.ts - Device registration routes
 routes/subscriptions.ts - Subscription management routes
 
@@ -126,6 +128,7 @@ validations/users.ts - Zod schemas for user endpoints
 validations/groups.ts - Zod schemas for group endpoints
 validations/goals.ts - Zod schemas for goal endpoints
 validations/progress.ts - Zod schemas for progress endpoints
+validations/photos.ts - Zod schemas for photo upload metadata
 validations/devices.ts - Zod schemas for device endpoints
 validations/subscriptions.ts - Zod schemas for subscription endpoints
 ```

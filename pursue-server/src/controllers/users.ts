@@ -20,6 +20,7 @@ import {
   getUserSubscriptionState,
   getSubscriptionEligibility,
 } from '../services/subscription.service.js';
+import { deleteUserPhotos } from '../services/gcs.service.js';
 
 // Temporary debug logging for avatar endpoints
 const DEBUG_AVATAR = process.env.DEBUG_AVATAR === 'true';
@@ -785,6 +786,14 @@ export async function deleteCurrentUser(
     }
 
     const userId = req.user.id;
+
+    // Delete user photos from GCS before database cleanup
+    // If this fails, photos will expire via GCS lifecycle rules
+    try {
+      await deleteUserPhotos(userId);
+    } catch (error) {
+      logger.warn('Failed to delete user photos from GCS', { userId, error });
+    }
 
     await db.transaction().execute(async (trx) => {
       // Check user exists

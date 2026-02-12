@@ -234,6 +234,33 @@ export interface UserConsentsTable {
 export type UserConsent = Selectable<UserConsentsTable>;
 export type NewUserConsent = Insertable<UserConsentsTable>;
 
+// Progress photos table (ephemeral photo attachments on progress entries)
+export interface ProgressPhotosTable {
+  id: Generated<string>;
+  progress_entry_id: string;
+  user_id: string;
+  gcs_object_path: string;
+  width_px: number;
+  height_px: number;
+  uploaded_at: ColumnType<Date, string | undefined, never>;
+  expires_at: ColumnType<Date, string | undefined, never>;
+  gcs_deleted_at: Date | null;
+  created_at: ColumnType<Date, string | undefined, never>;
+}
+
+export type ProgressPhoto = Selectable<ProgressPhotosTable>;
+export type NewProgressPhoto = Insertable<ProgressPhotosTable>;
+
+// Photo upload log table (permanent record for quota enforcement)
+export interface PhotoUploadLogTable {
+  id: Generated<string>;
+  user_id: string;
+  uploaded_at: ColumnType<Date, string | undefined, never>;
+}
+
+export type PhotoUploadLog = Selectable<PhotoUploadLogTable>;
+export type NewPhotoUploadLog = Insertable<PhotoUploadLogTable>;
+
 // Database interface combining all tables
 export interface Database {
   users: UsersTable;
@@ -251,4 +278,6 @@ export interface Database {
   subscription_downgrade_history: SubscriptionDowngradeHistoryTable;
   subscription_transactions: SubscriptionTransactionsTable;
   user_consents: UserConsentsTable;
+  progress_photos: ProgressPhotosTable;
+  photo_upload_log: PhotoUploadLogTable;
 }

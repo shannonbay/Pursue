@@ -147,6 +147,7 @@ export async function createProgress(
         goal_id: goal.id,
         goal_title: goal.title,
         value: data.value,
+        progress_entry_id: entry.id,
       }
     );
 

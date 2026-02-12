@@ -24,6 +24,7 @@ import { canUserJoinOrCreateGroup, validateExportDateRange } from '../services/s
 import { createGroupActivity, ACTIVITY_TYPES } from '../services/activity.service.js';
 import { sendGroupNotification, sendNotificationToUser, sendPushNotification, sendToTopic, buildTopicName } from '../services/fcm.service.js';
 import { uploadGroupIcon, deleteGroupIcon } from '../services/storage.service.js';
+import { getSignedUrl } from '../services/gcs.service.js';
 import {
   sanitizeSheetName,
   sanitizeFilename,
@@ -1422,6 +1423,63 @@ export async function getActivity(
       .offset(offset)
       .execute();
 
+    // Collect progress_entry_ids from progress_logged activities
+    const progressEntryIds: string[] = [];
+    for (const activity of activities) {
+      if (
+        activity.activity_type === 'progress_logged' &&
+        activity.metadata &&
+        typeof activity.metadata === 'object' &&
+        'progress_entry_id' in activity.metadata
+      ) {
+        progressEntryIds.push(activity.metadata.progress_entry_id as string);
+      }
+    }
+
+    // Batch fetch photos for all progress entries
+    const now = new Date();
+    const photosMap = new Map<string, {
+      id: string;
+      gcs_object_path: string;
+      width_px: number;
+      height_px: number;
+      expires_at: Date;
+    }>();
+
+    if (progressEntryIds.length > 0) {
+      const photos = await db
+        .selectFrom('progress_photos')
+        .select(['id', 'progress_entry_id', 'gcs_object_path', 'width_px', 'height_px', 'expires_at', 'gcs_deleted_at'])
+        .where('progress_entry_id', 'in', progressEntryIds)
+        .execute();
+
+      for (const photo of photos) {
+        const expiresAt = new Date(photo.expires_at);
+        // Only include non-expired, non-deleted photos
+        if (expiresAt > now && !photo.gcs_deleted_at) {
+          photosMap.set(photo.progress_entry_id, {
+            id: photo.id,
+            gcs_object_path: photo.gcs_object_path,
+            width_px: photo.width_px,
+            height_px: photo.height_px,
+            expires_at: expiresAt,
+          });
+        }
+      }
+    }
+
+    // Generate signed URLs for all photos (in parallel)
+    const signedUrls = new Map<string, string>();
+    const urlPromises = Array.from(photosMap.entries()).map(async ([entryId, photo]) => {
+      try {
+        const url = await getSignedUrl(photo.gcs_object_path);
+        signedUrls.set(entryId, url);
+      } catch (err) {
+        logger.warn('Failed to generate signed URL for photo', { entryId, error: err });
+      }
+    });
+    await Promise.all(urlPromises);
+
     // Get total count
     const totalResult = await db
       .selectFrom('group_activities')
@@ -1430,18 +1488,40 @@ export async function getActivity(
       .executeTakeFirstOrThrow();
 
     res.status(200).json({
-      activities: activities.map((a) => ({
-        id: a.id,
-        activity_type: a.activity_type,
-        user: a.user_id
-          ? {
-              id: a.user_id,
-              display_name: a.user_display_name,
-            }
-          : null,
-        metadata: a.metadata,
-        created_at: a.created_at,
-      })),
+      activities: activities.map((a) => {
+        const progressEntryId =
+          a.activity_type === 'progress_logged' &&
+          a.metadata &&
+          typeof a.metadata === 'object' &&
+          'progress_entry_id' in a.metadata
+            ? (a.metadata.progress_entry_id as string)
+            : null;
+
+        const photo = progressEntryId ? photosMap.get(progressEntryId) : null;
+        const signedUrl = progressEntryId ? signedUrls.get(progressEntryId) : null;
+
+        return {
+          id: a.id,
+          activity_type: a.activity_type,
+          user: a.user_id
+            ? {
+                id: a.user_id,
+                display_name: a.user_display_name,
+              }
+            : null,
+          metadata: a.metadata,
+          photo: photo && signedUrl
+            ? {
+                id: photo.id,
+                url: signedUrl,
+                width: photo.width_px,
+                height: photo.height_px,
+                expires_at: photo.expires_at,
+              }
+            : null,
+          created_at: a.created_at,
+        };
+      }),
       total: Number(totalResult.count),
     });
   } catch (error) {

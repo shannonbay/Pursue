@@ -413,6 +413,34 @@ async function createSchema(db: Kysely<Database>) {
     )
   `.execute(db);
 
+  // Create progress_photos table
+  await sql`
+    CREATE TABLE IF NOT EXISTS progress_photos (
+      id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+      progress_entry_id UUID NOT NULL UNIQUE REFERENCES progress_entries(id) ON DELETE CASCADE,
+      user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      gcs_object_path VARCHAR(512) NOT NULL,
+      width_px INTEGER NOT NULL,
+      height_px INTEGER NOT NULL,
+      uploaded_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      expires_at TIMESTAMPTZ NOT NULL DEFAULT (NOW() + INTERVAL '7 days'),
+      gcs_deleted_at TIMESTAMPTZ,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `.execute(db);
+  await sql`CREATE INDEX IF NOT EXISTS idx_photos_entry ON progress_photos(progress_entry_id)`.execute(db);
+  await sql`CREATE INDEX IF NOT EXISTS idx_photos_user ON progress_photos(user_id)`.execute(db);
+
+  // Create photo_upload_log table
+  await sql`
+    CREATE TABLE IF NOT EXISTS photo_upload_log (
+      id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+      user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      uploaded_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `.execute(db);
+  await sql`CREATE INDEX IF NOT EXISTS idx_upload_log_user_time ON photo_upload_log(user_id, uploaded_at DESC)`.execute(db);
+
   // Fix FK constraints for goals (CREATE TABLE IF NOT EXISTS won't update existing constraints)
   await sql`
     ALTER TABLE goals DROP CONSTRAINT IF EXISTS goals_created_by_user_id_fkey;
@@ -440,6 +468,8 @@ async function createSchema(db: Kysely<Database>) {
 
 async function cleanDatabase(db: Kysely<Database>) {
   // Delete all data in reverse order of dependencies
+  await db.deleteFrom('photo_upload_log').execute();
+  await db.deleteFrom('progress_photos').execute();
   await db.deleteFrom('progress_entries').execute();
   await db.deleteFrom('goals').execute();
   await db.deleteFrom('group_activities').execute();

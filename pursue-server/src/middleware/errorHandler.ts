@@ -6,12 +6,14 @@ import { logger } from '../utils/logger.js';
 export class ApplicationError extends Error {
   statusCode: number;
   code: string;
+  data?: Record<string, unknown>;
 
-  constructor(message: string, statusCode: number, code: string) {
+  constructor(message: string, statusCode: number, code: string, data?: Record<string, unknown>) {
     super(message);
     this.name = 'ApplicationError';
     this.statusCode = statusCode;
     this.code = code;
+    this.data = data;
   }
 }
 
@@ -65,12 +67,15 @@ export function errorHandler(
 
   // Custom application errors
   if (error instanceof ApplicationError) {
-    res.status(error.statusCode).json({
-      error: {
-        message: error.message,
-        code: error.code,
-      },
-    });
+    const errorResponse: Record<string, unknown> = {
+      message: error.message,
+      code: error.code,
+    };
+    // Include additional data (e.g., quota info for QUOTA_EXCEEDED)
+    if (error.data) {
+      Object.assign(errorResponse, error.data);
+    }
+    res.status(error.statusCode).json({ error: errorResponse });
     return;
   }
 
