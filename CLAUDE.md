@@ -312,6 +312,19 @@ PORT=3000
 4. Add strings to `res/values/strings.xml`
 5. Add unit tests following TESTING.md patterns
 
+## Git & Commits
+
+**Use Haiku for commit jobs.** When work is complete and ready to commit, use the Haiku model to create the commit. Haiku is fast and efficient for this task. Switch to Haiku with `/model haiku` before committing.
+
+Commit messages should follow the format:
+```
+feat(scope): brief description
+
+Optional longer explanation of the change.
+
+Co-Authored-By: Claude Haiku 4.5 <noreply@anthropic.com>
+```
+
 ## Specifications
 
 Detailed specs are in `specs/` and `pursue-app/specs/`:
