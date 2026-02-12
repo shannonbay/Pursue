@@ -25,6 +25,9 @@ ALTER TABLE group_activities ENABLE ROW LEVEL SECURITY;
 ALTER TABLE user_subscriptions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE subscription_downgrade_history ENABLE ROW LEVEL SECURITY;
 ALTER TABLE subscription_transactions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE activity_reactions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE photo_upload_log ENABLE ROW LEVEL SECURITY;
+ALTER TABLE progress_photos ENABLE ROW LEVEL SECURITY;
 
 -- ============================================================================
 -- VERIFICATION
@@ -43,7 +46,7 @@ BEGIN
     'users', 'auth_providers', 'refresh_tokens', 'password_reset_tokens',
     'user_consents', 'devices', 'groups', 'group_memberships', 'invite_codes',
     'goals', 'progress_entries', 'group_activities', 'user_subscriptions',
-    'subscription_downgrade_history', 'subscription_transactions'
+    'subscription_downgrade_history', 'subscription_transactions', 'activity_reactions', 'photo_upload_log', 'progress_photos'
   )
   AND c.relrowsecurity = false;
 
@@ -81,5 +84,5 @@ ALTER TABLE subscription_transactions DISABLE ROW LEVEL SECURITY;
 -- ============================================================================
 
 SELECT
-  'RLS enabled on 15 public tables' AS status,
+  'RLS enabled on 18 public tables' AS status,
   NOW() AS completed_at;
