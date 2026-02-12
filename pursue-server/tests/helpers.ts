@@ -338,6 +338,30 @@ export async function setUserPremium(userId: string): Promise<void> {
 }
 
 /**
+ * Create a nudge directly in the database for testing
+ */
+export async function createTestNudge(
+  senderId: string,
+  recipientId: string,
+  groupId: string,
+  senderLocalDate: string,
+  goalId?: string
+): Promise<string> {
+  const nudge = await testDb
+    .insertInto('nudges')
+    .values({
+      sender_user_id: senderId,
+      recipient_user_id: recipientId,
+      group_id: groupId,
+      goal_id: goalId ?? null,
+      sender_local_date: senderLocalDate,
+    })
+    .returning('id')
+    .executeTakeFirstOrThrow();
+  return nudge.id;
+}
+
+/**
  * Create a progress entry directly in the database for testing
  */
 export async function createProgressEntry(

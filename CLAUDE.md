@@ -86,6 +86,7 @@ controllers/goals.ts - Goal CRUD, progress retrieval, period aggregation
 controllers/progress.ts - POST/GET/DELETE progress entries
 controllers/photos.ts - POST/GET progress entry photo attachments
 controllers/devices.ts - POST/GET/DELETE FCM device registration
+controllers/nudges.ts - POST create nudge, GET sent-today by group
 controllers/subscriptions.ts - POST upgrade, verify, cancel, downgrade
 
 # Services
@@ -114,6 +115,7 @@ routes/groups.ts - Group routes (CRUD, members, invites, activity, export)
 routes/goals.ts - Goal routes (CRUD, progress)
 routes/progress.ts - Progress entry routes, photo upload/retrieval
 routes/devices.ts - Device registration routes
+routes/nudges.ts - Nudge creation routes
 routes/subscriptions.ts - Subscription management routes
 
 # Utils & Types
@@ -130,6 +132,7 @@ validations/goals.ts - Zod schemas for goal endpoints
 validations/progress.ts - Zod schemas for progress endpoints
 validations/photos.ts - Zod schemas for photo upload metadata
 validations/devices.ts - Zod schemas for device endpoints
+validations/nudges.ts - Zod schemas for nudge endpoints
 validations/subscriptions.ts - Zod schemas for subscription endpoints
 ```
 

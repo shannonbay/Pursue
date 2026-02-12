@@ -182,6 +182,24 @@ CREATE INDEX idx_progress_goal_user_date ON progress_entries(goal_id, user_id, p
 
 COMMENT ON COLUMN progress_entries.period_start IS 'User local date (DATE not TIMESTAMP). For daily goal, this is the user local day they completed it, e.g., 2026-01-17. Critical for timezone handling - a Friday workout at 11 PM EST should count for Friday, not Saturday UTC.';
 
+-- Nudges (motivational push notifications from group members)
+CREATE TABLE nudges (
+  id               UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  sender_user_id   UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  recipient_user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  group_id         UUID NOT NULL REFERENCES groups(id) ON DELETE CASCADE,
+  goal_id          UUID REFERENCES goals(id) ON DELETE SET NULL,
+  sent_at          TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  sender_local_date DATE NOT NULL
+);
+
+CREATE UNIQUE INDEX idx_nudges_daily_limit
+  ON nudges(sender_user_id, recipient_user_id, sender_local_date);
+CREATE INDEX idx_nudges_recipient
+  ON nudges(recipient_user_id, sent_at DESC);
+CREATE INDEX idx_nudges_sender_daily
+  ON nudges(sender_user_id, sender_local_date);
+
 -- Group activity feed
 CREATE TABLE group_activities (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),

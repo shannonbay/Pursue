@@ -14,7 +14,8 @@ export const ACTIVITY_TYPES = {
   MEMBER_APPROVED: 'member_approved',
   MEMBER_DECLINED: 'member_declined',
   INVITE_CODE_REGENERATED: 'invite_code_regenerated',
-  EXPORT_PROGRESS: 'export_progress'
+  EXPORT_PROGRESS: 'export_progress',
+  NUDGE_SENT: 'nudge_sent'
 } as const;
 
 /**

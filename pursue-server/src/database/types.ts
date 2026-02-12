@@ -168,6 +168,20 @@ export interface GroupActivitiesTable {
 export type GroupActivity = Selectable<GroupActivitiesTable>;
 export type NewGroupActivity = Insertable<GroupActivitiesTable>;
 
+// Nudges table
+export interface NudgesTable {
+  id: Generated<string>;
+  sender_user_id: string;
+  recipient_user_id: string;
+  group_id: string;
+  goal_id: string | null;
+  sent_at: ColumnType<Date, string | undefined, never>;
+  sender_local_date: string; // DATE as YYYY-MM-DD
+}
+
+export type Nudge = Selectable<NudgesTable>;
+export type NewNudge = Insertable<NudgesTable>;
+
 // Activity reactions table
 export interface ActivityReactionsTable {
   id: Generated<string>;
@@ -285,6 +299,7 @@ export interface Database {
   invite_codes: InviteCodesTable;
   goals: GoalsTable;
   progress_entries: ProgressEntriesTable;
+  nudges: NudgesTable;
   group_activities: GroupActivitiesTable;
   activity_reactions: ActivityReactionsTable;
   user_subscriptions: UserSubscriptionsTable;

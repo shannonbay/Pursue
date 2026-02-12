@@ -13,6 +13,7 @@ import progressRoutes from './routes/progress.js';
 import userRoutes from './routes/users.js';
 import subscriptionRoutes from './routes/subscriptions.js';
 import activityRoutes from './routes/reactions.js';
+import nudgeRoutes from './routes/nudges.js';
 
 const app = express();
 
@@ -116,6 +117,7 @@ app.use('/api/progress', progressRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/subscriptions', subscriptionRoutes);
 app.use('/api/activities', activityRoutes);
+app.use('/api/nudges', nudgeRoutes);
 
 // Error handling
 app.use(errorHandler);

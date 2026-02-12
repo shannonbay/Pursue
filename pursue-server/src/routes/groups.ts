@@ -21,6 +21,7 @@ import {
   validateExportRange,
   exportGroupProgress,
 } from '../controllers/groups.js';
+import { getSentToday } from '../controllers/nudges.js';
 import { createGoal, listGoals } from '../controllers/goals.js';
 import { authenticate } from '../middleware/authenticate.js';
 import { exportProgressLimiter } from '../middleware/rateLimiter.js';
@@ -65,5 +66,8 @@ router.post('/:group_id/goals', createGoal);
 
 // Activity
 router.get('/:group_id/activity', getActivity);
+
+// Nudges
+router.get('/:group_id/nudges/sent-today', getSentToday);
 
 export default router;
