@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <!-- Drag handle -->
+    <View
+        android:layout_width="40dp"
+        android:layout_height="4dp"
+        android:layout_gravity="center_horizontal"
+        android:background="@drawable/bottom_sheet_drag_handle"
+        android:contentDescription="@null" />
+
+    <!-- Logged confirmation -->
+    <TextView
+        android:id="@+id/logged_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="@string/post_log_photo_title"
+        android:textAppearance="?attr/textAppearanceTitleLarge"
+        android:textColor="@color/on_surface"
+        tools:text="Logged ✓" />
+
+    <TextView
+        android:id="@+id/add_photo_prompt"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:text="@string/add_photo_prompt"
+        android:textAppearance="?attr/textAppearanceBodyMedium"
+        android:textColor="@color/on_surface_variant"
+        tools:text="Add a photo?" />
+
+    <!-- Camera and Gallery buttons row -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
+        android:gravity="center"
+        android:orientation="horizontal"
+        android:baselineAligned="false">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/button_camera"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginEnd="8dp"
+            android:minHeight="48dp"
+            android:minWidth="48dp"
+            android:text="@string/add_photo_camera"
+            android:textColor="@color/primary"
+            app:icon="@android:drawable/ic_menu_camera"
+            app:iconGravity="textTop"
+            app:iconPadding="8dp"
+            app:iconTint="@color/primary"
+            app:strokeColor="@color/primary"
+            app:cornerRadius="20dp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/button_gallery"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="8dp"
+            android:minHeight="48dp"
+            android:minWidth="48dp"
+            android:text="@string/add_photo_gallery"
+            android:textColor="@color/primary"
+            app:icon="@android:drawable/ic_menu_gallery"
+            app:iconGravity="textTop"
+            app:iconPadding="8dp"
+            app:iconTint="@color/primary"
+            app:strokeColor="@color/primary"
+            app:cornerRadius="20dp" />
+
+    </LinearLayout>
+
+</LinearLayout>

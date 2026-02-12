@@ -103,6 +103,7 @@ dependencies {
     implementation(libs.glide)
     implementation(libs.glideOkHttp)
     implementation(libs.androidx.exifinterface)
+    implementation(libs.compressor)
     
     // Image cropping
     implementation(libs.imageCropper)

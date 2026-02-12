@@ -36,6 +36,19 @@
             android:textColor="@color/on_surface_variant"
             tools:text="2 hours ago" />
 
+        <!-- Progress photo (shown for progress_logged with photo) -->
+        <com.google.android.material.imageview.ShapeableImageView
+            android:id="@+id/activity_photo"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:visibility="gone"
+            android:adjustViewBounds="true"
+            android:contentDescription="@string/progress_photo_content_description"
+            app:shapeAppearanceOverlay="@style/ShapeAppearance.App.Corner.Small"
+            tools:visibility="visible"
+            tools:src="@android:drawable/ic_menu_gallery" />
+
     </LinearLayout>
 
 </com.google.android.material.card.MaterialCardView>

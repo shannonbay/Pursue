@@ -71,6 +71,20 @@
     <string name="from_camera">Take Photo</string>
     <string name="cancel">Cancel</string>
 
+    <!-- Progress Photo (post-log photo prompt) -->
+    <string name="post_log_photo_title">Logged</string>
+    <string name="add_photo_prompt">Add a photo?</string>
+    <string name="add_photo_camera">Camera</string>
+    <string name="add_photo_gallery">Gallery</string>
+    <string name="photo_uploaded">Photo uploaded</string>
+    <string name="photo_upload_failed">Photo upload failed</string>
+    <string name="photo_quota_exceeded">You\'ve used your free photo uploads this week</string>
+    <string name="photo_compressing">Preparing photo…</string>
+    <string name="camera_permission_required">Camera permission is required to take photos</string>
+    <string name="photo_capture_failed">Failed to take photo</string>
+    <string name="progress_photo_content_description">Progress photo</string>
+    <string name="photo_expired">This photo has expired</string>
+
     <!-- Home Screen: Groups List (4.2) -->
     <string name="groups_title">Groups</string>
     <string name="my_groups">My Groups</string>

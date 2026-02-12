@@ -1,6 +1,7 @@
 package app.getpursue.ui.handlers
 
 import android.graphics.Typeface
+import android.net.Uri
 import android.os.Handler
 import android.os.Looper
 import android.view.View
@@ -17,7 +18,9 @@ import app.getpursue.models.TodayGoal
 import app.getpursue.ui.activities.GroupDetailActivity
 import app.getpursue.ui.activities.MainAppActivity
 import app.getpursue.ui.dialogs.LogProgressDialog
+import app.getpursue.ui.views.PostLogPhotoBottomSheet
 import app.getpursue.R
+import app.getpursue.utils.compressPhotoForUpload
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import kotlinx.coroutines.Dispatchers
@@ -133,6 +136,7 @@ class GoalLogProgressHandler(
                         snackbar.dismiss()
                         currentSnackbar = null
                     }, 3000)
+                    showPostLogPhotoSheet(entryId)
                 }
             } catch (e: ApiException) {
                 fragment.requireActivity().runOnUiThread {
@@ -148,6 +152,58 @@ class GoalLogProgressHandler(
                 fragment.requireActivity().runOnUiThread {
                     onOptimisticUpdate?.invoke(goal.id, previousCompleted, previousProgressValue)
                     Toast.makeText(fragment.requireContext(), fragment.getString(R.string.log_progress_failed), Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+    }
+
+    private fun showPostLogPhotoSheet(entryId: String) {
+        PostLogPhotoBottomSheet.show(fragment.childFragmentManager, entryId,
+            object : PostLogPhotoBottomSheet.PhotoSelectedListener {
+                override fun onPhotoSelected(uri: Uri) {
+                    handlePhotoUpload(entryId, uri)
+                }
+            }
+        )
+    }
+
+    private fun handlePhotoUpload(entryId: String, uri: Uri) {
+        val accessToken = tokenSupplier() ?: return
+        fragment.viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                val compressed = compressPhotoForUpload(fragment.requireContext(), uri)
+                if (compressed == null) {
+                    fragment.requireActivity().runOnUiThread {
+                        Snackbar.make(snackbarParentView, fragment.getString(R.string.photo_upload_failed), Snackbar.LENGTH_SHORT).show()
+                    }
+                    return@launch
+                }
+                withContext(Dispatchers.IO) {
+                    ApiClient.uploadProgressPhoto(accessToken, entryId, compressed.file, compressed.width, compressed.height)
+                }
+                fragment.requireActivity().runOnUiThread {
+                    Toast.makeText(fragment.requireContext(), fragment.getString(R.string.photo_uploaded), Toast.LENGTH_SHORT).show()
+                }
+            } catch (e: ApiException) {
+                fragment.requireActivity().runOnUiThread {
+                    if (e.code == 422) {
+                        val snackbar = Snackbar.make(
+                            snackbarParentView,
+                            fragment.getString(R.string.photo_quota_exceeded),
+                            Snackbar.LENGTH_LONG
+                        )
+                        snackbar.setAction(fragment.getString(R.string.upgrade_to_premium)) {
+                            showUpgradeDialog()
+                        }
+                        snackbar.setActionTextColor(ContextCompat.getColor(fragment.requireContext(), R.color.primary))
+                        snackbar.show()
+                    } else {
+                        Snackbar.make(snackbarParentView, fragment.getString(R.string.photo_upload_failed), Snackbar.LENGTH_SHORT).show()
+                    }
+                }
+            } catch (e: Exception) {
+                fragment.requireActivity().runOnUiThread {
+                    Snackbar.make(snackbarParentView, fragment.getString(R.string.photo_upload_failed), Snackbar.LENGTH_SHORT).show()
                 }
             }
         }
@@ -295,6 +351,7 @@ class GoalLogProgressHandler(
                         snackbar.dismiss()
                         currentSnackbar = null
                     }, 3000)
+                    showPostLogPhotoSheet(entryId)
                 }
             } catch (e: ApiException) {
                 fragment.requireActivity().runOnUiThread {
@@ -364,6 +421,7 @@ class GoalLogProgressHandler(
                         snackbar.dismiss()
                         currentSnackbar = null
                     }, 3000)
+                    showPostLogPhotoSheet(newEntryId)
                 }
             } catch (e: ApiException) {
                 fragment.requireActivity().runOnUiThread {

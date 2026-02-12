@@ -3,11 +3,15 @@ package app.getpursue.ui.adapters
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import app.getpursue.models.GroupActivity
 import app.getpursue.utils.RelativeTimeUtils
 import app.getpursue.R
+import com.bumptech.glide.Glide
+import com.bumptech.glide.load.engine.DiskCacheStrategy
+import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -115,6 +119,7 @@ class GroupActivityAdapter(
     class ActivityViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         private val activityText: TextView = itemView.findViewById(R.id.activity_text)
         private val activityTimestamp: TextView = itemView.findViewById(R.id.activity_timestamp)
+        private val activityPhoto: ImageView = itemView.findViewById(R.id.activity_photo)
 
         fun bind(activity: GroupActivity, currentUserId: String?) {
             // Format activity text based on type
@@ -123,13 +128,30 @@ class GroupActivityAdapter(
 
             // Format timestamp
             activityTimestamp.text = formatRelativeTime(activity.created_at)
+
+            // Show progress photo when present
+            val photo = activity.photo
+            if (photo != null && photo.url.isNotBlank()) {
+                activityPhoto.visibility = View.VISIBLE
+                Glide.with(itemView.context)
+                    .load(photo.url)
+                    .diskCacheStrategy(DiskCacheStrategy.ALL)
+                    .override(photo.width, photo.height)
+                    .fitCenter()
+                    .transition(DrawableTransitionOptions.withCrossFade())
+                    .into(activityPhoto)
+            } else {
+                activityPhoto.visibility = View.GONE
+                Glide.with(itemView.context).clear(activityPhoto)
+            }
         }
 
         private fun formatActivityMessage(activity: GroupActivity, currentUserId: String?): String {
-            val userName = if (activity.user.id == currentUserId) {
-                itemView.context.getString(R.string.you)
-            } else {
-                activity.user.display_name
+            val user = activity.user
+            val userName = when {
+                user == null -> itemView.context.getString(R.string.unknown)
+                user.id == currentUserId -> itemView.context.getString(R.string.you)
+                else -> user.display_name
             }
 
             return when (activity.activity_type) {
@@ -201,11 +223,13 @@ class GroupActivityAdapter(
             displayNameKey: String,
             userIdKey: String
         ): String {
-            val meta = activity.metadata ?: return activity.user.display_name
+            val user = activity.user
+            val fallbackName = user?.display_name ?: itemView.context.getString(R.string.unknown)
+            val meta = activity.metadata ?: return fallbackName
             val displayName = (meta[displayNameKey] as? String)
                 ?: (meta["target_display_name"] as? String)
-                ?: activity.user.display_name
-            val targetId = meta[userIdKey] as? String ?: activity.user.id
+                ?: fallbackName
+            val targetId = meta[userIdKey] as? String ?: user?.id
             return if (currentUserId != null && targetId == currentUserId) {
                 itemView.context.getString(R.string.you)
             } else {

@@ -65,6 +65,7 @@ class ActivityTabFragment : Fragment() {
 
     private var currentState: ActivityUiState = ActivityUiState.LOADING
     private var cachedActivities: List<GroupActivity> = emptyList()
+    private var currentUserId: String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -90,7 +91,7 @@ class ActivityTabFragment : Fragment() {
 
         // Setup RecyclerView
         activityRecyclerView.layoutManager = LinearLayoutManager(requireContext())
-        adapter = GroupActivityAdapter(emptyList())
+        adapter = GroupActivityAdapter(emptyList(), currentUserId)
         activityRecyclerView.adapter = adapter
 
         // Setup pull-to-refresh
@@ -123,6 +124,14 @@ class ActivityTabFragment : Fragment() {
                     return@launch
                 }
 
+                if (currentUserId == null) {
+                    try {
+                        currentUserId = withContext(Dispatchers.IO) {
+                            ApiClient.getMyUser(accessToken).id
+                        }
+                    } catch (_: Exception) { /* ignore */ }
+                }
+
                 val response = withContext(Dispatchers.IO) {
                     ApiClient.getGroupActivity(accessToken, groupId)
                 }
@@ -134,11 +143,11 @@ class ActivityTabFragment : Fragment() {
                         updateUiState(ActivityUiState.SUCCESS_EMPTY)
                     } else {
                         adapter?.let { currentAdapter ->
-                            val newAdapter = GroupActivityAdapter(response.activities)
+                            val newAdapter = GroupActivityAdapter(response.activities, currentUserId)
                             activityRecyclerView.adapter = newAdapter
                             adapter = newAdapter
                         } ?: run {
-                            adapter = GroupActivityAdapter(response.activities)
+                            adapter = GroupActivityAdapter(response.activities, currentUserId)
                             activityRecyclerView.adapter = adapter
                         }
                         updateUiState(ActivityUiState.SUCCESS_WITH_DATA)
