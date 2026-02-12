@@ -84,7 +84,7 @@ export function errorHandler(
     const code = error.code === 'LIMIT_FILE_SIZE' ? 'FILE_TOO_LARGE' : error.code;
     const message =
       error.code === 'LIMIT_FILE_SIZE'
-        ? 'File too large. Please try a smaller image.'
+        ? 'File too large. Maximum size is 5 MB. Please try a smaller image.'
         : error.message;
     res.status(400).json({
       error: { message, code },
