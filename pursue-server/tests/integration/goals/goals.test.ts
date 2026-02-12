@@ -1644,7 +1644,7 @@ describe('Goals Authorization - Cross-User Access Tests', () => {
       const { goalId, groupId } = await createGroupWithGoal(creator.accessToken);
 
       const outsideUser = await createAuthenticatedUser(randomEmail());
-      const userDate = format(new Date(), 'yyyy-MM-dd');
+      const userDate = format(subDays(new Date(), 1), 'yyyy-MM-dd');
 
       const response = await request(app)
         .post('/api/progress')
@@ -1653,7 +1653,7 @@ describe('Goals Authorization - Cross-User Access Tests', () => {
           goal_id: goalId,
           value: 1,
           user_date: userDate,
-          user_timezone: 'UTC',
+          user_timezone: 'America/New_York',
         });
 
       expect(response.status).toBe(403);
@@ -1666,7 +1666,7 @@ describe('Goals Authorization - Cross-User Access Tests', () => {
 
       // Add another member
       const { memberAccessToken: memberToken, memberUserId: memberId } = await addMemberToGroup(creator.accessToken, groupId!);
-      const userDate = format(new Date(), 'yyyy-MM-dd');
+      const userDate = format(subDays(new Date(), 1), 'yyyy-MM-dd');
 
       const response = await request(app)
         .post('/api/progress')
@@ -1675,7 +1675,7 @@ describe('Goals Authorization - Cross-User Access Tests', () => {
           goal_id: goalId,
           value: 1,
           user_date: userDate,
-          user_timezone: 'UTC',
+          user_timezone: 'America/New_York',
         });
 
       expect(response.status).toBe(201);
@@ -1694,7 +1694,7 @@ describe('Goals Authorization - Cross-User Access Tests', () => {
       // Try to log progress for the creator (memberToken is member but trying to use creator's ID)
       // Note: Currently progress creation always uses req.user.id, so member can only log their own progress
       // This test verifies that behavior is enforced
-      const userDate = format(new Date(), 'yyyy-MM-dd');
+      const userDate = format(subDays(new Date(), 1), 'yyyy-MM-dd');
 
       const response = await request(app)
         .post('/api/progress')
@@ -1703,7 +1703,7 @@ describe('Goals Authorization - Cross-User Access Tests', () => {
           goal_id: goalId,
           value: 1,
           user_date: userDate,
-          user_timezone: 'UTC',
+          user_timezone: 'America/New_York',
         });
 
       expect(response.status).toBe(201);

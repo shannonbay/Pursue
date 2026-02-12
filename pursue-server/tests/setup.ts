@@ -427,6 +427,22 @@ async function createSchema(db: Kysely<Database>) {
   await sql`CREATE INDEX IF NOT EXISTS idx_reactions_activity ON activity_reactions(activity_id)`.execute(db);
   await sql`CREATE INDEX IF NOT EXISTS idx_reactions_user ON activity_reactions(user_id)`.execute(db);
 
+  // Create nudges table
+  await sql`
+    CREATE TABLE IF NOT EXISTS nudges (
+      id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+      sender_user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      recipient_user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      group_id UUID NOT NULL REFERENCES groups(id) ON DELETE CASCADE,
+      goal_id UUID REFERENCES goals(id) ON DELETE SET NULL,
+      sent_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+      sender_local_date DATE NOT NULL
+    )
+  `.execute(db);
+  await sql`CREATE UNIQUE INDEX IF NOT EXISTS idx_nudges_daily_limit ON nudges(sender_user_id, recipient_user_id, sender_local_date)`.execute(db);
+  await sql`CREATE INDEX IF NOT EXISTS idx_nudges_recipient ON nudges(recipient_user_id, sent_at DESC)`.execute(db);
+  await sql`CREATE INDEX IF NOT EXISTS idx_nudges_sender_daily ON nudges(sender_user_id, sender_local_date)`.execute(db);
+
   // Create progress_photos table
   await sql`
     CREATE TABLE IF NOT EXISTS progress_photos (
@@ -481,25 +497,31 @@ async function createSchema(db: Kysely<Database>) {
 }
 
 async function cleanDatabase(db: Kysely<Database>) {
-  // Delete all data in reverse order of dependencies
-  await db.deleteFrom('photo_upload_log').execute();
-  await db.deleteFrom('progress_photos').execute();
-  await db.deleteFrom('progress_entries').execute();
-  await db.deleteFrom('goals').execute();
-  await db.deleteFrom('activity_reactions').execute();
-  await db.deleteFrom('group_activities').execute();
-  await db.deleteFrom('invite_codes').execute();
-  await db.deleteFrom('group_memberships').execute();
-  await db.deleteFrom('subscription_transactions').execute();
-  await db.deleteFrom('subscription_downgrade_history').execute();
-  await db.deleteFrom('groups').execute();
-  await db.deleteFrom('user_subscriptions').execute();
-  await db.deleteFrom('devices').execute();
-  await db.deleteFrom('password_reset_tokens').execute();
-  await db.deleteFrom('refresh_tokens').execute();
-  await db.deleteFrom('auth_providers').execute();
-  await db.deleteFrom('user_consents').execute();
-  await db.deleteFrom('users').execute();
+  // Use TRUNCATE to clean all tables at once - handles FK dependencies automatically
+  // All tables listed explicitly to avoid issues with CASCADE not reaching all tables
+  await sql`
+    TRUNCATE TABLE
+      activity_reactions,
+      nudges,
+      progress_photos,
+      photo_upload_log,
+      progress_entries,
+      goals,
+      group_activities,
+      group_memberships,
+      invite_codes,
+      groups,
+      subscription_transactions,
+      subscription_downgrade_history,
+      user_subscriptions,
+      devices,
+      user_consents,
+      password_reset_tokens,
+      refresh_tokens,
+      auth_providers,
+      users
+    RESTART IDENTITY CASCADE
+  `.execute(db);
 }
 
 export { testDb };
