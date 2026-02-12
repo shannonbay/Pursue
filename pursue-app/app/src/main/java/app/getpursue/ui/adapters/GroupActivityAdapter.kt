@@ -24,6 +24,7 @@ import java.util.concurrent.TimeUnit
  */
 interface ReactionListener {
     fun onLongPress(activity: GroupActivity, anchorView: View, touchX: Float, touchY: Float)
+    fun onReactionButtonClick(activity: GroupActivity, button: View)
     fun onReactionSummaryClick(activityId: String)
 }
 
@@ -141,6 +142,7 @@ class GroupActivityAdapter(
     class ActivityViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         private val activityText: TextView = itemView.findViewById(R.id.activity_text)
         private val activityTimestamp: TextView = itemView.findViewById(R.id.activity_timestamp)
+        private val activityReactButton: View = itemView.findViewById(R.id.activity_react_button)
         private val reactionsContainer: View = itemView.findViewById(R.id.reactions_container)
         private val reactionsEmojis: TextView = itemView.findViewById(R.id.reactions_emojis)
         private val reactionsLabel: TextView = itemView.findViewById(R.id.reactions_label)
@@ -179,6 +181,17 @@ class GroupActivityAdapter(
             // Store activity data in view tag for retrieval by RecyclerViewLongPressHelper
             itemView.setTag(R.id.activity_data_tag, activity)
             itemView.setTag(R.id.reaction_listener_tag, reactionListener)
+
+            // React button: show picker (same as long-press)
+            if (activity.id != null && reactionListener != null) {
+                activityReactButton.visibility = View.VISIBLE
+                activityReactButton.setOnClickListener {
+                    reactionListener.onReactionButtonClick(activity, activityReactButton)
+                }
+            } else {
+                activityReactButton.visibility = View.GONE
+                activityReactButton.setOnClickListener(null)
+            }
 
             // Show progress photo when present
             val photo = activity.photo

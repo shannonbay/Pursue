@@ -280,6 +280,19 @@ class ActivityTabFragment : Fragment(), ReactionListener {
         popup.show(anchorView, touchX, touchY)
     }
 
+    override fun onReactionButtonClick(activity: GroupActivity, button: View) {
+        val activityId = activity.id ?: return
+        val currentUserEmoji = activity.reactions?.firstOrNull { it.current_user_reacted }?.emoji
+
+        val popup = ReactionPickerPopup(
+            context = requireContext(),
+            currentUserEmoji = currentUserEmoji,
+            onSelect = { emoji -> handleReactionSelect(activity, activityId, emoji) },
+            onDismiss = { }
+        )
+        popup.show(button)
+    }
+
     override fun onReactionSummaryClick(activityId: String) {
         ReactorsBottomSheet.show(childFragmentManager, activityId)
     }

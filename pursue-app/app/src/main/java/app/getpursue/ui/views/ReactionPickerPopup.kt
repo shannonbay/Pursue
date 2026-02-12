@@ -65,6 +65,18 @@ class ReactionPickerPopup(
     }
 
     /**
+     * Show the popup above the given view's center.
+     * Use for button clicks where the view is the button.
+     */
+    fun show(anchor: View) {
+        val location = IntArray(2)
+        anchor.getLocationOnScreen(location)
+        val centerX = location[0] + anchor.width / 2f
+        val centerY = location[1] + anchor.height / 2f
+        show(anchor, centerX, centerY)
+    }
+
+    /**
      * Show the popup above the touch point.
      * @param anchor Root view for showAtLocation; also used for haptic feedback
      * @param touchX Screen X of the long-press (e.g. MotionEvent.rawX)

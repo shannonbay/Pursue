@@ -473,6 +473,7 @@
     <string name="reactions_one_and_others">%1$s and %2$d others</string>
     <string name="reactions_title">Reactions</string>
     <string name="reactions_tab_all">All %1$d</string>
+    <string name="reaction_button_content_description">Add reaction</string>
     <string name="reaction_failed">Couldn\'t react — try again</string>
     
     <!-- Time Formatting -->
