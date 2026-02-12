@@ -111,19 +111,19 @@ shadowOf(Looper.getMainLooper()).idle()
 fun `test error handling`() = runTest(testDispatcher) {
     // Phase 1: Launch with successful mock
     val successResponse = MockApiClient.createEmptyGroupGoalsResponse()
-    coEvery { ApiClient.getGroupGoals(any(), any(), any(), any(), any()) } returns successResponse
+    coEvery { ApiClient.getGroupGoals(any(), any(), any(), any(), any(), any()) } returns successResponse
     launchFragment()
     advanceCoroutines()
 
     // Phase 2: Change mock to throw, then trigger reload
-    coEvery { ApiClient.getGroupGoals(any(), any(), any(), any(), any()) } coAnswers {
+    coEvery { ApiClient.getGroupGoals(any(), any(), any(), any(), any(), any()) } coAnswers {
         throw ApiException(401, "Unauthorized")
     }
     triggerSwipeRefresh()  // Triggers loadGoals() again
     for (i in 1..10) { advanceUntilIdle(); shadowOf(Looper.getMainLooper()).idle() }
 
     // Verify error state
-    coVerify(atLeast = 2) { ApiClient.getGroupGoals(any(), any(), any(), any(), any()) }
+    coVerify(atLeast = 2) { ApiClient.getGroupGoals(any(), any(), any(), any(), any(), any()) }
     val currentState = currentStateField.get(fragment) as GoalsUiState
     assertEquals(GoalsUiState.ERROR, currentState)
 }

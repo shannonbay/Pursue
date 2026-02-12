@@ -1107,7 +1107,7 @@ class GroupDetailFragmentTest {
         )
         val goalsResponse = MockApiClient.createGroupGoalsResponse()
         coEvery { ApiClient.getGroupDetails(any(), any()) } returns groupDetailResponse
-        coEvery { ApiClient.getGroupGoals(any(), any(), any(), any(), any()) } returns goalsResponse
+        coEvery { ApiClient.getGroupGoals(any(), any(), any(), any(), any(), any()) } returns goalsResponse
 
         launchFragment()
 
@@ -1146,7 +1146,7 @@ class GroupDetailFragmentTest {
         )
         val goalsResponse = MockApiClient.createGroupGoalsResponse()
         coEvery { ApiClient.getGroupDetails(any(), any()) } returns groupDetailResponse
-        coEvery { ApiClient.getGroupGoals(any(), any(), any(), any(), any()) } returns goalsResponse
+        coEvery { ApiClient.getGroupGoals(any(), any(), any(), any(), any(), any()) } returns goalsResponse
 
         launchFragment()
 
@@ -1192,7 +1192,7 @@ class GroupDetailFragmentTest {
             total = 2
         )
         coEvery { ApiClient.getGroupDetails(any(), any()) } returns groupDetailResponse
-        coEvery { ApiClient.getGroupGoals(any(), any(), any(), any(), any()) } returns goalsResponse
+        coEvery { ApiClient.getGroupGoals(any(), any(), any(), any(), any(), any()) } returns goalsResponse
 
         launchFragment()
 

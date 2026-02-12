@@ -33,8 +33,9 @@ class GroupActivityE2ETest : E2ETest() {
             val activity = response.activities.first()
             assertThat(activity.activity_type).isNotEmpty()
             assertThat(activity.user).isNotNull()
-            assertThat(activity.user.id).isNotEmpty()
-            assertThat(activity.user.display_name).isNotEmpty()
+            val user = activity.user!!
+            assertThat(user.id).isNotEmpty()
+            assertThat(user.display_name).isNotEmpty()
             assertThat(activity.created_at).isNotEmpty()
         }
     }

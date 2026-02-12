@@ -349,7 +349,7 @@ class GoalsTabFragmentTest {
     fun `test pull to refresh reloads goals`() = runTest(testDispatcher) {
         // Given - Set up mock BEFORE launching fragment
         val response = MockApiClient.createGroupGoalsResponse()
-        coEvery { ApiClient.getGroupGoals(any(), any(), any(), any(), any()) } returns response
+        coEvery { ApiClient.getGroupGoals(any(), any(), any(), any(), any(), any()) } returns response
 
         launchFragment()
         advanceCoroutines()
@@ -365,14 +365,14 @@ class GoalsTabFragmentTest {
         shadowOf(Looper.getMainLooper()).idle()
 
         // Then - Verify API was called again (twice total: initial load + refresh)
-        coVerify(exactly = 2) { ApiClient.getGroupGoals(any(), any(), any(), any(), any()) }
+        coVerify(exactly = 2) { ApiClient.getGroupGoals(any(), any(), any(), any(), any(), any()) }
     }
 
     @Test
     fun `test pull to refresh does not show skeleton`() = runTest(testDispatcher) {
         // Given - Mock API so initial load completes; wait until skeleton is hidden (SUCCESS_EMPTY or SUCCESS_WITH_DATA)
         val emptyResponse = MockApiClient.createEmptyGroupGoalsResponse()
-        coEvery { ApiClient.getGroupGoals(any(), any(), any(), any(), any()) } returns emptyResponse
+        coEvery { ApiClient.getGroupGoals(any(), any(), any(), any(), any(), any()) } returns emptyResponse
 
         launchFragment()
         // Wait until initial load completes (withContext(IO) + Handler.post; TESTING.md §5, §6)
@@ -425,7 +425,7 @@ class GoalsTabFragmentTest {
     fun `test loadGoals calls getGroupGoals with correct parameters`() = runTest(testDispatcher) {
         // Given - Set up mock BEFORE launching fragment
         val emptyResponse = MockApiClient.createEmptyGroupGoalsResponse()
-        coEvery { ApiClient.getGroupGoals(any(), any(), any(), any(), any()) } returns emptyResponse
+        coEvery { ApiClient.getGroupGoals(any(), any(), any(), any(), any(), any()) } returns emptyResponse
 
         launchFragment()
 
@@ -444,7 +444,8 @@ class GoalsTabFragmentTest {
                 groupId = testGroupId,
                 cadence = null,
                 archived = false,
-                includeProgress = true
+                includeProgress = true,
+                userTimezone = any()
             )
         }
     }
@@ -453,7 +454,7 @@ class GoalsTabFragmentTest {
     fun `test loadGoals shows empty state when no goals`() = runTest(testDispatcher) {
         // Given - Set up mock BEFORE launching fragment
         val emptyResponse = MockApiClient.createEmptyGroupGoalsResponse()
-        coEvery { ApiClient.getGroupGoals(any(), any(), any(), any(), any()) } returns emptyResponse
+        coEvery { ApiClient.getGroupGoals(any(), any(), any(), any(), any(), any()) } returns emptyResponse
 
         launchFragment()
 
@@ -480,7 +481,7 @@ class GoalsTabFragmentTest {
     fun `test loadGoals maps API response to GroupGoal correctly`() = runTest(testDispatcher) {
         // Given - Set up mock BEFORE launching fragment
         val response = MockApiClient.createGroupGoalsResponse()
-        coEvery { ApiClient.getGroupGoals(any(), any(), any(), any(), any()) } returns response
+        coEvery { ApiClient.getGroupGoals(any(), any(), any(), any(), any(), any()) } returns response
 
         launchFragment()
 
@@ -525,7 +526,7 @@ class GoalsTabFragmentTest {
     fun `test loadGoals shows goals in RecyclerView`() = runTest(testDispatcher) {
         // Given - Set up mock BEFORE launching fragment
         val response = MockApiClient.createGroupGoalsResponse()
-        coEvery { ApiClient.getGroupGoals(any(), any(), any(), any(), any()) } returns response
+        coEvery { ApiClient.getGroupGoals(any(), any(), any(), any(), any(), any()) } returns response
 
         launchFragment()
 
@@ -562,7 +563,7 @@ class GoalsTabFragmentTest {
     fun `test loadGoals handles goals with progress data`() = runTest(testDispatcher) {
         // Given - Set up mock BEFORE launching fragment with progress data
         val response = MockApiClient.createGroupGoalsResponse()
-        coEvery { ApiClient.getGroupGoals(any(), any(), any(), any(), any()) } returns response
+        coEvery { ApiClient.getGroupGoals(any(), any(), any(), any(), any(), any()) } returns response
 
         launchFragment()
 
@@ -615,7 +616,7 @@ class GoalsTabFragmentTest {
             currentPeriodProgress = null
         )
         val response = GroupGoalsResponse(goals = listOf(goalWithoutProgress), total = 1)
-        coEvery { ApiClient.getGroupGoals(any(), any(), any(), any(), any()) } returns response
+        coEvery { ApiClient.getGroupGoals(any(), any(), any(), any(), any(), any()) } returns response
 
         launchFragment()
 
@@ -651,7 +652,7 @@ class GoalsTabFragmentTest {
     fun `test loadGoals notifies parent when goals loaded`() = runTest(testDispatcher) {
         // Given - Set up mock BEFORE launching fragment
         val response = MockApiClient.createGroupGoalsResponse()
-        coEvery { ApiClient.getGroupGoals(any(), any(), any(), any(), any()) } returns response
+        coEvery { ApiClient.getGroupGoals(any(), any(), any(), any(), any(), any()) } returns response
 
         // Create a mock parent fragment
         val mockParent = mockk<GroupDetailFragment>(relaxed = true)
@@ -691,7 +692,7 @@ class GoalsTabFragmentTest {
     @Test
     fun `test loadGoals shows error on ApiException`() = runTest(testDispatcher) {
         // Given - Set up mock BEFORE launching fragment
-        coEvery { ApiClient.getGroupGoals(any(), any(), any(), any(), any()) } throws ApiException(500, "Server Error")
+        coEvery { ApiClient.getGroupGoals(any(), any(), any(), any(), any(), any()) } throws ApiException(500, "Server Error")
 
         launchFragment()
 
@@ -708,13 +709,13 @@ class GoalsTabFragmentTest {
         assertNotNull("Error state container should exist", errorStateContainer)
         
         // Verify API was called
-        coVerify(exactly = 1) { ApiClient.getGroupGoals(any(), any(), any(), any(), any()) }
+        coVerify(exactly = 1) { ApiClient.getGroupGoals(any(), any(), any(), any(), any(), any()) }
     }
 
     @Test
     fun `test loadGoals shows error on network exception`() = runTest(testDispatcher) {
         // Given - Set up mock BEFORE launching fragment
-        coEvery { ApiClient.getGroupGoals(any(), any(), any(), any(), any()) } throws Exception("Network error")
+        coEvery { ApiClient.getGroupGoals(any(), any(), any(), any(), any(), any()) } throws Exception("Network error")
 
         launchFragment()
 
@@ -731,20 +732,20 @@ class GoalsTabFragmentTest {
         assertNotNull("Error state container should exist", errorStateContainer)
         
         // Verify API was called
-        coVerify(exactly = 1) { ApiClient.getGroupGoals(any(), any(), any(), any(), any()) }
+        coVerify(exactly = 1) { ApiClient.getGroupGoals(any(), any(), any(), any(), any(), any()) }
     }
 
     @Test
     fun `test loadGoals handles 401 ApiException`() = runTest(testDispatcher) {
         // Given - First launch with empty response, then switch to error for reload
         val emptyResponse = MockApiClient.createEmptyGroupGoalsResponse()
-        coEvery { ApiClient.getGroupGoals(any(), any(), any(), any(), any()) } returns emptyResponse
+        coEvery { ApiClient.getGroupGoals(any(), any(), any(), any(), any(), any()) } returns emptyResponse
 
         launchFragment()
         advanceCoroutines()
 
         // Now set up mock to throw on next call
-        coEvery { ApiClient.getGroupGoals(any(), any(), any(), any(), any()) } coAnswers {
+        coEvery { ApiClient.getGroupGoals(any(), any(), any(), any(), any(), any()) } coAnswers {
             throw ApiException(401, "Unauthorized")
         }
 
@@ -758,7 +759,7 @@ class GoalsTabFragmentTest {
         }
 
         // Then - Verify API was called at least twice (initial + refresh)
-        coVerify(atLeast = 2) { ApiClient.getGroupGoals(any(), any(), any(), any(), any()) }
+        coVerify(atLeast = 2) { ApiClient.getGroupGoals(any(), any(), any(), any(), any(), any()) }
 
         // Verify current state is ERROR
         val currentStateField = GoalsTabFragment::class.java.getDeclaredField("currentState")
@@ -1210,7 +1211,7 @@ class GoalsTabFragmentTest {
     fun `test empty state shows Create Goal button for admin`() = runTest(testDispatcher) {
         // Given - Mock API to return empty response
         val emptyResponse = MockApiClient.createEmptyGroupGoalsResponse()
-        coEvery { ApiClient.getGroupGoals(any(), any(), any(), any(), any()) } returns emptyResponse
+        coEvery { ApiClient.getGroupGoals(any(), any(), any(), any(), any(), any()) } returns emptyResponse
 
         launchFragment(isAdmin = true)
 
@@ -1256,7 +1257,7 @@ class GoalsTabFragmentTest {
     fun `test empty state shows message only for member`() = runTest(testDispatcher) {
         // Given - Mock API to return empty response
         val emptyResponse = MockApiClient.createEmptyGroupGoalsResponse()
-        coEvery { ApiClient.getGroupGoals(any(), any(), any(), any(), any()) } returns emptyResponse
+        coEvery { ApiClient.getGroupGoals(any(), any(), any(), any(), any(), any()) } returns emptyResponse
 
         launchFragment(isAdmin = false)
 
@@ -1299,7 +1300,7 @@ class GoalsTabFragmentTest {
     fun `test empty state message differs for admin vs member`() = runTest(testDispatcher) {
         // Given - Mock API to return empty response
         val emptyResponse = MockApiClient.createEmptyGroupGoalsResponse()
-        coEvery { ApiClient.getGroupGoals(any(), any(), any(), any(), any()) } returns emptyResponse
+        coEvery { ApiClient.getGroupGoals(any(), any(), any(), any(), any(), any()) } returns emptyResponse
 
         // Given - Admin; wait until SUCCESS_EMPTY so empty state view is created (TESTING.md §5)
         launchFragment(isAdmin = true)
@@ -1346,7 +1347,7 @@ class GoalsTabFragmentTest {
     fun `test empty state shows clickable link for admin`() = runTest(testDispatcher) {
         // Given - Mock API to return empty response
         val emptyResponse = MockApiClient.createEmptyGroupGoalsResponse()
-        coEvery { ApiClient.getGroupGoals(any(), any(), any(), any(), any()) } returns emptyResponse
+        coEvery { ApiClient.getGroupGoals(any(), any(), any(), any(), any(), any()) } returns emptyResponse
 
         launchFragment(isAdmin = true)
 
@@ -1407,7 +1408,7 @@ class GoalsTabFragmentTest {
     fun `test empty state clickable link navigates to CreateGoalFragment`() = runTest(testDispatcher) {
         // Given - Mock API to return empty response
         val emptyResponse = MockApiClient.createEmptyGroupGoalsResponse()
-        coEvery { ApiClient.getGroupGoals(any(), any(), any(), any(), any()) } returns emptyResponse
+        coEvery { ApiClient.getGroupGoals(any(), any(), any(), any(), any(), any()) } returns emptyResponse
 
         launchFragment(isAdmin = true)
 
@@ -1457,7 +1458,7 @@ class GoalsTabFragmentTest {
     fun `test empty state clickable link styling`() = runTest(testDispatcher) {
         // Given - Mock API to return empty response
         val emptyResponse = MockApiClient.createEmptyGroupGoalsResponse()
-        coEvery { ApiClient.getGroupGoals(any(), any(), any(), any(), any()) } returns emptyResponse
+        coEvery { ApiClient.getGroupGoals(any(), any(), any(), any(), any(), any()) } returns emptyResponse
 
         launchFragment(isAdmin = true)
 
@@ -1520,7 +1521,7 @@ class GoalsTabFragmentTest {
     fun `test empty state shows non-clickable message for member`() = runTest(testDispatcher) {
         // Given - Mock API to return empty response
         val emptyResponse = MockApiClient.createEmptyGroupGoalsResponse()
-        coEvery { ApiClient.getGroupGoals(any(), any(), any(), any(), any()) } returns emptyResponse
+        coEvery { ApiClient.getGroupGoals(any(), any(), any(), any(), any(), any()) } returns emptyResponse
 
         launchFragment(isAdmin = false)
 
@@ -1572,7 +1573,7 @@ class GoalsTabFragmentTest {
     fun `test empty state link click with null groupId`() = runTest(testDispatcher) {
         // Given - Mock API to return empty response
         val emptyResponse = MockApiClient.createEmptyGroupGoalsResponse()
-        coEvery { ApiClient.getGroupGoals(any(), any(), any(), any(), any()) } returns emptyResponse
+        coEvery { ApiClient.getGroupGoals(any(), any(), any(), any(), any(), any()) } returns emptyResponse
 
         launchFragment(isAdmin = true)
 

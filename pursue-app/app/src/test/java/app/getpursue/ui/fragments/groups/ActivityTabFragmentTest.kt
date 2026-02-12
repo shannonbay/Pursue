@@ -15,6 +15,7 @@ import app.getpursue.R
 import app.getpursue.data.auth.SecureTokenManager
 import app.getpursue.data.network.ApiClient
 import app.getpursue.data.network.ApiException
+import app.getpursue.data.network.User
 import app.getpursue.models.ActivityUser
 import app.getpursue.models.GroupActivity
 import app.getpursue.models.GroupActivityResponse
@@ -76,8 +77,10 @@ class ActivityTabFragmentTest {
         every { SecureTokenManager.getInstance(any()) } returns mockTokenManager
         every { mockTokenManager.getAccessToken() } returns testAccessToken
 
-        // Mock ApiClient
+        // Mock ApiClient - fragment calls getMyUser first (when currentUserId is null), then getGroupActivity
         mockkObject(ApiClient)
+        val currentUser = User("user1", "test@example.com", "Test User", false, null)
+        coEvery { ApiClient.getMyUser(any()) } returns currentUser
     }
 
     @After

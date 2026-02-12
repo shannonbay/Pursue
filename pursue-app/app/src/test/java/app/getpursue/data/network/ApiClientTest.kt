@@ -227,7 +227,7 @@ class ApiClientTest {
         // Given
         val response = MockApiClient.createGroupGoalsResponse()
         coEvery { 
-            ApiClient.getGroupGoals(any(), any(), any(), any(), any())
+            ApiClient.getGroupGoals(any(), any(), any(), any(), any(), any())
         } returns response
 
         // When
@@ -258,7 +258,7 @@ class ApiClientTest {
     fun `test getGroupGoals throws ApiException on 401`() = runTest(testDispatcher) {
         // Given
         coEvery { 
-            ApiClient.getGroupGoals(any(), any(), any(), any(), any())
+            ApiClient.getGroupGoals(any(), any(), any(), any(), any(), any())
         } throws ApiException(401, "Unauthorized")
 
         // When/Then
@@ -278,7 +278,7 @@ class ApiClientTest {
     fun `test getGroupGoals throws ApiException on 403`() = runTest(testDispatcher) {
         // Given
         coEvery { 
-            ApiClient.getGroupGoals(any(), any(), any(), any(), any())
+            ApiClient.getGroupGoals(any(), any(), any(), any(), any(), any())
         } throws ApiException(403, "Forbidden")
 
         // When/Then
@@ -298,7 +298,7 @@ class ApiClientTest {
     fun `test getGroupGoals throws ApiException on 500`() = runTest(testDispatcher) {
         // Given
         coEvery { 
-            ApiClient.getGroupGoals(any(), any(), any(), any(), any())
+            ApiClient.getGroupGoals(any(), any(), any(), any(), any(), any())
         } throws ApiException(500, "Internal Server Error")
 
         // When/Then
@@ -319,7 +319,7 @@ class ApiClientTest {
         // Given
         val emptyResponse = MockApiClient.createEmptyGroupGoalsResponse()
         coEvery { 
-            ApiClient.getGroupGoals(any(), any(), any(), any(), any())
+            ApiClient.getGroupGoals(any(), any(), any(), any(), any(), any())
         } returns emptyResponse
 
         // When
