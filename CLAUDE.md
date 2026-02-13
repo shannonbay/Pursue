@@ -274,6 +274,13 @@ Pursue/
 - Tests clean up after themselves
 - Rate limiting disabled for `NODE_ENV=test`
 
+### Backend Logging
+- Use `logger` from `src/utils/logger.js` instead of `console.log`
+- Use `logger.debug()` for development/debugging info
+- Use `logger.info()` for important operational events
+- Use `logger.error()` for errors (with error object)
+- Debug logs are suppressed in production
+
 ### Android Unit Testing
 - Fragment tests use Robolectric with `@Config(sdk = [28])`
 - Mock ApiClient with `mockkObject(ApiClient)` before fragment launch
