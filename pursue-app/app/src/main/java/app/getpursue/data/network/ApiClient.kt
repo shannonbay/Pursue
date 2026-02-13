@@ -956,6 +956,48 @@ object ApiClient {
     }
 
     /**
+     * Get member progress for a specific member in a group.
+     * Returns member info, goal summaries for the timeframe, and paginated activity log.
+     *
+     * @param accessToken JWT access token for authentication
+     * @param groupId Group ID
+     * @param userId User ID of the member to get progress for
+     * @param startDate Start date (YYYY-MM-DD)
+     * @param endDate End date (YYYY-MM-DD)
+     * @param cursor Optional pagination cursor
+     * @param limit Number of activity log entries per page (default 50, max 50)
+     * @return MemberProgressResponse with member info, goal summaries, and activity log
+     * @throws ApiException on error (400 validation, 403 not member, 404 group not found)
+     */
+    suspend fun getMemberProgress(
+        accessToken: String,
+        groupId: String,
+        userId: String,
+        startDate: String,
+        endDate: String,
+        cursor: String? = null,
+        limit: Int = 50
+    ): MemberProgressResponse {
+        val params = mutableListOf(
+            "start_date=$startDate",
+            "end_date=$endDate",
+            "limit=$limit"
+        )
+        cursor?.let { params.add("cursor=${URLEncoder.encode(it, "UTF-8")}") }
+        val url = "$baseUrl/groups/$groupId/members/$userId/progress?${params.joinToString("&")}"
+
+        val request = Request.Builder()
+            .url(url)
+            .get()
+            .addHeader("Content-Type", "application/json")
+            .build()
+
+        return executeRequest(request, getClient()) { responseBody ->
+            gson.fromJson(responseBody, MemberProgressResponse::class.java)
+        }
+    }
+
+    /**
      * Get pending join requests (admin only).
      *
      * @param accessToken JWT access token for authentication
@@ -2248,6 +2290,69 @@ data class MarkAllReadResponse(
 data class MarkNotificationReadResponse(
     val id: String,
     val is_read: Boolean
+)
+
+// --- Member Progress DTOs ---
+
+/** GET /api/groups/:group_id/members/:user_id/progress response */
+data class MemberProgressResponse(
+    val member: MemberProgressMember,
+    val timeframe: MemberProgressTimeframe,
+    val goal_summaries: List<MemberProgressGoalSummary>,
+    val activity_log: List<MemberProgressActivityEntry>,
+    val pagination: MemberProgressPagination
+)
+
+data class MemberProgressMember(
+    val user_id: String,
+    val display_name: String,
+    val avatar_url: String?,
+    val role: String,
+    val joined_at: String
+)
+
+data class MemberProgressTimeframe(
+    val start_date: String,
+    val end_date: String
+)
+
+data class MemberProgressGoalSummary(
+    val goal_id: String,
+    val title: String,
+    val emoji: String?,
+    val cadence: String,
+    val metric_type: String,
+    val target_value: Double?,
+    val unit: String?,
+    val completed: Double,
+    val total: Double,
+    val percentage: Int
+)
+
+data class MemberProgressActivityEntry(
+    val entry_id: String,
+    val goal_id: String,
+    val goal_title: String,
+    val goal_emoji: String?,
+    val value: Double,
+    val unit: String?,
+    val metric_type: String,
+    val entry_date: String,
+    val logged_at: String,
+    val note: String?,
+    val photo_url: String?,
+    val reactions: List<MemberProgressReaction>
+)
+
+data class MemberProgressReaction(
+    val emoji: String,
+    val count: Int
+)
+
+data class MemberProgressPagination(
+    val next_cursor: String?,
+    val has_more: Boolean,
+    val total_in_timeframe: Int
 )
 
 /**

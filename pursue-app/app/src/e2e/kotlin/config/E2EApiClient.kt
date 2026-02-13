@@ -33,6 +33,7 @@ import app.getpursue.data.network.NotificationsResponse
 import app.getpursue.data.network.UnreadCountResponse
 import app.getpursue.data.network.MarkAllReadResponse
 import app.getpursue.data.network.MarkNotificationReadResponse
+import app.getpursue.data.network.MemberProgressResponse
 import app.getpursue.models.GroupsResponse
 import app.getpursue.models.GroupDetailResponse
 import app.getpursue.models.GroupMembersResponse
@@ -111,6 +112,19 @@ class E2EApiClient(private val context: Context) {
     suspend fun getGroupMembers(accessToken: String, groupId: String): GroupMembersResponse {
         storeTokenIfPresent(accessToken)
         return ApiClient.getGroupMembers("", groupId)
+    }
+
+    suspend fun getMemberProgress(
+        accessToken: String,
+        groupId: String,
+        userId: String,
+        startDate: String,
+        endDate: String,
+        cursor: String? = null,
+        limit: Int = 50
+    ): MemberProgressResponse {
+        storeTokenIfPresent(accessToken)
+        return ApiClient.getMemberProgress("", groupId, userId, startDate, endDate, cursor, limit)
     }
 
     suspend fun getGroupActivity(
