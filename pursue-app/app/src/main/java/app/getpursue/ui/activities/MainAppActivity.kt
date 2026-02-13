@@ -44,12 +44,14 @@ import app.getpursue.data.config.PolicyConfigManager
 import app.getpursue.data.fcm.FcmRegistrationHelper
 import app.getpursue.data.fcm.FcmTokenManager
 import app.getpursue.data.network.ApiClient
+import app.getpursue.data.notifications.UnreadBadgeManager
 import app.getpursue.data.network.ApiException
 import app.getpursue.utils.PolicyDateUtils
 import app.getpursue.models.Group
 import app.getpursue.ui.fragments.groups.CreateGroupFragment
 import app.getpursue.ui.fragments.home.HomeFragment
 import app.getpursue.ui.fragments.home.MyProgressFragment
+import app.getpursue.ui.fragments.home.NotificationsFragment
 import app.getpursue.ui.fragments.home.PremiumFragment
 import app.getpursue.ui.fragments.home.ProfileFragment
 import app.getpursue.ui.fragments.home.TodayFragment
@@ -95,6 +97,9 @@ class MainAppActivity : AppCompatActivity(),
 
     private var billingClient: BillingClient? = null
     private var premiumProductDetails: ProductDetails? = null
+
+    private var notificationBadgeView: TextView? = null
+    private var lastBadgeCount: Int = 0
     private val purchasesUpdatedListener = PurchasesUpdatedListener { billingResult, purchases ->
         if (billingResult.responseCode == BillingClient.BillingResponseCode.OK && purchases != null) {
             for (purchase in purchases) {
@@ -160,10 +165,17 @@ class MainAppActivity : AppCompatActivity(),
         bottomNavigation = findViewById(R.id.bottom_navigation)
         bottomNavigation.setOnItemSelectedListener(this)
 
-        // Setup menu provider for overflow menu
+        // Setup menu provider for toolbar (bell icon + overflow)
         addMenuProvider(object : MenuProvider {
             override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) {
-                // TODO: Add overflow menu items (section 4.2 spec shows ⋮ menu)
+                menuInflater.inflate(R.menu.main_toolbar, menu)
+                val notificationItem = menu.findItem(R.id.action_notifications)
+                val actionView = notificationItem?.actionView
+                notificationBadgeView = actionView?.findViewById(R.id.notification_badge)
+                // Custom action layouts don't propagate click to onMenuItemSelected,
+                // so we set a click listener directly on the action view
+                actionView?.setOnClickListener { openNotificationsInbox() }
+                applyNotificationBadge()
             }
 
             override fun onMenuItemSelected(menuItem: MenuItem): Boolean {
@@ -175,7 +187,9 @@ class MainAppActivity : AppCompatActivity(),
                     else -> false
                 }
             }
-        })
+        }, this, androidx.lifecycle.Lifecycle.State.RESUMED)
+
+        observeUnreadBadgeCount()
 
         // Setup network connectivity monitoring
         connectivityManager = getSystemService(ConnectivityManager::class.java)
@@ -333,6 +347,51 @@ class MainAppActivity : AppCompatActivity(),
 
     override fun onResume() {
         super.onResume()
+        fetchUnreadNotificationCount()
+    }
+
+    private fun fetchUnreadNotificationCount() {
+        lifecycleScope.launch {
+            try {
+                val token = SecureTokenManager.Companion.getInstance(this@MainAppActivity).getAccessToken()
+                Log.d("MainAppActivity", "fetchUnreadNotificationCount: token=${if (token != null) "present" else "null"}")
+                if (token != null) {
+                    UnreadBadgeManager.fetchUnreadCount(token)
+                    Log.d("MainAppActivity", "fetchUnreadNotificationCount: fetched count=${UnreadBadgeManager.unreadCount.value}")
+                }
+            } catch (e: Exception) {
+                Log.e("MainAppActivity", "Failed to fetch unread notification count", e)
+            }
+        }
+    }
+
+    private fun observeUnreadBadgeCount() {
+        lifecycleScope.launch {
+            Log.d("MainAppActivity", "observeUnreadBadgeCount: starting collection")
+            UnreadBadgeManager.unreadCount.collect { count ->
+                Log.d("MainAppActivity", "observeUnreadBadgeCount: received count=$count")
+                lastBadgeCount = count
+                runOnUiThread { applyNotificationBadge() }
+            }
+        }
+    }
+
+    private fun applyNotificationBadge() {
+        Log.d("MainAppActivity", "applyNotificationBadge: lastBadgeCount=$lastBadgeCount, notificationBadgeView=${if (notificationBadgeView != null) "present" else "null"}")
+        notificationBadgeView?.let { badge ->
+            badge.visibility = if (lastBadgeCount > 0) View.VISIBLE else View.GONE
+            badge.text = if (lastBadgeCount > 9) "9+" else lastBadgeCount.toString()
+            Log.d("MainAppActivity", "applyNotificationBadge: set visibility=${badge.visibility}, text=${badge.text}")
+        }
+    }
+
+    private fun openNotificationsInbox() {
+        supportActionBar?.title = getString(R.string.notifications_section_title)
+        supportActionBar?.setDisplayHomeAsUpEnabled(true)
+        supportFragmentManager.commit {
+            replace(R.id.fragment_container, NotificationsFragment.newInstance())
+            addToBackStack(null)
+        }
     }
 
     override fun onDestroy() {
@@ -459,6 +518,10 @@ class MainAppActivity : AppCompatActivity(),
             }
             is MyProgressFragment -> {
                 supportActionBar?.title = getString(R.string.my_progress_title)
+                supportActionBar?.setDisplayHomeAsUpEnabled(true)
+            }
+            is NotificationsFragment -> {
+                supportActionBar?.title = getString(R.string.notifications_section_title)
                 supportActionBar?.setDisplayHomeAsUpEnabled(true)
             }
             else -> {

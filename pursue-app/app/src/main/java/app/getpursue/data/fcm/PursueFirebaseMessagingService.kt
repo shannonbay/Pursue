@@ -13,6 +13,7 @@ import androidx.core.content.ContextCompat
 import app.getpursue.data.auth.SecureTokenManager
 import app.getpursue.data.network.ApiClient
 import app.getpursue.data.notifications.NotificationPreferences
+import app.getpursue.data.notifications.UnreadBadgeManager
 import app.getpursue.ui.activities.GroupDetailActivity
 import app.getpursue.ui.activities.MainActivity
 import app.getpursue.R
@@ -117,6 +118,8 @@ class PursueFirebaseMessagingService : FirebaseMessagingService() {
             }
         }
 
+        UnreadBadgeManager.incrementCount()
+
         createNotificationChannelIfNeeded()
         val title = remoteMessage.notification?.title ?: remoteMessage.data["title"] ?: getString(R.string.app_name)
         val body = remoteMessage.notification?.body ?: remoteMessage.data["body"] ?: ""
@@ -131,18 +134,25 @@ class PursueFirebaseMessagingService : FirebaseMessagingService() {
      * Otherwise launches MainActivity.
      */
     private fun buildContentIntent(data: Map<String, String>?): Intent {
+        val type = data?.get("type")
+        if (type == "removed_from_group") {
+            return Intent(applicationContext, MainActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            }
+        }
         val groupId = data?.get("group_id")?.takeIf { it.isNotBlank() }
         if (groupId == null) {
             return Intent(applicationContext, MainActivity::class.java).apply {
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
             }
         }
-        val type = data?.get("type")
         val groupName = data?.get("group_name") ?: ""
         val (initialTab, openPendingApprovals) = when (type) {
             "join_request" -> 1 to true
             "progress_logged" -> 2 to false
-            "nudge_received" -> 0 to false  // Goals tab
+            "nudge_received", "nudge_sent" -> 0 to false
+            "reaction_received", "milestone_achieved" -> 2 to false
+            "membership_approved", "membership_rejected", "promoted_to_admin" -> 1 to false
             "member_joined", "member_left", "member_promoted", "member_approved",
             "member_removed", "member_declined", "group_renamed", "invite_code_regenerated", "group_created" -> 1 to false
             else -> -1 to false

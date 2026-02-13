@@ -38,4 +38,11 @@
 
     <!-- Offline state -->
     <color name="offline_dimmed">#80000000</color>
+
+    <!-- Notification inbox -->
+    <color name="notification_badge_background">#D32F2F</color>
+    <color name="notification_unread_dot">#1976D2</color>
+    <color name="milestone_gold_border">#F9A825</color>
+    <color name="approved_green_border">#4CAF50</color>
+    <color name="swipe_delete_background">#D32F2F</color>
 </resources>

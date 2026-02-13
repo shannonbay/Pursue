@@ -10,6 +10,19 @@
     <string name="notify_group_events_summary">Joins, leaves, promotions, renames</string>
     <string name="notify_nudges_label">Nudge notifications</string>
     <string name="notify_nudges_summary">Get notified when someone nudges you</string>
+    <string name="empty_notifications_title">No notifications yet</string>
+    <string name="empty_notifications_message">Reactions and nudges from your groups will appear here.</string>
+    <string name="error_loading_notifications">Failed to load notifications</string>
+    <string name="notification_deleted">Notification removed</string>
+    <string name="no_longer_member_toast">You\'re no longer a member of this group</string>
+    <string name="notification_reaction">%1$s reacted %2$s to your %3$s log</string>
+    <string name="notification_nudge">%1$s nudged you on %2$s</string>
+    <string name="notification_approved">Your request to join %1$s was approved</string>
+    <string name="notification_rejected">Your request to join %1$s was not approved</string>
+    <string name="notification_promoted">%1$s made you an admin in %2$s</string>
+    <string name="notification_removed">You were removed from %1$s</string>
+    <string name="notification_milestone_first">You logged your first progress!</string>
+    <string name="notification_milestone_streak">You hit a %1$d-day streak on %2$s!</string>
 
     <!-- Nudge feature -->
     <string name="nudge_sent">Nudge sent to %1$s! 👊</string>

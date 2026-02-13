@@ -120,15 +120,29 @@ export async function getUnreadCount(
       throw new ApplicationError('Unauthorized', 401, 'UNAUTHORIZED');
     }
 
-    const result = await db
-      .selectFrom('user_notifications')
-      .select(db.fn.count('id').as('count'))
-      .where('user_id', '=', req.user.id)
-      .where('is_read', '=', false)
-      .executeTakeFirst();
+    // Debug: get total and unread count separately
+    const [unreadResult, totalResult] = await Promise.all([
+      db
+        .selectFrom('user_notifications')
+        .select(db.fn.count('id').as('count'))
+        .where('user_id', '=', req.user.id)
+        .where('is_read', '=', false)
+        .executeTakeFirst(),
+      db
+        .selectFrom('user_notifications')
+        .select(db.fn.count('id').as('count'))
+        .where('user_id', '=', req.user.id)
+        .executeTakeFirst(),
+    ]);
+
+    const unreadCount = Number(unreadResult?.count ?? 0);
+    const totalCount = Number(totalResult?.count ?? 0);
+
+    // Log for debugging
+    console.log(`[getUnreadCount] user=${req.user.id} total=${totalCount} unread=${unreadCount}`);
 
     res.status(200).json({
-      unread_count: Number(result?.count ?? 0),
+      unread_count: unreadCount,
     });
   } catch (error) {
     next(error);
@@ -146,6 +160,9 @@ export async function markAllAsRead(
       throw new ApplicationError('Unauthorized', 401, 'UNAUTHORIZED');
     }
 
+    // Log before marking
+    console.log(`[markAllAsRead] user=${req.user.id} - marking all as read`);
+
     const result = await db
       .updateTable('user_notifications')
       .set({ is_read: true })
@@ -155,6 +172,9 @@ export async function markAllAsRead(
 
     const updateResult = Array.isArray(result) ? result[0] : result;
     const markedRead = Number((updateResult as { numUpdatedRows?: bigint })?.numUpdatedRows ?? 0);
+
+    // Log result
+    console.log(`[markAllAsRead] user=${req.user.id} - marked ${markedRead} notifications as read`);
 
     res.status(200).json({
       marked_read: markedRead,
@@ -177,6 +197,8 @@ export async function markAsRead(
 
     const { notification_id } = NotificationIdParamSchema.parse(req.params);
 
+    console.log(`[markAsRead] user=${req.user.id} notification_id=${notification_id}`);
+
     const result = await db
       .updateTable('user_notifications')
       .set({ is_read: true })
@@ -188,6 +210,8 @@ export async function markAsRead(
     if (!result) {
       throw new ApplicationError('Notification not found', 404, 'NOT_FOUND');
     }
+
+    console.log(`[markAsRead] user=${req.user.id} marked notification ${result.id} as read`);
 
     res.status(200).json({
       id: result.id,
