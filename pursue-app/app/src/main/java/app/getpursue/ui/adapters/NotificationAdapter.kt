@@ -76,6 +76,7 @@ class NotificationAdapter(
                 "membership_rejected" -> context.getString(R.string.notification_rejected, groupName)
                 "promoted_to_admin" -> context.getString(R.string.notification_promoted, actorName, groupName)
                 "removed_from_group" -> context.getString(R.string.notification_removed, groupName)
+                "join_request_received" -> context.getString(R.string.notification_join_request, actorName, groupName)
                 "milestone_achieved" -> {
                     val milestoneType = item.metadata?.get("milestone_type") as? String
                     when (milestoneType) {
@@ -143,6 +144,10 @@ class NotificationAdapter(
                 }
                 "membership_approved" -> {
                     avatarOverlay.text = "✅"
+                    avatarOverlay.visibility = View.VISIBLE
+                }
+                "join_request_received" -> {
+                    avatarOverlay.text = "🙋"
                     avatarOverlay.visibility = View.VISIBLE
                 }
                 "membership_rejected", "removed_from_group" -> {

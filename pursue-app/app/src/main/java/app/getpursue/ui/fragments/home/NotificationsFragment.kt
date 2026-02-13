@@ -228,6 +228,20 @@ class NotificationsFragment : Fragment() {
             "removed_from_group" -> {
                 Snackbar.make(requireView(), getString(R.string.no_longer_member_toast), Snackbar.LENGTH_SHORT).show()
             }
+            "join_request_received" -> {
+                val groupId = item.group?.id
+                val groupName = item.group?.name ?: ""
+                if (groupId != null) {
+                    val intent = Intent(requireContext(), GroupDetailActivity::class.java).apply {
+                        putExtra(GroupDetailActivity.EXTRA_GROUP_ID, groupId)
+                        putExtra(GroupDetailActivity.EXTRA_GROUP_NAME, groupName)
+                        putExtra(GroupDetailActivity.EXTRA_GROUP_HAS_ICON, false)
+                        putExtra(GroupDetailActivity.EXTRA_INITIAL_TAB, 1) // Members tab
+                        putExtra(GroupDetailActivity.EXTRA_OPEN_PENDING_APPROVALS, true)
+                    }
+                    groupDetailLauncher.launch(intent)
+                }
+            }
             else -> {
                 val groupId = item.group?.id
                 val groupName = item.group?.name ?: ""

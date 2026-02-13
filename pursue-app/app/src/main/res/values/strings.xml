@@ -21,6 +21,7 @@
     <string name="notification_rejected">Your request to join %1$s was not approved</string>
     <string name="notification_promoted">%1$s made you an admin in %2$s</string>
     <string name="notification_removed">You were removed from %1$s</string>
+    <string name="notification_join_request">%1$s wants to join %2$s</string>
     <string name="notification_milestone_first">You logged your first progress!</string>
     <string name="notification_milestone_streak">You hit a %1$d-day streak on %2$s!</string>
 

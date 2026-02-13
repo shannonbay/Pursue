@@ -626,6 +626,14 @@ export async function approveMember(
       .where('user_id', '=', user_id)
       .execute();
 
+    // Delete join request notifications for all admins (request resolved)
+    await db
+      .deleteFrom('user_notifications')
+      .where('type', '=', 'join_request_received')
+      .where('group_id', '=', group_id)
+      .where('actor_user_id', '=', user_id)
+      .execute();
+
     const group = await db
       .selectFrom('groups')
       .select(['name'])
@@ -712,6 +720,14 @@ export async function declineMember(
       .set({ status: 'declined' })
       .where('group_id', '=', group_id)
       .where('user_id', '=', user_id)
+      .execute();
+
+    // Delete join request notifications for all admins (request resolved)
+    await db
+      .deleteFrom('user_notifications')
+      .where('type', '=', 'join_request_received')
+      .where('group_id', '=', group_id)
+      .where('actor_user_id', '=', user_id)
       .execute();
 
     const declinedUser = await db
@@ -1342,41 +1358,32 @@ export async function joinGroup(
       .where('id', '=', req.user.id)
       .executeTakeFirst();
 
-    // Send FCM notification to admins/creators only (fire and forget)
-    const displayName = requestingUser?.display_name ?? req.user.email;
+    // Get all admins/creators for notifications
     const userId = req.user.id;
-    db.selectFrom('devices')
-      .innerJoin('group_memberships', 'devices.user_id', 'group_memberships.user_id')
-      .select(['devices.fcm_token'])
-      .where('group_memberships.group_id', '=', invite.group_id)
+    const admins = await db
+      .selectFrom('group_memberships')
+      .select(['user_id'])
+      .where('group_id', '=', invite.group_id)
+      .where('status', '=', 'active')
       .where((eb) =>
         eb.or([
-          eb('group_memberships.role', '=', 'admin'),
-          eb('group_memberships.role', '=', 'creator'),
+          eb('role', '=', 'admin'),
+          eb('role', '=', 'creator'),
         ])
       )
-      .execute()
-      .then((adminDevices) => {
-        if (adminDevices.length > 0) {
-          for (const device of adminDevices) {
-            sendPushNotification(
-              device.fcm_token,
-              'New Join Request',
-              `${displayName} wants to join ${group.name}`,
-              {
-                type: 'join_request',
-                group_id: invite.group_id,
-                user_id: userId,
-              }
-            ).catch((error) => {
-              logger.error('Failed to send join request notification', { error });
-            });
-          }
-        }
-      })
-      .catch((error) => {
-        logger.error('Failed to query admin devices', { error });
+      .execute();
+
+    // Create inbox notifications for all admins (fire and forget)
+    for (const admin of admins) {
+      createNotification({
+        user_id: admin.user_id,
+        type: 'join_request_received',
+        actor_user_id: userId,
+        group_id: invite.group_id,
+      }).catch((error) => {
+        logger.error('Failed to create join request notification', { error });
       });
+    }
 
     res.status(200).json({
       status: 'pending',

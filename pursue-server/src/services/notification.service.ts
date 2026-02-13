@@ -9,7 +9,8 @@ export type NotificationType =
   | 'membership_rejected'
   | 'promoted_to_admin'
   | 'removed_from_group'
-  | 'milestone_achieved';
+  | 'milestone_achieved'
+  | 'join_request_received';
 
 export interface CreateNotificationParams {
   user_id: string;
@@ -169,6 +170,13 @@ async function sendFcmForNotification(
       }
       break;
     }
+    case 'join_request_received':
+      notification = {
+        title: 'New Join Request',
+        body: `${actorName} wants to join ${groupName}`,
+      };
+      if (group_id) data.group_id = group_id;
+      break;
     default:
       return;
   }
