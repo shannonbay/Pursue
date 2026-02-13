@@ -302,6 +302,27 @@ class GroupActivityAdapter(
                     )
                     itemView.context.getString(R.string.activity_member_declined, declinedName)
                 }
+                "nudge_sent" -> {
+                    val meta = activity.metadata ?: emptyMap()
+                    val recipientId = meta["recipient_user_id"] as? String
+                    val recipientName = (meta["recipient_display_name"] as? String) ?: "someone"
+                    val recipientNameOrYou = if (currentUserId != null && recipientId == currentUserId) {
+                        itemView.context.getString(R.string.you)
+                    } else {
+                        recipientName
+                    }
+                    val goalTitle = (meta["goal_title"] as? String) ?: "goal"
+                    itemView.context.getString(R.string.activity_nudge_sent, userName, recipientNameOrYou, goalTitle)
+                }
+                "invite_code_regenerated" -> {
+                    itemView.context.getString(R.string.activity_invite_code_regenerated, userName)
+                }
+                "export_progress" -> {
+                    val meta = activity.metadata ?: emptyMap()
+                    val startDate = (meta["start_date"] as? String) ?: ""
+                    val endDate = (meta["end_date"] as? String) ?: ""
+                    itemView.context.getString(R.string.activity_export_progress, userName, startDate, endDate)
+                }
                 else -> "$userName performed an action"
             }
         }

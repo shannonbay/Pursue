@@ -473,6 +473,9 @@
     <string name="activity_join_request">%1$s requested to join the group</string>
     <string name="activity_member_approved">%1$s was approved to join the group</string>
     <string name="activity_member_declined">Join request from %1$s was declined</string>
+    <string name="activity_nudge_sent">%1$s nudged %2$s for \"%3$s\"</string>
+    <string name="activity_invite_code_regenerated">%1$s regenerated the invite code</string>
+    <string name="activity_export_progress">%1$s exported progress (%2$s to %3$s)</string>
     
     <!-- Reactions -->
     <string name="reactions_you">You</string>
