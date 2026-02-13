@@ -25,7 +25,7 @@ data class CompressedPhoto(
 
 /**
  * Compresses an image from URI for progress photo upload.
- * Uses Zelory Compressor with spec settings: max 1080px, quality 85/80/75/60, target 200 KB.
+ * Uses Zelory Compressor with spec settings: max 1080px, WebP format, quality 85/80/75/60, target 200 KB.
  *
  * @param context Context for content resolver and compressor
  * @param uri URI from camera or gallery picker
@@ -41,7 +41,7 @@ suspend fun compressPhotoForUpload(context: Context, uri: Uri): CompressedPhoto?
         var compressedFile = Compressor.compress(context, sourceFile) {
             resolution(1080, 1080)
             quality(85)
-            format(android.graphics.Bitmap.CompressFormat.JPEG)
+            format(android.graphics.Bitmap.CompressFormat.WEBP)
             size(200_000)
         }
         Log.d(TAG, "Pass 1 (quality=85, target=200KB): ${compressedFile.length() / 1024} KB")
@@ -55,7 +55,7 @@ suspend fun compressPhotoForUpload(context: Context, uri: Uri): CompressedPhoto?
             compressedFile = Compressor.compress(context, sourceFile) {
                 resolution(1080, 1080)
                 quality(q)
-                format(android.graphics.Bitmap.CompressFormat.JPEG)
+                format(android.graphics.Bitmap.CompressFormat.WEBP)
                 size(target)
             }
             qualityUsed = q

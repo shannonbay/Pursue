@@ -703,7 +703,7 @@ object ApiClient {
      *
      * @param accessToken JWT access token for authentication
      * @param progressEntryId Progress entry ID to attach photo to
-     * @param imageFile Image file (JPEG or WebP, max 800 KB)
+     * @param imageFile Image file (WebP or JPEG, max 500 KB)
      * @param width Image width in pixels (metadata)
      * @param height Image height in pixels (metadata)
      * @return UploadProgressPhotoResponse with photo_id and expires_at
@@ -720,8 +720,8 @@ object ApiClient {
             .setType(MultipartBody.FORM)
             .addFormDataPart(
                 "photo",
-                "photo.jpg",
-                imageFile.asRequestBody("image/jpeg".toMediaType())
+                "photo.webp",
+                imageFile.asRequestBody("image/webp".toMediaType())
             )
             .addFormDataPart("width", width.toString())
             .addFormDataPart("height", height.toString())
