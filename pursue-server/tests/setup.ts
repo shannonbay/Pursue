@@ -443,6 +443,35 @@ async function createSchema(db: Kysely<Database>) {
   await sql`CREATE INDEX IF NOT EXISTS idx_nudges_recipient ON nudges(recipient_user_id, sent_at DESC)`.execute(db);
   await sql`CREATE INDEX IF NOT EXISTS idx_nudges_sender_daily ON nudges(sender_user_id, sender_local_date)`.execute(db);
 
+  // Create user_notifications table
+  await sql`
+    CREATE TABLE IF NOT EXISTS user_notifications (
+      id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+      user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      type VARCHAR(50) NOT NULL,
+      actor_user_id UUID REFERENCES users(id) ON DELETE SET NULL,
+      group_id UUID REFERENCES groups(id) ON DELETE CASCADE,
+      goal_id UUID REFERENCES goals(id) ON DELETE CASCADE,
+      progress_entry_id UUID REFERENCES progress_entries(id) ON DELETE CASCADE,
+      metadata JSONB,
+      is_read BOOLEAN NOT NULL DEFAULT FALSE,
+      created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+    )
+  `.execute(db);
+  await sql`CREATE INDEX IF NOT EXISTS idx_user_notifications_user ON user_notifications(user_id, created_at DESC)`.execute(db);
+  await sql`CREATE INDEX IF NOT EXISTS idx_user_notifications_unread ON user_notifications(user_id) WHERE is_read = FALSE`.execute(db);
+
+  // Create user_milestone_grants table
+  await sql`
+    CREATE TABLE IF NOT EXISTS user_milestone_grants (
+      id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+      user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      milestone_key VARCHAR(100) NOT NULL,
+      granted_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+      UNIQUE(user_id, milestone_key)
+    )
+  `.execute(db);
+
   // Create progress_photos table
   await sql`
     CREATE TABLE IF NOT EXISTS progress_photos (
@@ -501,6 +530,8 @@ async function cleanDatabase(db: Kysely<Database>) {
   // All tables listed explicitly to avoid issues with CASCADE not reaching all tables
   await sql`
     TRUNCATE TABLE
+      user_notifications,
+      user_milestone_grants,
       activity_reactions,
       nudges,
       progress_photos,

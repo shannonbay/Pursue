@@ -5,16 +5,9 @@ import type { AuthRequest } from '../types/express.js';
 import { CreateNudgeSchema, GetSentTodaySchema } from '../validations/nudges.js';
 import { requireActiveGroupMember } from '../services/authorization.js';
 import { createGroupActivity, ACTIVITY_TYPES } from '../services/activity.service.js';
-import { sendNotificationToUser } from '../services/fcm.service.js';
+import { createNotification } from '../services/notification.service.js';
 
 const DAILY_SEND_LIMIT = 20;
-
-function buildNudgeBody(senderName: string, goalTitle: string | null): string {
-  if (goalTitle) {
-    return `${senderName} is rooting for you! Don't forget your ${goalTitle} goal. 💪`;
-  }
-  return `${senderName} is rooting for you! Keep going today. 💪`;
-}
 
 // POST /api/nudges
 export async function createNudge(
@@ -85,12 +78,7 @@ export async function createNudge(
       throw err;
     }
 
-    const [group, sender, recipient, goal] = await Promise.all([
-      db
-        .selectFrom('groups')
-        .select('name')
-        .where('id', '=', data.group_id)
-        .executeTakeFirst(),
+    const [sender, recipient, goal] = await Promise.all([
       db
         .selectFrom('users')
         .select('display_name')
@@ -114,22 +102,15 @@ export async function createNudge(
     const senderName = sender?.display_name ?? 'Someone';
     const recipientName = recipient?.display_name ?? 'Someone';
     const goalTitle = goal?.title ?? null;
-    const groupName = group?.name ?? 'Your group';
 
-    await sendNotificationToUser(
-      data.recipient_user_id,
-      {
-        title: groupName,
-        body: buildNudgeBody(senderName, goalTitle),
-      },
-      {
-        type: 'nudge_received',
-        group_id: data.group_id,
-        goal_id: data.goal_id ?? '',
-        sender_user_id: senderId,
-        sender_display_name: senderName,
-      }
-    );
+    await createNotification({
+      user_id: data.recipient_user_id,
+      type: 'nudge_received',
+      actor_user_id: senderId,
+      group_id: data.group_id,
+      goal_id: data.goal_id ?? null,
+      metadata: {},
+    });
 
     await createGroupActivity(
       data.group_id,

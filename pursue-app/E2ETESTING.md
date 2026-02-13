@@ -50,6 +50,24 @@ Run a class: `./gradlew :app:testE2e --tests "com.github.shannonbay.pursue.e2e.u
 
 AGP only recognizes `main`, `test`, `androidTest`. Put E2E in `test`: `sourceSets.getByName("test") { java.srcDir("src/e2e/kotlin") }`. Filter: `include("**/*E2ETest.class", "**/*E2ETest\$*.class")`. E2E deps in `testImplementation` (okhttp, gson, truth, etc.).
 
+## Dates in Progress Logging
+
+The backend validates that `user_date` cannot be in the future. Because Robolectric tests run in a JVM whose timezone may differ from the server's, `LocalDate.now()` can return a date the server considers "tomorrow" — causing a **400 "Date cannot be in the future"** error.
+
+**Fix:** Use a fixed past date (e.g. `"2026-02-01"`) for `userDate` in `logProgress` calls instead of `LocalDate.now()`. All existing E2E tests follow this pattern.
+
+```kotlin
+// GOOD — fixed past date, always valid
+api.logProgress(accessToken = token, goalId = goalId, value = 1.0,
+    userDate = "2026-02-01", userTimezone = "America/New_York")
+
+// BAD — may fail if JVM timezone is ahead of server
+api.logProgress(accessToken = token, goalId = goalId, value = 1.0,
+    userDate = LocalDate.now().toString(), userTimezone = "America/New_York")
+```
+
+`LocalDate.now()` is fine for fields like `sender_local_date` on nudges, which don't have a "no future" validation.
+
 ## Test Images
 
 Robolectric doesn't mock Bitmap/Color. Use minimal valid JPEG bytes (SOI, APP0, DQT, SOF0, DHT, SOS, EOI); pad for size, keep EOI at end.

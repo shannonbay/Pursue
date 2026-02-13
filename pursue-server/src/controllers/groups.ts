@@ -22,6 +22,7 @@ import {
 } from '../services/authorization.js';
 import { canUserJoinOrCreateGroup, validateExportDateRange } from '../services/subscription.service.js';
 import { createGroupActivity, ACTIVITY_TYPES } from '../services/activity.service.js';
+import { createNotification } from '../services/notification.service.js';
 import { sendGroupNotification, sendNotificationToUser, sendPushNotification, sendToTopic, buildTopicName } from '../services/fcm.service.js';
 import { uploadGroupIcon, deleteGroupIcon } from '../services/storage.service.js';
 import { getSignedUrl } from '../services/gcs.service.js';
@@ -643,23 +644,13 @@ export async function approveMember(
       approved_user_display_name: approvedUser.display_name,
     });
 
-    // Send FCM to approved user
-    const approvedUserDevices = await db
-      .selectFrom('devices')
-      .select(['fcm_token'])
-      .where('user_id', '=', user_id)
-      .execute();
-
-    if (approvedUserDevices.length > 0) {
-      for (const device of approvedUserDevices) {
-        sendPushNotification(device.fcm_token, 'Request Approved', `You've been approved to join ${group.name}`, {
-          type: 'member_approved',
-          group_id,
-        }).catch((error) => {
-          logger.error('Failed to send approval notification', { error, user_id });
-        });
-      }
-    }
+    await createNotification({
+      user_id,
+      type: 'membership_approved',
+      actor_user_id: req.user.id,
+      group_id,
+      metadata: {},
+    });
 
     // Send FCM to group_events topic subscribers
     await sendToTopic(
@@ -741,23 +732,13 @@ export async function declineMember(
       declined_user_display_name: declinedUser.display_name,
     });
 
-    // Send FCM to declined user
-    const declinedUserDevices = await db
-      .selectFrom('devices')
-      .select(['fcm_token'])
-      .where('user_id', '=', user_id)
-      .execute();
-
-    if (declinedUserDevices.length > 0) {
-      for (const device of declinedUserDevices) {
-        sendPushNotification(device.fcm_token, 'Request Declined', `Your request to join ${group.name} was declined`, {
-          type: 'member_declined',
-          group_id,
-        }).catch((error) => {
-          logger.error('Failed to send decline notification', { error, user_id });
-        });
-      }
-    }
+    await createNotification({
+      user_id,
+      type: 'membership_rejected',
+      actor_user_id: req.user.id,
+      group_id,
+      metadata: {},
+    });
 
     res.status(200).json({
       success: true,
@@ -861,6 +842,16 @@ export async function updateMemberRole(
       new_role: data.role,
     });
 
+    if (data.role === 'admin') {
+      await createNotification({
+        user_id,
+        type: 'promoted_to_admin',
+        actor_user_id: req.user.id,
+        group_id,
+        metadata: {},
+      });
+    }
+
     res.status(200).json({ success: true });
   } catch (error) {
     next(error);
@@ -911,6 +902,14 @@ export async function removeMember(
     // Create activity
     await createGroupActivity(group_id, ACTIVITY_TYPES.MEMBER_REMOVED, req.user.id, {
       removed_user_id: user_id,
+    });
+
+    await createNotification({
+      user_id,
+      type: 'removed_from_group',
+      actor_user_id: req.user.id,
+      group_id,
+      metadata: {},
     });
 
     // Send FCM notification to group_events topic
@@ -1090,19 +1089,13 @@ export async function leaveGroup(
           }
         );
 
-        const titleToUser =
-          newRole === 'creator'
-            ? "You're now the group creator"
-            : "You're now an admin";
-        const bodyToUser =
-          newRole === 'creator'
-            ? `You're now the creator of ${groupName}`
-            : `You're now an admin of ${groupName}`;
-        await sendNotificationToUser(
-          promotedUserId,
-          { title: titleToUser, body: bodyToUser },
-          { type: 'member_promoted', group_id, new_role: newRole }
-        );
+        await createNotification({
+          user_id: promotedUserId,
+          type: 'promoted_to_admin',
+          actor_user_id: null, // System-triggered when last admin left
+          group_id,
+          metadata: {},
+        });
       }
     }
 

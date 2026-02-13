@@ -6,6 +6,7 @@ import type { AuthRequest } from '../types/express.js';
 import { AddReactionSchema } from '../validations/reactions.js';
 import { requireActiveGroupMember } from '../services/authorization.js';
 import { sendNotificationToUser } from '../services/fcm.service.js';
+import { createNotification } from '../services/notification.service.js';
 import { logger } from '../utils/logger.js';
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -70,9 +71,24 @@ export async function addOrReplaceReaction(
       .where('user_id', '=', req.user.id)
       .executeTakeFirstOrThrow();
 
-    // Send FCM notification to activity owner (skip if self-reaction)
+    // Create inbox notification and send FCM to activity owner (skip if self-reaction)
     const activityOwnerId = activity.user_id;
     if (activityOwnerId && activityOwnerId !== req.user.id) {
+      const activityWithMeta = await db
+        .selectFrom('group_activities')
+        .select('metadata')
+        .where('id', '=', activity_id)
+        .executeTakeFirst();
+      const meta = (activityWithMeta?.metadata ?? {}) as Record<string, unknown>;
+      await createNotification({
+        user_id: activityOwnerId,
+        type: 'reaction_received',
+        actor_user_id: req.user.id,
+        group_id: activity.group_id,
+        goal_id: (meta.goal_id as string) ?? null,
+        progress_entry_id: (meta.progress_entry_id as string) ?? null,
+        metadata: { emoji: data.emoji },
+      });
       const reactor = await db
         .selectFrom('users')
         .select('display_name')

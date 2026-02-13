@@ -1620,6 +1620,91 @@ object ApiClient {
         }
     }
 
+    // --- Notification Inbox Endpoints ---
+
+    /**
+     * Get paginated list of user notifications.
+     * GET /api/notifications?limit=30&before_id={cursor}
+     */
+    suspend fun getNotifications(
+        accessToken: String,
+        limit: Int = 30,
+        beforeId: String? = null
+    ): NotificationsResponse {
+        val params = mutableListOf("limit=$limit")
+        beforeId?.let { params.add("before_id=$it") }
+        val url = "$baseUrl/notifications?${params.joinToString("&")}"
+        val request = Request.Builder()
+            .url(url)
+            .get()
+            .addHeader("Content-Type", "application/json")
+            .build()
+        return executeRequest(request, getClient()) { responseBody ->
+            gson.fromJson(responseBody, NotificationsResponse::class.java)
+        }
+    }
+
+    /**
+     * Get unread notification count for badge.
+     * GET /api/notifications/unread-count
+     */
+    suspend fun getUnreadCount(accessToken: String): UnreadCountResponse {
+        val request = Request.Builder()
+            .url("$baseUrl/notifications/unread-count")
+            .get()
+            .addHeader("Content-Type", "application/json")
+            .build()
+        return executeRequest(request, getClient()) { responseBody ->
+            gson.fromJson(responseBody, UnreadCountResponse::class.java)
+        }
+    }
+
+    /**
+     * Mark all notifications as read.
+     * POST /api/notifications/mark-all-read
+     */
+    suspend fun markAllNotificationsRead(accessToken: String): MarkAllReadResponse {
+        val request = Request.Builder()
+            .url("$baseUrl/notifications/mark-all-read")
+            .post("".toRequestBody(jsonMediaType))
+            .addHeader("Content-Type", "application/json")
+            .build()
+        return executeRequest(request, getClient()) { responseBody ->
+            gson.fromJson(responseBody, MarkAllReadResponse::class.java)
+        }
+    }
+
+    /**
+     * Mark a single notification as read.
+     * PATCH /api/notifications/:id/read
+     */
+    suspend fun markNotificationRead(
+        accessToken: String,
+        notificationId: String
+    ): MarkNotificationReadResponse {
+        val request = Request.Builder()
+            .url("$baseUrl/notifications/$notificationId/read")
+            .patch("".toRequestBody(jsonMediaType))
+            .addHeader("Content-Type", "application/json")
+            .build()
+        return executeRequest(request, getClient()) { responseBody ->
+            gson.fromJson(responseBody, MarkNotificationReadResponse::class.java)
+        }
+    }
+
+    /**
+     * Delete a notification.
+     * DELETE /api/notifications/:id
+     */
+    suspend fun deleteNotification(accessToken: String, notificationId: String) {
+        val request = Request.Builder()
+            .url("$baseUrl/notifications/$notificationId")
+            .delete()
+            .addHeader("Content-Type", "application/json")
+            .build()
+        executeRequest<Unit>(request, getClient()) { Unit }
+    }
+
     /**
      * Execute an HTTP request and parse the response.
      */
@@ -2114,6 +2199,55 @@ data class NudgeDetail(
 /** GET /api/groups/:group_id/nudges/sent-today response */
 data class NudgesSentTodayResponse(
     val nudged_user_ids: List<String>
+)
+
+// --- Notification Inbox DTOs ---
+
+data class NotificationsResponse(
+    val notifications: List<NotificationItem>,
+    val unread_count: Int,
+    val has_more: Boolean
+)
+
+data class NotificationItem(
+    val id: String,
+    val type: String,
+    val is_read: Boolean,
+    val created_at: String,
+    val actor: NotificationActor?,
+    val group: NotificationGroup?,
+    val goal: NotificationGoal?,
+    val progress_entry_id: String?,
+    val metadata: Map<String, Any>?
+)
+
+data class NotificationActor(
+    val id: String,
+    val display_name: String,
+    val avatar_url: String?
+)
+
+data class NotificationGroup(
+    val id: String,
+    val name: String
+)
+
+data class NotificationGoal(
+    val id: String,
+    val title: String
+)
+
+data class UnreadCountResponse(
+    val unread_count: Int
+)
+
+data class MarkAllReadResponse(
+    val marked_read: Int
+)
+
+data class MarkNotificationReadResponse(
+    val id: String,
+    val is_read: Boolean
 )
 
 /**

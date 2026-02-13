@@ -29,6 +29,10 @@ import app.getpursue.data.network.AddReactionResponse
 import app.getpursue.data.network.GetReactionsResponse
 import app.getpursue.data.network.NudgesSentTodayResponse
 import app.getpursue.data.network.SendNudgeResponse
+import app.getpursue.data.network.NotificationsResponse
+import app.getpursue.data.network.UnreadCountResponse
+import app.getpursue.data.network.MarkAllReadResponse
+import app.getpursue.data.network.MarkNotificationReadResponse
 import app.getpursue.models.GroupsResponse
 import app.getpursue.models.GroupDetailResponse
 import app.getpursue.models.GroupMembersResponse
@@ -412,5 +416,39 @@ class E2EApiClient(private val context: Context) {
     ): NudgesSentTodayResponse {
         storeTokenIfPresent(accessToken)
         return ApiClient.getNudgesSentToday("", groupId, senderLocalDate)
+    }
+
+    // --- Notification Inbox Endpoints ---
+
+    suspend fun getNotifications(
+        accessToken: String,
+        limit: Int = 30,
+        beforeId: String? = null
+    ): NotificationsResponse {
+        storeTokenIfPresent(accessToken)
+        return ApiClient.getNotifications("", limit, beforeId)
+    }
+
+    suspend fun getUnreadCount(accessToken: String): UnreadCountResponse {
+        storeTokenIfPresent(accessToken)
+        return ApiClient.getUnreadCount("")
+    }
+
+    suspend fun markAllNotificationsRead(accessToken: String): MarkAllReadResponse {
+        storeTokenIfPresent(accessToken)
+        return ApiClient.markAllNotificationsRead("")
+    }
+
+    suspend fun markNotificationRead(
+        accessToken: String,
+        notificationId: String
+    ): MarkNotificationReadResponse {
+        storeTokenIfPresent(accessToken)
+        return ApiClient.markNotificationRead("", notificationId)
+    }
+
+    suspend fun deleteNotification(accessToken: String, notificationId: String) {
+        storeTokenIfPresent(accessToken)
+        ApiClient.deleteNotification("", notificationId)
     }
 }

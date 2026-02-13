@@ -14,6 +14,7 @@ import userRoutes from './routes/users.js';
 import subscriptionRoutes from './routes/subscriptions.js';
 import activityRoutes from './routes/reactions.js';
 import nudgeRoutes from './routes/nudges.js';
+import notificationRoutes from './routes/notifications.js';
 
 const app = express();
 
@@ -118,6 +119,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/subscriptions', subscriptionRoutes);
 app.use('/api/activities', activityRoutes);
 app.use('/api/nudges', nudgeRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // Error handling
 app.use(errorHandler);

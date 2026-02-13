@@ -16,6 +16,7 @@ import {
 } from '../services/authorization.js';
 import { canUserWriteInGroup } from '../services/subscription.service.js';
 import { createGroupActivity, ACTIVITY_TYPES } from '../services/activity.service.js';
+import { checkMilestones } from '../services/notification.service.js';
 import { sendToTopic, buildTopicName } from '../services/fcm.service.js';
 
 // Helper: Format date to YYYY-MM-DD string
@@ -178,6 +179,8 @@ export async function createProgress(
         group_id: goal.group_id,
       }
     );
+
+    await checkMilestones(req.user.id, goal.id, goal.group_id);
 
     res.status(201).json({
       id: entry.id,

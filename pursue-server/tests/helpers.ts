@@ -435,6 +435,38 @@ export async function recordPhotoUpload(
 }
 
 /**
+ * Create a test notification directly in the database
+ */
+export async function createTestNotification(
+  userId: string,
+  type: string,
+  options?: {
+    actorUserId?: string;
+    groupId?: string;
+    goalId?: string;
+    progressEntryId?: string;
+    metadata?: Record<string, unknown>;
+    isRead?: boolean;
+  }
+): Promise<string> {
+  const notif = await testDb
+    .insertInto('user_notifications')
+    .values({
+      user_id: userId,
+      type,
+      actor_user_id: options?.actorUserId ?? null,
+      group_id: options?.groupId ?? null,
+      goal_id: options?.goalId ?? null,
+      progress_entry_id: options?.progressEntryId ?? null,
+      metadata: options?.metadata ?? null,
+      is_read: options?.isRead ?? false,
+    })
+    .returning('id')
+    .executeTakeFirstOrThrow();
+  return notif.id;
+}
+
+/**
  * Create a minimal valid JPEG buffer for testing
  */
 export function createTestJpegBuffer(): Buffer {

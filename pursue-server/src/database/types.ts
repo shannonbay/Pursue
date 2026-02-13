@@ -277,6 +277,35 @@ export interface ProgressPhotosTable {
 export type ProgressPhoto = Selectable<ProgressPhotosTable>;
 export type NewProgressPhoto = Insertable<ProgressPhotosTable>;
 
+// User notifications table (personal inbox)
+export interface UserNotificationsTable {
+  id: Generated<string>;
+  user_id: string;
+  type: string;
+  actor_user_id: string | null;
+  group_id: string | null;
+  goal_id: string | null;
+  progress_entry_id: string | null;
+  metadata: Record<string, unknown> | null;
+  is_read: ColumnType<boolean, boolean | undefined, boolean>;
+  created_at: ColumnType<Date, string | undefined, never>;
+}
+
+export type UserNotification = Selectable<UserNotificationsTable>;
+export type NewUserNotification = Insertable<UserNotificationsTable>;
+export type UserNotificationUpdate = Updateable<UserNotificationsTable>;
+
+// User milestone grants table (deduplication for milestone notifications)
+export interface UserMilestoneGrantsTable {
+  id: Generated<string>;
+  user_id: string;
+  milestone_key: string;
+  granted_at: ColumnType<Date, string | undefined, never>;
+}
+
+export type UserMilestoneGrant = Selectable<UserMilestoneGrantsTable>;
+export type NewUserMilestoneGrant = Insertable<UserMilestoneGrantsTable>;
+
 // Photo upload log table (permanent record for quota enforcement)
 export interface PhotoUploadLogTable {
   id: Generated<string>;
@@ -308,4 +337,6 @@ export interface Database {
   user_consents: UserConsentsTable;
   progress_photos: ProgressPhotosTable;
   photo_upload_log: PhotoUploadLogTable;
+  user_notifications: UserNotificationsTable;
+  user_milestone_grants: UserMilestoneGrantsTable;
 }
