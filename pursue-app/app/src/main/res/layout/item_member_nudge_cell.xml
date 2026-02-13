@@ -1,16 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Right column cell: nudge button or progress, aligned with arrow (48dp) -->
+<!-- Right column cell: nudge button or progress, on same row as member name -->
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
-    android:layout_width="match_parent"
-    android:layout_height="48dp"
-    android:minWidth="48dp"
-    android:gravity="center">
+    android:layout_width="48dp"
+    android:layout_height="24dp">
 
     <ImageButton
         android:id="@+id/nudge_button"
         android:layout_width="48dp"
         android:layout_height="48dp"
+        android:layout_gravity="center"
         android:background="?attr/selectableItemBackgroundBorderless"
         android:contentDescription="@string/nudge_button_description"
         android:src="@drawable/ic_nudge"

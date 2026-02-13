@@ -171,7 +171,7 @@ class GroupGoalsAdapter(
                 progressText.visibility = View.GONE
             }
 
-            // Member status (adapter shows simplified view: circle + name only, no nudge column)
+            // Member status (simplified: circle + name only; nudge column hidden)
             memberNudgeColumn?.visibility = View.GONE
             memberStatusContainer.removeAllViews()
             if (goal.member_progress.isNotEmpty()) {

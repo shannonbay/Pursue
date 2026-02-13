@@ -14,124 +14,114 @@
     app:cardElevation="1dp"
     app:strokeWidth="0dp">
 
+    <!-- Two columns: content (title + progress + members/bells) | arrow -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
+        android:orientation="horizontal"
         android:padding="16dp">
 
-        <!-- Row 1: 85% body (title + progress) and 15% arrow - same as status icon / arrow alignment -->
+        <!-- Column 1: title + progress + (member names | bells side by side) -->
         <LinearLayout
-            android:layout_width="match_parent"
+            android:id="@+id/card_body"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:orientation="horizontal">
+            android:layout_weight="1"
+            android:orientation="vertical">
 
-            <!-- Main Card Body (85% width) -->
+            <!-- Goal title row -->
             <LinearLayout
-                android:id="@+id/card_body"
-                android:layout_width="0dp"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_weight="0.85"
-                android:orientation="vertical">
-
-                <!-- Goal Title Row: status icon aligns with member row circles -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical">
-
-                    <TextView
-                        android:id="@+id/status_icon"
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
-                        android:textSize="20sp"
-                        android:gravity="center"
-                        android:textColor="@color/primary"
-                        tools:text="✓" />
-
-                    <TextView
-                        android:id="@+id/goal_title"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:layout_marginStart="12dp"
-                        android:textAppearance="?attr/textAppearanceBodyLarge"
-                        android:textStyle="bold"
-                        android:textColor="@color/on_surface"
-                        android:maxLines="2"
-                        android:ellipsize="end"
-                        tools:text="30 min run" />
-
-                </LinearLayout>
-
-                <ProgressBar
-                    android:id="@+id/progress_bar"
-                    style="?android:attr/progressBarStyleHorizontal"
-                    android:layout_width="match_parent"
-                    android:layout_height="8dp"
-                    android:layout_marginTop="8dp"
-                    android:visibility="gone"
-                    android:progressTint="@color/primary"
-                    android:progressBackgroundTint="@color/surface_variant"
-                    android:max="100"
-                    tools:progress="50"
-                    tools:visibility="visible" />
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
 
                 <TextView
-                    android:id="@+id/progress_text"
-                    android:layout_width="wrap_content"
+                    android:id="@+id/status_icon"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:textSize="20sp"
+                    android:gravity="center"
+                    android:textColor="@color/primary"
+                    tools:text="✓" />
+
+                <TextView
+                    android:id="@+id/goal_title"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp"
-                    android:textAppearance="?attr/textAppearanceBodySmall"
-                    android:textColor="@color/on_surface_variant"
-                    android:visibility="gone"
-                    tools:text="50% (1/2)"
-                    tools:visibility="visible" />
+                    android:layout_weight="1"
+                    android:layout_marginStart="12dp"
+                    android:textAppearance="?attr/textAppearanceBodyLarge"
+                    android:textStyle="bold"
+                    android:textColor="@color/on_surface"
+                    android:maxLines="2"
+                    android:ellipsize="end"
+                    tools:text="30 min run" />
 
             </LinearLayout>
 
-            <ImageButton
-                android:id="@+id/arrow_button"
-                android:layout_width="0dp"
-                android:layout_height="48dp"
-                android:layout_weight="0.15"
-                android:minWidth="48dp"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:contentDescription="@string/view_goal_details"
-                android:src="@drawable/ic_chevron_right"
-                android:scaleType="centerInside"
-                android:padding="12dp"
-                android:clickable="true"
-                android:focusable="true"
-                android:duplicateParentState="false" />
+            <ProgressBar
+                android:id="@+id/progress_bar"
+                style="?android:attr/progressBarStyleHorizontal"
+                android:layout_width="match_parent"
+                android:layout_height="8dp"
+                android:layout_marginTop="8dp"
+                android:visibility="gone"
+                android:progressTint="@color/primary"
+                android:progressBackgroundTint="@color/surface_variant"
+                android:max="100"
+                tools:progress="50"
+                tools:visibility="visible" />
+
+            <TextView
+                android:id="@+id/progress_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:textAppearance="?attr/textAppearanceBodySmall"
+                android:textColor="@color/on_surface_variant"
+                android:visibility="gone"
+                tools:text="50% (1/2)"
+                tools:visibility="visible" />
+
+            <!-- Member section: names (left) | bells (right) - same row so they align -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:orientation="horizontal">
+
+                <LinearLayout
+                    android:id="@+id/member_status_container"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical" />
+
+                <LinearLayout
+                    android:id="@+id/member_nudge_column"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:minWidth="48dp"
+                    android:orientation="vertical"
+                    android:gravity="center_horizontal" />
+
+            </LinearLayout>
 
         </LinearLayout>
 
-        <!-- Row 2: Member list (85%) and nudge column (15%) - circles align with title row, bells align with arrow -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:orientation="horizontal">
-
-            <LinearLayout
-                android:id="@+id/member_status_container"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="0.85"
-                android:orientation="vertical" />
-
-            <LinearLayout
-                android:id="@+id/member_nudge_column"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="0.15"
-                android:minWidth="48dp"
-                android:gravity="top|end"
-                android:orientation="vertical" />
-
-        </LinearLayout>
+        <!-- Column 2: arrow (aligned to top with title) -->
+        <ImageButton
+            android:id="@+id/arrow_button"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/view_goal_details"
+            android:src="@drawable/ic_chevron_right"
+            android:scaleType="centerInside"
+            android:padding="12dp"
+            android:clickable="true"
+            android:focusable="true" />
 
     </LinearLayout>
 

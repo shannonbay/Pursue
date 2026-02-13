@@ -439,16 +439,17 @@ class GoalsTabFragment : Fragment() {
             progressText.visibility = View.GONE
         }
 
-        // Member status: show (You), completed members, and incomplete not-yet-nudged. Hide incomplete + already nudged until they complete.
+        // Member status: show other members only (completed, or incomplete not-yet-nudged). Hide (You) and incomplete+already-nudged until they complete.
         val memberNudgeColumn = view.findViewById<LinearLayout>(R.id.member_nudge_column)
         memberStatusContainer.removeAllViews()
         memberNudgeColumn.removeAllViews()
 
         val visibleMembers = goal.member_progress.filter { member ->
             val isCurrentUser = member.user_id == currentUserId
+            if (isCurrentUser) return@filter false
             val isCompleted = member.completed
             val alreadyNudged = member.user_id in nudgedUserIds
-            isCurrentUser || isCompleted || !alreadyNudged
+            isCompleted || !alreadyNudged
         }
 
         if (visibleMembers.isNotEmpty()) {
@@ -471,7 +472,7 @@ class GoalsTabFragment : Fragment() {
     }
 
     /**
-     * Bind a member row (left: circle + name) and nudge cell (right: bell or progress).
+     * Bind a member row (left: circle/check + name) and nudge cell (right: bell or progress, same row as name).
      */
     private fun bindMemberStatusRow(
         rowView: View,
@@ -485,13 +486,7 @@ class GoalsTabFragment : Fragment() {
         val nudgeButton = nudgeCellView.findViewById<ImageButton>(R.id.nudge_button)
         val nudgeProgress = nudgeCellView.findViewById<ProgressBar>(R.id.nudge_progress)
 
-        val displayName = if (member.user_id == currentUserId) {
-            "${member.display_name} ${getString(R.string.you)}"
-        } else {
-            member.display_name
-        }
-        nameView.text = displayName
-
+        nameView.text = member.display_name
         statusIconView.text = if (member.completed) "✓" else "○"
         statusIconView.setTextColor(
             if (member.completed) ContextCompat.getColor(requireContext(), R.color.primary)
