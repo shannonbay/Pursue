@@ -98,8 +98,22 @@ export const ExportProgressQuerySchema = z
     }
   });
 
+export const MemberProgressQuerySchema = z
+  .object({
+    start_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'start_date must be YYYY-MM-DD'),
+    end_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'end_date must be YYYY-MM-DD'),
+    cursor: z.string().optional(),
+    limit: z.coerce.number().int().min(1).max(50).optional().default(50),
+  })
+  .strict()
+  .refine(
+    (data) => data.end_date >= data.start_date,
+    { message: 'end_date must be >= start_date', path: ['end_date'] }
+  );
+
 export type CreateGroupInput = z.infer<typeof CreateGroupSchema>;
 export type UpdateGroupInput = z.infer<typeof UpdateGroupSchema>;
 export type UpdateMemberRoleInput = z.infer<typeof UpdateMemberRoleSchema>;
 export type JoinGroupInput = z.infer<typeof JoinGroupSchema>;
 export type ExportProgressQuery = z.infer<typeof ExportProgressQuerySchema>;
+export type MemberProgressQuery = z.infer<typeof MemberProgressQuerySchema>;

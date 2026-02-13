@@ -179,6 +179,10 @@ CREATE INDEX idx_progress_period ON progress_entries(period_start);
 -- Optimized indexes for batch progress queries (spec recommendations)
 CREATE INDEX idx_progress_goal_date ON progress_entries(goal_id, period_start DESC);
 CREATE INDEX idx_progress_goal_user_date ON progress_entries(goal_id, user_id, period_start DESC);
+-- Member progress endpoint: keyset pagination index (user_id, logged_at DESC, id DESC)
+CREATE INDEX idx_progress_user_logged_at_id ON progress_entries(user_id, logged_at DESC, id DESC);
+-- Member progress endpoint: goal summaries aggregation
+CREATE INDEX idx_progress_goal_user_period ON progress_entries(goal_id, user_id, period_start);
 
 COMMENT ON COLUMN progress_entries.period_start IS 'User local date (DATE not TIMESTAMP). For daily goal, this is the user local day they completed it, e.g., 2026-01-17. Critical for timezone handling - a Friday workout at 11 PM EST should count for Friday, not Saturday UTC.';
 

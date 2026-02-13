@@ -20,6 +20,7 @@ import {
   getActivity,
   validateExportRange,
   exportGroupProgress,
+  getMemberProgress,
 } from '../controllers/groups.js';
 import { getSentToday } from '../controllers/nudges.js';
 import { createGoal, listGoals } from '../controllers/goals.js';
@@ -55,6 +56,7 @@ router.post('/:group_id/members/:user_id/decline', declineMember);
 router.delete('/:group_id/members/me', leaveGroup); // Must be before /:user_id
 router.patch('/:group_id/members/:user_id', updateMemberRole);
 router.delete('/:group_id/members/:user_id', removeMember);
+router.get('/:group_id/members/:user_id/progress', getMemberProgress);
 
 // Invite (one active code per group)
 router.get('/:group_id/invite', getGroupInvite);

@@ -10,6 +10,7 @@ import {
   UpdateMemberRoleSchema,
   JoinGroupSchema,
   ExportProgressQuerySchema,
+  MemberProgressQuerySchema,
 } from '../validations/groups.js';
 import { ValidateExportRangeQuerySchema } from '../validations/subscriptions.js';
 import {
@@ -1859,5 +1860,458 @@ export async function exportGroupProgress(
     res.end();
   } catch (error) {
     next(error);
+  }
+}
+
+/**
+ * GET /api/groups/:group_id/members/:user_id/progress
+ * Get member progress overview and activity log for a specific user in a group.
+ * Supports cursor-based pagination for the activity log.
+ */
+export async function getMemberProgress(
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    if (!req.user) {
+      throw new ApplicationError('Unauthorized', 401, 'UNAUTHORIZED');
+    }
+
+    const group_id = String(req.params.group_id);
+    const target_user_id = String(req.params.user_id);
+
+    // Validate query parameters
+    const parseResult = MemberProgressQuerySchema.safeParse(req.query);
+    if (!parseResult.success) {
+      const firstError = parseResult.error.issues[0];
+      // Check if it's a date range error
+      if (firstError.path.includes('end_date') && firstError.message.includes('>=')) {
+        throw new ApplicationError('end_date must be >= start_date', 400, 'INVALID_DATE_RANGE');
+      }
+      throw new ApplicationError(firstError.message, 400, 'VALIDATION_ERROR');
+    }
+    const { start_date, end_date, cursor, limit } = parseResult.data;
+
+    // Ensure group exists
+    await ensureGroupExists(group_id);
+
+    // Authorization: requesting user must be an active member
+    await requireActiveGroupMember(req.user.id, group_id);
+
+    // Authorization: target user must be an active member
+    const targetMembership = await db
+      .selectFrom('group_memberships')
+      .select(['user_id', 'role', 'status', 'joined_at'])
+      .where('group_id', '=', group_id)
+      .where('user_id', '=', target_user_id)
+      .where('status', '=', 'active')
+      .executeTakeFirst();
+
+    if (!targetMembership) {
+      throw new ApplicationError(
+        'Target user is not an approved member of this group',
+        403,
+        'TARGET_NOT_A_MEMBER'
+      );
+    }
+
+    // Check premium for date ranges > 30 days
+    const startDateObj = new Date(start_date + 'T00:00:00Z');
+    const endDateObj = new Date(end_date + 'T00:00:00Z');
+    const daysDiff = Math.ceil((endDateObj.getTime() - startDateObj.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+
+    if (daysDiff > 30) {
+      const user = await db
+        .selectFrom('users')
+        .select('current_subscription_tier')
+        .where('id', '=', req.user.id)
+        .where('deleted_at', 'is', null)
+        .executeTakeFirst();
+
+      if (!user || user.current_subscription_tier !== 'premium') {
+        throw new ApplicationError(
+          'Date range exceeds 30 days. Premium subscription required.',
+          403,
+          'SUBSCRIPTION_REQUIRED'
+        );
+      }
+    }
+
+    // Get member info
+    const memberInfo = await db
+      .selectFrom('users')
+      .select(['id', 'display_name', 'avatar_data', 'avatar_mime_type'])
+      .where('id', '=', target_user_id)
+      .where('deleted_at', 'is', null)
+      .executeTakeFirst();
+
+    if (!memberInfo) {
+      throw new ApplicationError('User not found', 404, 'NOT_FOUND');
+    }
+
+    // Build avatar URL (null if no avatar data)
+    const avatar_url = memberInfo.avatar_data
+      ? `/api/users/${memberInfo.id}/avatar`
+      : null;
+
+    // Get all active goals for this group
+    const goals = await db
+      .selectFrom('goals')
+      .select(['id', 'title', 'description', 'cadence', 'metric_type', 'target_value', 'unit'])
+      .where('group_id', '=', group_id)
+      .where('deleted_at', 'is', null)
+      .orderBy('created_at', 'asc')
+      .execute();
+
+    // Get all progress entries for this user in the date range (for goal summaries)
+    const goalIds = goals.map((g) => g.id);
+    let progressEntries: Array<{
+      id: string;
+      goal_id: string;
+      value: number | string;
+      period_start: string;
+    }> = [];
+
+    if (goalIds.length > 0) {
+      progressEntries = await db
+        .selectFrom('progress_entries')
+        .select(['id', 'goal_id', 'value', 'period_start'])
+        .where('goal_id', 'in', goalIds)
+        .where('user_id', '=', target_user_id)
+        .where('period_start', '>=', start_date)
+        .where('period_start', '<=', end_date)
+        .execute();
+    }
+
+    // Calculate goal summaries
+    const goal_summaries = goals.map((goal) => {
+      const goalEntries = progressEntries.filter((e) => e.goal_id === goal.id);
+
+      // Calculate completed
+      let completed: number;
+      if (goal.metric_type === 'binary') {
+        completed = goalEntries.length;
+      } else {
+        completed = goalEntries.reduce((sum, entry) => {
+          const val = typeof entry.value === 'string' ? parseFloat(entry.value) : Number(entry.value) || 0;
+          return sum + val;
+        }, 0);
+      }
+
+      // Calculate total based on cadence and date range for binary goals
+      let total: number;
+      if (goal.metric_type === 'binary') {
+        // For binary goals, total is number of periods in the timeframe * target_value
+        const periodsInRange = calculatePeriodsInRange(goal.cadence, start_date, end_date);
+        const targetPerPeriod = goal.target_value != null
+          ? (typeof goal.target_value === 'string' ? parseFloat(goal.target_value) : Number(goal.target_value))
+          : 1;
+        total = periodsInRange * targetPerPeriod;
+      } else {
+        // For numeric/duration goals, total is target_value per period * number of periods
+        const periodsInRange = calculatePeriodsInRange(goal.cadence, start_date, end_date);
+        const targetPerPeriod = goal.target_value != null
+          ? (typeof goal.target_value === 'string' ? parseFloat(goal.target_value) : Number(goal.target_value))
+          : 0;
+        total = periodsInRange * targetPerPeriod;
+      }
+
+      const percentage = total > 0 ? Math.min(100, Math.round((completed / total) * 100)) : 0;
+
+      return {
+        goal_id: goal.id,
+        title: goal.title,
+        emoji: null, // Goals don't have emoji in the schema, this is in metadata if needed
+        cadence: goal.cadence,
+        metric_type: goal.metric_type,
+        target_value: goal.target_value != null
+          ? (typeof goal.target_value === 'string' ? parseFloat(goal.target_value) : Number(goal.target_value))
+          : null,
+        unit: goal.unit,
+        completed: Math.round(completed * 100) / 100, // Round to 2 decimal places
+        total: Math.round(total * 100) / 100,
+        percentage,
+      };
+    });
+
+    // Decode cursor if provided
+    let cursorLoggedAt: Date | null = null;
+    let cursorEntryId: string | null = null;
+    if (cursor) {
+      try {
+        const decoded = JSON.parse(Buffer.from(cursor, 'base64').toString('utf-8'));
+        if (!decoded.logged_at || !decoded.entry_id) {
+          throw new Error('Invalid cursor structure');
+        }
+        cursorLoggedAt = new Date(decoded.logged_at);
+        cursorEntryId = decoded.entry_id;
+        if (isNaN(cursorLoggedAt.getTime())) {
+          throw new Error('Invalid cursor date');
+        }
+      } catch {
+        throw new ApplicationError('Invalid cursor', 400, 'INVALID_CURSOR');
+      }
+    }
+
+    // Query activity log with keyset pagination
+    // We need limit + 1 to determine if there's a next page
+    let activityQuery = db
+      .selectFrom('progress_entries as pe')
+      .innerJoin('goals as g', 'pe.goal_id', 'g.id')
+      .select([
+        'pe.id as entry_id',
+        'pe.goal_id',
+        'g.title as goal_title',
+        'g.metric_type',
+        'g.unit',
+        'pe.value',
+        'pe.period_start as entry_date',
+        'pe.logged_at',
+        'pe.note',
+        sql<number>`COUNT(*) OVER()`.as('total_count'),
+      ])
+      .where('g.group_id', '=', group_id)
+      .where('g.deleted_at', 'is', null)
+      .where('pe.user_id', '=', target_user_id)
+      .where('pe.period_start', '>=', start_date)
+      .where('pe.period_start', '<=', end_date);
+
+    // Apply cursor filter if provided (keyset pagination)
+    // (logged_at, id) < (cursor_logged_at, cursor_entry_id) is equivalent to:
+    // logged_at < cursor_logged_at OR (logged_at = cursor_logged_at AND id < cursor_entry_id)
+    if (cursorLoggedAt && cursorEntryId) {
+      activityQuery = activityQuery.where(({ eb, or, and }) =>
+        or([
+          eb('pe.logged_at', '<', cursorLoggedAt),
+          and([
+            eb('pe.logged_at', '=', cursorLoggedAt),
+            eb('pe.id', '<', cursorEntryId),
+          ]),
+        ])
+      );
+    }
+
+    const activityRows = await activityQuery
+      .orderBy('pe.logged_at', 'desc')
+      .orderBy('pe.id', 'desc')
+      .limit(limit + 1)
+      .execute();
+
+    // Determine pagination
+    const hasMore = activityRows.length > limit;
+    const activityResults = hasMore ? activityRows.slice(0, limit) : activityRows;
+    const totalInTimeframe = activityRows.length > 0 ? Number(activityRows[0].total_count) : 0;
+
+    // Build next cursor
+    let nextCursor: string | null = null;
+    if (hasMore && activityResults.length > 0) {
+      const lastEntry = activityResults[activityResults.length - 1];
+      const cursorData = {
+        logged_at: lastEntry.logged_at instanceof Date
+          ? lastEntry.logged_at.toISOString()
+          : lastEntry.logged_at,
+        entry_id: lastEntry.entry_id,
+      };
+      nextCursor = Buffer.from(JSON.stringify(cursorData)).toString('base64');
+    }
+
+    // Collect entry IDs for photo and reaction lookups
+    const entryIds = activityResults.map((a) => a.entry_id);
+
+    // Fetch photos for progress entries
+    const now = new Date();
+    const photosMap = new Map<string, {
+      id: string;
+      gcs_object_path: string;
+      width_px: number;
+      height_px: number;
+      expires_at: Date;
+    }>();
+
+    if (entryIds.length > 0) {
+      const photos = await db
+        .selectFrom('progress_photos')
+        .select(['id', 'progress_entry_id', 'gcs_object_path', 'width_px', 'height_px', 'expires_at', 'gcs_deleted_at'])
+        .where('progress_entry_id', 'in', entryIds)
+        .execute();
+
+      for (const photo of photos) {
+        const expiresAt = new Date(photo.expires_at);
+        if (expiresAt > now && !photo.gcs_deleted_at) {
+          photosMap.set(photo.progress_entry_id, {
+            id: photo.id,
+            gcs_object_path: photo.gcs_object_path,
+            width_px: photo.width_px,
+            height_px: photo.height_px,
+            expires_at: expiresAt,
+          });
+        }
+      }
+    }
+
+    // Generate signed URLs for photos
+    const signedUrls = new Map<string, string>();
+    const urlPromises = Array.from(photosMap.entries()).map(async ([entryId, photo]) => {
+      try {
+        const url = await getSignedUrl(photo.gcs_object_path);
+        signedUrls.set(entryId, url);
+      } catch (err) {
+        logger.warn('Failed to generate signed URL for photo', { entryId, error: err });
+      }
+    });
+    await Promise.all(urlPromises);
+
+    // Fetch reactions: find group_activities that link to these progress entries
+    const reactionsByEntry = new Map<string, Array<{ emoji: string; count: number }>>();
+
+    if (entryIds.length > 0) {
+      // Find group_activities with progress_logged type that reference these entries
+      const activities = await db
+        .selectFrom('group_activities')
+        .select(['id', 'metadata'])
+        .where('group_id', '=', group_id)
+        .where('activity_type', '=', 'progress_logged')
+        .execute();
+
+      // Map activity_id -> progress_entry_id
+      const activityToEntryMap = new Map<string, string>();
+      const activityIds: string[] = [];
+      for (const activity of activities) {
+        if (
+          activity.metadata &&
+          typeof activity.metadata === 'object' &&
+          'progress_entry_id' in activity.metadata
+        ) {
+          const progressEntryId = activity.metadata.progress_entry_id as string;
+          if (entryIds.includes(progressEntryId)) {
+            activityToEntryMap.set(activity.id, progressEntryId);
+            activityIds.push(activity.id);
+          }
+        }
+      }
+
+      // Fetch reactions for these activities
+      if (activityIds.length > 0) {
+        const reactions = await db
+          .selectFrom('activity_reactions')
+          .select(['activity_id', 'emoji', sql<number>`COUNT(*)`.as('count')])
+          .where('activity_id', 'in', activityIds)
+          .groupBy(['activity_id', 'emoji'])
+          .execute();
+
+        // Group by progress entry
+        for (const r of reactions) {
+          const entryId = activityToEntryMap.get(r.activity_id);
+          if (entryId) {
+            if (!reactionsByEntry.has(entryId)) {
+              reactionsByEntry.set(entryId, []);
+            }
+            reactionsByEntry.get(entryId)!.push({
+              emoji: r.emoji,
+              count: Number(r.count),
+            });
+          }
+        }
+      }
+    }
+
+    // Build activity log response
+    const activity_log = activityResults.map((row) => {
+      const photo = photosMap.get(row.entry_id);
+      const signedUrl = signedUrls.get(row.entry_id);
+      const reactions = reactionsByEntry.get(row.entry_id) || [];
+
+      // Sort reactions by count descending
+      reactions.sort((a, b) => b.count - a.count);
+
+      return {
+        entry_id: row.entry_id,
+        goal_id: row.goal_id,
+        goal_title: row.goal_title,
+        goal_emoji: null, // Goals don't have emoji field
+        value: typeof row.value === 'string' ? parseFloat(row.value) : Number(row.value),
+        unit: row.unit,
+        metric_type: row.metric_type,
+        entry_date: row.entry_date,
+        logged_at: row.logged_at,
+        note: row.note,
+        photo_url: photo && signedUrl ? signedUrl : null,
+        reactions,
+      };
+    });
+
+    res.status(200).json({
+      member: {
+        user_id: memberInfo.id,
+        display_name: memberInfo.display_name,
+        avatar_url,
+        role: targetMembership.role,
+        joined_at: targetMembership.joined_at,
+      },
+      timeframe: {
+        start_date,
+        end_date,
+      },
+      goal_summaries,
+      activity_log,
+      pagination: {
+        next_cursor: nextCursor,
+        has_more: hasMore,
+        total_in_timeframe: totalInTimeframe,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * Calculate the number of periods (days/weeks/months/years) within a date range.
+ */
+function calculatePeriodsInRange(cadence: string, startDate: string, endDate: string): number {
+  const start = new Date(startDate + 'T00:00:00Z');
+  const end = new Date(endDate + 'T00:00:00Z');
+
+  switch (cadence) {
+    case 'daily': {
+      const days = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+      return days;
+    }
+    case 'weekly': {
+      // Count number of weeks touched by the range
+      // A week is Monday-Sunday
+      const dayOfWeekStart = (start.getUTCDay() + 6) % 7; // Monday = 0
+      const dayOfWeekEnd = (end.getUTCDay() + 6) % 7;
+
+      const msPerDay = 1000 * 60 * 60 * 24;
+      const totalDays = Math.ceil((end.getTime() - start.getTime()) / msPerDay) + 1;
+
+      // Number of complete weeks + partial weeks
+      const daysToNextMonday = (7 - dayOfWeekStart) % 7;
+      if (totalDays <= daysToNextMonday + 1) {
+        return 1; // All in one week
+      }
+
+      const daysAfterFirstWeek = totalDays - daysToNextMonday - 1;
+      const completeWeeks = Math.floor(daysAfterFirstWeek / 7);
+      const remainingDays = daysAfterFirstWeek % 7;
+
+      return 1 + completeWeeks + (remainingDays > 0 || dayOfWeekEnd < 6 ? 1 : 0);
+    }
+    case 'monthly': {
+      // Count number of months touched
+      const startYear = start.getUTCFullYear();
+      const startMonth = start.getUTCMonth();
+      const endYear = end.getUTCFullYear();
+      const endMonth = end.getUTCMonth();
+      return (endYear - startYear) * 12 + (endMonth - startMonth) + 1;
+    }
+    case 'yearly': {
+      // Count number of years touched
+      return end.getUTCFullYear() - start.getUTCFullYear() + 1;
+    }
+    default:
+      return 1;
   }
 }
