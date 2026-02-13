@@ -7,6 +7,7 @@ import {
   GetNotificationsSchema,
   NotificationIdParamSchema,
 } from '../validations/notifications.js';
+import { logger } from '../utils/logger.js';
 
 // GET /api/notifications
 export async function getNotifications(
@@ -138,8 +139,7 @@ export async function getUnreadCount(
     const unreadCount = Number(unreadResult?.count ?? 0);
     const totalCount = Number(totalResult?.count ?? 0);
 
-    // Log for debugging
-    console.log(`[getUnreadCount] user=${req.user.id} total=${totalCount} unread=${unreadCount}`);
+    logger.debug('getUnreadCount', { userId: req.user.id, totalCount, unreadCount });
 
     res.status(200).json({
       unread_count: unreadCount,
@@ -160,8 +160,7 @@ export async function markAllAsRead(
       throw new ApplicationError('Unauthorized', 401, 'UNAUTHORIZED');
     }
 
-    // Log before marking
-    console.log(`[markAllAsRead] user=${req.user.id} - marking all as read`);
+    logger.debug('markAllAsRead', { userId: req.user.id });
 
     const result = await db
       .updateTable('user_notifications')
@@ -173,8 +172,7 @@ export async function markAllAsRead(
     const updateResult = Array.isArray(result) ? result[0] : result;
     const markedRead = Number((updateResult as { numUpdatedRows?: bigint })?.numUpdatedRows ?? 0);
 
-    // Log result
-    console.log(`[markAllAsRead] user=${req.user.id} - marked ${markedRead} notifications as read`);
+    logger.debug('markAllAsRead complete', { userId: req.user.id, markedRead });
 
     res.status(200).json({
       marked_read: markedRead,
@@ -197,7 +195,7 @@ export async function markAsRead(
 
     const { notification_id } = NotificationIdParamSchema.parse(req.params);
 
-    console.log(`[markAsRead] user=${req.user.id} notification_id=${notification_id}`);
+    logger.debug('markAsRead', { userId: req.user.id, notificationId: notification_id });
 
     const result = await db
       .updateTable('user_notifications')
@@ -211,7 +209,7 @@ export async function markAsRead(
       throw new ApplicationError('Notification not found', 404, 'NOT_FOUND');
     }
 
-    console.log(`[markAsRead] user=${req.user.id} marked notification ${result.id} as read`);
+    logger.debug('markAsRead complete', { userId: req.user.id, notificationId: result.id });
 
     res.status(200).json({
       id: result.id,

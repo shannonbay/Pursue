@@ -28,7 +28,7 @@ export interface CreateNotificationParams {
  */
 export async function createNotification(params: CreateNotificationParams): Promise<string | null> {
   try {
-    console.log(`[createNotification] Creating notification: user=${params.user_id} type=${params.type}`);
+    logger.debug('createNotification', { userId: params.user_id, type: params.type });
 
     const row = await db
       .insertInto('user_notifications')
@@ -46,7 +46,7 @@ export async function createNotification(params: CreateNotificationParams): Prom
 
     if (!row) return null;
 
-    console.log(`[createNotification] Created notification: id=${row.id} is_read=${row.is_read}`);
+    logger.debug('createNotification complete', { notificationId: row.id, isRead: row.is_read });
 
     // Send FCM in background - do not block
     sendFcmForNotification(row.id, params).catch((err) => {
