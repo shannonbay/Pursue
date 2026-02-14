@@ -39,6 +39,9 @@
     <!-- Visual feedback colors -->
     <color name="card_highlight">#E3F2FD</color>
 
+    <!-- Bottom nav: selected tab background (silver for contrast with blue icon) -->
+    <color name="bottom_nav_selected_bg">#C0C0C0</color>
+
     <!-- Offline state -->
     <color name="offline_dimmed">#80000000</color>
 

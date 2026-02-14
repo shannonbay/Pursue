@@ -38,6 +38,11 @@
         <item name="snackbarTextViewStyle">@style/Widget.Material3.Snackbar.TextView</item>
     </style>
 
+    <!-- Silver oval behind selected bottom nav icon (contrasts with blue icon) -->
+    <style name="Widget.Pursue.BottomNav.ActiveIndicator" parent="Widget.Material3.BottomNavigationView.ActiveIndicator">
+        <item name="android:color">@color/bottom_nav_selected_bg</item>
+    </style>
+
     <style name="ThemeOverlay.Pursue.Popup" parent="ThemeOverlay.AppCompat.Light">
         <item name="android:textColorPrimary">@color/on_surface</item>
         <item name="android:textColorSecondary">@color/on_surface_variant</item>
