@@ -1,18 +1,24 @@
 package app.getpursue.ui.adapters
 
+import android.graphics.drawable.Drawable
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
+import app.getpursue.data.network.ApiClient
 import app.getpursue.models.GroupActivity
 import app.getpursue.models.ReactionSummary
 import app.getpursue.utils.RelativeTimeUtils
 import app.getpursue.R
 import com.bumptech.glide.Glide
+import com.bumptech.glide.load.DataSource
+import com.bumptech.glide.load.engine.GlideException
 import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions
+import com.bumptech.glide.request.RequestListener
+import com.bumptech.glide.request.target.Target
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -140,6 +146,8 @@ class GroupActivityAdapter(
     class FooterViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView)
 
     class ActivityViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+        private val activityAvatar: ImageView = itemView.findViewById(R.id.activity_avatar)
+        private val activityAvatarFallback: TextView = itemView.findViewById(R.id.activity_avatar_fallback)
         private val activityText: TextView = itemView.findViewById(R.id.activity_text)
         private val activityTimestamp: TextView = itemView.findViewById(R.id.activity_timestamp)
         private val activityReactButton: View = itemView.findViewById(R.id.activity_react_button)
@@ -154,6 +162,49 @@ class GroupActivityAdapter(
             onPhotoClick: ((photoUrl: String) -> Unit)?,
             reactionListener: ReactionListener?
         ) {
+            // Avatar: same URL pattern as MembersTabFragment / MemberDetailFragment
+            val user = activity.user
+            if (user == null) {
+                activityAvatar.visibility = View.GONE
+                activityAvatarFallback.visibility = View.VISIBLE
+                activityAvatarFallback.text = "?"
+                activityAvatarFallback.contentDescription = itemView.context.getString(R.string.unknown)
+            } else {
+                activityAvatar.visibility = View.VISIBLE
+                activityAvatarFallback.visibility = View.GONE
+                val imageUrl = "${ApiClient.getBaseUrl()}/users/${user.id}/avatar"
+                activityAvatar.contentDescription = itemView.context.getString(R.string.content_description_member_avatar, user.display_name)
+                Glide.with(itemView.context)
+                    .load(imageUrl)
+                    .diskCacheStrategy(DiskCacheStrategy.ALL)
+                    .circleCrop()
+                    .error(R.drawable.ic_pursue_logo)
+                    .listener(object : RequestListener<Drawable> {
+                        override fun onLoadFailed(
+                            e: GlideException?,
+                            model: Any?,
+                            target: Target<Drawable>,
+                            isFirstResource: Boolean
+                        ): Boolean {
+                            activityAvatar.post {
+                                activityAvatar.visibility = View.GONE
+                                activityAvatarFallback.visibility = View.VISIBLE
+                                val firstLetter = user.display_name.firstOrNull()?.uppercaseChar() ?: '?'
+                                activityAvatarFallback.text = firstLetter.toString()
+                            }
+                            return false
+                        }
+                        override fun onResourceReady(
+                            resource: Drawable,
+                            model: Any,
+                            target: Target<Drawable>?,
+                            dataSource: DataSource,
+                            isFirstResource: Boolean
+                        ): Boolean = false
+                    })
+                    .into(activityAvatar)
+            }
+
             // Format activity text based on type
             val activityMessage = formatActivityMessage(activity, currentUserId)
             activityText.text = activityMessage

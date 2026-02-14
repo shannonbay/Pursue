@@ -17,26 +17,64 @@
         android:orientation="vertical"
         android:padding="16dp">
 
-        <!-- Activity Text -->
-        <TextView
-            android:id="@+id/activity_text"
+        <!-- Top row: Avatar + text -->
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textAppearance="?attr/textAppearanceBodyMedium"
-            android:textColor="@color/on_surface"
-            tools:text="✓ Alex completed '30 min run'" />
+            android:orientation="horizontal">
 
-        <!-- Timestamp -->
-        <TextView
-            android:id="@+id/activity_timestamp"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:textAppearance="?attr/textAppearanceBodySmall"
-            android:textColor="@color/on_surface_variant"
-            tools:text="2 hours ago" />
+            <!-- Avatar -->
+            <ImageView
+                android:id="@+id/activity_avatar"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:layout_gravity="top"
+                android:scaleType="centerCrop"
+                android:background="@drawable/circle_background"
+                tools:src="@android:drawable/ic_menu_gallery" />
 
-        <!-- Progress photo (shown for progress_logged with photo) -->
+            <!-- Avatar Fallback (initials when no photo) -->
+            <TextView
+                android:id="@+id/activity_avatar_fallback"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:layout_gravity="top"
+                android:textSize="20sp"
+                android:gravity="center"
+                android:background="@drawable/circle_background"
+                android:textColor="@color/on_primary"
+                android:visibility="gone"
+                tools:text="A"
+                tools:visibility="visible" />
+
+            <!-- Text content -->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="12dp"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/activity_text"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textAppearance="?attr/textAppearanceBodyMedium"
+                    android:textColor="@color/on_surface"
+                    tools:text="✓ Alex completed '30 min run'" />
+
+                <TextView
+                    android:id="@+id/activity_timestamp"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:textAppearance="?attr/textAppearanceBodySmall"
+                    android:textColor="@color/on_surface_variant"
+                    tools:text="2 hours ago" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Progress photo: full card width (below avatar row) -->
         <com.google.android.material.imageview.ShapeableImageView
             android:id="@+id/activity_photo"
             android:layout_width="match_parent"
