@@ -32,6 +32,9 @@
     <!-- Shimmer colors -->
     <color name="shimmer_base">#E0E0E0</color>
     <color name="shimmer_highlight">#F5F5F5</color>
+
+    <!-- Goal progress colors -->
+    <color name="goal_incomplete">#E0E0E0</color>
     
     <!-- Visual feedback colors -->
     <color name="card_highlight">#E3F2FD</color>

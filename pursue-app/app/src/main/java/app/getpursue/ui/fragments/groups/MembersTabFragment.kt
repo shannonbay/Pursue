@@ -316,6 +316,17 @@ class MembersTabFragment : Fragment() {
 
         lastActive.text = RelativeTimeUtils.formatRelativeTime(requireContext(), member.joined_at)
 
+        // Click to navigate to member detail screen
+        view.setOnClickListener {
+            val gid = groupId ?: return@setOnClickListener
+            val groupName = (requireActivity() as? GroupDetailActivity)?.intent?.getStringExtra(
+                GroupDetailActivity.Companion.EXTRA_GROUP_NAME) ?: ""
+            requireActivity().supportFragmentManager.commit {
+                replace(R.id.fragment_container, MemberDetailFragment.newInstance(gid, member.user_id, groupName))
+                addToBackStack(null)
+            }
+        }
+
         if (isAdmin) {
             view.setOnLongClickListener {
                 showMemberContextMenu(view, member)

@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginHorizontal="16dp"
+    android:layout_marginVertical="4dp"
+    app:cardCornerRadius="12dp"
+    app:cardElevation="1dp"
+    app:strokeWidth="0dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <!-- Goal Info Row -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <!-- Goal Emoji -->
+            <TextView
+                android:id="@+id/entry_goal_emoji"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="20sp"
+                tools:text="📖" />
+
+            <!-- Goal Title -->
+            <TextView
+                android:id="@+id/entry_goal_title"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="8dp"
+                android:textAppearance="?attr/textAppearanceBodyLarge"
+                android:textColor="@color/on_surface"
+                android:ellipsize="end"
+                android:maxLines="1"
+                tools:text="Read 50 pages" />
+
+            <!-- Value -->
+            <TextView
+                android:id="@+id/entry_value"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:textAppearance="?attr/textAppearanceBodyMedium"
+                android:textColor="@color/primary"
+                android:textStyle="bold"
+                tools:text="20 pg" />
+
+        </LinearLayout>
+
+        <!-- Date Row -->
+        <TextView
+            android:id="@+id/entry_date"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:textAppearance="?attr/textAppearanceBodySmall"
+            android:textColor="@color/on_surface_variant"
+            tools:text="Thu 12 Feb · 2 days ago" />
+
+        <!-- Note (optional, truncated to 1 line) -->
+        <TextView
+            android:id="@+id/entry_note"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:textAppearance="?attr/textAppearanceBodyMedium"
+            android:textColor="@color/on_surface"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:visibility="gone"
+            tools:text="Finally finished chapter 3"
+            tools:visibility="visible" />
+
+        <!-- Photo Thumbnail (optional) -->
+        <com.google.android.material.imageview.ShapeableImageView
+            android:id="@+id/entry_photo"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:visibility="gone"
+            android:adjustViewBounds="true"
+            android:contentDescription="@string/progress_photo_content_description"
+            app:shapeAppearanceOverlay="@style/ShapeAppearance.App.Corner.Small"
+            tools:visibility="visible"
+            tools:src="@android:drawable/ic_menu_gallery" />
+
+        <!-- Reactions Row -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <!-- Reactions Summary -->
+            <LinearLayout
+                android:id="@+id/reactions_container"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:visibility="gone">
+
+                <TextView
+                    android:id="@+id/reactions_emojis"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textSize="16sp"
+                    tools:text="🔥💪" />
+
+                <TextView
+                    android:id="@+id/reactions_count"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="6dp"
+                    android:textAppearance="?attr/textAppearanceBodySmall"
+                    android:textColor="@color/on_surface_variant"
+                    tools:text="2" />
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+</com.google.android.material.card.MaterialCardView>

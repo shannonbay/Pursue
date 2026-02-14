@@ -1,0 +1,270 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.coordinatorlayout.widget.CoordinatorLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/background_light">
+
+    <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+        android:id="@+id/swipe_refresh"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <androidx.core.widget.NestedScrollView
+            android:id="@+id/nested_scroll_view"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:fillViewport="true">
+
+            <LinearLayout
+                android:id="@+id/content_container"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingBottom="80dp">
+
+                <!-- Member Header Card -->
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/member_header_card"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="16dp"
+                    app:cardCornerRadius="12dp"
+                    app:cardElevation="1dp"
+                    app:strokeWidth="0dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:padding="16dp">
+
+                        <!-- Avatar -->
+                        <ImageView
+                            android:id="@+id/member_avatar"
+                            android:layout_width="56dp"
+                            android:layout_height="56dp"
+                            android:scaleType="centerCrop"
+                            android:background="@drawable/circle_background"
+                            tools:src="@android:drawable/ic_menu_gallery" />
+
+                        <!-- Avatar Fallback (first letter) -->
+                        <TextView
+                            android:id="@+id/member_avatar_fallback"
+                            android:layout_width="56dp"
+                            android:layout_height="56dp"
+                            android:textSize="24sp"
+                            android:gravity="center"
+                            android:background="@drawable/circle_background"
+                            android:textColor="@color/on_primary"
+                            android:visibility="gone"
+                            tools:text="A"
+                            tools:visibility="visible" />
+
+                        <!-- Member Info -->
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:layout_marginStart="16dp"
+                            android:orientation="vertical">
+
+                            <!-- Display Name -->
+                            <TextView
+                                android:id="@+id/member_display_name"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:textAppearance="?attr/textAppearanceTitleLarge"
+                                android:textColor="@color/on_surface"
+                                tools:text="Alex Johnson" />
+
+                            <!-- Role and Joined Date -->
+                            <LinearLayout
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="4dp"
+                                android:orientation="horizontal"
+                                android:gravity="center_vertical">
+
+                                <!-- Role Badge -->
+                                <TextView
+                                    android:id="@+id/member_role_badge"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:textAppearance="?attr/textAppearanceBodySmall"
+                                    android:textColor="@color/on_surface_variant"
+                                    tools:text="Member" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginHorizontal="6dp"
+                                    android:text="·"
+                                    android:textAppearance="?attr/textAppearanceBodySmall"
+                                    android:textColor="@color/on_surface_variant" />
+
+                                <!-- Joined Date -->
+                                <TextView
+                                    android:id="@+id/member_joined_date"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:textAppearance="?attr/textAppearanceBodySmall"
+                                    android:textColor="@color/on_surface_variant"
+                                    tools:text="Joined Jan 26" />
+
+                            </LinearLayout>
+
+                        </LinearLayout>
+
+                    </LinearLayout>
+
+                </com.google.android.material.card.MaterialCardView>
+
+                <!-- Timeframe Chips -->
+                <HorizontalScrollView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:scrollbars="none"
+                    android:paddingHorizontal="16dp"
+                    android:clipToPadding="false">
+
+                    <com.google.android.material.chip.ChipGroup
+                        android:id="@+id/timeframe_chip_group"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        app:singleSelection="true"
+                        app:selectionRequired="true" />
+
+                </HorizontalScrollView>
+
+                <!-- Goal Overview Section -->
+                <TextView
+                    android:id="@+id/goal_overview_header"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="16dp"
+                    android:layout_marginTop="24dp"
+                    android:layout_marginEnd="16dp"
+                    android:text="@string/goal_overview_section"
+                    android:textAppearance="?attr/textAppearanceTitleMedium"
+                    android:textColor="@color/on_surface"
+                    android:textStyle="bold" />
+
+                <!-- Goal Summaries Container -->
+                <LinearLayout
+                    android:id="@+id/goal_summaries_container"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:orientation="vertical" />
+
+                <!-- Activity Log Section -->
+                <TextView
+                    android:id="@+id/activity_log_header"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="16dp"
+                    android:layout_marginTop="24dp"
+                    android:layout_marginEnd="16dp"
+                    android:text="@string/activity_log_section"
+                    android:textAppearance="?attr/textAppearanceTitleMedium"
+                    android:textColor="@color/on_surface"
+                    android:textStyle="bold" />
+
+                <!-- Activity Log RecyclerView -->
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/activity_recycler_view"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:nestedScrollingEnabled="false"
+                    tools:listitem="@layout/item_member_activity_entry" />
+
+                <!-- Loading More Indicator -->
+                <ProgressBar
+                    android:id="@+id/loading_more_indicator"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:layout_gravity="center_horizontal"
+                    android:layout_marginTop="16dp"
+                    android:visibility="gone"
+                    tools:visibility="visible" />
+
+                <!-- Activity Empty State (inline) -->
+                <LinearLayout
+                    android:id="@+id/activity_empty_state"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="32dp"
+                    android:gravity="center"
+                    android:orientation="vertical"
+                    android:paddingHorizontal="32dp"
+                    android:visibility="gone">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="📭"
+                        android:textSize="48sp" />
+
+                    <TextView
+                        android:id="@+id/activity_empty_title"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp"
+                        android:text="@string/empty_member_activity_title"
+                        android:textAppearance="?attr/textAppearanceTitleMedium"
+                        android:textColor="@color/on_surface" />
+
+                    <TextView
+                        android:id="@+id/activity_empty_message"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:gravity="center"
+                        android:textAppearance="?attr/textAppearanceBodyMedium"
+                        android:textColor="@color/on_surface_variant"
+                        tools:text="Alex hasn't logged any progress in this period." />
+
+                </LinearLayout>
+
+            </LinearLayout>
+
+        </androidx.core.widget.NestedScrollView>
+
+    </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
+
+    <!-- Loading Skeleton -->
+    <LinearLayout
+        android:id="@+id/skeleton_container"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:padding="16dp"
+        android:visibility="gone">
+
+        <include
+            layout="@layout/skeleton_member_detail"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+
+    </LinearLayout>
+
+    <!-- Error State -->
+    <FrameLayout
+        android:id="@+id/error_state_container"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="gone" />
+
+    <!-- Empty State (full screen for when no data at all) -->
+    <FrameLayout
+        android:id="@+id/empty_state_container"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="gone" />
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>
