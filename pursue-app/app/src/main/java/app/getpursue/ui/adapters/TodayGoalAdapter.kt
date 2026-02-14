@@ -141,7 +141,11 @@ class TodayGoalAdapter(
             textView.text = "$icon ${group.group_name} (${group.completed_count}/${group.total_count})"
             textView.textSize = 16f
             textView.setTextColor(ContextCompat.getColor(itemView.context, R.color.on_surface))
-            textView.setPadding(16, 16, 16, 8)
+            // Match goal card alignment: card margin 16dp + card inner padding 16dp = 32dp
+            val horizontalPadding = itemView.resources.getDimensionPixelSize(R.dimen.today_group_header_horizontal_padding)
+            val topPadding = itemView.resources.getDimensionPixelSize(R.dimen.today_group_header_padding_top)
+            val bottomPadding = itemView.resources.getDimensionPixelSize(R.dimen.today_group_header_padding_bottom)
+            textView.setPadding(horizontalPadding, topPadding, horizontalPadding, bottomPadding)
         }
     }
 
