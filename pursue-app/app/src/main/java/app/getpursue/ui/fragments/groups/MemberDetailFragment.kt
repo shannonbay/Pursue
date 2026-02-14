@@ -32,8 +32,13 @@ import app.getpursue.ui.activities.GroupDetailActivity
 import app.getpursue.ui.adapters.MemberActivityAdapter
 import app.getpursue.ui.dialogs.FullscreenPhotoDialog
 import app.getpursue.ui.views.ErrorStateView
+import android.graphics.drawable.Drawable
 import com.bumptech.glide.Glide
+import com.bumptech.glide.load.DataSource
+import com.bumptech.glide.load.engine.GlideException
 import com.bumptech.glide.load.engine.DiskCacheStrategy
+import com.bumptech.glide.request.RequestListener
+import com.bumptech.glide.request.target.Target
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.card.MaterialCardView
@@ -404,22 +409,40 @@ class MemberDetailFragment : Fragment() {
         // Display name
         memberDisplayName.text = member.display_name
         
-        // Avatar
-        if (!member.avatar_url.isNullOrBlank()) {
-            memberAvatar.visibility = View.VISIBLE
-            memberAvatarFallback.visibility = View.GONE
-            Glide.with(requireContext())
-                .load(member.avatar_url)
-                .diskCacheStrategy(DiskCacheStrategy.ALL)
-                .circleCrop()
-                .error(R.drawable.ic_pursue_logo)
-                .into(memberAvatar)
-        } else {
-            memberAvatar.visibility = View.GONE
-            memberAvatarFallback.visibility = View.VISIBLE
-            val firstLetter = member.display_name.firstOrNull()?.uppercaseChar() ?: '?'
-            memberAvatarFallback.text = firstLetter.toString()
-        }
+        // Avatar: use same URL as MembersTabFragment so Glide uses authenticated request
+        memberAvatar.visibility = View.VISIBLE
+        memberAvatarFallback.visibility = View.GONE
+        val imageUrl = "${ApiClient.getBaseUrl()}/users/${member.user_id}/avatar"
+        Glide.with(requireContext())
+            .load(imageUrl)
+            .diskCacheStrategy(DiskCacheStrategy.ALL)
+            .circleCrop()
+            .error(R.drawable.ic_pursue_logo)
+            .listener(object : RequestListener<Drawable> {
+                override fun onLoadFailed(
+                    e: GlideException?,
+                    model: Any?,
+                    target: Target<Drawable>,
+                    isFirstResource: Boolean
+                ): Boolean {
+                    // No avatar or load failed: show initials fallback
+                    memberAvatar.post {
+                        memberAvatar.visibility = View.GONE
+                        memberAvatarFallback.visibility = View.VISIBLE
+                        val firstLetter = member.display_name.firstOrNull()?.uppercaseChar() ?: '?'
+                        memberAvatarFallback.text = firstLetter.toString()
+                    }
+                    return false
+                }
+                override fun onResourceReady(
+                    resource: Drawable,
+                    model: Any,
+                    target: Target<Drawable>?,
+                    dataSource: DataSource,
+                    isFirstResource: Boolean
+                ): Boolean = false
+            })
+            .into(memberAvatar)
         memberAvatar.contentDescription = getString(R.string.content_description_member_avatar, member.display_name)
         
         // Role badge
