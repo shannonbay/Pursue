@@ -407,13 +407,9 @@ docker build -t gcr.io/your-project/pursue-server .
 docker push gcr.io/your-project/pursue-server
 
 # 3. Deploy to Cloud Run
-gcloud run deploy pursue-server \
-  --image gcr.io/your-project/pursue-server \
-  --platform managed \
-  --region us-central1 \
-  --allow-unauthenticated \
-  --set-env-vars DATABASE_URL="postgresql://..." \
-  --set-env-vars JWT_SECRET="..."
+gcloud builds submit --tag australia-southeast1-docker.pkg.dev/pursue-485005/pursue-repo/pursue-backend
+
+gcloud run deploy pursue-api --image australia-southeast1-docker.pkg.dev/pursue-485005/pursue-repo/pursue-backend --platform managed --region australia-southeast1 --allow-unauthenticated
 
 # Output:
 # Service URL: https://pursue-server-abc123.run.app

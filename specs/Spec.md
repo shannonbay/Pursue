@@ -1441,13 +1441,13 @@ CREATE TABLE group_member_keys (
 
 ## 14. Open Questions
 
-- [ ] Should we allow editing progress entries after logging?
-- [ ] How to handle time zones for daily goals?
-- [ ] Should group creator be able to transfer ownership?
-- [ ] Rate limit for progress logging (prevent spam)?
-- [ ] Maximum group size? (100 members?)
-- [ ] Should we support nested/hierarchical goals?
-- [ ] Email notifications in addition to push?
+- [ ] Should we allow editing progress entries after logging? A: Yes
+- [ ] How to handle time zones for daily goals? 
+- [ ] Should group creator be able to transfer ownership? A: Automatic when they leave the group
+- [ ] Rate limit for progress logging (prevent spam)? A: 50 requests per minute per user
+- [ ] Maximum group size? A: 50 members
+- [ ] Should we support nested/hierarchical goals? A: No
+- [ ] Email notifications in addition to push? A: No
 
 ---
 
