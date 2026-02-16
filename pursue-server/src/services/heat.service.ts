@@ -253,9 +253,20 @@ export async function calculateGroupHeat(
 
   // 4. Calculate delta and update heat score
   const delta = yesterdayGcr - baseline;
-  const rawNewScore = currentScore + delta * SENSITIVITY;
+
+  // GCR bonus: rewards absolute performance, tapers as score approaches 100
+  // At score 50 with 100% GCR: +2.5 pts. At score 90: +0.5 pts.
+  const GCR_BONUS_FACTOR = 5;
+  const headroom = (100 - currentScore) / 100;
+  const gcrBonus = yesterdayGcr * GCR_BONUS_FACTOR * headroom;
+
+  const rawNewScore = currentScore + delta * SENSITIVITY + gcrBonus;
   const clampedScore = Math.max(0, Math.min(100, rawNewScore));
-  const decayedScore = clampedScore * DECAY_FACTOR;
+
+  // Scale decay by inverse of GCR: higher completion = less decay
+  // GCR=1.0 -> no decay, GCR=0.5 -> 1% decay, GCR=0.0 -> full 2% decay
+  const adjustedDecay = 1 - (1 - DECAY_FACTOR) * (1 - yesterdayGcr);
+  const decayedScore = clampedScore * adjustedDecay;
   const finalScore = Math.round(decayedScore * 100) / 100; // 2 decimal places
 
   // 5. Determine new tier
