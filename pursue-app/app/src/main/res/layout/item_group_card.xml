@@ -17,7 +17,7 @@
         android:orientation="vertical"
         android:padding="16dp">
 
-        <!-- Top row: Icon, Name, Arrow -->
+        <!-- Top row: Icon, Name, Badge, Arrow -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -62,7 +62,7 @@
                 android:textColor="@color/on_surface"
                 tools:text="Morning Runners" />
 
-            <!-- Read Only Badge (after group_name, before arrow) -->
+            <!-- Read Only Badge -->
             <TextView
                 android:id="@+id/read_only_badge"
                 android:layout_width="wrap_content"
@@ -89,38 +89,66 @@
 
         </LinearLayout>
 
-        <!-- Member and Goal Count -->
-        <TextView
-            android:id="@+id/member_goal_count"
+        <!-- Bottom section: Left content + Heat Icon on right -->
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            android:textAppearance="?attr/textAppearanceBodyMedium"
-            android:textColor="@color/on_surface_variant"
-            tools:text="8 members · 5 active goals" />
+            android:orientation="horizontal"
+            android:gravity="top">
 
-        <!-- Progress Bar -->
-        <ProgressBar
-            android:id="@+id/progress_bar"
-            style="?android:attr/progressBarStyleHorizontal"
-            android:layout_width="match_parent"
-            android:layout_height="4dp"
-            android:layout_marginTop="8dp"
-            android:progress="80"
-            android:progressTint="@color/primary"
-            android:progressBackgroundTint="@color/surface_variant"
-            android:max="100"
-            tools:progress="80" />
+            <!-- Left content: Member count, Progress bar, Last activity -->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
 
-        <!-- Last Activity Timestamp -->
-        <TextView
-            android:id="@+id/last_activity"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:textAppearance="?attr/textAppearanceBodySmall"
-            android:textColor="@color/on_surface_variant"
-            tools:text="2 hours ago" />
+                <!-- Member and Goal Count -->
+                <TextView
+                    android:id="@+id/member_goal_count"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textAppearance="?attr/textAppearanceBodyMedium"
+                    android:textColor="@color/on_surface_variant"
+                    tools:text="8 members · 5 active goals" />
+
+                <!-- Progress Bar -->
+                <ProgressBar
+                    android:id="@+id/progress_bar"
+                    style="?android:attr/progressBarStyleHorizontal"
+                    android:layout_width="match_parent"
+                    android:layout_height="4dp"
+                    android:layout_marginTop="8dp"
+                    android:progress="80"
+                    android:progressTint="@color/primary"
+                    android:progressBackgroundTint="@color/surface_variant"
+                    android:max="100"
+                    tools:progress="80" />
+
+                <!-- Last Activity Timestamp -->
+                <TextView
+                    android:id="@+id/last_activity"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:textAppearance="?attr/textAppearanceBodySmall"
+                    android:textColor="@color/on_surface_variant"
+                    tools:text="2 hours ago" />
+
+            </LinearLayout>
+
+            <!-- Heat Icon (large, on the right) -->
+            <ImageView
+                android:id="@+id/heat_icon"
+                android:layout_width="60dp"
+                android:layout_height="60dp"
+                android:layout_marginStart="12dp"
+                android:visibility="gone"
+                tools:src="@drawable/flame5"
+                tools:visibility="visible" />
+
+        </LinearLayout>
 
     </LinearLayout>
 

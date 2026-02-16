@@ -21,6 +21,7 @@ import {
   getSubscriptionEligibility,
 } from '../services/subscription.service.js';
 import { deleteUserPhotos } from '../services/gcs.service.js';
+import { tierName } from '../services/heat.service.js';
 
 // Temporary debug logging for avatar endpoints
 const DEBUG_AVATAR = process.env.DEBUG_AVATAR === 'true';
@@ -616,11 +617,12 @@ export async function getUserGroups(
     const limit = Math.min(query.limit ?? 50, 100); // Clamp to max 100
     const offset = query.offset ?? 0;
 
-    // Get user's groups with member count and role
+    // Get user's groups with member count, role, and heat data
     // Use subquery to get member count for each group
     const groups = await db
       .selectFrom('group_memberships')
       .innerJoin('groups', 'groups.id', 'group_memberships.group_id')
+      .leftJoin('group_heat', 'group_heat.group_id', 'groups.id')
       .select([
         'groups.id',
         'groups.name',
@@ -637,6 +639,12 @@ export async function getUserGroups(
            WHERE gm.group_id = groups.id
              AND gm.status = 'active')
         `.as('member_count'),
+        // Heat data
+        'group_heat.heat_score',
+        'group_heat.heat_tier',
+        'group_heat.streak_days',
+        'group_heat.peak_score',
+        'group_heat.last_calculated_at',
       ])
       .where('group_memberships.user_id', '=', req.user.id)
       .orderBy('group_memberships.joined_at', 'desc')
@@ -684,6 +692,14 @@ export async function getUserGroups(
         role: g.role,
         joined_at: g.joined_at,
         is_read_only: keptGroupId !== null && g.id !== keptGroupId,
+        heat: {
+          score: g.heat_score != null ? Number(g.heat_score) : 0,
+          tier: g.heat_tier ?? 0,
+          tier_name: tierName(g.heat_tier ?? 0),
+          streak_days: g.streak_days ?? 0,
+          peak_score: g.peak_score != null ? Number(g.peak_score) : 0,
+          last_calculated_at: g.last_calculated_at?.toISOString() ?? null,
+        },
       })),
       total,
     });

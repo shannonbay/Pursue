@@ -198,7 +198,8 @@ async function createSchema(db: Kysely<Database>) {
       icon_mime_type VARCHAR(50),
       creator_user_id UUID NOT NULL REFERENCES users(id),
       created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-      updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+      updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+      deleted_at TIMESTAMP WITH TIME ZONE
     )
   `.execute(db);
 
@@ -223,6 +224,12 @@ async function createSchema(db: Kysely<Database>) {
         WHERE table_name = 'groups' AND column_name = 'icon_mime_type'
       ) THEN
         ALTER TABLE groups ADD COLUMN icon_mime_type VARCHAR(50);
+      END IF;
+      IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = 'groups' AND column_name = 'deleted_at'
+      ) THEN
+        ALTER TABLE groups ADD COLUMN deleted_at TIMESTAMP WITH TIME ZONE;
       END IF;
     END $$;
   `.execute(db);
@@ -500,6 +507,38 @@ async function createSchema(db: Kysely<Database>) {
   `.execute(db);
   await sql`CREATE INDEX IF NOT EXISTS idx_upload_log_user_time ON photo_upload_log(user_id, uploaded_at DESC)`.execute(db);
 
+  // Create group_heat table
+  await sql`
+    CREATE TABLE IF NOT EXISTS group_heat (
+      group_id UUID PRIMARY KEY REFERENCES groups(id) ON DELETE CASCADE,
+      heat_score DECIMAL(5,2) NOT NULL DEFAULT 0.00,
+      heat_tier SMALLINT NOT NULL DEFAULT 0,
+      last_calculated_at TIMESTAMP WITH TIME ZONE,
+      streak_days INTEGER NOT NULL DEFAULT 0,
+      peak_score DECIMAL(5,2) NOT NULL DEFAULT 0.00,
+      peak_date DATE,
+      created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+      updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    )
+  `.execute(db);
+
+  // Create group_daily_gcr table
+  await sql`
+    CREATE TABLE IF NOT EXISTS group_daily_gcr (
+      id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+      group_id UUID NOT NULL REFERENCES groups(id) ON DELETE CASCADE,
+      date DATE NOT NULL,
+      total_possible INTEGER NOT NULL,
+      total_completed INTEGER NOT NULL,
+      gcr DECIMAL(5,4) NOT NULL,
+      member_count INTEGER NOT NULL,
+      goal_count INTEGER NOT NULL,
+      created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+      UNIQUE(group_id, date)
+    )
+  `.execute(db);
+  await sql`CREATE INDEX IF NOT EXISTS idx_gcr_group_date ON group_daily_gcr(group_id, date DESC)`.execute(db);
+
   // Fix FK constraints for goals (CREATE TABLE IF NOT EXISTS won't update existing constraints)
   await sql`
     ALTER TABLE goals DROP CONSTRAINT IF EXISTS goals_created_by_user_id_fkey;
@@ -539,6 +578,8 @@ async function cleanDatabase(db: Kysely<Database>) {
       progress_entries,
       goals,
       group_activities,
+      group_heat,
+      group_daily_gcr,
       group_memberships,
       invite_codes,
       groups,

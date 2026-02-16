@@ -13,5 +13,6 @@ data class GroupDetailResponse(
     val creator_user_id: String,
     val member_count: Int,
     val created_at: String, // ISO 8601 timestamp
-    val user_role: String // "creator", "admin", or "member"
+    val user_role: String, // "creator", "admin", or "member"
+    val heat: GroupHeat? = null // Group heat momentum data (with extended GCR values)
 )

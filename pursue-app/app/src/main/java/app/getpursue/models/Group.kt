@@ -19,5 +19,6 @@ data class Group(
     val role: String, // "creator", "admin", or "member"
     val joined_at: String, // ISO 8601 timestamp
     val updated_at: String?, // ISO 8601 timestamp for cache invalidation
-    val is_read_only: Boolean = false // true when free user is over limit and this is not their kept group
+    val is_read_only: Boolean = false, // true when free user is over limit and this is not their kept group
+    val heat: GroupHeat? = null // Group heat momentum data
 )

@@ -1747,6 +1747,36 @@ object ApiClient {
         executeRequest<Unit>(request, getClient()) { Unit }
     }
 
+    // --- Group Heat Endpoints ---
+
+    /**
+     * Get heat history for a group.
+     * Premium users get full history and stats. Free users get only current heat.
+     *
+     * GET /api/groups/:group_id/heat/history?days=30
+     *
+     * @param accessToken JWT access token for authentication
+     * @param groupId Group ID to get heat history for
+     * @param days Number of days of history to retrieve (1-90, default 30)
+     * @return HeatHistoryResponse with current, history (premium), and stats (premium)
+     * @throws ApiException on error (403 not member, 404 group not found)
+     */
+    suspend fun getHeatHistory(
+        accessToken: String,
+        groupId: String,
+        days: Int = 30
+    ): HeatHistoryResponse {
+        val request = Request.Builder()
+            .url("$baseUrl/groups/$groupId/heat/history?days=$days")
+            .get()
+            .addHeader("Content-Type", "application/json")
+            .build()
+
+        return executeRequest(request, getClient()) { responseBody ->
+            gson.fromJson(responseBody, HeatHistoryResponse::class.java)
+        }
+    }
+
     /**
      * Execute an HTTP request and parse the response.
      */
@@ -2353,6 +2383,38 @@ data class MemberProgressPagination(
     val next_cursor: String?,
     val has_more: Boolean,
     val total_in_timeframe: Int
+)
+
+// --- Group Heat DTOs ---
+
+/** GET /api/groups/:group_id/heat/history response */
+data class HeatHistoryResponse(
+    val group_id: String,
+    val current: HeatCurrent,
+    val history: List<HeatHistoryItem>?,
+    val stats: HeatStats?,
+    val premium_required: Boolean
+)
+
+data class HeatCurrent(
+    val score: Float,
+    val tier: Int,
+    val tier_name: String
+)
+
+data class HeatHistoryItem(
+    val date: String,
+    val score: Float,
+    val tier: Int,
+    val gcr: Float
+)
+
+data class HeatStats(
+    val avg_score_30d: Float?,
+    val peak_score: Float?,
+    val peak_date: String?,
+    val days_at_supernova: Int?,
+    val longest_increase_streak: Int?
 )
 
 /**

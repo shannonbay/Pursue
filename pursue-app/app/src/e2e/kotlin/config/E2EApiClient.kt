@@ -34,6 +34,7 @@ import app.getpursue.data.network.UnreadCountResponse
 import app.getpursue.data.network.MarkAllReadResponse
 import app.getpursue.data.network.MarkNotificationReadResponse
 import app.getpursue.data.network.MemberProgressResponse
+import app.getpursue.data.network.HeatHistoryResponse
 import app.getpursue.models.GroupsResponse
 import app.getpursue.models.GroupDetailResponse
 import app.getpursue.models.GroupMembersResponse
@@ -464,5 +465,16 @@ class E2EApiClient(private val context: Context) {
     suspend fun deleteNotification(accessToken: String, notificationId: String) {
         storeTokenIfPresent(accessToken)
         ApiClient.deleteNotification("", notificationId)
+    }
+
+    // --- Group Heat Endpoints ---
+
+    suspend fun getHeatHistory(
+        accessToken: String,
+        groupId: String,
+        days: Int = 30
+    ): HeatHistoryResponse {
+        storeTokenIfPresent(accessToken)
+        return ApiClient.getHeatHistory("", groupId, days)
     }
 }

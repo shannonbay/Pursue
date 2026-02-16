@@ -52,6 +52,7 @@ import app.getpursue.ui.activities.GroupDetailActivity
 import app.getpursue.ui.fragments.goals.CreateGoalFragment
 import app.getpursue.ui.views.IconPickerBottomSheet
 import app.getpursue.ui.views.InviteMembersBottomSheet
+import app.getpursue.utils.HeatUtils
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -114,6 +115,11 @@ class GroupDetailFragment : Fragment() {
     private lateinit var groupIconLetter: TextView
     private lateinit var subtitleMembersGoals: TextView
     private lateinit var createdBy: TextView
+    private lateinit var heatSection: View
+    private lateinit var heatIconDetail: ImageView
+    private lateinit var heatTierLabel: TextView
+    private lateinit var heatScoreLabel: TextView
+    private lateinit var heatDetails: TextView
     private lateinit var tabLayout: TabLayout
     private lateinit var viewPager: ViewPager2
     private lateinit var fabAction: FloatingActionButton
@@ -164,6 +170,11 @@ class GroupDetailFragment : Fragment() {
         groupIconLetter = view.findViewById(R.id.group_icon_letter)
         subtitleMembersGoals = view.findViewById(R.id.subtitle_members_goals)
         createdBy = view.findViewById(R.id.created_by)
+        heatSection = view.findViewById(R.id.heat_section)
+        heatIconDetail = view.findViewById(R.id.heat_icon_detail)
+        heatTierLabel = view.findViewById(R.id.heat_tier_label)
+        heatScoreLabel = view.findViewById(R.id.heat_score_label)
+        heatDetails = view.findViewById(R.id.heat_details)
         tabLayout = view.findViewById(R.id.tab_layout)
         viewPager = view.findViewById(R.id.view_pager)
         fabAction = view.findViewById(R.id.fab_action)
@@ -978,7 +989,60 @@ class GroupDetailFragment : Fragment() {
         val creatorName = members?.firstOrNull { it.user_id == detail.creator_user_id || it.role == "creator" }?.display_name
         createdBy.text = getString(R.string.created_by, creatorName ?: getString(R.string.unknown))
 
+        // Update heat section
+        updateHeatSection(detail)
+
         requireActivity().invalidateOptionsMenu()
+    }
+
+    /**
+     * Update the heat section display in the header.
+     * Shows heat tier icon, name, score, streak, and GCR details for tiers 1-7.
+     * Hidden for tier 0 (Cold).
+     */
+    private fun updateHeatSection(detail: GroupDetailResponse) {
+        detail.heat?.let { heat ->
+            if (heat.tier > 0) {
+                // Show heat icon
+                HeatUtils.getTierDrawable(heat.tier)?.let { resId ->
+                    heatIconDetail.setImageResource(resId)
+                    heatIconDetail.contentDescription = HeatUtils.getContentDescription(
+                        requireContext(), heat.tier_name, heat.score
+                    )
+                }
+                
+                // Show tier name and score
+                heatTierLabel.text = heat.tier_name
+                heatScoreLabel.text = getString(R.string.heat_score_format, heat.score.toInt())
+                heatSection.visibility = View.VISIBLE
+
+                // Build details string (streak, yesterday GCR, baseline)
+                val detailParts = mutableListOf<String>()
+                if (heat.streak_days > 0) {
+                    detailParts.add(getString(R.string.heat_streak_format, heat.streak_days))
+                }
+                heat.yesterday_gcr?.let { gcr ->
+                    val gcrStr = heat.baseline_gcr?.let { baseline ->
+                        getString(R.string.heat_gcr_with_baseline, (gcr * 100).toInt(), (baseline * 100).toInt())
+                    } ?: getString(R.string.heat_gcr_format, (gcr * 100).toInt())
+                    detailParts.add(gcrStr)
+                }
+                if (detailParts.isNotEmpty()) {
+                    heatDetails.text = detailParts.joinToString(" · ")
+                    heatDetails.visibility = View.VISIBLE
+                } else {
+                    heatDetails.visibility = View.GONE
+                }
+            } else {
+                // Tier 0 (Cold) - hide heat section
+                heatSection.visibility = View.GONE
+                heatDetails.visibility = View.GONE
+            }
+        } ?: run {
+            // No heat data - hide heat section
+            heatSection.visibility = View.GONE
+            heatDetails.visibility = View.GONE
+        }
     }
 
     /**

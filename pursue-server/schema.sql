@@ -243,6 +243,35 @@ CREATE TABLE user_milestone_grants (
   UNIQUE(user_id, milestone_key)
 );
 
+-- Group heat: momentum indicator based on rolling completion rates
+CREATE TABLE group_heat (
+  group_id UUID PRIMARY KEY REFERENCES groups(id) ON DELETE CASCADE,
+  heat_score DECIMAL(5,2) NOT NULL DEFAULT 0.00,
+  heat_tier SMALLINT NOT NULL DEFAULT 0,
+  last_calculated_at TIMESTAMP WITH TIME ZONE,
+  streak_days INTEGER NOT NULL DEFAULT 0,
+  peak_score DECIMAL(5,2) NOT NULL DEFAULT 0.00,
+  peak_date DATE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Group daily GCR: stores computed daily group completion rates
+CREATE TABLE group_daily_gcr (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  group_id UUID NOT NULL REFERENCES groups(id) ON DELETE CASCADE,
+  date DATE NOT NULL,
+  total_possible INTEGER NOT NULL,
+  total_completed INTEGER NOT NULL,
+  gcr DECIMAL(5,4) NOT NULL,
+  member_count INTEGER NOT NULL,
+  goal_count INTEGER NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  UNIQUE(group_id, date)
+);
+
+CREATE INDEX idx_gcr_group_date ON group_daily_gcr(group_id, date DESC);
+
 -- Triggers for updated_at timestamps
 CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$
@@ -256,6 +285,9 @@ CREATE TRIGGER update_users_updated_at BEFORE UPDATE ON users
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 CREATE TRIGGER update_groups_updated_at BEFORE UPDATE ON groups
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_group_heat_updated_at BEFORE UPDATE ON group_heat
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 -- =========================

@@ -606,4 +606,19 @@
     <string name="error_loading_member_progress">Failed to load member progress</string>
     <string name="loading_member_progress">Loading member progress…</string>
 
+    <!-- Group Heat -->
+    <string name="heat_score_format">· Score: %1$d</string>
+    <string name="heat_streak_format">%1$d-day streak</string>
+    <string name="heat_gcr_format">Yesterday: %1$d%%</string>
+    <string name="heat_gcr_with_baseline">Yesterday: %1$d%% (baseline: %2$d%%)</string>
+    <string name="heat_content_description">Group heat: %1$s (score %2$d)</string>
+    <string name="heat_cold">Cold</string>
+    <string name="heat_spark">Spark</string>
+    <string name="heat_ember">Ember</string>
+    <string name="heat_flicker">Flicker</string>
+    <string name="heat_steady">Steady</string>
+    <string name="heat_blaze">Blaze</string>
+    <string name="heat_inferno">Inferno</string>
+    <string name="heat_supernova">Supernova</string>
+
 </resources>

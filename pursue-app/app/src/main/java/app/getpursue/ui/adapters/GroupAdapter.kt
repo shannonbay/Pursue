@@ -13,6 +13,7 @@ import androidx.recyclerview.widget.RecyclerView
 import app.getpursue.data.network.ApiClient
 import app.getpursue.models.Group
 import app.getpursue.utils.GrayscaleTransformation
+import app.getpursue.utils.HeatUtils
 import app.getpursue.utils.RelativeTimeUtils
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.engine.DiskCacheStrategy
@@ -43,6 +44,7 @@ class GroupAdapter(
         private val groupIconImage: ImageView = itemView.findViewById(R.id.group_icon_image)
         private val groupIconEmoji: TextView = itemView.findViewById(R.id.group_icon_emoji)
         private val groupName: TextView = itemView.findViewById(R.id.group_name)
+        private val heatIcon: ImageView = itemView.findViewById(R.id.heat_icon)
         private val readOnlyBadge: TextView = itemView.findViewById(R.id.read_only_badge)
         private val memberGoalCount: TextView = itemView.findViewById(R.id.member_goal_count)
         private val progressBar: ProgressBar = itemView.findViewById(R.id.progress_bar)
@@ -99,6 +101,22 @@ class GroupAdapter(
             }
             
             groupName.text = group.name
+
+            // Heat icon display
+            group.heat?.let { heat ->
+                val drawableRes = HeatUtils.getTierDrawable(heat.tier)
+                if (drawableRes != null) {
+                    heatIcon.setImageResource(drawableRes)
+                    heatIcon.contentDescription = HeatUtils.getContentDescription(
+                        itemView.context, heat.tier_name, heat.score
+                    )
+                    heatIcon.visibility = View.VISIBLE
+                } else {
+                    heatIcon.visibility = View.GONE
+                }
+            } ?: run {
+                heatIcon.visibility = View.GONE
+            }
             
             // TODO: active_goals count not in API response - use placeholder for MVP
             val activeGoals = 0 // Placeholder until we fetch from group detail

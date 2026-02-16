@@ -15,7 +15,12 @@ export const ACTIVITY_TYPES = {
   MEMBER_DECLINED: 'member_declined',
   INVITE_CODE_REGENERATED: 'invite_code_regenerated',
   EXPORT_PROGRESS: 'export_progress',
-  NUDGE_SENT: 'nudge_sent'
+  NUDGE_SENT: 'nudge_sent',
+  // Heat-related activity types
+  HEAT_TIER_UP: 'heat_tier_up',
+  HEAT_TIER_DOWN: 'heat_tier_down',
+  HEAT_SUPERNOVA_REACHED: 'heat_supernova_reached',
+  HEAT_STREAK_MILESTONE: 'heat_streak_milestone',
 } as const;
 
 /**

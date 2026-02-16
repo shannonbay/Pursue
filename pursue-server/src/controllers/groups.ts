@@ -37,6 +37,7 @@ import {
   type ExportProgressEntry,
 } from '../services/exportProgress.service.js';
 import { logger } from '../utils/logger.js';
+import { getGroupHeat, initializeGroupHeat } from '../services/heat.service.js';
 import ExcelJS from 'exceljs';
 import path from 'node:path';
 import fs from 'node:fs/promises';
@@ -196,6 +197,9 @@ export async function createGroup(
       return { group, inviteCode };
     });
 
+    // Initialize heat record for the new group
+    await initializeGroupHeat(result.group.id);
+
     const memberCount = await db
       .selectFrom('group_memberships')
       .select(db.fn.count('id').as('count'))
@@ -259,6 +263,9 @@ export async function getGroup(
       .groupBy('groups.id')
       .executeTakeFirstOrThrow();
 
+    // Get extended heat data including GCR values
+    const heatData = await getGroupHeat(group_id, true);
+
     res.status(200).json({
       id: result.id,
       name: result.name,
@@ -270,6 +277,17 @@ export async function getGroup(
       member_count: Number(result.member_count),
       created_at: result.created_at,
       user_role: membership.role,
+      heat: heatData ?? {
+        score: 0,
+        tier: 0,
+        tier_name: 'Cold',
+        streak_days: 0,
+        peak_score: 0,
+        peak_date: null,
+        last_calculated_at: null,
+        yesterday_gcr: undefined,
+        baseline_gcr: undefined,
+      },
     });
   } catch (error) {
     next(error);

@@ -34,5 +34,7 @@ module.exports = {
   },
   testTimeout: 10000,
   maxWorkers: 1,  // Run tests sequentially to avoid database conflicts
+  // Note: --runInBand should be used when running tests to ensure complete sequential execution
+  // The npm test script includes this flag
   forceExit: true
 };
