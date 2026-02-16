@@ -112,17 +112,10 @@
                     app:layout_constraintEnd_toEndOf="parent"
                     tools:visibility="visible">
 
-                    <ImageView
-                        android:id="@+id/heat_icon_detail"
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
-                        tools:src="@drawable/flame5" />
-
                     <TextView
                         android:id="@+id/heat_tier_label"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginStart="8dp"
                         android:textAppearance="?attr/textAppearanceBodyMedium"
                         android:textStyle="bold"
                         android:textColor="@color/on_surface"
@@ -136,6 +129,13 @@
                         android:textAppearance="?attr/textAppearanceBodyMedium"
                         android:textColor="@color/on_surface_variant"
                         tools:text="· Score: 72" />
+
+                    <ImageView
+                        android:id="@+id/heat_icon_detail"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:layout_marginStart="8dp"
+                        tools:src="@drawable/flame5" />
 
                 </LinearLayout>
 
