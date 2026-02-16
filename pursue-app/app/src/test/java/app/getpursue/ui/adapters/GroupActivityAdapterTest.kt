@@ -92,8 +92,8 @@ class GroupActivityAdapterTest {
         )
         val adapter = GroupActivityAdapter(activities)
 
-        // Then - 2 headers (one per date) + 3 activities = 5 items
-        assertEquals("Item count should match activities plus headers", 5, adapter.itemCount)
+        // Then - 2 headers (one per date) + 3 activities + 1 footer spacer = 6 items
+        assertEquals("Item count should match activities plus headers plus footer", 6, adapter.itemCount)
     }
 
     // ========== Grouping Logic Tests ==========
@@ -108,14 +108,16 @@ class GroupActivityAdapterTest {
         )
         val adapter = GroupActivityAdapter(activities)
 
-        // Then - 2 headers (one per date) + 3 activities = 5 items
-        assertEquals("Should have 5 items", 5, adapter.itemCount)
+        // Then - 2 headers (one per date) + 3 activities + 1 footer = 6 items
+        assertEquals("Should have 6 items", 6, adapter.itemCount)
         
-        // Verify order: date1 header, activities, date2 header, activity
+        // Verify order: date1 header, activities, date2 header, activity, footer
         assertEquals("First item should be date header", 0, adapter.getItemViewType(0))
         assertEquals("Second item should be activity", 1, adapter.getItemViewType(1))
         assertEquals("Third item should be activity", 1, adapter.getItemViewType(2))
         assertEquals("Fourth item should be date header", 0, adapter.getItemViewType(3))
+        assertEquals("Fifth item should be activity", 1, adapter.getItemViewType(4))
+        assertEquals("Sixth item should be footer spacer", 2, adapter.getItemViewType(5))
     }
 
     @Test
@@ -364,5 +366,86 @@ class GroupActivityAdapterTest {
             metadata = metadata,
             created_at = createdAt
         )
+    }
+
+    /** Creates an activity with no user (e.g. heat/system events). */
+    private fun createActivityWithNullUser(
+        id: String,
+        activityType: String,
+        createdAt: String,
+        metadata: Map<String, Any>? = null
+    ): GroupActivity {
+        return GroupActivity(
+            id = id,
+            activity_type = activityType,
+            user = null,
+            metadata = metadata,
+            created_at = createdAt
+        )
+    }
+
+    @Test
+    fun `test activity view holder formats heat_tier_up correctly`() {
+        val activity = createActivityWithNullUser(
+            "act1",
+            "heat_tier_up",
+            "2024-01-01T00:00:00Z",
+            metadata = mapOf("tier_name" to "Blaze", "score" to 72.5)
+        )
+        val adapter = GroupActivityAdapter(listOf(activity))
+        val parent = getMockParent()
+        val activityHolder = adapter.onCreateViewHolder(parent, 1) as GroupActivityAdapter.ActivityViewHolder
+        adapter.onBindViewHolder(activityHolder, 1)
+        val activityText = activityHolder.itemView.findViewById<TextView>(R.id.activity_text)
+        assertTrue(
+            "Activity text should contain tier up message and tier name",
+            activityText.text.toString().contains("Group heat is rising") && activityText.text.toString().contains("Blaze")
+        )
+    }
+
+    @Test
+    fun `test activity view holder formats heat_tier_down correctly`() {
+        val activity = createActivityWithNullUser("act1", "heat_tier_down", "2024-01-01T00:00:00Z")
+        val adapter = GroupActivityAdapter(listOf(activity))
+        val parent = getMockParent()
+        val activityHolder = adapter.onCreateViewHolder(parent, 1) as GroupActivityAdapter.ActivityViewHolder
+        adapter.onBindViewHolder(activityHolder, 1)
+        val activityText = activityHolder.itemView.findViewById<TextView>(R.id.activity_text)
+        assertTrue(
+            "Activity text should contain cooling message",
+            activityText.text.toString().contains("cooling")
+        )
+    }
+
+    @Test
+    fun `test activity view holder formats heat_supernova_reached correctly`() {
+        val activity = createActivityWithNullUser("act1", "heat_supernova_reached", "2024-01-01T00:00:00Z")
+        val adapter = GroupActivityAdapter(listOf(activity))
+        val parent = getMockParent()
+        val activityHolder = adapter.onCreateViewHolder(parent, 1) as GroupActivityAdapter.ActivityViewHolder
+        adapter.onBindViewHolder(activityHolder, 1)
+        val activityText = activityHolder.itemView.findViewById<TextView>(R.id.activity_text)
+        assertTrue(
+            "Activity text should contain SUPERNOVA message",
+            activityText.text.toString().contains("SUPERNOVA")
+        )
+    }
+
+    @Test
+    fun `test activity view holder formats heat_streak_milestone correctly`() {
+        val activity = createActivityWithNullUser(
+            "act1",
+            "heat_streak_milestone",
+            "2024-01-01T00:00:00Z",
+            metadata = mapOf("streak_days" to 7, "score" to 65.0)
+        )
+        val adapter = GroupActivityAdapter(listOf(activity))
+        val parent = getMockParent()
+        val activityHolder = adapter.onCreateViewHolder(parent, 1) as GroupActivityAdapter.ActivityViewHolder
+        adapter.onBindViewHolder(activityHolder, 1)
+        val activityText = activityHolder.itemView.findViewById<TextView>(R.id.activity_text)
+        val text = activityText.text.toString()
+        assertTrue("Activity text should contain streak message", text.contains("heat streak"))
+        assertTrue("Activity text should contain 7-day", text.contains("7-day"))
     }
 }

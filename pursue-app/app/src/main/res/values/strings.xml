@@ -490,6 +490,10 @@
     <string name="activity_nudge_sent">%1$s nudged %2$s for \"%3$s\"</string>
     <string name="activity_invite_code_regenerated">%1$s regenerated the invite code</string>
     <string name="activity_export_progress">%1$s exported progress (%2$s to %3$s)</string>
+    <string name="activity_heat_tier_up">Group heat is rising! Now at %1$s.</string>
+    <string name="activity_heat_tier_down">The group flame is cooling — keep logging!</string>
+    <string name="activity_heat_supernova_reached">SUPERNOVA! The group is burning blue-hot!</string>
+    <string name="activity_heat_streak_milestone">%1$d-day heat streak! Keep the momentum!</string>
     
     <!-- Reactions -->
     <string name="reactions_you">You</string>
@@ -612,6 +616,9 @@
     <string name="heat_gcr_format">Yesterday: %1$d%%</string>
     <string name="heat_gcr_with_baseline">Yesterday: %1$d%% (baseline: %2$d%%)</string>
     <string name="heat_content_description">Group heat: %1$s (score %2$d)</string>
+    <string name="heat_info_title">What is Group Heat?</string>
+    <string name="heat_info_body">Group Heat shows your group\'s momentum based on how consistently everyone is completing their daily goals.\n\nThe score compares yesterday\'s completion rate against your group\'s recent average. When the group does better than usual, the flame grows. When activity dips, it cools down.\n\nHeat tiers: Cold, Spark, Ember, Flicker, Steady, Blaze, Inferno, and Supernova. Keep logging to reach the top!</string>
+    <string name="heat_info_ok">Got it</string>
     <string name="heat_cold">Cold</string>
     <string name="heat_spark">Spark</string>
     <string name="heat_ember">Ember</string>

@@ -45,6 +45,13 @@ class GroupActivityAdapter(
         private const val TYPE_DATE_HEADER = 0
         private const val TYPE_ACTIVITY = 1
         private const val TYPE_FOOTER_SPACER = 2
+
+        private val HEAT_ACTIVITY_TYPES = setOf(
+            "heat_tier_up",
+            "heat_tier_down",
+            "heat_supernova_reached",
+            "heat_streak_milestone"
+        )
     }
 
     private data class Item(
@@ -162,16 +169,27 @@ class GroupActivityAdapter(
             onPhotoClick: ((photoUrl: String) -> Unit)?,
             reactionListener: ReactionListener?
         ) {
-            // Avatar: same URL pattern as MembersTabFragment / MemberDetailFragment
+            // Avatar: same URL pattern as MembersTabFragment / MemberDetailFragment; heat activities use Pursue logo
             val user = activity.user
             if (user == null) {
-                activityAvatar.visibility = View.GONE
-                activityAvatarFallback.visibility = View.VISIBLE
-                activityAvatarFallback.text = "?"
-                activityAvatarFallback.contentDescription = itemView.context.getString(R.string.unknown)
+                val isHeatActivity = activity.activity_type in HEAT_ACTIVITY_TYPES
+                if (isHeatActivity) {
+                    activityAvatar.visibility = View.VISIBLE
+                    activityAvatarFallback.visibility = View.GONE
+                    Glide.with(itemView.context).clear(activityAvatar)
+                    activityAvatar.setImageResource(R.drawable.ic_pursue_logo)
+                    activityAvatar.scaleType = ImageView.ScaleType.CENTER_INSIDE
+                    activityAvatar.contentDescription = itemView.context.getString(R.string.app_name)
+                } else {
+                    activityAvatar.visibility = View.GONE
+                    activityAvatarFallback.visibility = View.VISIBLE
+                    activityAvatarFallback.text = "?"
+                    activityAvatarFallback.contentDescription = itemView.context.getString(R.string.unknown)
+                }
             } else {
                 activityAvatar.visibility = View.VISIBLE
                 activityAvatarFallback.visibility = View.GONE
+                activityAvatar.scaleType = ImageView.ScaleType.CENTER_CROP
                 val imageUrl = "${ApiClient.getBaseUrl()}/users/${user.id}/avatar"
                 activityAvatar.contentDescription = itemView.context.getString(R.string.content_description_member_avatar, user.display_name)
                 Glide.with(itemView.context)
@@ -373,6 +391,16 @@ class GroupActivityAdapter(
                     val startDate = (meta["start_date"] as? String) ?: ""
                     val endDate = (meta["end_date"] as? String) ?: ""
                     itemView.context.getString(R.string.activity_export_progress, userName, startDate, endDate)
+                }
+                "heat_tier_up" -> {
+                    val tierName = activity.metadata?.get("tier_name") as? String ?: "this tier"
+                    itemView.context.getString(R.string.activity_heat_tier_up, tierName)
+                }
+                "heat_tier_down" -> itemView.context.getString(R.string.activity_heat_tier_down)
+                "heat_supernova_reached" -> itemView.context.getString(R.string.activity_heat_supernova_reached)
+                "heat_streak_milestone" -> {
+                    val days = (activity.metadata?.get("streak_days") as? Number)?.toInt() ?: 7
+                    itemView.context.getString(R.string.activity_heat_streak_milestone, days)
                 }
                 else -> "$userName performed an action"
             }
