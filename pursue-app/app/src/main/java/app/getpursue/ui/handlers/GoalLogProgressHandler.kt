@@ -2,8 +2,6 @@ package app.getpursue.ui.handlers
 
 import android.graphics.Typeface
 import android.net.Uri
-import android.os.Handler
-import android.os.Looper
 import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
@@ -42,9 +40,6 @@ class GoalLogProgressHandler(
     private val onOptimisticUpdate: ((goalId: String, completed: Boolean, progressValue: Double?) -> Unit)? = null,
     private val onRefresh: (silent: Boolean) -> Unit = {}
 ) {
-    private var currentSnackbar: Snackbar? = null
-    private val undoHandler = Handler(Looper.getMainLooper())
-
     private fun showUpgradeDialog() {
         val ctx = fragment.requireContext()
         val d = MaterialAlertDialogBuilder(ctx)
@@ -103,40 +98,9 @@ class GoalLogProgressHandler(
                 }
                 val entryId = response.id
                 fragment.requireActivity().runOnUiThread {
-                    currentSnackbar?.dismiss()
-                    currentSnackbar = null
-                    val snackbar = Snackbar.make(
-                        snackbarParentView,
-                        fragment.getString(R.string.logged_with_undo),
-                        Snackbar.LENGTH_LONG
-                    )
-                    snackbar.setAction(fragment.getString(R.string.undo)) {
-                        onOptimisticUpdate?.invoke(goal.id, previousCompleted, previousProgressValue)
-                        fragment.viewLifecycleOwner.lifecycleScope.launch {
-                            try {
-                                withContext(Dispatchers.IO) {
-                                    ApiClient.deleteProgressEntry(accessToken, entryId)
-                                }
-                                fragment.requireActivity().runOnUiThread {
-                                    Snackbar.make(snackbarParentView, fragment.getString(R.string.undone), Snackbar.LENGTH_SHORT).show()
-                                }
-                            } catch (_: Exception) {
-                                fragment.requireActivity().runOnUiThread {
-                                    Toast.makeText(fragment.requireContext(), "Failed to undo", Toast.LENGTH_SHORT).show()
-                                }
-                            }
-                        }
-                        snackbar.dismiss()
-                        currentSnackbar = null
+                    showPostLogPhotoSheet(entryId) {
+                        performUndo(goal.id, entryId, previousCompleted, previousProgressValue, accessToken)
                     }
-                    snackbar.setActionTextColor(ContextCompat.getColor(fragment.requireContext(), R.color.primary))
-                    currentSnackbar = snackbar
-                    snackbar.show()
-                    undoHandler.postDelayed({
-                        snackbar.dismiss()
-                        currentSnackbar = null
-                    }, 3000)
-                    showPostLogPhotoSheet(entryId)
                 }
             } catch (e: ApiException) {
                 fragment.requireActivity().runOnUiThread {
@@ -157,14 +121,44 @@ class GoalLogProgressHandler(
         }
     }
 
-    private fun showPostLogPhotoSheet(entryId: String) {
-        PostLogPhotoBottomSheet.show(fragment.childFragmentManager, entryId,
+    private fun showPostLogPhotoSheet(
+        entryId: String,
+        onUndo: (() -> Unit)? = null
+    ) {
+        PostLogPhotoBottomSheet.show(
+            fragment.childFragmentManager,
+            entryId,
             object : PostLogPhotoBottomSheet.PhotoSelectedListener {
                 override fun onPhotoSelected(uri: Uri) {
                     handlePhotoUpload(entryId, uri)
                 }
-            }
+            },
+            onUndo = onUndo
         )
+    }
+
+    private fun performUndo(
+        goalId: String,
+        entryId: String,
+        previousCompleted: Boolean,
+        previousProgressValue: Double?,
+        accessToken: String
+    ) {
+        onOptimisticUpdate?.invoke(goalId, previousCompleted, previousProgressValue)
+        fragment.viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                withContext(Dispatchers.IO) {
+                    ApiClient.deleteProgressEntry(accessToken, entryId)
+                }
+                fragment.requireActivity().runOnUiThread {
+                    Snackbar.make(snackbarParentView, fragment.getString(R.string.undone), Snackbar.LENGTH_SHORT).show()
+                }
+            } catch (_: Exception) {
+                fragment.requireActivity().runOnUiThread {
+                    Toast.makeText(fragment.requireContext(), "Failed to undo", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
     }
 
     private fun handlePhotoUpload(entryId: String, uri: Uri) {
@@ -318,40 +312,9 @@ class GoalLogProgressHandler(
                 }
                 val entryId = response.id
                 fragment.requireActivity().runOnUiThread {
-                    currentSnackbar?.dismiss()
-                    currentSnackbar = null
-                    val snackbar = Snackbar.make(
-                        snackbarParentView,
-                        fragment.getString(R.string.logged_with_undo),
-                        Snackbar.LENGTH_LONG
-                    )
-                    snackbar.setAction(fragment.getString(R.string.undo)) {
-                        onOptimisticUpdate?.invoke(goal.id, previousCompleted, previousProgressValue)
-                        fragment.viewLifecycleOwner.lifecycleScope.launch {
-                            try {
-                                withContext(Dispatchers.IO) {
-                                    ApiClient.deleteProgressEntry(accessToken, entryId)
-                                }
-                                fragment.requireActivity().runOnUiThread {
-                                    Snackbar.make(snackbarParentView, fragment.getString(R.string.undone), Snackbar.LENGTH_SHORT).show()
-                                }
-                            } catch (_: Exception) {
-                                fragment.requireActivity().runOnUiThread {
-                                    Toast.makeText(fragment.requireContext(), "Failed to undo", Toast.LENGTH_SHORT).show()
-                                }
-                            }
-                        }
-                        snackbar.dismiss()
-                        currentSnackbar = null
+                    showPostLogPhotoSheet(entryId) {
+                        performUndo(goal.id, entryId, previousCompleted, previousProgressValue, accessToken)
                     }
-                    snackbar.setActionTextColor(ContextCompat.getColor(fragment.requireContext(), R.color.primary))
-                    currentSnackbar = snackbar
-                    snackbar.show()
-                    undoHandler.postDelayed({
-                        snackbar.dismiss()
-                        currentSnackbar = null
-                    }, 3000)
-                    showPostLogPhotoSheet(entryId)
                 }
             } catch (e: ApiException) {
                 fragment.requireActivity().runOnUiThread {
@@ -388,40 +351,9 @@ class GoalLogProgressHandler(
                 }
                 val newEntryId = response.id
                 fragment.requireActivity().runOnUiThread {
-                    currentSnackbar?.dismiss()
-                    currentSnackbar = null
-                    val snackbar = Snackbar.make(
-                        snackbarParentView,
-                        fragment.getString(R.string.logged_with_undo),
-                        Snackbar.LENGTH_LONG
-                    )
-                    snackbar.setAction(fragment.getString(R.string.undo)) {
-                        onOptimisticUpdate?.invoke(goal.id, previousCompleted, previousProgressValue)
-                        fragment.viewLifecycleOwner.lifecycleScope.launch {
-                            try {
-                                withContext(Dispatchers.IO) {
-                                    ApiClient.deleteProgressEntry(accessToken, newEntryId)
-                                }
-                                fragment.requireActivity().runOnUiThread {
-                                    Snackbar.make(snackbarParentView, fragment.getString(R.string.undone), Snackbar.LENGTH_SHORT).show()
-                                }
-                            } catch (_: Exception) {
-                                fragment.requireActivity().runOnUiThread {
-                                    Toast.makeText(fragment.requireContext(), "Failed to undo", Toast.LENGTH_SHORT).show()
-                                }
-                            }
-                        }
-                        snackbar.dismiss()
-                        currentSnackbar = null
+                    showPostLogPhotoSheet(newEntryId) {
+                        performUndo(goal.id, newEntryId, previousCompleted, previousProgressValue, accessToken)
                     }
-                    snackbar.setActionTextColor(ContextCompat.getColor(fragment.requireContext(), R.color.primary))
-                    currentSnackbar = snackbar
-                    snackbar.show()
-                    undoHandler.postDelayed({
-                        snackbar.dismiss()
-                        currentSnackbar = null
-                    }, 3000)
-                    showPostLogPhotoSheet(newEntryId)
                 }
             } catch (e: ApiException) {
                 fragment.requireActivity().runOnUiThread {

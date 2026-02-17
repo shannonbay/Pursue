@@ -16,16 +16,36 @@
         android:background="@drawable/bottom_sheet_drag_handle"
         android:contentDescription="@null" />
 
-    <!-- Logged confirmation -->
-    <TextView
-        android:id="@+id/logged_title"
-        android:layout_width="wrap_content"
+    <!-- Logged confirmation with Undo -->
+    <LinearLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
-        android:text="@string/post_log_photo_title"
-        android:textAppearance="?attr/textAppearanceTitleLarge"
-        android:textColor="@color/on_surface"
-        tools:text="Logged ✓" />
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/logged_title"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/post_log_photo_title"
+            android:textAppearance="?attr/textAppearanceTitleLarge"
+            android:textColor="@color/on_surface"
+            tools:text="Logged ✓" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/button_undo"
+            style="@style/Widget.MaterialComponents.Button.TextButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:minWidth="0dp"
+            android:minHeight="0dp"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp"
+            android:text="@string/undo"
+            android:textColor="@color/primary" />
+    </LinearLayout>
 
     <TextView
         android:id="@+id/add_photo_prompt"

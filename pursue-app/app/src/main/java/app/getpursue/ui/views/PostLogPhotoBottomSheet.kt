@@ -32,6 +32,7 @@ class PostLogPhotoBottomSheet : BottomSheetDialogFragment() {
     }
 
     private var listener: PhotoSelectedListener? = null
+    private var undoCallback: (() -> Unit)? = null
     private var photoUri: Uri? = null
     private val autoDismissHandler = Handler(Looper.getMainLooper())
     private var autoDismissRunnable: Runnable? = null
@@ -64,6 +65,10 @@ class PostLogPhotoBottomSheet : BottomSheetDialogFragment() {
         this.listener = listener
     }
 
+    fun setUndoCallback(callback: (() -> Unit)?) {
+        this.undoCallback = callback
+    }
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -83,6 +88,12 @@ class PostLogPhotoBottomSheet : BottomSheetDialogFragment() {
         view.findViewById<MaterialButton>(R.id.button_gallery).setOnClickListener {
             cancelAutoDismiss()
             pickImageLauncher.launch("image/*")
+        }
+
+        view.findViewById<MaterialButton>(R.id.button_undo).setOnClickListener {
+            cancelAutoDismiss()
+            undoCallback?.invoke()
+            dismiss()
         }
 
         startAutoDismissTimer()
@@ -160,9 +171,15 @@ class PostLogPhotoBottomSheet : BottomSheetDialogFragment() {
             }
         }
 
-        fun show(fragmentManager: FragmentManager, progressEntryId: String, listener: PhotoSelectedListener) {
+        fun show(
+            fragmentManager: FragmentManager,
+            progressEntryId: String,
+            listener: PhotoSelectedListener,
+            onUndo: (() -> Unit)? = null
+        ) {
             val sheet = newInstance(progressEntryId).apply {
                 setPhotoSelectedListener(listener)
+                setUndoCallback(onUndo)
             }
             sheet.show(fragmentManager, "PostLogPhotoBottomSheet")
         }
