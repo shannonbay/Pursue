@@ -24,6 +24,14 @@
     <string name="notification_join_request">%1$s wants to join %2$s</string>
     <string name="notification_milestone_first">You logged your first progress!</string>
     <string name="notification_milestone_streak">You hit a %1$d-day streak on %2$s!</string>
+    <string name="notification_weekly_recap">📊 %1$s — Week in Review</string>
+
+    <!-- Weekly Recap Card -->
+    <string name="recap_completion_rate_label">Group Completion Rate</string>
+    <string name="recap_highlights_header">🏆  HIGHLIGHTS</string>
+    <string name="recap_goals_header">📋  GOAL BREAKDOWN</string>
+    <string name="recap_heat_header">🔥  GROUP HEAT</string>
+    <string name="recap_open_group">Open Group →</string>
 
     <!-- Nudge feature -->
     <string name="nudge_sent">Nudge sent to %1$s! 👊</string>

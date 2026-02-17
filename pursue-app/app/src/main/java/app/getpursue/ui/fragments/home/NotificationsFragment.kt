@@ -242,6 +242,20 @@ class NotificationsFragment : Fragment() {
                     groupDetailLauncher.launch(intent)
                 }
             }
+            "weekly_recap" -> {
+                // Open the group's Goals tab so the user can dive straight into this week's activity
+                val groupId = item.group?.id
+                val groupName = item.group?.name ?: ""
+                if (groupId != null) {
+                    val intent = Intent(requireContext(), GroupDetailActivity::class.java).apply {
+                        putExtra(GroupDetailActivity.EXTRA_GROUP_ID, groupId)
+                        putExtra(GroupDetailActivity.EXTRA_GROUP_NAME, groupName)
+                        putExtra(GroupDetailActivity.EXTRA_GROUP_HAS_ICON, false)
+                        putExtra(GroupDetailActivity.EXTRA_INITIAL_TAB, 0) // Goals tab
+                    }
+                    groupDetailLauncher.launch(intent)
+                }
+            }
             else -> {
                 val groupId = item.group?.id
                 val groupName = item.group?.name ?: ""
