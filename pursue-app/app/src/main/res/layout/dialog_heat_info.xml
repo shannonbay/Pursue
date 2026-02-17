@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="16dp"
+    android:background="@color/surface">
+
+    <!-- Flame icon for current tier -->
+    <ImageView
+        android:id="@+id/heat_info_icon"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_gravity="center_horizontal"
+        tools:src="@drawable/flame5" />
+
+    <!-- Current tier name -->
+    <TextView
+        android:id="@+id/heat_info_tier"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="8dp"
+        android:textAppearance="?attr/textAppearanceTitleMedium"
+        android:textStyle="bold"
+        android:textColor="@color/on_surface"
+        tools:text="Blaze" />
+
+    <!-- Explanation text -->
+    <TextView
+        android:id="@+id/heat_info_body"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:textAppearance="?attr/textAppearanceBodyMedium"
+        android:textColor="@color/on_surface"
+        android:lineSpacingExtra="4dp"
+        tools:text="Group Heat shows your group's momentum..." />
+
+</LinearLayout>
