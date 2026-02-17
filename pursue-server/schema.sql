@@ -117,6 +117,7 @@ CREATE TABLE group_memberships (
   role VARCHAR(20) NOT NULL, -- 'creator', 'admin', 'member'
   status VARCHAR(20) NOT NULL DEFAULT 'active', -- 'pending', 'active', 'declined'
   joined_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  weekly_recap_enabled BOOLEAN NOT NULL DEFAULT TRUE,
   UNIQUE(group_id, user_id)
 );
 
@@ -494,4 +495,23 @@ COMMENT ON COLUMN user_reminder_preferences.mode
 
 COMMENT ON COLUMN user_reminder_preferences.aggressiveness 
   IS 'gentle = last_chance only, balanced = all tiers, persistent = shorter delays';
+
+-- =========================
+-- Weekly Group Recap System
+-- =========================
+
+-- Weekly recaps sent: deduplication table
+CREATE TABLE weekly_recaps_sent (
+  group_id    UUID NOT NULL REFERENCES groups(id) ON DELETE CASCADE,
+  week_end    DATE NOT NULL,  -- Sunday date
+  sent_at     TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+  PRIMARY KEY (group_id, week_end)
+);
+
+CREATE INDEX idx_weekly_recaps_sent_group ON weekly_recaps_sent(group_id);
+CREATE INDEX idx_weekly_recaps_sent_week_end ON weekly_recaps_sent(week_end);
+
+COMMENT ON TABLE weekly_recaps_sent IS 'Tracks which weekly recaps have been sent to prevent duplicate notifications';
+COMMENT ON COLUMN weekly_recaps_sent.week_end IS 'Sunday date marking the end of the recap week (YYYY-MM-DD)';
+COMMENT ON COLUMN group_memberships.weekly_recap_enabled IS 'Whether the member wants to receive weekly recap notifications for this group';
 

@@ -102,6 +102,7 @@ export interface GroupMembershipsTable {
   role: string;
   status: ColumnType<'pending' | 'active' | 'declined', string | undefined, string>;
   joined_at: ColumnType<Date, string | undefined, never>;
+  weekly_recap_enabled: ColumnType<boolean, boolean | undefined, boolean>;
 }
 
 export type GroupMembership = Selectable<GroupMembershipsTable>;
@@ -400,6 +401,16 @@ export type UserReminderPreferences = Selectable<UserReminderPreferencesTable>;
 export type NewUserReminderPreferences = Insertable<UserReminderPreferencesTable>;
 export type UserReminderPreferencesUpdate = Updateable<UserReminderPreferencesTable>;
 
+// Weekly recaps sent table (deduplication)
+export interface WeeklyRecapsSentTable {
+  group_id: string;
+  week_end: string; // DATE as YYYY-MM-DD
+  sent_at: ColumnType<Date, string | undefined, never>;
+}
+
+export type WeeklyRecapSent = Selectable<WeeklyRecapsSentTable>;
+export type NewWeeklyRecapSent = Insertable<WeeklyRecapsSentTable>;
+
 // Database interface combining all tables
 export interface Database {
   users: UsersTable;
@@ -428,4 +439,5 @@ export interface Database {
   user_logging_patterns: UserLoggingPatternsTable;
   reminder_history: ReminderHistoryTable;
   user_reminder_preferences: UserReminderPreferencesTable;
+  weekly_recaps_sent: WeeklyRecapsSentTable;
 }

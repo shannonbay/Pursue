@@ -8,6 +8,17 @@ gcloud builds submit --tag australia-southeast1-docker.pkg.dev/pursue-485005/pur
 gcloud run deploy pursue-api --image australia-southeast1-docker.pkg.dev/pursue-485005/pursue-repo/pursue-backend --platform managed --region australia-southeast1 --allow-unauthenticated
 ```
 
+One-off scheduler job creation for weekly-recap
+```
+gcloud scheduler jobs create http weekly-recap-job \
+  --schedule="*/30 * * * 0" \
+  --uri="https://your-api-domain.com/api/internal/jobs/weekly-recap" \
+  --http-method=POST \
+  --headers="x-internal-job-key=YOUR_INTERNAL_JOB_KEY_HERE" \
+  --time-zone="UTC" \
+  --description="Weekly group recap notifications"
+```
+
 Since your **Pursue** onboarding guide confirms you are targeting a Q2 2026 launch and using **Google Cloud Run** for the backend, Dockerizing your Express.js app is the essential "bridge" to get your code from your Windows machine into the cloud.
 
 Because you don't have Docker installed yet, we will start from the very beginning.

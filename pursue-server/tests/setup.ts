@@ -24,6 +24,9 @@ if (!process.env.GOOGLE_CLIENT_ID) {
 if (!process.env.CONSENT_HASH_SALT) {
   process.env.CONSENT_HASH_SALT = 'test-consent-hash-salt-for-testing';
 }
+if (!process.env.INTERNAL_JOB_KEY) {
+  process.env.INTERNAL_JOB_KEY = 'test-internal-job-key-for-testing';
+}
 
 const TEST_DATABASE_URL = process.env.TEST_DATABASE_URL ||
   'postgresql://postgres:postgres@localhost:5432/pursue_test';
@@ -250,11 +253,12 @@ async function createSchema(db: Kysely<Database>) {
       role VARCHAR(20) NOT NULL,
       status VARCHAR(20) NOT NULL DEFAULT 'active',
       joined_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+      weekly_recap_enabled BOOLEAN NOT NULL DEFAULT TRUE,
       UNIQUE(group_id, user_id)
     )
   `.execute(db);
 
-  // Add status column if table already existed without it (e.g. from older test runs)
+  // Add columns if table already existed without them (e.g. from older test runs)
   await sql`
     DO $$
     BEGIN
@@ -263,6 +267,12 @@ async function createSchema(db: Kysely<Database>) {
         WHERE table_name = 'group_memberships' AND column_name = 'status'
       ) THEN
         ALTER TABLE group_memberships ADD COLUMN status VARCHAR(20) NOT NULL DEFAULT 'active';
+      END IF;
+      IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = 'group_memberships' AND column_name = 'weekly_recap_enabled'
+      ) THEN
+        ALTER TABLE group_memberships ADD COLUMN weekly_recap_enabled BOOLEAN NOT NULL DEFAULT TRUE;
       END IF;
     END $$
   `.execute(db);
@@ -593,6 +603,18 @@ async function createSchema(db: Kysely<Database>) {
     )
   `.execute(db);
 
+  // Create weekly_recaps_sent table
+  await sql`
+    CREATE TABLE IF NOT EXISTS weekly_recaps_sent (
+      group_id UUID NOT NULL REFERENCES groups(id) ON DELETE CASCADE,
+      week_end DATE NOT NULL,
+      sent_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+      PRIMARY KEY (group_id, week_end)
+    )
+  `.execute(db);
+  await sql`CREATE INDEX IF NOT EXISTS idx_weekly_recaps_sent_group ON weekly_recaps_sent(group_id)`.execute(db);
+  await sql`CREATE INDEX IF NOT EXISTS idx_weekly_recaps_sent_week_end ON weekly_recaps_sent(week_end)`.execute(db);
+
   // Fix FK constraints for goals (CREATE TABLE IF NOT EXISTS won't update existing constraints)
   await sql`
     ALTER TABLE goals DROP CONSTRAINT IF EXISTS goals_created_by_user_id_fkey;
@@ -632,6 +654,7 @@ async function cleanDatabase(db: Kysely<Database>) {
       user_logging_patterns,
       reminder_history,
       user_reminder_preferences,
+      weekly_recaps_sent,
       progress_entries,
       goals,
       group_activities,

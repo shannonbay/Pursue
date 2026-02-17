@@ -612,3 +612,67 @@ export async function setUserTimezone(
     .where('id', '=', userId)
     .execute();
 }
+
+// =============================================================================
+// Weekly Recap Test Helpers
+// =============================================================================
+
+/**
+ * Create a weekly recap sent record directly in the database
+ */
+export async function createWeeklyRecapSent(
+  groupId: string,
+  weekEnd: string
+): Promise<void> {
+  await testDb
+    .insertInto('weekly_recaps_sent')
+    .values({
+      group_id: groupId,
+      week_end: weekEnd,
+    })
+    .execute();
+}
+
+/**
+ * Create GCR records for a week
+ */
+export async function createGcrDataForWeek(
+  groupId: string,
+  weekStart: string,
+  gcrValues: number[]
+): Promise<void> {
+  for (let i = 0; i < gcrValues.length; i++) {
+    const date = new Date(weekStart + 'T00:00:00Z');
+    date.setUTCDate(date.getUTCDate() + i);
+    const dateStr = date.toISOString().slice(0, 10);
+
+    await testDb
+      .insertInto('group_daily_gcr')
+      .values({
+        group_id: groupId,
+        date: dateStr,
+        total_possible: 10,
+        total_completed: Math.round(gcrValues[i] * 10),
+        gcr: gcrValues[i],
+        member_count: 2,
+        goal_count: 5,
+      })
+      .execute();
+  }
+}
+
+/**
+ * Set member's weekly recap preference
+ */
+export async function setWeeklyRecapEnabled(
+  groupId: string,
+  userId: string,
+  enabled: boolean
+): Promise<void> {
+  await testDb
+    .updateTable('group_memberships')
+    .set({ weekly_recap_enabled: enabled })
+    .where('group_id', '=', groupId)
+    .where('user_id', '=', userId)
+    .execute();
+}
