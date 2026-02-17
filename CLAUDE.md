@@ -193,6 +193,7 @@ ui/fragments/groups/PendingApprovalsFragment.kt - Pending membership approvals
 # Fragments — Goals & Onboarding
 ui/fragments/goals/CreateGoalFragment.kt - Create new goal
 ui/fragments/goals/GoalDetailFragment.kt - Goal details display
+ui/fragments/goals/ReminderSettingsFragment.kt - Per-goal smart reminder settings
 ui/fragments/onboarding/WelcomeFragment.kt - Welcome screen
 ui/fragments/onboarding/SignInEmailFragment.kt - Email sign-in
 ui/fragments/onboarding/SignUpEmailFragment.kt - Email sign-up

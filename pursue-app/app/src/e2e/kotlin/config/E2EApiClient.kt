@@ -35,6 +35,10 @@ import app.getpursue.data.network.MarkAllReadResponse
 import app.getpursue.data.network.MarkNotificationReadResponse
 import app.getpursue.data.network.MemberProgressResponse
 import app.getpursue.data.network.HeatHistoryResponse
+import app.getpursue.data.network.GetAllReminderPreferencesResponse
+import app.getpursue.data.network.GoalReminderPreferencesResponse
+import app.getpursue.data.network.RecalculateGoalPatternResponse
+import app.getpursue.data.network.UpdateGoalReminderPreferencesResponse
 import app.getpursue.models.GroupsResponse
 import app.getpursue.models.GroupDetailResponse
 import app.getpursue.models.GroupMembersResponse
@@ -476,5 +480,45 @@ class E2EApiClient(private val context: Context) {
     ): HeatHistoryResponse {
         storeTokenIfPresent(accessToken)
         return ApiClient.getHeatHistory("", groupId, days)
+    }
+
+    // --- Smart Reminders ---
+
+    suspend fun getAllReminderPreferences(accessToken: String): GetAllReminderPreferencesResponse {
+        storeTokenIfPresent(accessToken)
+        return ApiClient.getAllReminderPreferences("")
+    }
+
+    suspend fun getGoalReminderPreferences(
+        accessToken: String,
+        goalId: String
+    ): GoalReminderPreferencesResponse {
+        storeTokenIfPresent(accessToken)
+        return ApiClient.getGoalReminderPreferences("", goalId)
+    }
+
+    suspend fun updateGoalReminderPreferences(
+        accessToken: String,
+        goalId: String,
+        enabled: Boolean? = null,
+        mode: String? = null,
+        fixedHour: Int? = null,
+        aggressiveness: String? = null,
+        quietHoursStart: Int? = null,
+        quietHoursEnd: Int? = null
+    ): UpdateGoalReminderPreferencesResponse {
+        storeTokenIfPresent(accessToken)
+        return ApiClient.updateGoalReminderPreferences(
+            "", goalId, enabled, mode, fixedHour, aggressiveness, quietHoursStart, quietHoursEnd
+        )
+    }
+
+    suspend fun recalculateGoalPattern(
+        accessToken: String,
+        goalId: String,
+        userTimezone: String
+    ): RecalculateGoalPatternResponse {
+        storeTokenIfPresent(accessToken)
+        return ApiClient.recalculateGoalPattern("", goalId, userTimezone)
     }
 }

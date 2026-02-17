@@ -16,6 +16,7 @@ import activityRoutes from './routes/reactions.js';
 import nudgeRoutes from './routes/nudges.js';
 import notificationRoutes from './routes/notifications.js';
 import heatRoutes from './routes/heat.js';
+import reminderRoutes from './routes/reminders.js';
 
 const app = express();
 
@@ -122,6 +123,7 @@ app.use('/api/activities', activityRoutes);
 app.use('/api/nudges', nudgeRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api', heatRoutes);
+app.use('/api', reminderRoutes);
 
 // Error handling
 app.use(errorHandler);

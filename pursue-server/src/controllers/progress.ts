@@ -139,6 +139,21 @@ export async function createProgress(
       ])
       .executeTakeFirstOrThrow();
 
+    // Sync user's cached timezone for smart reminders (if changed)
+    if (data.user_timezone) {
+      await db
+        .updateTable('users')
+        .set({ timezone: data.user_timezone })
+        .where('id', '=', req.user.id)
+        .where((eb) =>
+          eb.or([
+            eb('timezone', 'is', null),
+            eb('timezone', '!=', data.user_timezone),
+          ])
+        )
+        .execute();
+    }
+
     // Create group activity entry
     await createGroupActivity(
       goal.group_id,

@@ -1549,6 +1549,100 @@ object ApiClient {
         executeRequest<Unit>(request, getClient()) { Unit }
     }
 
+    // --- Smart Reminders ---
+
+    /**
+     * Get all reminder preferences for the current user.
+     * GET /api/users/me/reminder-preferences
+     */
+    suspend fun getAllReminderPreferences(accessToken: String): GetAllReminderPreferencesResponse {
+        val request = Request.Builder()
+            .url("$baseUrl/users/me/reminder-preferences")
+            .get()
+            .addHeader("Content-Type", "application/json")
+            .build()
+
+        return executeRequest(request, getClient()) { responseBody ->
+            gson.fromJson(responseBody, GetAllReminderPreferencesResponse::class.java)
+        }
+    }
+
+    /**
+     * Get reminder preferences for a specific goal (or defaults).
+     * GET /api/goals/:goal_id/reminder-preferences
+     */
+    suspend fun getGoalReminderPreferences(
+        accessToken: String,
+        goalId: String
+    ): GoalReminderPreferencesResponse {
+        val request = Request.Builder()
+            .url("$baseUrl/goals/$goalId/reminder-preferences")
+            .get()
+            .addHeader("Content-Type", "application/json")
+            .build()
+
+        return executeRequest(request, getClient()) { responseBody ->
+            gson.fromJson(responseBody, GoalReminderPreferencesResponse::class.java)
+        }
+    }
+
+    /**
+     * Update reminder preferences for a specific goal.
+     * PUT /api/goals/:goal_id/reminder-preferences
+     */
+    suspend fun updateGoalReminderPreferences(
+        accessToken: String,
+        goalId: String,
+        enabled: Boolean? = null,
+        mode: String? = null,
+        fixedHour: Int? = null,
+        aggressiveness: String? = null,
+        quietHoursStart: Int? = null,
+        quietHoursEnd: Int? = null
+    ): UpdateGoalReminderPreferencesResponse {
+        val toSend = JsonObject()
+        enabled?.let { toSend.addProperty("enabled", it) }
+        mode?.let { toSend.addProperty("mode", it) }
+        fixedHour?.let { toSend.addProperty("fixed_hour", it) }
+        aggressiveness?.let { toSend.addProperty("aggressiveness", it) }
+        quietHoursStart?.let { toSend.addProperty("quiet_hours_start", it) }
+        quietHoursEnd?.let { toSend.addProperty("quiet_hours_end", it) }
+        val requestBody = toSend.toString().toRequestBody(jsonMediaType)
+
+        val request = Request.Builder()
+            .url("$baseUrl/goals/$goalId/reminder-preferences")
+            .put(requestBody)
+            .addHeader("Content-Type", "application/json")
+            .build()
+
+        return executeRequest(request, getClient()) { responseBody ->
+            gson.fromJson(responseBody, UpdateGoalReminderPreferencesResponse::class.java)
+        }
+    }
+
+    /**
+     * Trigger recalculation of logging pattern for a goal.
+     * POST /api/goals/:goal_id/recalculate-pattern
+     */
+    suspend fun recalculateGoalPattern(
+        accessToken: String,
+        goalId: String,
+        userTimezone: String
+    ): RecalculateGoalPatternResponse {
+        val requestBody = gson.toJson(RecalculateGoalPatternRequest(user_timezone = userTimezone))
+            .toRequestBody(jsonMediaType)
+
+        val request = Request.Builder()
+            .url("$baseUrl/goals/$goalId/recalculate-pattern")
+            .post(requestBody)
+            .addHeader("Content-Type", "application/json")
+            .build()
+
+        return executeRequest(request, getClient()) { responseBody ->
+            gson.fromJson(responseBody, RecalculateGoalPatternResponse::class.java)
+        }
+    }
+
     /**
      * Delete the current user's account (hard delete).
      *
@@ -2196,6 +2290,72 @@ data class LogProgressResponse(
     val note: String?,
     val period_start: String, // ISO date YYYY-MM-DD
     val logged_at: String // ISO 8601 timestamp
+)
+
+// --- Smart Reminders DTOs ---
+
+data class ReminderPreferenceItem(
+    val goal_id: String,
+    val goal_title: String,
+    val enabled: Boolean,
+    val mode: String,
+    val fixed_hour: Int?,
+    val aggressiveness: String,
+    val quiet_hours_start: Int?,
+    val quiet_hours_end: Int?,
+    val last_modified_at: String?
+)
+
+data class GetAllReminderPreferencesResponse(
+    val preferences: List<ReminderPreferenceItem>
+)
+
+data class GoalReminderPattern(
+    val typical_hour_start: Int,
+    val typical_hour_end: Int,
+    val confidence_score: Double,
+    val sample_size: Int
+)
+
+data class GoalReminderPreferencesResponse(
+    val goal_id: String,
+    val enabled: Boolean,
+    val mode: String,
+    val fixed_hour: Int?,
+    val aggressiveness: String,
+    val quiet_hours_start: Int?,
+    val quiet_hours_end: Int?,
+    val last_modified_at: String? = null,
+    val pattern: GoalReminderPattern? = null
+)
+
+data class UpdateGoalReminderPreferencesResponse(
+    val goal_id: String,
+    val enabled: Boolean,
+    val mode: String,
+    val fixed_hour: Int?,
+    val aggressiveness: String,
+    val quiet_hours_start: Int?,
+    val quiet_hours_end: Int?,
+    val last_modified_at: String
+)
+
+data class RecalculateGoalPatternPattern(
+    val typical_hour_start: Int,
+    val typical_hour_end: Int,
+    val confidence_score: Double,
+    val sample_size: Int,
+    val last_calculated_at: String
+)
+
+data class RecalculateGoalPatternResponse(
+    val goal_id: String,
+    val pattern: RecalculateGoalPatternPattern? = null,
+    val message: String? = null
+)
+
+data class RecalculateGoalPatternRequest(
+    val user_timezone: String
 )
 
 // --- Progress Photo DTOs ---

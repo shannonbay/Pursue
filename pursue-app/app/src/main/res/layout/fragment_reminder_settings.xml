@@ -1,0 +1,364 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.core.widget.NestedScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/background_light"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <!-- Loading -->
+        <ProgressBar
+            android:id="@+id/reminder_loading"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_marginTop="24dp"
+            android:visibility="gone"
+            tools:visibility="gone" />
+
+        <!-- Content container (hidden while loading) -->
+        <LinearLayout
+            android:id="@+id/reminder_content"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone"
+            tools:visibility="visible">
+
+            <!-- Header -->
+            <TextView
+                android:id="@+id/reminder_goal_title"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textAppearance="?attr/textAppearanceBodyMedium"
+                android:textColor="@color/on_surface"
+                android:textStyle="bold"
+                tools:text="Goal: 30 min run" />
+            <TextView
+                android:id="@+id/reminder_group_name"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:textAppearance="?attr/textAppearanceBodySmall"
+                android:textColor="@color/on_surface_variant"
+                tools:text="Group: Morning Runners" />
+
+            <!-- Enable reminders -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="24dp"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="1dp"
+                app:strokeWidth="0dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:padding="16dp"
+                    android:gravity="center_vertical">
+
+                    <TextView
+                        android:id="@+id/reminder_enable_label"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="@string/reminder_enable"
+                        android:textAppearance="?attr/textAppearanceBodyLarge"
+                        android:textColor="@color/on_surface" />
+                    <androidx.appcompat.widget.SwitchCompat
+                        android:id="@+id/reminder_enable_switch"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:contentDescription="@string/reminder_enable_content_description"
+                        android:minWidth="48dp"
+                        android:minHeight="48dp" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Reminder mode -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="1dp"
+                app:strokeWidth="0dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/reminder_mode_label"
+                        android:textAppearance="?attr/textAppearanceTitleMedium"
+                        android:textColor="@color/on_surface"
+                        android:textStyle="bold" />
+                    <RadioGroup
+                        android:id="@+id/reminder_mode_group"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp">
+
+                        <RadioButton
+                            android:id="@+id/reminder_mode_smart"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:minHeight="48dp"
+                            android:text="@string/reminder_mode_smart"
+                            android:textAppearance="?attr/textAppearanceBodyMedium" />
+                        <RadioButton
+                            android:id="@+id/reminder_mode_fixed"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:minHeight="48dp"
+                            android:text="@string/reminder_mode_fixed"
+                            android:textAppearance="?attr/textAppearanceBodyMedium" />
+                        <RadioButton
+                            android:id="@+id/reminder_mode_off"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:minHeight="48dp"
+                            android:text="@string/reminder_mode_off"
+                            android:textAppearance="?attr/textAppearanceBodyMedium" />
+                    </RadioGroup>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Smart mode details -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/reminder_smart_card"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="1dp"
+                app:strokeWidth="0dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:id="@+id/reminder_pattern_text"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:textAppearance="?attr/textAppearanceBodyMedium"
+                        android:textColor="@color/on_surface"
+                        android:visibility="gone"
+                        tools:text="Your pattern: 5:00 PM – 7:00 PM"
+                        tools:visibility="visible" />
+                    <TextView
+                        android:id="@+id/reminder_pattern_logs_text"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:textAppearance="?attr/textAppearanceBodySmall"
+                        android:textColor="@color/on_surface_variant"
+                        android:visibility="gone"
+                        tools:text="Based on 23 logs (High confidence)"
+                        tools:visibility="visible" />
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/reminder_recalculate_button"
+                        style="@style/Widget.Material3.Button.TextButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:minHeight="48dp"
+                        android:text="@string/reminder_recalculate_pattern"
+                        android:contentDescription="@string/reminder_recalculate_pattern_content_description" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Fixed time -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/reminder_fixed_card"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:visibility="gone"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="1dp"
+                app:strokeWidth="0dp"
+                tools:visibility="visible">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:padding="16dp"
+                    android:gravity="center_vertical">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="@string/reminder_time_label"
+                        android:textAppearance="?attr/textAppearanceBodyLarge"
+                        android:textColor="@color/on_surface" />
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/reminder_fixed_time_button"
+                        style="@style/Widget.Material3.Button.OutlinedButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:minHeight="48dp"
+                        android:contentDescription="@string/reminder_time_content_description"
+                        tools:text="9:00 PM" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Reminder level -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="1dp"
+                app:strokeWidth="0dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/reminder_level_label"
+                        android:textAppearance="?attr/textAppearanceTitleMedium"
+                        android:textColor="@color/on_surface"
+                        android:textStyle="bold" />
+                    <RadioGroup
+                        android:id="@+id/reminder_level_group"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp">
+
+                        <RadioButton
+                            android:id="@+id/reminder_level_gentle"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:minHeight="48dp"
+                            android:text="@string/reminder_level_gentle"
+                            android:textAppearance="?attr/textAppearanceBodyMedium" />
+                        <RadioButton
+                            android:id="@+id/reminder_level_balanced"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:minHeight="48dp"
+                            android:text="@string/reminder_level_balanced"
+                            android:textAppearance="?attr/textAppearanceBodyMedium" />
+                        <RadioButton
+                            android:id="@+id/reminder_level_persistent"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:minHeight="48dp"
+                            android:text="@string/reminder_level_persistent"
+                            android:textAppearance="?attr/textAppearanceBodyMedium" />
+                    </RadioGroup>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Quiet hours -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="1dp"
+                app:strokeWidth="0dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/reminder_quiet_hours"
+                        android:textAppearance="?attr/textAppearanceTitleMedium"
+                        android:textColor="@color/on_surface"
+                        android:textStyle="bold" />
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:layout_marginTop="12dp"
+                        android:gravity="center_vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/reminder_quiet_from"
+                            android:textAppearance="?attr/textAppearanceBodyMedium"
+                            android:textColor="@color/on_surface" />
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/reminder_quiet_from_button"
+                            style="@style/Widget.Material3.Button.OutlinedButton"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:layout_marginStart="8dp"
+                            android:layout_marginEnd="4dp"
+                            android:minHeight="48dp"
+                            android:contentDescription="@string/reminder_quiet_from_content_description"
+                            tools:text="10:00 PM" />
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="8dp"
+                            android:text="@string/reminder_quiet_to"
+                            android:textAppearance="?attr/textAppearanceBodyMedium"
+                            android:textColor="@color/on_surface" />
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/reminder_quiet_to_button"
+                            style="@style/Widget.Material3.Button.OutlinedButton"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:layout_marginStart="4dp"
+                            android:minHeight="48dp"
+                            android:contentDescription="@string/reminder_quiet_to_content_description"
+                            tools:text="7:00 AM" />
+                    </LinearLayout>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Save -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/reminder_save_button"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="24dp"
+                android:minHeight="48dp"
+                android:text="@string/reminder_save"
+                android:contentDescription="@string/reminder_save_content_description"
+                app:cornerRadius="20dp" />
+        </LinearLayout>
+        <View
+            android:id="@+id/keyboard_spacer"
+            android:layout_width="match_parent"
+            android:layout_height="300dp"
+            android:layout_marginTop="16dp"
+            app:layout_constraintTop_toBottomOf="@id/button_create"
+            app:layout_constraintStart_toStartOf="parent" />
+    </LinearLayout>
+</androidx.core.widget.NestedScrollView>

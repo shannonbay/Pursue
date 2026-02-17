@@ -8,6 +8,7 @@ export interface UsersTable {
   avatar_data: Buffer | null;
   avatar_mime_type: string | null;
   password_hash: string | null;
+  timezone: ColumnType<string, string | undefined, string>; // Cached timezone for smart reminders
   created_at: ColumnType<Date, string | undefined, never>;
   updated_at: ColumnType<Date, string | undefined, string | undefined>;
   deleted_at: ColumnType<Date | null, string | undefined, string | undefined>;
@@ -350,6 +351,55 @@ export interface GroupDailyGcrTable {
 export type GroupDailyGcr = Selectable<GroupDailyGcrTable>;
 export type NewGroupDailyGcr = Insertable<GroupDailyGcrTable>;
 
+// User logging patterns table (cached patterns for smart reminders)
+export interface UserLoggingPatternsTable {
+  user_id: string;
+  goal_id: string;
+  day_of_week: number; // -1 for general, 0-6 for day-specific
+  typical_hour_start: number;
+  typical_hour_end: number;
+  confidence_score: number;
+  sample_size: number;
+  last_calculated_at: ColumnType<Date, string | undefined, string | undefined>;
+}
+
+export type UserLoggingPattern = Selectable<UserLoggingPatternsTable>;
+export type NewUserLoggingPattern = Insertable<UserLoggingPatternsTable>;
+export type UserLoggingPatternUpdate = Updateable<UserLoggingPatternsTable>;
+
+// Reminder history table (track sent reminders and effectiveness)
+export interface ReminderHistoryTable {
+  id: Generated<string>;
+  user_id: string;
+  goal_id: string;
+  reminder_tier: string; // 'gentle', 'supportive', 'last_chance'
+  sent_at: ColumnType<Date, string | undefined, never>;
+  sent_at_local_date: string; // DATE as YYYY-MM-DD
+  was_effective: boolean | null;
+  social_context: Record<string, unknown> | null;
+  user_timezone: string;
+}
+
+export type ReminderHistory = Selectable<ReminderHistoryTable>;
+export type NewReminderHistory = Insertable<ReminderHistoryTable>;
+
+// User reminder preferences table (per-goal reminder settings)
+export interface UserReminderPreferencesTable {
+  user_id: string;
+  goal_id: string;
+  enabled: ColumnType<boolean, boolean | undefined, boolean>;
+  mode: ColumnType<string, string | undefined, string>; // 'smart', 'fixed', 'disabled'
+  fixed_hour: number | null;
+  aggressiveness: ColumnType<string, string | undefined, string>; // 'gentle', 'balanced', 'persistent'
+  quiet_hours_start: number | null;
+  quiet_hours_end: number | null;
+  last_modified_at: ColumnType<Date, string | undefined, string | undefined>;
+}
+
+export type UserReminderPreferences = Selectable<UserReminderPreferencesTable>;
+export type NewUserReminderPreferences = Insertable<UserReminderPreferencesTable>;
+export type UserReminderPreferencesUpdate = Updateable<UserReminderPreferencesTable>;
+
 // Database interface combining all tables
 export interface Database {
   users: UsersTable;
@@ -375,4 +425,7 @@ export interface Database {
   user_milestone_grants: UserMilestoneGrantsTable;
   group_heat: GroupHeatTable;
   group_daily_gcr: GroupDailyGcrTable;
+  user_logging_patterns: UserLoggingPatternsTable;
+  reminder_history: ReminderHistoryTable;
+  user_reminder_preferences: UserReminderPreferencesTable;
 }

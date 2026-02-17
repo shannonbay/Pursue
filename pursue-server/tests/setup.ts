@@ -76,6 +76,7 @@ async function createSchema(db: Kysely<Database>) {
       avatar_data BYTEA,
       avatar_mime_type VARCHAR(50),
       password_hash VARCHAR(255),
+      timezone VARCHAR(50) DEFAULT 'UTC',
       created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
       updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
       deleted_at TIMESTAMP WITH TIME ZONE,
@@ -131,6 +132,12 @@ async function createSchema(db: Kysely<Database>) {
         WHERE table_name = 'users' AND column_name = 'current_group_count'
       ) THEN
         ALTER TABLE users ADD COLUMN current_group_count INTEGER NOT NULL DEFAULT 0;
+      END IF;
+      IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = 'users' AND column_name = 'timezone'
+      ) THEN
+        ALTER TABLE users ADD COLUMN timezone VARCHAR(50) DEFAULT 'UTC';
       END IF;
     END $$;
   `.execute(db);
@@ -539,6 +546,53 @@ async function createSchema(db: Kysely<Database>) {
   `.execute(db);
   await sql`CREATE INDEX IF NOT EXISTS idx_gcr_group_date ON group_daily_gcr(group_id, date DESC)`.execute(db);
 
+  // Create user_logging_patterns table
+  await sql`
+    CREATE TABLE IF NOT EXISTS user_logging_patterns (
+      user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+      goal_id UUID REFERENCES goals(id) ON DELETE CASCADE,
+      day_of_week INTEGER NOT NULL DEFAULT -1,
+      typical_hour_start INTEGER NOT NULL,
+      typical_hour_end INTEGER NOT NULL,
+      confidence_score DECIMAL(3,2) NOT NULL,
+      sample_size INTEGER NOT NULL,
+      last_calculated_at TIMESTAMPTZ DEFAULT NOW(),
+      PRIMARY KEY (user_id, goal_id, day_of_week)
+    )
+  `.execute(db);
+
+  // Create reminder_history table
+  await sql`
+    CREATE TABLE IF NOT EXISTS reminder_history (
+      id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+      user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+      goal_id UUID REFERENCES goals(id) ON DELETE CASCADE,
+      reminder_tier VARCHAR(20) NOT NULL,
+      sent_at TIMESTAMPTZ DEFAULT NOW(),
+      sent_at_local_date DATE NOT NULL,
+      was_effective BOOLEAN,
+      social_context JSONB,
+      user_timezone VARCHAR(50) NOT NULL
+    )
+  `.execute(db);
+  await sql`CREATE INDEX IF NOT EXISTS idx_reminder_history_user_goal_date ON reminder_history(user_id, goal_id, sent_at_local_date DESC)`.execute(db);
+
+  // Create user_reminder_preferences table
+  await sql`
+    CREATE TABLE IF NOT EXISTS user_reminder_preferences (
+      user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+      goal_id UUID REFERENCES goals(id) ON DELETE CASCADE,
+      enabled BOOLEAN DEFAULT TRUE,
+      mode VARCHAR(20) DEFAULT 'smart',
+      fixed_hour INTEGER,
+      aggressiveness VARCHAR(20) DEFAULT 'balanced',
+      quiet_hours_start INTEGER,
+      quiet_hours_end INTEGER,
+      last_modified_at TIMESTAMPTZ DEFAULT NOW(),
+      PRIMARY KEY (user_id, goal_id)
+    )
+  `.execute(db);
+
   // Fix FK constraints for goals (CREATE TABLE IF NOT EXISTS won't update existing constraints)
   await sql`
     ALTER TABLE goals DROP CONSTRAINT IF EXISTS goals_created_by_user_id_fkey;
@@ -575,6 +629,9 @@ async function cleanDatabase(db: Kysely<Database>) {
       nudges,
       progress_photos,
       photo_upload_log,
+      user_logging_patterns,
+      reminder_history,
+      user_reminder_preferences,
       progress_entries,
       goals,
       group_activities,

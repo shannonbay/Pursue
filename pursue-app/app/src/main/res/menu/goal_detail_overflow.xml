@@ -11,5 +11,10 @@
         android:id="@+id/menu_delete_goal"
         android:title="@string/menu_delete_goal"
         app:showAsAction="never" />
-    
+
+    <item
+        android:id="@+id/menu_reminder_settings"
+        android:title="@string/reminder_settings_title"
+        app:showAsAction="never" />
+
 </menu>

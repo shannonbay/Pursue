@@ -16,6 +16,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.MenuProvider
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.commit
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -67,6 +68,7 @@ class GoalDetailFragment : Fragment() {
     private var goalId: String? = null
     private var currentUserId: String? = null
     private var isAdmin: Boolean = false
+    private var groupName: String? = null
     
     // Views
     private lateinit var swipeRefreshLayout: SwipeRefreshLayout
@@ -168,9 +170,11 @@ class GoalDetailFragment : Fragment() {
             override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) {
                 menuInflater.inflate(R.menu.goal_detail_overflow, menu)
                 
-                // Show/hide menu items based on admin status
+                // Show/hide menu items based on admin status and cadence
                 menu.findItem(R.id.menu_edit_goal).isVisible = isAdmin
                 menu.findItem(R.id.menu_delete_goal).isVisible = isAdmin
+                menu.findItem(R.id.menu_reminder_settings).isVisible =
+                    goalDetail?.goal?.cadence == "daily"
             }
 
             override fun onMenuItemSelected(menuItem: MenuItem): Boolean {
@@ -184,10 +188,27 @@ class GoalDetailFragment : Fragment() {
                         handleDeleteGoal()
                         true
                     }
+                    R.id.menu_reminder_settings -> {
+                        openReminderSettings()
+                        true
+                    }
                     else -> false
                 }
             }
         }, viewLifecycleOwner, Lifecycle.State.RESUMED)
+    }
+
+    private fun openReminderSettings() {
+        val gid = goalId ?: return
+        val title = goalDetail?.goal?.title ?: return
+        val gname = groupName ?: return
+        requireActivity().supportFragmentManager.commit {
+            replace(
+                R.id.fragment_container,
+                ReminderSettingsFragment.newInstance(gid, title, gname)
+            )
+            addToBackStack(null)
+        }
     }
 
     private fun loadGoalData() {
@@ -233,15 +254,17 @@ class GoalDetailFragment : Fragment() {
                 // In a real implementation, we'd decode the JWT or call /api/users/me
                 currentUserId = progressResponse.progress.firstOrNull()?.user_id
 
-                // Load group details to check if user is admin
+                // Load group details to check if user is admin and get group name
                 try {
                     val groupDetail = withContext(Dispatchers.IO) {
                         ApiClient.getGroupDetails(accessToken, goalResponse.group_id)
                     }
                     isAdmin = groupDetail.user_role == "admin" || groupDetail.user_role == "creator"
+                    groupName = groupDetail.name
                 } catch (e: Exception) {
                     // If we can't load group details, assume not admin
                     isAdmin = false
+                    groupName = null
                 }
 
                 // Calculate current period progress
@@ -284,6 +307,7 @@ class GoalDetailFragment : Fragment() {
                     updateEntriesList(entries)
                     updateUiState(if (entries.isEmpty()) GoalDetailUiState.SUCCESS_EMPTY else GoalDetailUiState.SUCCESS_WITH_DATA)
                     swipeRefreshLayout.isRefreshing = false
+                    requireActivity().invalidateOptionsMenu()
                 }
             } catch (e: ApiException) {
                 Handler(Looper.getMainLooper()).post {

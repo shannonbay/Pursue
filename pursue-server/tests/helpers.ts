@@ -503,3 +503,112 @@ export function createTestJpegBuffer(): Buffer {
     0x14, 0x51, 0x40, 0x05, 0xFF, 0xD9
   ]);
 }
+
+// =============================================================================
+// Smart Reminders Test Helpers
+// =============================================================================
+
+/**
+ * Create a reminder preference directly in the database
+ */
+export async function createTestReminderPreference(
+  userId: string,
+  goalId: string,
+  options?: {
+    enabled?: boolean;
+    mode?: 'smart' | 'fixed' | 'disabled';
+    fixedHour?: number | null;
+    aggressiveness?: 'gentle' | 'balanced' | 'persistent';
+    quietHoursStart?: number | null;
+    quietHoursEnd?: number | null;
+  }
+): Promise<void> {
+  await testDb
+    .insertInto('user_reminder_preferences')
+    .values({
+      user_id: userId,
+      goal_id: goalId,
+      enabled: options?.enabled ?? true,
+      mode: options?.mode ?? 'smart',
+      fixed_hour: options?.fixedHour ?? null,
+      aggressiveness: options?.aggressiveness ?? 'balanced',
+      quiet_hours_start: options?.quietHoursStart ?? null,
+      quiet_hours_end: options?.quietHoursEnd ?? null,
+    })
+    .execute();
+}
+
+/**
+ * Create a reminder history entry directly in the database
+ */
+export async function createTestReminderHistory(
+  userId: string,
+  goalId: string,
+  options?: {
+    reminderTier?: 'gentle' | 'supportive' | 'last_chance';
+    sentAt?: Date;
+    sentAtLocalDate?: string;
+    wasEffective?: boolean | null;
+    userTimezone?: string;
+    socialContext?: Record<string, unknown> | null;
+  }
+): Promise<string> {
+  const today = new Date().toISOString().slice(0, 10);
+  const history = await testDb
+    .insertInto('reminder_history')
+    .values({
+      user_id: userId,
+      goal_id: goalId,
+      reminder_tier: options?.reminderTier ?? 'gentle',
+      sent_at: options?.sentAt?.toISOString() ?? new Date().toISOString(),
+      sent_at_local_date: options?.sentAtLocalDate ?? today,
+      was_effective: options?.wasEffective ?? null,
+      user_timezone: options?.userTimezone ?? 'America/New_York',
+      social_context: options?.socialContext ?? null,
+    })
+    .returning('id')
+    .executeTakeFirstOrThrow();
+  return history.id;
+}
+
+/**
+ * Create a logging pattern directly in the database
+ */
+export async function createTestLoggingPattern(
+  userId: string,
+  goalId: string,
+  options?: {
+    dayOfWeek?: number;
+    typicalHourStart?: number;
+    typicalHourEnd?: number;
+    confidenceScore?: number;
+    sampleSize?: number;
+  }
+): Promise<void> {
+  await testDb
+    .insertInto('user_logging_patterns')
+    .values({
+      user_id: userId,
+      goal_id: goalId,
+      day_of_week: options?.dayOfWeek ?? -1,
+      typical_hour_start: options?.typicalHourStart ?? 8,
+      typical_hour_end: options?.typicalHourEnd ?? 10,
+      confidence_score: options?.confidenceScore ?? 0.8,
+      sample_size: options?.sampleSize ?? 15,
+    })
+    .execute();
+}
+
+/**
+ * Set a user's timezone directly in the database
+ */
+export async function setUserTimezone(
+  userId: string,
+  timezone: string
+): Promise<void> {
+  await testDb
+    .updateTable('users')
+    .set({ timezone })
+    .where('id', '=', userId)
+    .execute();
+}
