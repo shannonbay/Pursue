@@ -179,6 +179,11 @@ class GroupDetailFragment : Fragment() {
         viewPager = view.findViewById(R.id.view_pager)
         fabAction = view.findViewById(R.id.fab_action)
 
+        // Heat section tap -> show info dialog
+        val heatClickListener = View.OnClickListener { showHeatInfoDialog() }
+        heatSection.setOnClickListener(heatClickListener)
+        heatDetails.setOnClickListener(heatClickListener)
+
         // Load initial icon from arguments (no icon_color until details load)
         loadGroupIcon(
             hasIcon = arguments?.getBoolean(ARG_GROUP_HAS_ICON) ?: false,
@@ -1043,6 +1048,29 @@ class GroupDetailFragment : Fragment() {
             heatSection.visibility = View.GONE
             heatDetails.visibility = View.GONE
         }
+    }
+
+    /**
+     * Show a dialog explaining how the Group Heat score is calculated.
+     * Includes the current group's flame icon and tier name.
+     */
+    private fun showHeatInfoDialog() {
+        val heat = groupDetail?.heat ?: return
+        val dialogView = layoutInflater.inflate(R.layout.dialog_heat_info, null)
+
+        val icon = dialogView.findViewById<ImageView>(R.id.heat_info_icon)
+        val tierLabel = dialogView.findViewById<TextView>(R.id.heat_info_tier)
+        val body = dialogView.findViewById<TextView>(R.id.heat_info_body)
+
+        HeatUtils.getTierDrawable(heat.tier)?.let { icon.setImageResource(it) }
+        tierLabel.text = heat.tier_name
+        body.text = getString(R.string.heat_info_body)
+
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle(getString(R.string.heat_info_title))
+            .setView(dialogView)
+            .setPositiveButton(getString(R.string.heat_info_ok), null)
+            .show()
     }
 
     /**
