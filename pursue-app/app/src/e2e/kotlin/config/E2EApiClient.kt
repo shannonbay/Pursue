@@ -35,6 +35,7 @@ import app.getpursue.data.network.MarkAllReadResponse
 import app.getpursue.data.network.MarkNotificationReadResponse
 import app.getpursue.data.network.MemberProgressResponse
 import app.getpursue.data.network.HeatHistoryResponse
+import app.getpursue.data.network.WeeklyRecapJobResponse
 import app.getpursue.data.network.GetAllReminderPreferencesResponse
 import app.getpursue.data.network.GoalReminderPreferencesResponse
 import app.getpursue.data.network.RecalculateGoalPatternResponse
@@ -520,5 +521,16 @@ class E2EApiClient(private val context: Context) {
     ): RecalculateGoalPatternResponse {
         storeTokenIfPresent(accessToken)
         return ApiClient.recalculateGoalPattern("", goalId, userTimezone)
+    }
+
+    // --- Internal Jobs ---
+
+    // No storeTokenIfPresent call — internal job uses x-internal-job-key, not Bearer auth
+    suspend fun triggerWeeklyRecapJob(
+        internalJobKey: String,
+        forceGroupId: String? = null,
+        forceWeekEnd: String? = null
+    ): WeeklyRecapJobResponse {
+        return ApiClient.triggerWeeklyRecapJob(internalJobKey, forceGroupId, forceWeekEnd)
     }
 }

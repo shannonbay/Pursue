@@ -9,6 +9,7 @@ import java.net.URL
 object LocalServerConfig {
     const val BASE_URL = "http://localhost:3000"
     const val API_BASE_URL = "$BASE_URL/api"
+    const val INTERNAL_JOB_KEY = "test-internal-job-key"
     
     /**
      * Check if local dev server is running and accessible.

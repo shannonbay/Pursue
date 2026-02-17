@@ -1872,6 +1872,33 @@ object ApiClient {
     }
 
     /**
+     * Trigger the weekly recap internal job.
+     * Uses x-internal-job-key header instead of Bearer auth.
+     * In test mode, forceGroupId and forceWeekEnd bypass timezone filtering.
+     */
+    suspend fun triggerWeeklyRecapJob(
+        internalJobKey: String,
+        forceGroupId: String? = null,
+        forceWeekEnd: String? = null
+    ): WeeklyRecapJobResponse {
+        val bodyMap = mutableMapOf<String, Any>()
+        forceGroupId?.let { bodyMap["forceGroupId"] = it }
+        forceWeekEnd?.let { bodyMap["forceWeekEnd"] = it }
+        val requestBody = gson.toJson(bodyMap).toRequestBody(jsonMediaType)
+
+        val request = Request.Builder()
+            .url("$baseUrl/internal/jobs/weekly-recap")
+            .post(requestBody)
+            .addHeader("Content-Type", "application/json")
+            .addHeader("x-internal-job-key", internalJobKey)
+            .build()
+
+        return executeRequest(request, getClient()) { responseBody ->
+            gson.fromJson(responseBody, WeeklyRecapJobResponse::class.java)
+        }
+    }
+
+    /**
      * Execute an HTTP request and parse the response.
      */
     private suspend fun <T> executeRequest(
@@ -2575,6 +2602,14 @@ data class HeatStats(
     val peak_date: String?,
     val days_at_supernova: Int?,
     val longest_increase_streak: Int?
+)
+
+/** POST /internal/jobs/weekly-recap response */
+data class WeeklyRecapJobResponse(
+    val success: Boolean,
+    val groups_processed: Int,
+    val errors: Int,
+    val skipped: Int
 )
 
 /**
