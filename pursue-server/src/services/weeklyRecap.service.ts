@@ -948,9 +948,59 @@ export async function shouldSkipGroup(
 /**
  * Process weekly recaps for all eligible groups
  * This runs every 30 minutes on Sundays and sends recaps to groups
- * where members are experiencing Sunday 7 PM in their local timezone
+ * where members are experiencing Sunday 7 PM in their local timezone.
+ *
+ * In test mode, pass forceGroupId to bypass timezone filtering and process
+ * a specific group directly. Pass forceWeekEnd (YYYY-MM-DD) to override the
+ * week-end date used for the recap window.
  */
-export async function processWeeklyRecaps(): Promise<{ processed: number; errors: number; skipped: number }> {
+export async function processWeeklyRecaps(options?: {
+  forceGroupId?: string;
+  forceWeekEnd?: string;
+}): Promise<{ processed: number; errors: number; skipped: number }> {
+  // Test-only: force a specific group regardless of timezone window
+  if (options?.forceGroupId) {
+    const forceGroupId = options.forceGroupId;
+    const weekEndDate = options.forceWeekEnd ?? (() => {
+      // Default to previous Sunday in UTC
+      const today = new Date();
+      const dayOfWeek = today.getUTCDay();
+      const daysBack = dayOfWeek === 0 ? 7 : dayOfWeek;
+      const sunday = new Date(today);
+      sunday.setUTCDate(today.getUTCDate() - daysBack);
+      return sunday.toISOString().slice(0, 10);
+    })();
+    const weekStartDate = subtractDays(weekEndDate, 6);
+
+    logger.info('Weekly recap: force processing group', { forceGroupId, weekStartDate, weekEndDate });
+
+    try {
+      // Still check deduplication to prevent double-sends
+      const alreadySent = await db
+        .selectFrom('weekly_recaps_sent')
+        .where('group_id', '=', forceGroupId)
+        .where('week_end', '=', weekEndDate)
+        .executeTakeFirst();
+
+      if (alreadySent) {
+        logger.debug('Skipping force recap — already sent', { forceGroupId, weekEndDate });
+        return { processed: 0, errors: 0, skipped: 1 };
+      }
+
+      const recapData = await buildWeeklyRecap(forceGroupId, weekStartDate, weekEndDate);
+      const result = await sendRecapToGroup(forceGroupId, recapData);
+      if (result.sent === 0) {
+        return { processed: 0, errors: 0, skipped: 1 };
+      }
+      return { processed: 1, errors: 0, skipped: 0 };
+    } catch (error) {
+      logger.error('Failed to force-process weekly recap for group', {
+        forceGroupId,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
+      return { processed: 0, errors: 1, skipped: 0 };
+    }
+  }
   logger.info('Starting weekly recap processing');
 
   // Get all groups with their member timezones

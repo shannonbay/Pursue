@@ -32,9 +32,13 @@ export async function weeklyRecapJob(
 
     logger.info('Starting weekly recap job');
 
+    // In test mode, allow force overrides to bypass timezone/day-of-week filtering
+    const forceGroupId = process.env.NODE_ENV === 'test' ? (req.body?.forceGroupId as string | undefined) : undefined;
+    const forceWeekEnd = process.env.NODE_ENV === 'test' ? (req.body?.forceWeekEnd as string | undefined) : undefined;
+
     // Process weekly recaps
     // The service will internally check which groups have members experiencing Sunday 7 PM
-    const result = await processWeeklyRecaps();
+    const result = await processWeeklyRecaps({ forceGroupId, forceWeekEnd });
 
     logger.info('Weekly recap job completed', result);
 
