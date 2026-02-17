@@ -201,36 +201,6 @@ If the device is stopped in a bad state, this may persist when relaunching the e
 
 ---
 
-
-
-## Development Phases
-
-
-
-### Phase 1: Core Backend + Auth (2-3 weeks)
-
-- PostgreSQL schema
-
-- User registration/login (JWT)
-
-- Basic API endpoints (users, groups)
-
-- FCM setup
-
-
-
-### Phase 2: Groups & Goals (2-3 weeks)
-
-- Group CRUD operations
-
-- Invite codes and joining
-
-- Goals CRUD
-
-- Progress tracking API
-
-
-
 ### Phase 3: Android App - Core UI (3-4 weeks)
 
 - Authentication screens (sign up, sign in)
@@ -579,7 +549,19 @@ This is currently a design-phase project. Once development begins:
 
 ---
 
+## How to test weekly recap?
 
+Run server in test with test-internal-job-key
+
+`$env:NODE_ENV='test'; $env:INTERNAL_JOB_KEY='test-internal-job-key'; npm run dev`
+
+Then curl
+```
+curl -X POST http://localhost:3000/api/internal/jobs/weekly-recap \
+-H "Content-Type: application/json" \
+-H "x-internal-job-key: test-internal-job-key" \
+-d '{"forceGroupId": "8a752a57-cb94-40eb-a381-97928ea90e60", "forceWeekEnd": "2026-02-16"}'
+```
 
 ## Archived Documents
 
