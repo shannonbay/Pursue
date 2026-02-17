@@ -179,6 +179,7 @@ class GroupActivityAdapter(
                     Glide.with(itemView.context).clear(activityAvatar)
                     activityAvatar.setImageResource(R.drawable.ic_pursue_logo)
                     activityAvatar.scaleType = ImageView.ScaleType.CENTER_INSIDE
+                    activityAvatar.setBackgroundResource(R.drawable.circle_background_white)
                     activityAvatar.contentDescription = itemView.context.getString(R.string.app_name)
                 } else {
                     activityAvatar.visibility = View.GONE
@@ -190,6 +191,7 @@ class GroupActivityAdapter(
                 activityAvatar.visibility = View.VISIBLE
                 activityAvatarFallback.visibility = View.GONE
                 activityAvatar.scaleType = ImageView.ScaleType.CENTER_CROP
+                activityAvatar.setBackgroundResource(R.drawable.circle_background)
                 val imageUrl = "${ApiClient.getBaseUrl()}/users/${user.id}/avatar"
                 activityAvatar.contentDescription = itemView.context.getString(R.string.content_description_member_avatar, user.display_name)
                 Glide.with(itemView.context)

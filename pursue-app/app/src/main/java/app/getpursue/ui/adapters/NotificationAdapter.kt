@@ -103,7 +103,7 @@ class NotificationAdapter(
             if (item.type == "milestone_achieved") {
                 avatar.setImageResource(R.drawable.ic_pursue_logo)
                 avatar.scaleType = ImageView.ScaleType.CENTER_INSIDE
-                avatar.setBackgroundResource(R.color.surface_variant)
+                avatar.setBackgroundResource(R.color.white)
                 avatarOverlay.visibility = View.GONE
                 return
             }
@@ -127,7 +127,7 @@ class NotificationAdapter(
                 avatar.setBackgroundResource(0)
             } else {
                 avatar.setImageResource(R.drawable.ic_pursue_logo)
-                avatar.setBackgroundResource(R.color.surface_variant)
+                avatar.setBackgroundResource(R.color.white)
             }
         }
 
