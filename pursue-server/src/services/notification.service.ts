@@ -184,6 +184,80 @@ async function sendFcmForNotification(
   await sendNotificationToUser(user_id, notification, data);
 }
 
+export type HeatMilestoneType = 'heat_tier_up' | 'heat_supernova_reached' | 'heat_streak_milestone';
+
+export interface HeatMilestoneMetadata {
+  tier_name?: string;
+  streak_days?: number;
+}
+
+/**
+ * Send FCM push for a group heat milestone to all active members.
+ * Does NOT create user_notifications (inbox) entries — heat is a group-level ambient event.
+ * Fire-and-forget; failures are logged and do not throw.
+ */
+export async function sendHeatMilestonePush(
+  groupId: string,
+  type: HeatMilestoneType,
+  metadata: HeatMilestoneMetadata
+): Promise<void> {
+  try {
+    const [group, members] = await Promise.all([
+      db.selectFrom('groups').select('name').where('id', '=', groupId).executeTakeFirst(),
+      db
+        .selectFrom('group_memberships')
+        .select('user_id')
+        .where('group_id', '=', groupId)
+        .where('status', '=', 'active')
+        .execute(),
+    ]);
+
+    const groupName = group?.name ?? 'Your group';
+    const memberIds = members.map((m) => m.user_id);
+    if (memberIds.length === 0) return;
+
+    let title: string;
+    let body: string;
+    switch (type) {
+      case 'heat_tier_up':
+        title = groupName;
+        body = `Group heat is rising! Now at ${metadata.tier_name ?? 'higher'}.`;
+        break;
+      case 'heat_supernova_reached':
+        title = groupName;
+        body = 'SUPERNOVA! The group is burning blue-hot!';
+        break;
+      case 'heat_streak_milestone':
+        title = groupName;
+        body = `${metadata.streak_days ?? 0}-day heat streak! Keep the momentum!`;
+        break;
+      default:
+        return;
+    }
+
+    const data: Record<string, string> = { type, group_id: groupId };
+
+    await Promise.all(
+      memberIds.map((user_id) =>
+        sendNotificationToUser(user_id, { title, body }, data).catch((err) => {
+          logger.error('Failed to send heat milestone FCM', {
+            groupId,
+            type,
+            userId: user_id,
+            error: err instanceof Error ? err.message : String(err),
+          });
+        })
+      )
+    );
+  } catch (err) {
+    logger.error('sendHeatMilestonePush failed', {
+      groupId,
+      type,
+      error: err instanceof Error ? err.message : String(err),
+    });
+  }
+}
+
 /**
  * Check milestone conditions after a progress entry is saved.
  * Awards notifications for first log, 7-day streak, 30-day streak, 100 total logs.

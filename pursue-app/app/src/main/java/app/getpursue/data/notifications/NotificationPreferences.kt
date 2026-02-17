@@ -96,7 +96,7 @@ object NotificationPreferences {
     /** FCM data type for nudge notifications (when someone nudges you). */
     private const val TYPE_NUDGE_RECEIVED = "nudge_received"
 
-    /** FCM data types that map to "group events" (joins, leaves, promotions, renames, etc.). */
+    /** FCM data types that map to "group events" (joins, leaves, promotions, renames, heat milestones, etc.). */
     private val GROUP_EVENT_TYPES = setOf(
         "member_joined",
         "member_left",
@@ -107,7 +107,10 @@ object NotificationPreferences {
         "member_approved",
         "member_declined",
         "invite_code_regenerated",
-        "group_created"
+        "group_created",
+        "heat_tier_up",
+        "heat_supernova_reached",
+        "heat_streak_milestone"
     )
 
     /**

@@ -1,6 +1,7 @@
 import { db } from '../database/index.js';
 import { logger } from '../utils/logger.js';
 import { createGroupActivity, ACTIVITY_TYPES } from './activity.service.js';
+import { sendHeatMilestonePush } from './notification.service.js';
 
 // Constants from spec
 export const SENSITIVITY = 50;
@@ -332,6 +333,9 @@ async function createHeatActivities(
       tier_name: tierName(newTier),
       score,
     });
+    sendHeatMilestonePush(groupId, 'heat_tier_up', { tier_name: tierName(newTier) }).catch((err) => {
+      logger.error('Heat tier-up push failed', { groupId, error: err });
+    });
 
     // First time reaching Supernova
     if (newTier === 7 && oldTier < 7) {
@@ -341,6 +345,9 @@ async function createHeatActivities(
         null,
         { score }
       );
+      sendHeatMilestonePush(groupId, 'heat_supernova_reached', {}).catch((err) => {
+        logger.error('Heat supernova push failed', { groupId, error: err });
+      });
     }
   }
 
@@ -362,6 +369,11 @@ async function createHeatActivities(
         ACTIVITY_TYPES.HEAT_STREAK_MILESTONE,
         null,
         { streak_days: milestone, score }
+      );
+      sendHeatMilestonePush(groupId, 'heat_streak_milestone', { streak_days: milestone }).catch(
+        (err) => {
+          logger.error('Heat streak milestone push failed', { groupId, milestone, error: err });
+        }
       );
     }
   }

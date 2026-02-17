@@ -155,6 +155,7 @@ class PursueFirebaseMessagingService : FirebaseMessagingService() {
             "membership_approved", "membership_rejected", "promoted_to_admin" -> 1 to false
             "member_joined", "member_left", "member_promoted", "member_approved",
             "member_removed", "member_declined", "group_renamed", "invite_code_regenerated", "group_created" -> 1 to false
+            "heat_tier_up", "heat_supernova_reached", "heat_streak_milestone" -> 2 to false
             else -> -1 to false
         }
         return Intent(applicationContext, GroupDetailActivity::class.java).apply {
