@@ -107,6 +107,8 @@ My TODOs
 - blank space on goal creation and group creation screen after save button
 - Site should merge features page with homepage
 - app announcements
+- Password reset e-mails
+ 
 
 TODO: Redis-backed sliding-window limits
 
