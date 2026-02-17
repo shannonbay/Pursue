@@ -3,7 +3,6 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { app } from './app.js';
 import { logger } from './utils/logger.js';
-import { calculateDailyHeatForAllGroups } from './services/heat.service.js';
 
 // Validate required environment variables
 const requiredEnvVars = [
@@ -77,19 +76,6 @@ const server = app.listen(Number(PORT), '0.0.0.0', () => {
     androidClientId: hasAndroidClient && androidClientId ? `${androidClientId.substring(0, 30)}...` : undefined,
   });
 });
-
-// Schedule daily heat calculation (every 24 hours)
-const TWENTY_FOUR_HOURS_MS = 24 * 60 * 60 * 1000;
-setInterval(() => {
-  calculateDailyHeatForAllGroups()
-    .then((result) => {
-      logger.info('Scheduled heat calculation completed', result);
-    })
-    .catch((err) => {
-      logger.error('Scheduled heat calculation failed', { error: err });
-    });
-}, TWENTY_FOUR_HOURS_MS);
-logger.info('Heat calculation scheduled', { intervalMs: TWENTY_FOUR_HOURS_MS });
 
 // Handle server startup errors
 server.on('error', (error: NodeJS.ErrnoException) => {
