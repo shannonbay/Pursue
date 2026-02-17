@@ -1,1 +1,14 @@
 .codanna
+
+# Local / IDE
+.claude/settings.local.json
+**/.claude/settings.local.json
+pursue-app/.idea/runConfigurations/
+pursue-app/.idea/deploymentTargetSelector.xml
+pursue-app/.idea/vcs.xml
+
+# Temporary
+COMMIT_MSG.txt
+
+# Test output
+pursue-server/test-results.json
