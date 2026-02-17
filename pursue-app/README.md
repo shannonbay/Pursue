@@ -555,7 +555,7 @@ Run server in test with test-internal-job-key
 
 `$env:NODE_ENV='test'; $env:INTERNAL_JOB_KEY='test-internal-job-key'; npm run dev`
 
-Then curl
+Then curl (use most recent Sunday as date YYYY-MM-DD)
 ```
 curl -X POST http://localhost:3000/api/internal/jobs/weekly-recap \
 -H "Content-Type: application/json" \
