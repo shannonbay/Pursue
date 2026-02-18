@@ -10,6 +10,20 @@
             android:viewportHeight="666">
             <group android:name="group"/>
             <path
+                android:name="glow_path"
+                android:pathData="M 333.553 28.107 C 266.648 28.107 201.432 48.695 147.305 86.903 C 93.178 125.112 52.872 179.012 32.197 240.834 C 11.522 302.656 11.522 369.28 32.197 431.103 C 52.872 492.925 93.178 546.825 147.305 585.033 C 201.432 623.242 266.648 643.83 333.553 643.83 C 417.558 643.83 498.209 611.372 557.61 553.659 C 617.011 495.946 650.417 417.587 650.417 335.968 C 650.417 254.35 617.011 175.991 557.61 118.278 C 498.209 60.565 417.558 28.107 333.553 28.107 Z">
+                <aapt:attr name="android:fillColor">
+                    <gradient
+                        android:centerX="339"
+                        android:centerY="338"
+                        android:gradientRadius="300"
+                        android:type="radial">
+                        <item android:offset="0" android:color="#99d200ff" />
+                        <item android:offset="1" android:color="#00d200ff" />
+                    </gradient>
+                </aapt:attr>
+            </path>
+            <path
                 android:name="path"
                 android:pathData="M 335.529 572.244 C 309.618 573.562 149.721 555.818 181.379 396.135 C 189.723 336.847 218.859 321.336 260.87 248.573 C 290.733 163.812 295.125 97.936 295.125 97.936 C 417.655 153.711 459.376 351.339 459.376 351.339 C 487.484 343.874 501.098 310.057 501.098 310.057 C 519.982 314.01 546.333 552.042 335.529 572.244 Z"
                 android:fillColor="#d200ff"
