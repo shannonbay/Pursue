@@ -524,6 +524,15 @@ class CreateGoalFragment : Fragment() {
                                 }
                                 return@post
                             }
+                            if (e.errorCode == "CHALLENGE_GOALS_LOCKED") {
+                                Toast.makeText(
+                                    requireContext(),
+                                    getString(R.string.challenge_goals_locked),
+                                    Toast.LENGTH_LONG
+                                ).show()
+                                navigateBack()
+                                return@post
+                            }
                             "You don't have permission to create goals in this group."
                         }
                         500, 503 -> "Server error. Please try again later."

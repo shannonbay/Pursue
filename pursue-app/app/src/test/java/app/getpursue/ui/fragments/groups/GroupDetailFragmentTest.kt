@@ -422,6 +422,39 @@ class GroupDetailFragmentTest {
     }
 
     @Test
+    fun `test FAB hidden on Goals tab for active challenge`() = runTest(testDispatcher) {
+        val groupDetailResponse = GroupDetailResponse(
+            id = testGroupId,
+            name = testGroupName,
+            description = null,
+            icon_emoji = null,
+            icon_color = null,
+            has_icon = false,
+            creator_user_id = "creator_123",
+            member_count = 5,
+            created_at = "2024-01-01T00:00:00Z",
+            user_role = "creator",
+            is_challenge = true,
+            challenge_start_date = "2026-02-01",
+            challenge_end_date = "2026-02-10",
+            challenge_status = "active"
+        )
+        coEvery { ApiClient.getGroupDetails(any(), any()) } returns groupDetailResponse
+
+        launchFragment()
+        advanceCoroutines()
+        shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(100))
+        shadowOf(Looper.getMainLooper()).idle()
+
+        val fab = fragment.view?.findViewById<FloatingActionButton>(R.id.fab_action)
+        val viewPager = fragment.view?.findViewById<ViewPager2>(R.id.view_pager)
+        viewPager?.currentItem = 0
+        shadowOf(Looper.getMainLooper()).idle()
+
+        assertEquals("FAB should be hidden for active challenges on Goals tab", View.GONE, fab?.visibility)
+    }
+
+    @Test
     fun `test FAB icon changes correctly`() = runTest(testDispatcher) {
         // Given - Set up mock BEFORE launching fragment
         val groupDetailResponse = MockApiClient.createGroupDetailResponse(

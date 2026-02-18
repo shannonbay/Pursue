@@ -49,6 +49,8 @@ import app.getpursue.data.network.ApiException
 import app.getpursue.utils.PolicyDateUtils
 import app.getpursue.models.Group
 import app.getpursue.ui.fragments.groups.CreateGroupFragment
+import app.getpursue.ui.fragments.challenges.ChallengeTemplatesFragment
+import app.getpursue.ui.fragments.challenges.ChallengeSetupFragment
 import app.getpursue.ui.fragments.home.HomeFragment
 import app.getpursue.ui.fragments.home.MyProgressFragment
 import app.getpursue.ui.fragments.home.NotificationsFragment
@@ -515,6 +517,14 @@ class MainAppActivity : AppCompatActivity(),
                 supportActionBar?.title = getString(R.string.create_group_title)
                 supportActionBar?.setDisplayHomeAsUpEnabled(true)
             }
+            is ChallengeTemplatesFragment -> {
+                supportActionBar?.title = getString(R.string.start_challenge)
+                supportActionBar?.setDisplayHomeAsUpEnabled(true)
+            }
+            is ChallengeSetupFragment -> {
+                supportActionBar?.title = getString(R.string.challenge_setup_title)
+                supportActionBar?.setDisplayHomeAsUpEnabled(true)
+            }
             is PremiumFragment -> {
                 supportActionBar?.title = getString(R.string.pursue_premium_title)
                 supportActionBar?.setDisplayHomeAsUpEnabled(true)
@@ -617,6 +627,15 @@ class MainAppActivity : AppCompatActivity(),
                 if (eligibility.can_create_group) proceedToCreateGroup()
                 else showGroupLimitReachedDialog()
             }
+        }
+    }
+
+    override fun onStartChallenge() {
+        supportActionBar?.title = getString(R.string.start_challenge)
+        supportActionBar?.setDisplayHomeAsUpEnabled(true)
+        supportFragmentManager.commit {
+            replace(R.id.fragment_container, ChallengeTemplatesFragment.newInstance())
+            addToBackStack(null)
         }
     }
 

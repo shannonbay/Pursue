@@ -141,6 +141,40 @@
                 app:maxImageSize="24dp" />
         </LinearLayout>
 
+        <!-- Start Challenge row (label + mini FAB) -->
+        <LinearLayout
+            android:id="@+id/speed_dial_row_challenge"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical|end"
+            android:visibility="gone"
+            android:layout_marginBottom="8dp">
+
+            <TextView
+                android:id="@+id/speed_dial_label_challenge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/start_challenge"
+                android:textAppearance="?attr/textAppearanceBodyMedium"
+                android:textColor="@color/on_surface"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:paddingStart="12dp"
+                android:paddingEnd="8dp"
+                android:minHeight="40dp"
+                android:gravity="center_vertical" />
+
+            <com.google.android.material.floatingactionbutton.FloatingActionButton
+                android:id="@+id/fab_start_challenge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:contentDescription="@string/start_challenge"
+                app:fabSize="mini"
+                app:srcCompat="@android:drawable/ic_menu_compass"
+                app:tint="@color/on_primary"
+                app:maxImageSize="24dp" />
+        </LinearLayout>
+
         <!-- Create Group row (label + mini FAB) -->
         <LinearLayout
             android:id="@+id/speed_dial_row_create"

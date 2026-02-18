@@ -23,6 +23,11 @@
         app:showAsAction="never" />
 
     <item
+        android:id="@+id/menu_cancel_challenge"
+        android:title="@string/menu_cancel_challenge"
+        app:showAsAction="never" />
+
+    <item
         android:id="@+id/menu_export_progress"
         android:title="@string/menu_export_progress"
         app:showAsAction="never" />

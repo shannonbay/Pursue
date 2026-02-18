@@ -309,4 +309,41 @@ class GroupAdapterTest {
         // Then
         assertEquals("Adapter should have correct item count", 2, adapter.itemCount)
     }
+
+    @Test
+    fun `test challenge group shows challenge metadata and hides heat icon`() {
+        val challengeGroup = Group(
+            id = "challenge_1",
+            name = "No Sugar Challenge",
+            description = "Challenge",
+            icon_emoji = "🏆",
+            has_icon = false,
+            member_count = 12,
+            role = "creator",
+            joined_at = "2026-02-01T00:00:00Z",
+            updated_at = "2026-02-01T00:00:00Z",
+            is_challenge = true,
+            challenge_start_date = "2026-02-01",
+            challenge_end_date = "2026-02-10",
+            challenge_status = "active"
+        )
+        adapter = GroupAdapter(listOf(challengeGroup), mockOnGroupClick)
+
+        val parent = mockk<RecyclerView>(relaxed = true)
+        every { parent.context } returns getThemedContext()
+        val holder = adapter.onCreateViewHolder(parent, 0)
+        adapter.onBindViewHolder(holder, 0)
+
+        val heatIcon = holder.itemView.findViewById<ImageView>(R.id.heat_icon)
+        val statusBadge = holder.itemView.findViewById<TextView>(R.id.challenge_status_badge)
+        val dayLabel = holder.itemView.findViewById<TextView>(R.id.challenge_day_label)
+        val remainingLabel = holder.itemView.findViewById<TextView>(R.id.challenge_remaining_label)
+
+        assertEquals("Heat icon should be hidden for challenges", View.GONE, heatIcon.visibility)
+        assertEquals("Challenge status should be visible", View.VISIBLE, statusBadge.visibility)
+        assertEquals("Challenge day label should be visible", View.VISIBLE, dayLabel.visibility)
+        assertEquals("Challenge remaining label should be visible", View.VISIBLE, remainingLabel.visibility)
+        assertEquals("Status text should be title cased", "Active", statusBadge.text.toString())
+        assertTrue("Day label should be rendered", dayLabel.text.toString().startsWith("Day "))
+    }
 }

@@ -19,6 +19,7 @@ import app.getpursue.data.network.ApiException
 import app.getpursue.models.Group
 import app.getpursue.models.GroupsResponse
 import app.getpursue.ui.adapters.GroupAdapter
+import com.google.android.material.floatingactionbutton.FloatingActionButton
 import io.mockk.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -610,6 +611,29 @@ class HomeFragmentTest {
         val adapterGroups = adapterField.get(adapter) as List<Group>
         assertTrue("Cached group 1 should still have icon flag", adapterGroups[0].has_icon)
         assertTrue("Cached group 2 should still have icon flag", adapterGroups[1].has_icon)
+    }
+
+    @Test
+    fun `test speed dial start challenge invokes callback`() = runTest(testDispatcher) {
+        skipInCI()
+
+        coEvery { ApiClient.getMyGroups(any()) } returns GroupsResponse(emptyList(), 0)
+
+        launchFragment()
+        advanceCoroutines()
+
+        val mainFab = fragment.view?.findViewById<FloatingActionButton>(R.id.fab_speed_dial_main)
+        val challengeFab = fragment.view?.findViewById<FloatingActionButton>(R.id.fab_start_challenge)
+
+        assertNotNull("Main speed dial FAB should exist", mainFab)
+        assertNotNull("Start challenge FAB should exist", challengeFab)
+
+        mainFab?.performClick()
+        shadowOf(Looper.getMainLooper()).idle()
+        challengeFab?.performClick()
+        shadowOf(Looper.getMainLooper()).idle()
+
+        verify(exactly = 1) { mockCallbacks.onStartChallenge() }
     }
 
 }

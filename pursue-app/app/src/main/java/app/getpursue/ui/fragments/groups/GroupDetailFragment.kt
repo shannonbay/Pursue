@@ -52,6 +52,7 @@ import app.getpursue.ui.activities.GroupDetailActivity
 import app.getpursue.ui.fragments.goals.CreateGoalFragment
 import app.getpursue.ui.views.IconPickerBottomSheet
 import app.getpursue.ui.views.InviteMembersBottomSheet
+import app.getpursue.utils.ChallengeDateUiUtils
 import app.getpursue.utils.HeatUtils
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.engine.DiskCacheStrategy
@@ -115,6 +116,12 @@ class GroupDetailFragment : Fragment() {
     private lateinit var groupIconLetter: TextView
     private lateinit var subtitleMembersGoals: TextView
     private lateinit var createdBy: TextView
+    private lateinit var challengeHeaderContainer: View
+    private lateinit var challengeHeaderTitle: TextView
+    private lateinit var challengeHeaderDayProgress: TextView
+    private lateinit var challengeHeaderProgressBar: android.widget.ProgressBar
+    private lateinit var challengeShareButton: MaterialButton
+    private lateinit var challengeInviteButton: MaterialButton
     private lateinit var heatSection: View
     private lateinit var heatIconDetail: ImageView
     private lateinit var heatTierLabel: TextView
@@ -170,6 +177,12 @@ class GroupDetailFragment : Fragment() {
         groupIconLetter = view.findViewById(R.id.group_icon_letter)
         subtitleMembersGoals = view.findViewById(R.id.subtitle_members_goals)
         createdBy = view.findViewById(R.id.created_by)
+        challengeHeaderContainer = view.findViewById(R.id.challenge_header_container)
+        challengeHeaderTitle = view.findViewById(R.id.challenge_header_title)
+        challengeHeaderDayProgress = view.findViewById(R.id.challenge_header_day_progress)
+        challengeHeaderProgressBar = view.findViewById(R.id.challenge_header_progress_bar)
+        challengeShareButton = view.findViewById(R.id.challenge_share_button)
+        challengeInviteButton = view.findViewById(R.id.challenge_invite_button)
         heatSection = view.findViewById(R.id.heat_section)
         heatIconDetail = view.findViewById(R.id.heat_icon_detail)
         heatTierLabel = view.findViewById(R.id.heat_tier_label)
@@ -183,6 +196,8 @@ class GroupDetailFragment : Fragment() {
         val heatClickListener = View.OnClickListener { showHeatInfoDialog() }
         heatSection.setOnClickListener(heatClickListener)
         heatDetails.setOnClickListener(heatClickListener)
+        challengeInviteButton.setOnClickListener { showInviteMembersSheet() }
+        challengeShareButton.setOnClickListener { shareChallenge() }
 
         // Load initial icon from arguments (no icon_color until details load)
         loadGroupIcon(
@@ -267,10 +282,13 @@ class GroupDetailFragment : Fragment() {
         val isAdmin = groupDetail?.let { detail ->
             detail.user_role == "admin" || detail.user_role == "creator"
         } ?: false
+        val isActiveChallenge = groupDetail?.let { detail ->
+            detail.is_challenge && detail.challenge_status == "active"
+        } ?: false
 
         when (tabPosition) {
             0 -> { // Goals tab
-                if (isAdmin) {
+                if (isAdmin && !isActiveChallenge) {
                     showFABWithAnimation(
                         icon = android.R.drawable.ic_input_add,
                         contentDescription = getString(R.string.fab_add_goal),
@@ -504,6 +522,8 @@ class GroupDetailFragment : Fragment() {
                     menu.findItem(R.id.menu_manage_members).isVisible = isAdmin
                     menu.findItem(R.id.menu_invite_members).isVisible = isAdmin
                     menu.findItem(R.id.menu_regenerate_invite).isVisible = isAdmin
+                    menu.findItem(R.id.menu_cancel_challenge).isVisible =
+                        isCreator && detail.is_challenge && (detail.challenge_status == "upcoming" || detail.challenge_status == "active")
                     menu.findItem(R.id.menu_delete_group).isVisible = isCreator
                 }
             }
@@ -541,6 +561,10 @@ class GroupDetailFragment : Fragment() {
                     }
                     R.id.menu_regenerate_invite -> {
                         showRegenerateInviteConfirmation()
+                        true
+                    }
+                    R.id.menu_cancel_challenge -> {
+                        showCancelChallengeConfirmation()
                         true
                     }
                     R.id.menu_export_progress -> {
@@ -994,6 +1018,8 @@ class GroupDetailFragment : Fragment() {
         val creatorName = members?.firstOrNull { it.user_id == detail.creator_user_id || it.role == "creator" }?.display_name
         createdBy.text = getString(R.string.created_by, creatorName ?: getString(R.string.unknown))
 
+        updateChallengeHeader(detail)
+
         // Update heat section
         updateHeatSection(detail)
 
@@ -1047,6 +1073,94 @@ class GroupDetailFragment : Fragment() {
             // No heat data - hide heat section
             heatSection.visibility = View.GONE
             heatDetails.visibility = View.GONE
+        }
+    }
+
+    private fun updateChallengeHeader(detail: GroupDetailResponse) {
+        if (!detail.is_challenge || detail.challenge_start_date.isNullOrBlank() || detail.challenge_end_date.isNullOrBlank()) {
+            challengeHeaderContainer.visibility = View.GONE
+            return
+        }
+
+        val startDate = parseChallengeDate(detail.challenge_start_date)
+        val endDate = parseChallengeDate(detail.challenge_end_date)
+        val progress = ChallengeDateUiUtils.computeDayProgress(
+            startDate = startDate,
+            endDate = endDate,
+            status = detail.challenge_status
+        )
+
+        challengeHeaderContainer.visibility = View.VISIBLE
+        challengeHeaderTitle.text = detail.name
+        challengeHeaderDayProgress.text = "${progress.dayLabel} · ${progress.daysRemainingLabel}"
+        challengeHeaderProgressBar.progress = progress.progressPercent
+    }
+
+    private fun parseChallengeDate(value: String): LocalDate {
+        return try {
+            LocalDate.parse(value.take(10))
+        } catch (_: Exception) {
+            LocalDate.now()
+        }
+    }
+
+    private fun shareChallenge() {
+        val gid = groupId ?: return
+        lifecycleScope.launch {
+            try {
+                val token = SecureTokenManager.getInstance(requireContext()).getAccessToken()
+                if (token == null) {
+                    Toast.makeText(requireContext(), getString(R.string.error_unauthorized_message), Toast.LENGTH_SHORT).show()
+                    return@launch
+                }
+                val invite = withContext(Dispatchers.IO) { ApiClient.getGroupInviteCode(token, gid) }
+                val detail = groupDetail
+                val shareText = getString(
+                    R.string.challenge_share_text,
+                    detail?.name ?: getString(R.string.start_challenge),
+                    invite.share_url
+                )
+                val intent = Intent(Intent.ACTION_SEND).apply {
+                    type = "text/plain"
+                    putExtra(Intent.EXTRA_TEXT, shareText)
+                }
+                startActivity(Intent.createChooser(intent, getString(R.string.challenge_share_button)))
+            } catch (e: ApiException) {
+                Toast.makeText(requireContext(), e.message ?: getString(R.string.challenge_share_failed), Toast.LENGTH_SHORT).show()
+            } catch (_: Exception) {
+                Toast.makeText(requireContext(), getString(R.string.challenge_share_failed), Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    private fun showCancelChallengeConfirmation() {
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle(getString(R.string.menu_cancel_challenge))
+            .setMessage(getString(R.string.challenge_cancel_confirmation))
+            .setNegativeButton(getString(R.string.cancel), null)
+            .setPositiveButton(getString(R.string.menu_cancel_challenge)) { _, _ ->
+                performCancelChallenge()
+            }
+            .show()
+    }
+
+    private fun performCancelChallenge() {
+        val gid = groupId ?: return
+        lifecycleScope.launch {
+            try {
+                val token = SecureTokenManager.getInstance(requireContext()).getAccessToken()
+                if (token == null) {
+                    Toast.makeText(requireContext(), getString(R.string.error_unauthorized_message), Toast.LENGTH_SHORT).show()
+                    return@launch
+                }
+                withContext(Dispatchers.IO) { ApiClient.cancelChallenge(token, gid) }
+                Toast.makeText(requireContext(), getString(R.string.challenge_cancel_success), Toast.LENGTH_SHORT).show()
+                loadGroupDetails()
+            } catch (e: ApiException) {
+                Toast.makeText(requireContext(), e.message ?: getString(R.string.challenge_cancel_failed), Toast.LENGTH_SHORT).show()
+            } catch (_: Exception) {
+                Toast.makeText(requireContext(), getString(R.string.challenge_cancel_failed), Toast.LENGTH_SHORT).show()
+            }
         }
     }
 

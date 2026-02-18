@@ -54,6 +54,9 @@ class GroupAdapter(
         private val groupIconEmoji: TextView = itemView.findViewById(R.id.group_icon_emoji)
         private val groupName: TextView = itemView.findViewById(R.id.group_name)
         private val heatIcon: ImageView = itemView.findViewById(R.id.heat_icon)
+        private val challengeStatusBadge: TextView = itemView.findViewById(R.id.challenge_status_badge)
+        private val challengeDayLabel: TextView = itemView.findViewById(R.id.challenge_day_label)
+        private val challengeRemainingLabel: TextView = itemView.findViewById(R.id.challenge_remaining_label)
         private val readOnlyBadge: TextView = itemView.findViewById(R.id.read_only_badge)
         private val memberGoalCount: TextView = itemView.findViewById(R.id.member_goal_count)
         private val progressBar: ProgressBar = itemView.findViewById(R.id.progress_bar)
@@ -112,24 +115,39 @@ class GroupAdapter(
             
             groupName.text = group.name
 
-            // Heat icon display
-            group.heat?.let { heat ->
-                val drawableRes = HeatUtils.getTierDrawable(heat.tier)
-                if (drawableRes != null) {
-                    stopHeatAnimation()
-                    heatIcon.setImageResource(drawableRes)
-                    heatIcon.contentDescription = HeatUtils.getContentDescription(
-                        itemView.context, heat.tier_name, heat.score
-                    )
-                    heatIcon.visibility = View.VISIBLE
-                    heatIcon.post { startHeatAnimation() }
-                } else {
+            val challengeState = ChallengeCardStateMapper.map(group)
+            if (challengeState != null) {
+                stopHeatAnimation()
+                heatIcon.visibility = View.GONE
+                challengeStatusBadge.visibility = View.VISIBLE
+                challengeDayLabel.visibility = View.VISIBLE
+                challengeRemainingLabel.visibility = View.VISIBLE
+                challengeStatusBadge.text = challengeState.statusText
+                challengeDayLabel.text = challengeState.dayLabel
+                challengeRemainingLabel.text = challengeState.daysRemainingLabel
+                progressBar.progress = challengeState.progressPercent
+            } else {
+                challengeStatusBadge.visibility = View.GONE
+                challengeDayLabel.visibility = View.GONE
+                challengeRemainingLabel.visibility = View.GONE
+                group.heat?.let { heat ->
+                    val drawableRes = HeatUtils.getTierDrawable(heat.tier)
+                    if (drawableRes != null) {
+                        stopHeatAnimation()
+                        heatIcon.setImageResource(drawableRes)
+                        heatIcon.contentDescription = HeatUtils.getContentDescription(
+                            itemView.context, heat.tier_name, heat.score
+                        )
+                        heatIcon.visibility = View.VISIBLE
+                        heatIcon.post { startHeatAnimation() }
+                    } else {
+                        stopHeatAnimation()
+                        heatIcon.visibility = View.GONE
+                    }
+                } ?: run {
                     stopHeatAnimation()
                     heatIcon.visibility = View.GONE
                 }
-            } ?: run {
-                stopHeatAnimation()
-                heatIcon.visibility = View.GONE
             }
             
             // TODO: active_goals count not in API response - use placeholder for MVP
@@ -140,9 +158,11 @@ class GroupAdapter(
                 activeGoals
             )
             
-            // TODO: today_completion_percent not in API response - use placeholder for MVP
-            val completionPercent = 0 // Placeholder until we fetch from group detail
-            progressBar.progress = completionPercent
+            if (!group.is_challenge) {
+                // TODO: today_completion_percent not in API response - use placeholder for MVP
+                val completionPercent = 0 // Placeholder until we fetch from group detail
+                progressBar.progress = completionPercent
+            }
             
             // Format last activity with prefix (use updated_at when available, else joined_at)
             lastActivity.text = itemView.context.getString(
