@@ -45,14 +45,7 @@
                     android:valueFrom="M 340.799 250.329 C 305.665 365.393 284.146 368.906 263.505 433.465 C 216.952 551.603 328.942 564.778 328.942 564.778 C 328.942 564.778 430.391 569.609 415.898 430.83 C 415.898 430.83 409.75 354.414 340.799 250.329 Z"
                     android:valueTo="M 310.057 256.039 C 295.125 298.199 261.748 407.115 256.478 432.148 C 235.397 567.413 328.942 564.778 328.942 564.778 C 328.942 564.778 418.533 561.265 417.655 455.424 C 390.359 375.032 361.001 397.453 310.057 256.039 Z"
                     android:valueType="pathType"
-                    android:interpolator="@android:interpolator/fast_out_slow_in"/>
-                <objectAnimator
-                    android:propertyName="pathData"
-                    android:startOffset="146"
-                    android:duration="154"
-                    android:valueFrom="M 310.057 256.039 C 295.125 298.199 261.748 407.115 256.478 432.148 C 235.397 567.413 328.942 564.778 328.942 564.778 C 328.942 564.778 418.533 561.265 417.655 455.424 C 390.359 375.032 361.001 397.453 310.057 256.039 Z"
-                    android:valueTo="M 340.799 250.329 C 305.665 365.393 284.146 368.906 263.505 433.465 C 216.952 551.603 328.942 564.778 328.942 564.778 C 328.942 564.778 430.391 569.609 415.898 430.83 C 415.898 430.83 409.75 354.414 340.799 250.329 Z"
-                    android:valueType="pathType"
+                    android:repeatCount="infinite"  android:repeatMode="reverse"
                     android:interpolator="@android:interpolator/fast_out_slow_in"/>
             </set>
         </aapt:attr>
