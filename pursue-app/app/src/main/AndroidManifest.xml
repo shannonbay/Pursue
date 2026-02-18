@@ -35,6 +35,11 @@
             android:parentActivityName="app.getpursue.ui.activities.MainAppActivity" />
 
         <activity
+            android:name="app.getpursue.ui.activities.ShareableMilestoneCardActivity"
+            android:exported="false"
+            android:parentActivityName="app.getpursue.ui.activities.MainAppActivity" />
+
+        <activity
             android:name="app.getpursue.ui.activities.MainActivity"
             android:exported="true">
             <intent-filter>

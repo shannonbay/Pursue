@@ -24,7 +24,22 @@
     <string name="notification_join_request">%1$s wants to join %2$s</string>
     <string name="notification_milestone_first">You logged your first progress!</string>
     <string name="notification_milestone_streak">You hit a %1$d-day streak on %2$s!</string>
+    <string name="notification_milestone_total_logs">You reached 100 total logs!</string>
     <string name="notification_weekly_recap">📊 %1$s — Week in Review</string>
+    <string name="shareable_card_title">Your Achievement</string>
+    <string name="shareable_card_unavailable">This milestone card is unavailable</string>
+    <string name="shareable_card_saved">Saved to Photos</string>
+    <string name="shareable_card_save_failed">Could not save image</string>
+    <string name="shareable_card_share_failed">Could not open share options</string>
+    <string name="shareable_card_share_chooser_title">Share your achievement</string>
+    <string name="shareable_card_share_text">Check out my progress on Pursue! %1$s</string>
+    <string name="shareable_card_btn_share_primary">Share Your Achievement</string>
+    <string name="shareable_card_btn_share_instagram">Share to Instagram Stories</string>
+    <string name="shareable_card_btn_save">Save to Photos</string>
+    <string name="shareable_card_branding_line_1">Track goals with friends on Pursue</string>
+    <string name="shareable_card_branding_line_2">getpursue.app</string>
+    <string name="shareable_card_quote_template">"%1$s"</string>
+    <string name="shareable_card_content_description">Milestone card showing %1$s - %2$s %3$s</string>
 
     <!-- Weekly Recap Card -->
     <string name="recap_completion_rate_label">Group Completion Rate</string>

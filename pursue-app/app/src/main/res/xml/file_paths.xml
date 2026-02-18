@@ -5,6 +5,9 @@
 
     <!-- Cache directory for invite QR code sharing -->
     <cache-path name="invite_qr" path="invite_qr/" />
+
+    <!-- Cache directory for shareable milestone card exports -->
+    <cache-path name="milestone_cards" path="milestone_cards/" />
     
     <!-- External files directory for camera photos -->
     <external-files-path name="camera_photos" path="Pictures/" />

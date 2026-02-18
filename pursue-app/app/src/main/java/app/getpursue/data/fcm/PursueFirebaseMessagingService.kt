@@ -16,6 +16,7 @@ import app.getpursue.data.notifications.NotificationPreferences
 import app.getpursue.data.notifications.UnreadBadgeManager
 import app.getpursue.ui.activities.GroupDetailActivity
 import app.getpursue.ui.activities.MainActivity
+import app.getpursue.ui.activities.ShareableMilestoneCardActivity
 import app.getpursue.R
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
@@ -135,6 +136,15 @@ class PursueFirebaseMessagingService : FirebaseMessagingService() {
      */
     private fun buildContentIntent(data: Map<String, String>?): Intent {
         val type = data?.get("type")
+        val isShareableMilestone = type == "milestone_achieved" && data?.get("shareable") == "true"
+        val notificationId = data?.get("notification_id")?.takeIf { it.isNotBlank() }
+        if (isShareableMilestone && notificationId != null) {
+            return Intent(applicationContext, ShareableMilestoneCardActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                putExtra(ShareableMilestoneCardActivity.EXTRA_NOTIFICATION_ID, notificationId)
+            }
+        }
+
         if (type == "removed_from_group") {
             return Intent(applicationContext, MainActivity::class.java).apply {
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP

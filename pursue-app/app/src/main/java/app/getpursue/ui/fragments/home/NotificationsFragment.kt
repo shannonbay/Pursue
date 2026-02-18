@@ -23,9 +23,11 @@ import app.getpursue.data.network.ApiException
 import app.getpursue.data.network.NotificationItem
 import app.getpursue.data.notifications.UnreadBadgeManager
 import app.getpursue.ui.activities.GroupDetailActivity
+import app.getpursue.ui.activities.ShareableMilestoneCardActivity
 import app.getpursue.ui.adapters.NotificationAdapter
 import app.getpursue.ui.views.ErrorStateView
 import app.getpursue.R
+import com.google.gson.Gson
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.snackbar.Snackbar
 import kotlinx.coroutines.Dispatchers
@@ -49,6 +51,7 @@ class NotificationsFragment : Fragment() {
     private lateinit var errorStateContainer: FrameLayout
     private var adapter: NotificationAdapter? = null
     private var errorStateView: ErrorStateView? = null
+    private val gson = Gson()
 
     private var cachedList: MutableList<NotificationItem> = mutableListOf()
     private var hasMore = false
@@ -85,7 +88,7 @@ class NotificationsFragment : Fragment() {
         errorStateContainer = view.findViewById(R.id.error_state_container)
 
         recyclerView.layoutManager = LinearLayoutManager(requireContext())
-        adapter = NotificationAdapter(emptyList(), requireContext(), ::onNotificationClick)
+        adapter = createAdapter(emptyList())
         recyclerView.adapter = adapter
 
         swipeRefreshLayout.setOnRefreshListener {
@@ -132,7 +135,7 @@ class NotificationsFragment : Fragment() {
                     if (cachedList.isEmpty()) {
                         updateUiState(NotificationsUiState.SUCCESS_EMPTY)
                     } else {
-                        adapter = NotificationAdapter(cachedList.toList(), requireContext(), ::onNotificationClick)
+                        adapter = createAdapter(cachedList.toList())
                         recyclerView.adapter = adapter
                         updateUiState(NotificationsUiState.SUCCESS_WITH_DATA)
                     }
@@ -174,7 +177,7 @@ class NotificationsFragment : Fragment() {
                 Handler(Looper.getMainLooper()).post {
                     if (isAdded) {
                         cachedList = cachedList.map { it.copy(is_read = true) }.toMutableList()
-                        adapter = NotificationAdapter(cachedList.toList(), requireContext(), ::onNotificationClick)
+                        adapter = createAdapter(cachedList.toList())
                         recyclerView.adapter = adapter
                     }
                 }
@@ -186,7 +189,7 @@ class NotificationsFragment : Fragment() {
         val token = SecureTokenManager.getInstance(requireContext()).getAccessToken() ?: return
         val previousList = cachedList.toList()
         cachedList.removeAll { it.id == id }
-        adapter = NotificationAdapter(cachedList.toList(), requireContext(), ::onNotificationClick)
+        adapter = createAdapter(cachedList.toList())
         recyclerView.adapter = adapter
         if (cachedList.isEmpty()) updateUiState(NotificationsUiState.SUCCESS_EMPTY)
         view?.let { Snackbar.make(it, getString(R.string.notification_deleted), Snackbar.LENGTH_SHORT).show() }
@@ -198,7 +201,7 @@ class NotificationsFragment : Fragment() {
                 Handler(Looper.getMainLooper()).post {
                     cachedList.clear()
                     cachedList.addAll(previousList)
-                    adapter = NotificationAdapter(cachedList.toList(), requireContext(), ::onNotificationClick)
+                    adapter = createAdapter(cachedList.toList())
                     recyclerView.adapter = adapter
                     updateUiState(NotificationsUiState.SUCCESS_WITH_DATA)
                     view?.let { Snackbar.make(it, "Could not remove notification", Snackbar.LENGTH_SHORT).show() }
@@ -216,11 +219,16 @@ class NotificationsFragment : Fragment() {
                     val idx = cachedList.indexOfFirst { it.id == item.id }
                     if (idx >= 0) {
                         cachedList[idx] = item.copy(is_read = true)
-                        adapter = NotificationAdapter(cachedList.toList(), requireContext(), ::onNotificationClick)
+                        adapter = createAdapter(cachedList.toList())
                         recyclerView.adapter = adapter
                     }
                 } catch (_: Exception) { /* ignore */ }
             }
+        }
+
+        if (item.type == "milestone_achieved" && item.shareable_card_data != null) {
+            openShareableCard(item, autoAction = null)
+            return
         }
 
         when (item.type) {
@@ -275,6 +283,30 @@ class NotificationsFragment : Fragment() {
                 }
             }
         }
+    }
+
+    private fun createAdapter(items: List<NotificationItem>): NotificationAdapter {
+        return NotificationAdapter(
+            items = items,
+            context = requireContext(),
+            onItemClick = ::onNotificationClick,
+            onShareClick = ::onShareNotificationClick
+        )
+    }
+
+    private fun onShareNotificationClick(item: NotificationItem) {
+        openShareableCard(item, ShareableMilestoneCardActivity.ACTION_GENERIC_SHARE)
+    }
+
+    private fun openShareableCard(item: NotificationItem, autoAction: String?) {
+        val cardDataJson = item.shareable_card_data?.let { gson.toJson(it) }
+        val intent = ShareableMilestoneCardActivity.createIntent(
+            context = requireContext(),
+            notificationId = item.id,
+            cardDataJson = cardDataJson,
+            autoAction = autoAction
+        )
+        startActivity(intent)
     }
 
     private fun setupSwipeToDismiss() {

@@ -26,7 +26,8 @@ import com.bumptech.glide.load.engine.DiskCacheStrategy
 class NotificationAdapter(
     private val items: List<NotificationItem>,
     private val context: Context,
-    private val onItemClick: (NotificationItem) -> Unit
+    private val onItemClick: (NotificationItem) -> Unit,
+    private val onShareClick: ((NotificationItem) -> Unit)? = null
 ) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     companion object {
@@ -49,7 +50,7 @@ class NotificationAdapter(
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
         when (holder) {
             is RecapCardViewHolder -> holder.bind(items[position], onItemClick)
-            is NotificationViewHolder -> holder.bind(items[position], context, onItemClick)
+            is NotificationViewHolder -> holder.bind(items[position], context, onItemClick, onShareClick)
         }
     }
 
@@ -66,8 +67,14 @@ class NotificationAdapter(
         private val contextLine: TextView = itemView.findViewById(R.id.notification_context)
         private val unreadDot: View = itemView.findViewById(R.id.notification_unread_dot)
         private val leftAccent: View = itemView.findViewById(R.id.notification_left_accent)
+        private val shareIcon: View = itemView.findViewById(R.id.notification_share_icon)
 
-        fun bind(item: NotificationItem, context: Context, onItemClick: (NotificationItem) -> Unit) {
+        fun bind(
+            item: NotificationItem,
+            context: Context,
+            onItemClick: (NotificationItem) -> Unit,
+            onShareClick: ((NotificationItem) -> Unit)?
+        ) {
             body.text = formatBody(context, item)
             body.setTypeface(null, if (item.is_read) android.graphics.Typeface.NORMAL else android.graphics.Typeface.BOLD)
             contextLine.text = formatContext(context, item)
@@ -76,8 +83,18 @@ class NotificationAdapter(
             setupAvatar(item, context)
             setupLeftAccent(item, context)
             setupOverlay(item)
+            setupShareIcon(item, onShareClick)
 
             itemView.setOnClickListener { onItemClick(item) }
+        }
+
+        private fun setupShareIcon(item: NotificationItem, onShareClick: ((NotificationItem) -> Unit)?) {
+            val isShareableMilestone = item.type == "milestone_achieved" && item.shareable_card_data != null
+            shareIcon.visibility = if (isShareableMilestone && onShareClick != null) View.VISIBLE else View.GONE
+            shareIcon.setOnClickListener(null)
+            if (isShareableMilestone && onShareClick != null) {
+                shareIcon.setOnClickListener { onShareClick(item) }
+            }
         }
 
         private fun formatBody(context: Context, item: NotificationItem): String {
@@ -103,7 +120,7 @@ class NotificationAdapter(
                             val count = (item.metadata?.get("streak_count") as? Number)?.toInt() ?: 0
                             context.getString(R.string.notification_milestone_streak, count, goalTitle.ifEmpty { "your goal" })
                         }
-                        "total_logs" -> context.getString(R.string.notification_milestone_first)
+                        "total_logs" -> context.getString(R.string.notification_milestone_total_logs)
                         else -> context.getString(R.string.notification_milestone_first)
                     }
                 }

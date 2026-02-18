@@ -37,7 +37,7 @@
             android:textSize="12sp"
             android:visibility="gone"
             tools:visibility="visible"
-            tools:text="🔥" />
+            tools:text="*" />
 
     </FrameLayout>
 
@@ -51,10 +51,10 @@
         android:maxLines="2"
         android:textAppearance="?attr/textAppearanceBodyMedium"
         android:textColor="@color/on_surface"
-        app:layout_constraintEnd_toStartOf="@id/notification_unread_dot"
+        app:layout_constraintEnd_toStartOf="@id/notification_share_icon"
         app:layout_constraintStart_toEndOf="@id/notification_avatar_container"
         app:layout_constraintTop_toTopOf="parent"
-        tools:text="Alex reacted 🔥 to your 30 min run log" />
+        tools:text="Alex reacted to your run log" />
 
     <TextView
         android:id="@+id/notification_context"
@@ -69,7 +69,33 @@
         app:layout_constraintEnd_toEndOf="@id/notification_body"
         app:layout_constraintStart_toStartOf="@id/notification_body"
         app:layout_constraintTop_toBottomOf="@id/notification_body"
-        tools:text="Morning Runners · 2 hours ago" />
+        tools:text="Morning Runners - 2 hours ago" />
+
+    <FrameLayout
+        android:id="@+id/notification_share_icon"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_marginEnd="4dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:clickable="true"
+        android:contentDescription="@string/share"
+        android:focusable="true"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/notification_unread_dot"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:visibility="visible">
+
+        <ImageView
+            android:id="@+id/notification_share_icon_image"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:layout_gravity="center"
+            android:alpha="0.7"
+            android:contentDescription="@null"
+            android:src="@android:drawable/ic_menu_share"
+            android:tint="@color/primary" />
+    </FrameLayout>
 
     <View
         android:id="@+id/notification_unread_dot"
