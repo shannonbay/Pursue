@@ -197,6 +197,32 @@ class GoalsTabFragmentTest {
             R.id.error_state_container))
     }
 
+    @Test
+    fun `test challenge logging status blocks non active challenges`() {
+        launchFragment()
+        shadowOf(Looper.getMainLooper()).idle()
+
+        fragment.updateChallengeLoggingStatus(isChallenge = true, status = "upcoming")
+
+        val canLogMethod = GoalsTabFragment::class.java.getDeclaredMethod("canLogProgress")
+        canLogMethod.isAccessible = true
+        val canLog = canLogMethod.invoke(fragment) as Boolean
+        assertTrue("Upcoming challenge goals should be read-only", !canLog)
+    }
+
+    @Test
+    fun `test challenge logging status allows active challenges`() {
+        launchFragment()
+        shadowOf(Looper.getMainLooper()).idle()
+
+        fragment.updateChallengeLoggingStatus(isChallenge = true, status = "active")
+
+        val canLogMethod = GoalsTabFragment::class.java.getDeclaredMethod("canLogProgress")
+        canLogMethod.isAccessible = true
+        val canLog = canLogMethod.invoke(fragment) as Boolean
+        assertTrue("Active challenge goals should be loggable", canLog)
+    }
+
     // ========== 5-State UI Pattern Tests ==========
 
     @Test

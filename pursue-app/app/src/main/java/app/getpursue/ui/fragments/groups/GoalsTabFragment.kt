@@ -73,6 +73,8 @@ class GoalsTabFragment : Fragment() {
 
     private var groupId: String? = null
     private var isAdmin: Boolean = false
+    private var isChallengeGroup: Boolean = false
+    private var challengeStatus: String? = null
     private lateinit var goalsRecyclerView: RecyclerView
     private lateinit var goalsScrollView: NestedScrollView
     private lateinit var goalsListContainer: LinearLayout
@@ -98,6 +100,15 @@ class GoalsTabFragment : Fragment() {
                 updateUiState(GoalsUiState.SUCCESS_EMPTY)
             }
         }
+    }
+
+    fun updateChallengeLoggingStatus(isChallenge: Boolean, status: String?) {
+        isChallengeGroup = isChallenge
+        challengeStatus = status
+    }
+
+    private fun canLogProgress(): Boolean {
+        return !isChallengeGroup || challengeStatus == "active"
     }
 
     /**
@@ -375,6 +386,14 @@ class GoalsTabFragment : Fragment() {
                     val arrowButton = goalCardView.findViewById<ImageButton>(R.id.arrow_button)
 
                     goalCard.setOnClickListener {
+                        if (!canLogProgress()) {
+                            Toast.makeText(
+                                requireContext(),
+                                getString(R.string.challenge_progress_locked_not_active),
+                                Toast.LENGTH_SHORT
+                            ).show()
+                            return@setOnClickListener
+                        }
                         logProgressHandler?.handleCardBodyClick(GoalLogProgressHandler.Companion.fromGroupGoal(goal))
                     }
 

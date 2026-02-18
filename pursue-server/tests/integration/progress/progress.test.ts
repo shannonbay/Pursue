@@ -75,6 +75,67 @@ describe('POST /api/progress', () => {
     jest.clearAllMocks();
   });
 
+  describe('challenge status guard', () => {
+    async function createChallengeGoalWithStatus(status: 'upcoming' | 'active' | 'completed' | 'cancelled') {
+      const { accessToken } = await createAuthenticatedUser();
+      const { groupId, goalId } = await createGroupWithGoal(accessToken);
+      const today = todayInTz();
+      const tomorrow = format(new Date(Date.now() + 24 * 60 * 60 * 1000), 'yyyy-MM-dd');
+      const yesterday = format(subDays(new Date(), 1), 'yyyy-MM-dd');
+
+      await testDb
+        .updateTable('groups')
+        .set({
+          is_challenge: true,
+          challenge_status: status,
+          challenge_start_date: status === 'upcoming' ? tomorrow : yesterday,
+          challenge_end_date: format(new Date(Date.now() + 10 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd'),
+        })
+        .where('id', '=', groupId)
+        .execute();
+
+      return { accessToken, groupId, goalId: goalId!, today };
+    }
+
+    it.each(['upcoming', 'completed', 'cancelled'] as const)(
+      'should reject progress for %s challenge with CHALLENGE_NOT_ACTIVE',
+      async (status) => {
+        const { accessToken, goalId, today } = await createChallengeGoalWithStatus(status);
+
+        const response = await request(app)
+          .post('/api/progress')
+          .set('Authorization', `Bearer ${accessToken}`)
+          .send({
+            goal_id: goalId,
+            value: 1,
+            user_date: today,
+            user_timezone: TEST_TIMEZONE,
+          });
+
+        expect(response.status).toBe(403);
+        expect(response.body.error?.code).toBe('CHALLENGE_NOT_ACTIVE');
+        expect(response.body.error?.message).toBe('Progress can only be logged for active challenges.');
+      }
+    );
+
+    it('should allow progress for active challenge', async () => {
+      const { accessToken, goalId, today } = await createChallengeGoalWithStatus('active');
+
+      const response = await request(app)
+        .post('/api/progress')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send({
+          goal_id: goalId,
+          value: 1,
+          user_date: today,
+          user_timezone: TEST_TIMEZONE,
+        });
+
+      expect(response.status).toBe(201);
+      expect(response.body.goal_id).toBe(goalId);
+    });
+  });
+
   describe('happy paths', () => {
     it('should log progress for binary goal with value 1 and optional note', async () => {
       const { accessToken, userId } = await createAuthenticatedUser();

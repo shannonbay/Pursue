@@ -488,6 +488,10 @@ class GroupDetailFragment : Fragment() {
                             it is GoalsTabFragment
                         } as? GoalsTabFragment
                         goalsTabFragment?.updateAdminStatus(isAdmin)
+                        goalsTabFragment?.updateChallengeLoggingStatus(
+                            response.is_challenge,
+                            response.challenge_status
+                        )
                         val membersTabFragment = childFragmentManager.fragments.firstOrNull {
                             it is MembersTabFragment
                         } as? MembersTabFragment
@@ -1012,6 +1016,7 @@ class GroupDetailFragment : Fragment() {
         val goalsTabFragment = childFragmentManager.fragments.firstOrNull {
             it is GoalsTabFragment
         } as? GoalsTabFragment
+        goalsTabFragment?.updateChallengeLoggingStatus(detail.is_challenge, detail.challenge_status)
         val activeGoalsCount = goalsTabFragment?.getActiveGoalsCount() ?: 0
 
         updateGoalsCountSubtitle(detail.member_count, activeGoalsCount)

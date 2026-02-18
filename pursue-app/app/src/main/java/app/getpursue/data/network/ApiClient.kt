@@ -27,6 +27,7 @@ import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.concurrent.TimeUnit
 import app.getpursue.BuildConfig
+import app.getpursue.utils.TodayGoalsFilterUtils
 import java.net.URLEncoder
 import java.time.ZoneId
 
@@ -424,6 +425,7 @@ object ApiClient {
         var totalGoals = 0
 
         for (group in groupsResponse.groups) {
+            if (!TodayGoalsFilterUtils.shouldIncludeGroup(group)) continue
             val goalsResponse = try {
                 getGroupGoals(
                     accessToken = accessToken,

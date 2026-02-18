@@ -380,7 +380,7 @@
     <string name="challenge_end_date_format">End Date: %1$s (%2$d days)</string>
     <string name="challenge_goals_included">Goals Included</string>
     <string name="challenge_create_failed">Failed to create challenge</string>
-    <string name="challenge_share_button">Share Challenge</string>
+    <string name="challenge_share_button">Share</string>
     <string name="challenge_invite_button">Invite Friends</string>
     <string name="challenge_share_text">Join my challenge "%1$s" on Pursue: %2$s</string>
     <string name="challenge_share_failed">Failed to share challenge</string>
@@ -388,6 +388,7 @@
     <string name="challenge_cancel_success">Challenge cancelled</string>
     <string name="challenge_cancel_failed">Failed to cancel challenge</string>
     <string name="challenge_goals_locked">Goals can’t be added while this challenge is active.</string>
+    <string name="challenge_progress_locked_not_active">Progress can only be logged after the challenge starts.</string>
     <string name="export_progress_failed">Failed to export. Please try again.</string>
     <string name="export_progress_open_file">Open file</string>
     <string name="export_progress_open_folder">Open folder</string>

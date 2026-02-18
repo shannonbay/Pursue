@@ -82,6 +82,20 @@ export async function createProgress(
     // Verify user is active member of goal's group
     await requireActiveGroupMember(req.user.id, goal.group_id);
 
+    const groupMeta = await db
+      .selectFrom('groups')
+      .select(['is_challenge', 'challenge_status'])
+      .where('id', '=', goal.group_id)
+      .executeTakeFirst();
+
+    if (groupMeta?.is_challenge && groupMeta.challenge_status !== 'active') {
+      throw new ApplicationError(
+        'Progress can only be logged for active challenges.',
+        403,
+        'CHALLENGE_NOT_ACTIVE'
+      );
+    }
+
     const writeCheck = await canUserWriteInGroup(req.user.id, goal.group_id);
     if (!writeCheck.allowed) {
       if (writeCheck.reason === 'group_selection_required') {

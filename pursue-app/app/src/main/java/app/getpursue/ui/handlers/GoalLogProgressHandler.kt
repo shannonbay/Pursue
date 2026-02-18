@@ -105,12 +105,7 @@ class GoalLogProgressHandler(
             } catch (e: ApiException) {
                 fragment.requireActivity().runOnUiThread {
                     onOptimisticUpdate?.invoke(goal.id, previousCompleted, previousProgressValue)
-                    if (e.errorCode == "GROUP_READ_ONLY") {
-                        showUpgradeDialog()
-                    } else {
-                        val msg = if (e.code == 400) fragment.getString(R.string.log_progress_duplicate) else fragment.getString(R.string.log_progress_failed)
-                        Toast.makeText(fragment.requireContext(), msg, Toast.LENGTH_SHORT).show()
-                    }
+                    handleLogApiException(e)
                 }
             } catch (e: Exception) {
                 fragment.requireActivity().runOnUiThread {
@@ -319,12 +314,7 @@ class GoalLogProgressHandler(
             } catch (e: ApiException) {
                 fragment.requireActivity().runOnUiThread {
                     onOptimisticUpdate?.invoke(goal.id, previousCompleted, previousProgressValue)
-                    if (e.errorCode == "GROUP_READ_ONLY") {
-                        showUpgradeDialog()
-                    } else {
-                        val msg = if (e.code == 400) fragment.getString(R.string.log_progress_duplicate) else fragment.getString(R.string.log_progress_failed)
-                        Toast.makeText(fragment.requireContext(), msg, Toast.LENGTH_SHORT).show()
-                    }
+                    handleLogApiException(e)
                 }
             } catch (e: Exception) {
                 fragment.requireActivity().runOnUiThread {
@@ -358,11 +348,7 @@ class GoalLogProgressHandler(
             } catch (e: ApiException) {
                 fragment.requireActivity().runOnUiThread {
                     onOptimisticUpdate?.invoke(goal.id, previousCompleted, previousProgressValue)
-                    if (e.errorCode == "GROUP_READ_ONLY") {
-                        showUpgradeDialog()
-                    } else {
-                        Toast.makeText(fragment.requireContext(), fragment.getString(R.string.log_progress_failed), Toast.LENGTH_SHORT).show()
-                    }
+                    handleLogApiException(e)
                 }
             } catch (e: Exception) {
                 fragment.requireActivity().runOnUiThread {
@@ -425,6 +411,28 @@ class GoalLogProgressHandler(
             "monthly" -> date.withDayOfMonth(1).format(DateTimeFormatter.ISO_DATE)
             "yearly" -> date.withDayOfYear(1).format(DateTimeFormatter.ISO_DATE)
             else -> userDate
+        }
+    }
+
+    private fun handleLogApiException(e: ApiException) {
+        when (e.errorCode) {
+            "GROUP_READ_ONLY" -> showUpgradeDialog()
+            "CHALLENGE_NOT_ACTIVE" -> {
+                Toast.makeText(
+                    fragment.requireContext(),
+                    fragment.getString(R.string.challenge_progress_locked_not_active),
+                    Toast.LENGTH_SHORT
+                ).show()
+                onRefresh(true)
+            }
+            else -> {
+                val msg = if (e.code == 400) {
+                    fragment.getString(R.string.log_progress_duplicate)
+                } else {
+                    fragment.getString(R.string.log_progress_failed)
+                }
+                Toast.makeText(fragment.requireContext(), msg, Toast.LENGTH_SHORT).show()
+            }
         }
     }
 
