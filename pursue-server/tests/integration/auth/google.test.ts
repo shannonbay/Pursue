@@ -307,7 +307,7 @@ describe('POST /api/auth/google', () => {
 
     expect(consents).toHaveLength(2);
     const types = consents.map(c => c.consent_type).sort();
-    expect(types).toEqual(['privacy policy Feb 11, 2026', 'terms Feb 11, 2026']);
+    expect(types).toEqual(['privacy policy Feb 17, 2026', 'terms Feb 11, 2026']);
   });
 
   it('should not require consent for returning Google user', async () => {
