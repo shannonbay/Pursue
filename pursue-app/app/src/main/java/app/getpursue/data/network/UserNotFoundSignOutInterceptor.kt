@@ -1,6 +1,7 @@
 package app.getpursue.data.network
 
 import android.content.Context
+import android.util.Log
 import app.getpursue.data.auth.AuthRepository
 import app.getpursue.data.auth.SecureTokenManager
 import com.google.gson.Gson
@@ -29,7 +30,14 @@ class UserNotFoundSignOutInterceptor(
         // Guard: don't sign out if a new sign-in has replaced the token
         val requestToken = request.header("Authorization")?.removePrefix("Bearer ")?.trim()
         val currentToken = SecureTokenManager.Companion.getInstance(context.applicationContext).getAccessToken()
+
+        Log.w(TAG, "404 on users/me path: $path | " +
+                "requestToken=${requestToken?.take(12)}... | " +
+                "currentToken=${currentToken?.take(12) ?: "null"} | " +
+                "method=${request.method}")
+
         if (requestToken != null && currentToken != null && requestToken != currentToken) {
+            Log.w(TAG, "Guard: stale request (tokens differ) — ignoring, NOT signing out")
             return response   // stale request — ignore
         }
 
@@ -41,13 +49,17 @@ class UserNotFoundSignOutInterceptor(
         }
 
         if (wrapper.error?.code == "NOT_FOUND") {
+            Log.w(TAG, "NOT_FOUND on $path — signing out. currentToken=${if (currentToken != null) "present" else "null"}")
             AuthRepository.Companion.getInstance(context.applicationContext).signOut()
+        } else {
+            Log.w(TAG, "404 on $path but error code=${wrapper.error?.code} — not signing out")
         }
 
         return response
     }
 
     private companion object {
+        private const val TAG = "UserNotFoundInterceptor"
         private val gson = Gson()
     }
 }

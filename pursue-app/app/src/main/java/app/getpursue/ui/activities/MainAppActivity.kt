@@ -303,9 +303,12 @@ class MainAppActivity : AppCompatActivity(),
         lifecycleScope.launch {
             authRepository.authState.collect { state ->
                 when (state) {
-                    is AuthState.SignedOut -> handleSignOut()
+                    is AuthState.SignedOut -> {
+                        Log.w("MainAppActivity", "authState → SignedOut received (stackTrace=${Thread.currentThread().stackTrace.take(5).joinToString("|") { it.methodName }})")
+                        handleSignOut()
+                    }
                     is AuthState.SignedIn -> {
-                        // Already signed in, no action needed
+                        Log.d("MainAppActivity", "authState → SignedIn received")
                     }
                 }
             }
