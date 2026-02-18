@@ -2,6 +2,10 @@ package app.getpursue.ui.adapters
 
 import android.content.res.ColorStateList
 import android.graphics.Color
+import android.graphics.drawable.Animatable
+import android.graphics.drawable.Animatable2
+import android.graphics.drawable.AnimatedVectorDrawable
+import android.graphics.drawable.Drawable
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -38,6 +42,11 @@ class GroupAdapter(
         holder.bind(groups[position], onGroupClick)
     }
 
+    override fun onViewRecycled(holder: GroupViewHolder) {
+        holder.unbind()
+        super.onViewRecycled(holder)
+    }
+
     override fun getItemCount(): Int = groups.size
 
     class GroupViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
@@ -49,6 +58,7 @@ class GroupAdapter(
         private val memberGoalCount: TextView = itemView.findViewById(R.id.member_goal_count)
         private val progressBar: ProgressBar = itemView.findViewById(R.id.progress_bar)
         private val lastActivity: TextView = itemView.findViewById(R.id.last_activity)
+        private var heatAnimationCallback: Animatable2.AnimationCallback? = null
 
         fun bind(group: Group, onGroupClick: (Group) -> Unit) {
             // Handle group icon display
@@ -106,15 +116,19 @@ class GroupAdapter(
             group.heat?.let { heat ->
                 val drawableRes = HeatUtils.getTierDrawable(heat.tier)
                 if (drawableRes != null) {
+                    stopHeatAnimation()
                     heatIcon.setImageResource(drawableRes)
                     heatIcon.contentDescription = HeatUtils.getContentDescription(
                         itemView.context, heat.tier_name, heat.score
                     )
                     heatIcon.visibility = View.VISIBLE
+                    heatIcon.post { startHeatAnimation() }
                 } else {
+                    stopHeatAnimation()
                     heatIcon.visibility = View.GONE
                 }
             } ?: run {
+                stopHeatAnimation()
                 heatIcon.visibility = View.GONE
             }
             
@@ -148,6 +162,40 @@ class GroupAdapter(
             itemView.setOnClickListener {
                 onGroupClick(group)
             }
+        }
+
+        fun unbind() {
+            stopHeatAnimation()
+        }
+
+        private fun startHeatAnimation() {
+            val drawable = heatIcon.drawable ?: return
+            when (drawable) {
+                is AnimatedVectorDrawable -> {
+                    val callback = object : Animatable2.AnimationCallback() {
+                        override fun onAnimationEnd(d: Drawable?) {
+                            if (heatIcon.visibility == View.VISIBLE) {
+                                drawable.start()
+                            }
+                        }
+                    }
+                    heatAnimationCallback = callback
+                    drawable.registerAnimationCallback(callback)
+                    drawable.start()
+                }
+                is Animatable -> drawable.start()
+            }
+        }
+
+        private fun stopHeatAnimation() {
+            val drawable = heatIcon.drawable
+            if (drawable is AnimatedVectorDrawable) {
+                heatAnimationCallback?.let { drawable.unregisterAnimationCallback(it) }
+            }
+            if (drawable is Animatable) {
+                drawable.stop()
+            }
+            heatAnimationCallback = null
         }
     }
 }
