@@ -53,6 +53,7 @@ import app.getpursue.ui.fragments.goals.CreateGoalFragment
 import app.getpursue.ui.views.IconPickerBottomSheet
 import app.getpursue.ui.views.InviteMembersBottomSheet
 import app.getpursue.utils.ChallengeDateUiUtils
+import app.getpursue.utils.EmojiUtils
 import app.getpursue.utils.HeatUtils
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.engine.DiskCacheStrategy
@@ -1229,7 +1230,8 @@ class GroupDetailFragment : Fragment() {
             groupIconImage.visibility = View.GONE
             groupIconEmoji.visibility = View.VISIBLE
             groupIconLetter.visibility = View.GONE
-            groupIconEmoji.text = iconEmoji
+            val fallbackEmoji = if (groupDetail?.is_challenge == true) "🏆" else "📁"
+            groupIconEmoji.text = EmojiUtils.normalizeOrFallback(iconEmoji, fallbackEmoji)
             try {
                 groupIconEmoji.backgroundTintList = ColorStateList.valueOf(
                     if (iconColor != null) Color.parseColor(iconColor) else fallbackColor

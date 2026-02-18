@@ -19,6 +19,7 @@ import app.getpursue.data.network.ApiException
 import app.getpursue.data.network.ChallengeTemplate
 import app.getpursue.ui.activities.GroupDetailActivity
 import app.getpursue.ui.activities.MainAppActivity
+import app.getpursue.utils.EmojiUtils
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.textfield.TextInputEditText
@@ -173,7 +174,10 @@ class ChallengeSetupFragment : Fragment() {
                         putExtra(GroupDetailActivity.EXTRA_GROUP_ID, group.id)
                         putExtra(GroupDetailActivity.EXTRA_GROUP_NAME, group.name)
                         putExtra(GroupDetailActivity.EXTRA_GROUP_HAS_ICON, false)
-                        putExtra(GroupDetailActivity.EXTRA_GROUP_ICON_EMOJI, template.icon_emoji)
+                        putExtra(
+                            GroupDetailActivity.EXTRA_GROUP_ICON_EMOJI,
+                            EmojiUtils.normalizeOrFallback(template.icon_emoji, "🏆")
+                        )
                     }
                 )
                 requireActivity().supportFragmentManager.popBackStack(null, 1)

@@ -7,6 +7,7 @@ import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import app.getpursue.R
 import app.getpursue.data.network.ChallengeTemplate
+import app.getpursue.utils.EmojiUtils
 import com.google.android.material.button.MaterialButton
 
 class ChallengeTemplateAdapter(
@@ -44,7 +45,7 @@ class ChallengeTemplateAdapter(
         private val startButton: MaterialButton = itemView.findViewById(R.id.template_start_button)
 
         fun bind(template: ChallengeTemplate, onStartClick: (ChallengeTemplate) -> Unit) {
-            emoji.text = template.icon_emoji
+            emoji.text = EmojiUtils.normalizeOrFallback(template.icon_emoji, "🏆")
             title.text = template.title
             description.text = template.description
             durationDifficulty.text = itemView.context.getString(
@@ -56,4 +57,3 @@ class ChallengeTemplateAdapter(
         }
     }
 }
-

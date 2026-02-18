@@ -16,6 +16,7 @@ import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import app.getpursue.data.network.ApiClient
 import app.getpursue.models.Group
+import app.getpursue.utils.EmojiUtils
 import app.getpursue.utils.GrayscaleTransformation
 import app.getpursue.utils.HeatUtils
 import app.getpursue.utils.RelativeTimeUtils
@@ -94,7 +95,8 @@ class GroupAdapter(
                 // Show emoji, hide image (circle background tinted by icon_color)
                 groupIconImage.visibility = View.GONE
                 groupIconEmoji.visibility = View.VISIBLE
-                groupIconEmoji.text = group.icon_emoji ?: "📁"
+                val fallbackEmoji = if (group.is_challenge) "🏆" else "📁"
+                groupIconEmoji.text = EmojiUtils.normalizeOrFallback(group.icon_emoji, fallbackEmoji)
                 if (group.is_read_only) {
                     groupIconEmoji.backgroundTintList = ColorStateList.valueOf(
                         ContextCompat.getColor(itemView.context, R.color.surface_variant)
