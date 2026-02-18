@@ -20,5 +20,10 @@ data class Group(
     val joined_at: String, // ISO 8601 timestamp
     val updated_at: String?, // ISO 8601 timestamp for cache invalidation
     val is_read_only: Boolean = false, // true when free user is over limit and this is not their kept group
-    val heat: GroupHeat? = null // Group heat momentum data
+    val heat: GroupHeat? = null, // Group heat momentum data
+    val is_challenge: Boolean = false,
+    val challenge_start_date: String? = null,
+    val challenge_end_date: String? = null,
+    val challenge_status: String? = null,
+    val challenge_template_id: String? = null
 )

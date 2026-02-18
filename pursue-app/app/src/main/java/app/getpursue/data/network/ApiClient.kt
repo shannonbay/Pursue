@@ -926,6 +926,109 @@ object ApiClient {
         }
     }
 
+    // --- Challenge Endpoints ---
+
+    /**
+     * Get challenge templates.
+     * GET /api/challenge-templates?category=&featured=
+     */
+    suspend fun getChallengeTemplates(
+        accessToken: String,
+        category: String? = null,
+        featured: Boolean? = null
+    ): ChallengeTemplatesResponse {
+        val params = mutableListOf<String>()
+        category?.let { params.add("category=${URLEncoder.encode(it, "UTF-8")}") }
+        featured?.let { params.add("featured=$it") }
+        val url = if (params.isEmpty()) {
+            "$baseUrl/challenge-templates"
+        } else {
+            "$baseUrl/challenge-templates?${params.joinToString("&")}"
+        }
+        val request = Request.Builder()
+            .url(url)
+            .get()
+            .addHeader("Content-Type", "application/json")
+            .build()
+        return executeRequest(request, getClient()) { responseBody ->
+            gson.fromJson(responseBody, ChallengeTemplatesResponse::class.java)
+        }
+    }
+
+    /**
+     * Create challenge from template or custom definition.
+     * POST /api/challenges
+     */
+    suspend fun createChallenge(
+        accessToken: String,
+        templateId: String? = null,
+        startDate: String,
+        endDate: String? = null,
+        groupName: String? = null,
+        groupDescription: String? = null,
+        iconEmoji: String? = null,
+        goals: List<CreateChallengeGoal>? = null
+    ): CreateChallengeResponse {
+        val requestBody = gson.toJson(
+            CreateChallengeRequest(
+                template_id = templateId,
+                start_date = startDate,
+                end_date = endDate,
+                group_name = groupName,
+                group_description = groupDescription,
+                icon_emoji = iconEmoji,
+                goals = goals
+            )
+        ).toRequestBody(jsonMediaType)
+
+        val request = Request.Builder()
+            .url("$baseUrl/challenges")
+            .post(requestBody)
+            .addHeader("Content-Type", "application/json")
+            .build()
+        return executeRequest(request, getClient()) { responseBody ->
+            gson.fromJson(responseBody, CreateChallengeResponse::class.java)
+        }
+    }
+
+    /**
+     * List challenges for current user.
+     * GET /api/challenges?status=
+     */
+    suspend fun getChallenges(
+        accessToken: String,
+        status: String? = null
+    ): ChallengesListResponse {
+        val url = if (status.isNullOrBlank()) {
+            "$baseUrl/challenges"
+        } else {
+            "$baseUrl/challenges?status=${URLEncoder.encode(status, "UTF-8")}"
+        }
+        val request = Request.Builder()
+            .url(url)
+            .get()
+            .addHeader("Content-Type", "application/json")
+            .build()
+        return executeRequest(request, getClient()) { responseBody ->
+            gson.fromJson(responseBody, ChallengesListResponse::class.java)
+        }
+    }
+
+    /**
+     * Cancel challenge.
+     * PATCH /api/challenges/:id/cancel
+     */
+    suspend fun cancelChallenge(accessToken: String, challengeId: String): CancelChallengeResponse {
+        val request = Request.Builder()
+            .url("$baseUrl/challenges/$challengeId/cancel")
+            .patch("{}".toRequestBody(jsonMediaType))
+            .addHeader("Content-Type", "application/json")
+            .build()
+        return executeRequest(request, getClient()) { responseBody ->
+            gson.fromJson(responseBody, CancelChallengeResponse::class.java)
+        }
+    }
+
     /**
      * Returns the app invite base URL for join links (e.g. https://getpursue.app/join/{code}).
      * Use share_url from API responses when available.
@@ -1899,6 +2002,24 @@ object ApiClient {
     }
 
     /**
+     * Trigger challenge status lifecycle job.
+     * Uses x-internal-job-key header instead of Bearer auth.
+     */
+    suspend fun triggerChallengeStatusUpdateJob(
+        internalJobKey: String
+    ): ChallengeStatusUpdateJobResponse {
+        val request = Request.Builder()
+            .url("$baseUrl/internal/jobs/update-challenge-statuses")
+            .post("{}".toRequestBody(jsonMediaType))
+            .addHeader("Content-Type", "application/json")
+            .addHeader("x-internal-job-key", internalJobKey)
+            .build()
+        return executeRequest(request, getClient()) { responseBody ->
+            gson.fromJson(responseBody, ChallengeStatusUpdateJobResponse::class.java)
+        }
+    }
+
+    /**
      * Execute an HTTP request and parse the response.
      */
     private suspend fun <T> executeRequest(
@@ -2218,7 +2339,113 @@ data class JoinGroupResponse(
 data class JoinGroupResponseGroup(
     val id: String,
     val name: String,
-    val member_count: Int
+    val member_count: Int,
+    val is_challenge: Boolean = false,
+    val challenge_start_date: String? = null,
+    val challenge_end_date: String? = null,
+    val challenge_status: String? = null,
+    val challenge_template_id: String? = null
+)
+
+// --- Challenge DTOs ---
+
+data class ChallengeTemplateGoal(
+    val title: String,
+    val description: String?,
+    val cadence: String,
+    val metric_type: String,
+    val target_value: Double?,
+    val unit: String?
+)
+
+data class ChallengeTemplate(
+    val id: String,
+    val slug: String,
+    val title: String,
+    val description: String,
+    val icon_emoji: String,
+    val duration_days: Int,
+    val category: String,
+    val difficulty: String,
+    val is_featured: Boolean,
+    val goals: List<ChallengeTemplateGoal>
+)
+
+data class ChallengeTemplatesResponse(
+    val templates: List<ChallengeTemplate>,
+    val categories: List<String>
+)
+
+data class CreateChallengeGoal(
+    val title: String,
+    val description: String? = null,
+    val cadence: String,
+    val metric_type: String,
+    val target_value: Double? = null,
+    val unit: String? = null,
+    val sort_order: Int? = null
+)
+
+data class CreateChallengeRequest(
+    val template_id: String? = null,
+    val start_date: String,
+    val end_date: String? = null,
+    val group_name: String? = null,
+    val group_description: String? = null,
+    val icon_emoji: String? = null,
+    val goals: List<CreateChallengeGoal>? = null
+)
+
+data class ChallengeGoal(
+    val id: String,
+    val title: String,
+    val description: String?,
+    val cadence: String,
+    val metric_type: String,
+    val target_value: Double?,
+    val unit: String?
+)
+
+data class ChallengeSummary(
+    val id: String,
+    val name: String,
+    val is_challenge: Boolean,
+    val challenge_start_date: String,
+    val challenge_end_date: String,
+    val challenge_status: String,
+    val challenge_template_id: String?,
+    val member_count: Int,
+    val goals: List<ChallengeGoal>,
+    val invite_code: String,
+    val invite_url: String
+)
+
+data class CreateChallengeResponse(
+    val challenge: ChallengeSummary
+)
+
+data class ChallengeListItem(
+    val id: String,
+    val name: String,
+    val icon_emoji: String?,
+    val challenge_start_date: String,
+    val challenge_end_date: String,
+    val challenge_status: String,
+    val days_remaining: Int,
+    val days_elapsed: Int,
+    val total_days: Int,
+    val member_count: Int,
+    val my_completion_rate: Double,
+    val template_title: String?
+)
+
+data class ChallengesListResponse(
+    val challenges: List<ChallengeListItem>
+)
+
+data class CancelChallengeResponse(
+    val id: String,
+    val challenge_status: String
 )
 
 // --- Goal DTOs (3.4) ---
@@ -2611,6 +2838,13 @@ data class WeeklyRecapJobResponse(
     val groups_processed: Int,
     val errors: Int,
     val skipped: Int
+)
+
+data class ChallengeStatusUpdateJobResponse(
+    val success: Boolean,
+    val activated: Int,
+    val completed: Int,
+    val completion_notifications: Int
 )
 
 /**

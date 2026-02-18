@@ -14,5 +14,10 @@ data class GroupDetailResponse(
     val member_count: Int,
     val created_at: String, // ISO 8601 timestamp
     val user_role: String, // "creator", "admin", or "member"
-    val heat: GroupHeat? = null // Group heat momentum data (with extended GCR values)
+    val heat: GroupHeat? = null, // Group heat momentum data (with extended GCR values)
+    val is_challenge: Boolean = false,
+    val challenge_start_date: String? = null,
+    val challenge_end_date: String? = null,
+    val challenge_status: String? = null,
+    val challenge_template_id: String? = null
 )

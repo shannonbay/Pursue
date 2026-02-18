@@ -8,6 +8,12 @@ import app.getpursue.data.network.CreateGroupResponse
 import app.getpursue.data.network.DeleteAvatarResponse
 import app.getpursue.data.network.GetInviteCodeResponse
 import app.getpursue.data.network.JoinGroupResponse
+import app.getpursue.data.network.ChallengeTemplatesResponse
+import app.getpursue.data.network.CreateChallengeGoal
+import app.getpursue.data.network.CreateChallengeResponse
+import app.getpursue.data.network.ChallengesListResponse
+import app.getpursue.data.network.CancelChallengeResponse
+import app.getpursue.data.network.ChallengeStatusUpdateJobResponse
 import app.getpursue.data.network.RegenerateInviteResponse
 import app.getpursue.data.network.PatchGroupIconResponse
 import app.getpursue.data.network.UploadProgressPhotoResponse
@@ -161,6 +167,53 @@ class E2EApiClient(private val context: Context) {
     suspend fun joinGroup(accessToken: String, inviteCode: String): JoinGroupResponse {
         storeTokenIfPresent(accessToken)
         return ApiClient.joinGroup("", inviteCode)
+    }
+
+    // --- Challenge Endpoints ---
+
+    suspend fun getChallengeTemplates(
+        accessToken: String,
+        category: String? = null,
+        featured: Boolean? = null
+    ): ChallengeTemplatesResponse {
+        storeTokenIfPresent(accessToken)
+        return ApiClient.getChallengeTemplates("", category, featured)
+    }
+
+    suspend fun createChallenge(
+        accessToken: String,
+        templateId: String? = null,
+        startDate: String,
+        endDate: String? = null,
+        groupName: String? = null,
+        groupDescription: String? = null,
+        iconEmoji: String? = null,
+        goals: List<CreateChallengeGoal>? = null
+    ): CreateChallengeResponse {
+        storeTokenIfPresent(accessToken)
+        return ApiClient.createChallenge(
+            "",
+            templateId,
+            startDate,
+            endDate,
+            groupName,
+            groupDescription,
+            iconEmoji,
+            goals
+        )
+    }
+
+    suspend fun getChallenges(
+        accessToken: String,
+        status: String? = null
+    ): ChallengesListResponse {
+        storeTokenIfPresent(accessToken)
+        return ApiClient.getChallenges("", status)
+    }
+
+    suspend fun cancelChallenge(accessToken: String, challengeId: String): CancelChallengeResponse {
+        storeTokenIfPresent(accessToken)
+        return ApiClient.cancelChallenge("", challengeId)
     }
 
     suspend fun updateMemberRole(
@@ -532,5 +585,12 @@ class E2EApiClient(private val context: Context) {
         forceWeekEnd: String? = null
     ): WeeklyRecapJobResponse {
         return ApiClient.triggerWeeklyRecapJob(internalJobKey, forceGroupId, forceWeekEnd)
+    }
+
+    // No storeTokenIfPresent call — internal job uses x-internal-job-key, not Bearer auth
+    suspend fun triggerChallengeStatusUpdateJob(
+        internalJobKey: String
+    ): ChallengeStatusUpdateJobResponse {
+        return ApiClient.triggerChallengeStatusUpdateJob(internalJobKey)
     }
 }
