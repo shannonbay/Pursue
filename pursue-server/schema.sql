@@ -230,21 +230,34 @@ CREATE TABLE user_notifications (
   goal_id           UUID REFERENCES goals(id) ON DELETE CASCADE,
   progress_entry_id UUID REFERENCES progress_entries(id) ON DELETE CASCADE,
   metadata          JSONB,
+  shareable_card_data JSONB,  -- Pre-rendered card data for shareable milestones
   is_read           BOOLEAN NOT NULL DEFAULT FALSE,
   created_at        TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
 );
 
 CREATE INDEX idx_user_notifications_user ON user_notifications(user_id, created_at DESC);
 CREATE INDEX idx_user_notifications_unread ON user_notifications(user_id) WHERE is_read = FALSE;
+CREATE INDEX idx_user_notifications_shareable ON user_notifications(user_id, type) WHERE shareable_card_data IS NOT NULL;
 
 -- Milestone deduplication: track which milestones have been awarded
 CREATE TABLE user_milestone_grants (
   id            UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   user_id       UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   milestone_key VARCHAR(100) NOT NULL,
+  goal_id       UUID REFERENCES goals(id) ON DELETE SET NULL,
   granted_at    TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
   UNIQUE(user_id, milestone_key)
 );
+
+-- Stable referral token per user for milestone share attribution
+CREATE TABLE referral_tokens (
+  token      VARCHAR(12) PRIMARY KEY,
+  user_id    UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+  UNIQUE(user_id)
+);
+
+CREATE INDEX idx_referral_tokens_user ON referral_tokens(user_id);
 
 -- Group heat: momentum indicator based on rolling completion rates
 CREATE TABLE group_heat (
@@ -514,4 +527,3 @@ CREATE INDEX idx_weekly_recaps_sent_week_end ON weekly_recaps_sent(week_end);
 COMMENT ON TABLE weekly_recaps_sent IS 'Tracks which weekly recaps have been sent to prevent duplicate notifications';
 COMMENT ON COLUMN weekly_recaps_sent.week_end IS 'Sunday date marking the end of the recap week (YYYY-MM-DD)';
 COMMENT ON COLUMN group_memberships.weekly_recap_enabled IS 'Whether the member wants to receive weekly recap notifications for this group';
-

@@ -290,6 +290,7 @@ export interface UserNotificationsTable {
   goal_id: string | null;
   progress_entry_id: string | null;
   metadata: Record<string, unknown> | null;
+  shareable_card_data: ColumnType<Record<string, unknown> | null, Record<string, unknown> | null | undefined, Record<string, unknown> | null>;
   is_read: ColumnType<boolean, boolean | undefined, boolean>;
   created_at: ColumnType<Date, string | undefined, never>;
 }
@@ -303,11 +304,22 @@ export interface UserMilestoneGrantsTable {
   id: Generated<string>;
   user_id: string;
   milestone_key: string;
-  granted_at: ColumnType<Date, string | undefined, never>;
+  goal_id: string | null;
+  granted_at: ColumnType<Date, string | undefined, string | undefined>;
 }
 
 export type UserMilestoneGrant = Selectable<UserMilestoneGrantsTable>;
 export type NewUserMilestoneGrant = Insertable<UserMilestoneGrantsTable>;
+
+// Referral tokens table (stable opaque token per user for share attribution)
+export interface ReferralTokensTable {
+  token: string;
+  user_id: string;
+  created_at: ColumnType<Date, string | undefined, never>;
+}
+
+export type ReferralToken = Selectable<ReferralTokensTable>;
+export type NewReferralToken = Insertable<ReferralTokensTable>;
 
 // Photo upload log table (permanent record for quota enforcement)
 export interface PhotoUploadLogTable {
@@ -434,6 +446,7 @@ export interface Database {
   photo_upload_log: PhotoUploadLogTable;
   user_notifications: UserNotificationsTable;
   user_milestone_grants: UserMilestoneGrantsTable;
+  referral_tokens: ReferralTokensTable;
   group_heat: GroupHeatTable;
   group_daily_gcr: GroupDailyGcrTable;
   user_logging_patterns: UserLoggingPatternsTable;

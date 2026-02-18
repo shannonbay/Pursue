@@ -85,6 +85,60 @@ describe('Notification Endpoints', () => {
       expect(response.status).toBe(200);
       expect(response.body.notifications).toHaveLength(0);
     });
+
+    it('should return shareable_card_data for milestone notifications', async () => {
+      const { accessToken, userId } = await createAuthenticatedUser('shareable-milestone@example.com');
+      const cardData = {
+        milestone_type: 'first_log',
+        milestone_key: 'first_log',
+        title: 'First step taken',
+        subtitle: '30 min run',
+        stat_value: '1',
+        stat_label: 'progress logged',
+        quote: 'Every journey begins somewhere',
+        goal_icon_emoji: '🎯',
+        background_gradient: ['#1E88E5', '#1565C0'],
+        referral_token: 'abc123def456',
+        share_url: 'https://getpursue.app?utm_source=share&utm_medium=milestone_card&utm_campaign=first_log&ref=abc123def456',
+        qr_url: 'https://getpursue.app?ref=abc123def456&utm_source=qr&utm_medium=milestone_card&utm_campaign=first_log',
+        generated_at: new Date().toISOString(),
+      };
+      const notifId = await createTestNotification(userId, 'milestone_achieved', {
+        metadata: { milestone_type: 'first_log' },
+        shareableCardData: cardData,
+      });
+
+      const response = await request(app)
+        .get('/api/notifications')
+        .set('Authorization', `Bearer ${accessToken}`);
+
+      expect(response.status).toBe(200);
+      const notif = response.body.notifications.find((n: { id: string }) => n.id === notifId);
+      expect(notif).toBeDefined();
+      expect(notif.shareable_card_data).toMatchObject({
+        milestone_type: 'first_log',
+        milestone_key: 'first_log',
+        title: 'First step taken',
+        stat_value: '1',
+        background_gradient: ['#1E88E5', '#1565C0'],
+      });
+    });
+
+    it('should return null shareable_card_data for non-milestone notifications', async () => {
+      const { accessToken, userId } = await createAuthenticatedUser('non-shareable-notif@example.com');
+      const notifId = await createTestNotification(userId, 'nudge_received', {
+        metadata: { goal_title: 'Run 5k' },
+      });
+
+      const response = await request(app)
+        .get('/api/notifications')
+        .set('Authorization', `Bearer ${accessToken}`);
+
+      expect(response.status).toBe(200);
+      const notif = response.body.notifications.find((n: { id: string }) => n.id === notifId);
+      expect(notif).toBeDefined();
+      expect(notif.shareable_card_data).toBeNull();
+    });
   });
 
   describe('GET /api/notifications/unread-count', () => {

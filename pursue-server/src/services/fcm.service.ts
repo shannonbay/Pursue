@@ -28,7 +28,8 @@ export async function sendPushNotification(
   deviceToken: string,
   title: string,
   body: string,
-  data?: Record<string, string>
+  data?: Record<string, string>,
+  image?: string
 ): Promise<void> {
   try {
     await admin.messaging().send({
@@ -38,6 +39,7 @@ export async function sendPushNotification(
       android: {
         priority: 'high',
         notification: {
+          imageUrl: image,
           sound: 'default',
           channelId: 'pursue_notifications'
         }
@@ -73,6 +75,7 @@ export async function sendPushNotification(
 export interface GroupNotificationPayload {
   title: string;
   body: string;
+  image?: string;
 }
 
 export interface SendGroupNotificationOptions {
@@ -109,12 +112,16 @@ export async function sendGroupNotification(
     if (tokens.length === 0) return;
 
     const message = {
-      notification,
+      notification: {
+        title: notification.title,
+        body: notification.body,
+      },
       data: { ...data },
       tokens,
       android: {
         priority: 'high' as const,
         notification: {
+          imageUrl: notification.image,
           sound: 'default',
           channelId: 'pursue_notifications'
         }
@@ -172,11 +179,15 @@ export async function sendToTopic(
   try {
     const message = {
       topic,
-      notification,
+      notification: {
+        title: notification.title,
+        body: notification.body,
+      },
       data: { ...data },
       android: {
         priority: 'high' as const,
         notification: {
+          imageUrl: notification.image,
           sound: 'default',
           channelId: 'pursue_notifications'
         }
@@ -216,12 +227,16 @@ export async function sendNotificationToUser(
     if (tokens.length === 0) return;
 
     const message = {
-      notification,
+      notification: {
+        title: notification.title,
+        body: notification.body,
+      },
       data: { ...data },
       tokens,
       android: {
         priority: 'high' as const,
         notification: {
+          imageUrl: notification.image,
           sound: 'default',
           channelId: 'pursue_notifications'
         }

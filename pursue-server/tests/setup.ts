@@ -485,16 +485,55 @@ async function createSchema(db: Kysely<Database>) {
   await sql`CREATE INDEX IF NOT EXISTS idx_user_notifications_user ON user_notifications(user_id, created_at DESC)`.execute(db);
   await sql`CREATE INDEX IF NOT EXISTS idx_user_notifications_unread ON user_notifications(user_id) WHERE is_read = FALSE`.execute(db);
 
+  // Add shareable_card_data column if not exists (migration for existing test databases)
+  await sql`
+    DO $$ BEGIN
+      IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = 'user_notifications' AND column_name = 'shareable_card_data'
+      ) THEN
+        ALTER TABLE user_notifications ADD COLUMN shareable_card_data JSONB;
+      END IF;
+    END $$
+  `.execute(db);
+  await sql`
+    CREATE INDEX IF NOT EXISTS idx_user_notifications_shareable
+    ON user_notifications(user_id, type) WHERE shareable_card_data IS NOT NULL
+  `.execute(db);
+
   // Create user_milestone_grants table
   await sql`
     CREATE TABLE IF NOT EXISTS user_milestone_grants (
       id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
       user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
       milestone_key VARCHAR(100) NOT NULL,
+      goal_id UUID REFERENCES goals(id) ON DELETE SET NULL,
       granted_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
       UNIQUE(user_id, milestone_key)
     )
   `.execute(db);
+  await sql`
+    DO $$ BEGIN
+      IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = 'user_milestone_grants' AND column_name = 'goal_id'
+      ) THEN
+        ALTER TABLE user_milestone_grants
+          ADD COLUMN goal_id UUID REFERENCES goals(id) ON DELETE SET NULL;
+      END IF;
+    END $$
+  `.execute(db);
+
+  // Create referral_tokens table
+  await sql`
+    CREATE TABLE IF NOT EXISTS referral_tokens (
+      token VARCHAR(12) PRIMARY KEY,
+      user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      UNIQUE(user_id)
+    )
+  `.execute(db);
+  await sql`CREATE INDEX IF NOT EXISTS idx_referral_tokens_user ON referral_tokens(user_id)`.execute(db);
 
   // Create progress_photos table
   await sql`
@@ -647,6 +686,7 @@ async function cleanDatabase(db: Kysely<Database>) {
     TRUNCATE TABLE
       user_notifications,
       user_milestone_grants,
+      referral_tokens,
       activity_reactions,
       nudges,
       progress_photos,

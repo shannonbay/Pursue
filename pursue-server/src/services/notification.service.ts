@@ -1,6 +1,273 @@
+import crypto from 'crypto';
 import { db } from '../database/index.js';
 import { logger } from '../utils/logger.js';
 import { sendNotificationToUser } from './fcm.service.js';
+
+const SHARE_BASE_URL = process.env.PURSUE_SHARE_BASE_URL ?? 'https://getpursue.app';
+const MILESTONE_ASSET_BASE_URL = process.env.PURSUE_MILESTONE_ASSET_BASE_URL ?? 'https://storage.googleapis.com/pursue-assets';
+const REFERRAL_SECRET = process.env.REFERRAL_SECRET ?? 'dev-referral-secret';
+const ONE_DAY_MS = 24 * 60 * 60 * 1000;
+
+export const SHAREABLE_MILESTONE_CARDS_PREMIUM_REQUIRED = false;
+
+export type MilestoneKey =
+  | 'first_log'
+  | 'streak_7'
+  | 'streak_14'
+  | 'streak_30'
+  | 'streak_365'
+  | 'total_logs_100'
+  | 'total_logs_500';
+
+interface MilestoneConfig {
+  key: MilestoneKey;
+  condition: boolean;
+  count: number;
+  cooldownDays: number | null;
+  goalScoped: boolean;
+  metadata: Record<string, unknown>;
+}
+
+export interface ShareableCardData {
+  milestone_type: 'first_log' | 'streak' | 'total_logs';
+  milestone_key: MilestoneKey;
+  title: string;
+  subtitle: string;
+  stat_value: string;
+  stat_label: string;
+  quote: string;
+  goal_icon_emoji: string;
+  background_gradient: [string, string];
+  referral_token: string;
+  share_url: string;
+  qr_url: string;
+  generated_at: string;
+}
+
+function getMilestoneTypeFromKey(milestoneKey: MilestoneKey): ShareableCardData['milestone_type'] {
+  if (milestoneKey === 'first_log') return 'first_log';
+  if (milestoneKey.startsWith('streak_')) return 'streak';
+  return 'total_logs';
+}
+
+function generateReferralToken(userId: string, attempt = 0): string {
+  const input = attempt > 0 ? `${userId}:${attempt}` : userId;
+  const hash = crypto
+    .createHmac('sha256', REFERRAL_SECRET)
+    .update(input)
+    .digest('hex');
+  return hash.substring(0, 12);
+}
+
+async function getOrCreateReferralToken(userId: string): Promise<string> {
+  const existing = await db
+    .selectFrom('referral_tokens')
+    .select('token')
+    .where('user_id', '=', userId)
+    .executeTakeFirst();
+
+  if (existing?.token) return existing.token;
+
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const token = generateReferralToken(userId, attempt);
+    try {
+      await db
+        .insertInto('referral_tokens')
+        .values({
+          token,
+          user_id: userId,
+        })
+        .execute();
+      return token;
+    } catch (err: unknown) {
+      const pgErr = err as { code?: string };
+      if (pgErr.code !== '23505') throw err;
+
+      // Handle race where another request inserted this user's token.
+      const raced = await db
+        .selectFrom('referral_tokens')
+        .select('token')
+        .where('user_id', '=', userId)
+        .executeTakeFirst();
+      if (raced?.token) return raced.token;
+    }
+  }
+
+  throw new Error('Unable to generate unique referral token');
+}
+
+function buildShareUrl(token: string, milestoneKey: MilestoneKey): string {
+  const campaign = encodeURIComponent(milestoneKey);
+  const ref = encodeURIComponent(token);
+  return `${SHARE_BASE_URL}?utm_source=share&utm_medium=milestone_card&utm_campaign=${campaign}&ref=${ref}`;
+}
+
+function buildQrUrl(token: string, milestoneKey: MilestoneKey): string {
+  const campaign = encodeURIComponent(milestoneKey);
+  const ref = encodeURIComponent(token);
+  return `${SHARE_BASE_URL}?ref=${ref}&utm_source=qr&utm_medium=milestone_card&utm_campaign=${campaign}`;
+}
+
+function getMilestonePreviewImageUrl(milestoneKey: MilestoneKey): string {
+  const previewImages: Record<MilestoneKey, string> = {
+    first_log: `${MILESTONE_ASSET_BASE_URL}/milestone-preview-first-log.png`,
+    streak_7: `${MILESTONE_ASSET_BASE_URL}/milestone-preview-streak-7.png`,
+    streak_14: `${MILESTONE_ASSET_BASE_URL}/milestone-preview-streak-14.png`,
+    streak_30: `${MILESTONE_ASSET_BASE_URL}/milestone-preview-streak-30.png`,
+    streak_365: `${MILESTONE_ASSET_BASE_URL}/milestone-preview-streak-365.png`,
+    total_logs_100: `${MILESTONE_ASSET_BASE_URL}/milestone-preview-total-100.png`,
+    total_logs_500: `${MILESTONE_ASSET_BASE_URL}/milestone-preview-total-500.png`,
+  };
+
+  return previewImages[milestoneKey];
+}
+
+function getMilestoneKeyFromMetadata(metadata: Record<string, unknown> | null | undefined): MilestoneKey | null {
+  const explicit = metadata?.milestone_key;
+  if (typeof explicit === 'string') {
+    const knownKeys: MilestoneKey[] = [
+      'first_log',
+      'streak_7',
+      'streak_14',
+      'streak_30',
+      'streak_365',
+      'total_logs_100',
+      'total_logs_500',
+    ];
+    if (knownKeys.includes(explicit as MilestoneKey)) {
+      return explicit as MilestoneKey;
+    }
+  }
+
+  const milestoneType = metadata?.milestone_type;
+  const streakCount = metadata?.streak_count;
+  const count = metadata?.count;
+
+  if (milestoneType === 'first_log') return 'first_log';
+  if (milestoneType === 'streak' && typeof streakCount === 'number') {
+    if (streakCount === 7) return 'streak_7';
+    if (streakCount === 14) return 'streak_14';
+    if (streakCount === 30) return 'streak_30';
+    if (streakCount === 365) return 'streak_365';
+  }
+  if (milestoneType === 'total_logs' && typeof count === 'number') {
+    if (count === 100) return 'total_logs_100';
+    if (count === 500) return 'total_logs_500';
+  }
+  return null;
+}
+
+export function generateCardData(
+  milestoneKey: MilestoneKey,
+  goalTitle: string | null,
+  count: number,
+  referralToken: string
+): ShareableCardData {
+  const milestoneType = getMilestoneTypeFromKey(milestoneKey);
+  const templates = {
+    first_log: {
+      title: 'First step taken',
+      quote: 'Every journey begins somewhere',
+      stat_label: 'progress logged',
+    },
+    streak_7: {
+      title: '7-day streak!',
+      quote: 'Consistency is everything',
+      stat_label: 'days in a row',
+    },
+    streak_14: {
+      title: 'Two weeks strong!',
+      quote: 'Habits are forming',
+      stat_label: 'days in a row',
+    },
+    streak_30: {
+      title: '30-day streak!',
+      quote: 'A month of dedication',
+      stat_label: 'days in a row',
+    },
+    streak_365: {
+      title: 'One year. Every day.',
+      quote: 'This is who you are now',
+      stat_label: 'days in a row',
+    },
+    total_logs_100: {
+      title: '100 logs milestone',
+      quote: 'Proof that showing up works',
+      stat_label: 'total logs',
+    },
+    total_logs_500: {
+      title: '500 logs milestone',
+      quote: 'Dedication has a number',
+      stat_label: 'total logs',
+    },
+  } as const;
+  const gradients: Record<MilestoneKey, [string, string]> = {
+    first_log: ['#1E88E5', '#1565C0'],
+    streak_7: ['#F57C00', '#E65100'],
+    streak_14: ['#00897B', '#00695C'],
+    streak_30: ['#F57C00', '#E65100'],
+    streak_365: ['#FF6F00', '#E65100'],
+    total_logs_100: ['#7B1FA2', '#4A148C'],
+    total_logs_500: ['#6A1B9A', '#4A148C'],
+  };
+
+  const subtitle = milestoneType === 'total_logs' ? 'Pursue Goals' : (goalTitle ?? 'Pursue Goals');
+
+  return {
+    milestone_type: milestoneType,
+    milestone_key: milestoneKey,
+    title: templates[milestoneKey].title,
+    subtitle,
+    stat_value: String(count),
+    stat_label: templates[milestoneKey].stat_label,
+    quote: templates[milestoneKey].quote,
+    goal_icon_emoji: '\u{1F3AF}',
+    background_gradient: gradients[milestoneKey],
+    referral_token: referralToken,
+    share_url: buildShareUrl(referralToken, milestoneKey),
+    qr_url: buildQrUrl(referralToken, milestoneKey),
+    generated_at: new Date().toISOString(),
+  };
+}
+
+async function canAwardMilestone(
+  userId: string,
+  milestoneKey: string,
+  cooldownDays: number | null
+): Promise<boolean> {
+  const existing = await db
+    .selectFrom('user_milestone_grants')
+    .select('granted_at')
+    .where('user_id', '=', userId)
+    .where('milestone_key', '=', milestoneKey)
+    .executeTakeFirst();
+
+  if (!existing) return true;
+  if (cooldownDays === null) return false;
+
+  const now = Date.now();
+  const grantedAt = new Date(existing.granted_at).getTime();
+  const daysSinceGrant = Math.floor((now - grantedAt) / ONE_DAY_MS);
+  return daysSinceGrant >= cooldownDays;
+}
+
+async function upsertMilestoneGrant(userId: string, milestoneKey: string, goalId: string | null): Promise<void> {
+  await db
+    .insertInto('user_milestone_grants')
+    .values({
+      user_id: userId,
+      milestone_key: milestoneKey,
+      goal_id: goalId,
+      granted_at: new Date().toISOString(),
+    })
+    .onConflict((oc) =>
+      oc.columns(['user_id', 'milestone_key']).doUpdateSet({
+        granted_at: new Date().toISOString(),
+        goal_id: goalId,
+      })
+    )
+    .execute();
+}
 
 export type NotificationType =
   | 'reaction_received'
@@ -20,6 +287,7 @@ export interface CreateNotificationParams {
   goal_id?: string | null;
   progress_entry_id?: string | null;
   metadata?: Record<string, unknown> | null;
+  shareable_card_data?: Record<string, unknown> | null;
 }
 
 /**
@@ -40,6 +308,7 @@ export async function createNotification(params: CreateNotificationParams): Prom
         goal_id: params.goal_id ?? null,
         progress_entry_id: params.progress_entry_id ?? null,
         metadata: params.metadata ?? null,
+        shareable_card_data: params.shareable_card_data ?? null,
       })
       .returning(['id', 'is_read'])
       .executeTakeFirst();
@@ -74,7 +343,6 @@ async function sendFcmForNotification(
 ): Promise<void> {
   const { user_id, type, actor_user_id, group_id, goal_id, metadata } = params;
 
-  // Fetch context for FCM payload
   const [group, goal, actor] = await Promise.all([
     group_id
       ? db.selectFrom('groups').select('name').where('id', '=', group_id).executeTakeFirst()
@@ -91,15 +359,15 @@ async function sendFcmForNotification(
   const goalTitle = goal?.title ?? 'your goal';
   const actorName = actor?.display_name ?? 'Someone';
 
-  let notification: { title: string; body: string };
-  let data: Record<string, string> = {
+  let notification: { title: string; body: string; image?: string };
+  const data: Record<string, string> = {
     type,
     notification_id: notificationId,
   };
 
   switch (type) {
     case 'reaction_received': {
-      const emoji = (metadata?.emoji as string) ?? '👍';
+      const emoji = (metadata?.emoji as string) ?? '\u{1F44D}';
       notification = {
         title: groupName,
         body: `${actorName} reacted ${emoji} to your ${goalTitle} log`,
@@ -146,28 +414,35 @@ async function sendFcmForNotification(
       const milestoneType = (metadata?.milestone_type as string) ?? 'milestone';
       const streakCount = metadata?.streak_count as number | undefined;
       const count = metadata?.count as number | undefined;
+      const milestoneKey = getMilestoneKeyFromMetadata(metadata);
 
       if (milestoneType === 'first_log') {
         notification = {
-          title: '🎉 First log!',
-          body: "You've logged your first activity. Keep it up!",
+          title: '\u{1F389} First log!',
+          body: "You've logged your first activity. Tap to share!",
         };
       } else if (milestoneType === 'streak' && streakCount) {
         notification = {
-          title: `🎉 ${streakCount}-day streak!`,
-          body: `You've logged ${goalTitle} ${streakCount} days in a row. Keep it up!`,
+          title: `\u{1F389} ${streakCount}-day streak!`,
+          body: `You've logged ${goalTitle} ${streakCount} days in a row. Tap to share!`,
         };
       } else if (milestoneType === 'total_logs' && count) {
         notification = {
-          title: `🎉 ${count} total logs!`,
-          body: `You've reached ${count} total logs. Amazing progress!`,
+          title: `\u{1F389} ${count} total logs!`,
+          body: `You've reached ${count} total logs. Tap to share!`,
         };
       } else {
         notification = {
-          title: '🎉 Milestone achieved!',
+          title: '\u{1F389} Milestone achieved!',
           body: `Great progress on ${goalTitle}!`,
         };
       }
+
+      if (milestoneKey) {
+        data.milestone_key = milestoneKey;
+        notification.image = getMilestonePreviewImageUrl(milestoneKey);
+      }
+      data.shareable = 'true';
       break;
     }
     case 'join_request_received':
@@ -193,7 +468,7 @@ export interface HeatMilestoneMetadata {
 
 /**
  * Send FCM push for a group heat milestone to all active members.
- * Does NOT create user_notifications (inbox) entries — heat is a group-level ambient event.
+ * Does NOT create user_notifications (inbox) entries - heat is a group-level ambient event.
  * Fire-and-forget; failures are logged and do not throw.
  */
 export async function sendHeatMilestonePush(
@@ -260,8 +535,7 @@ export async function sendHeatMilestonePush(
 
 /**
  * Check milestone conditions after a progress entry is saved.
- * Awards notifications for first log, 7-day streak, 30-day streak, 100 total logs.
- * Uses user_milestone_grants for deduplication.
+ * Awards notifications for first log, streak tiers, and total log tiers.
  */
 export async function checkMilestones(
   userId: string,
@@ -269,61 +543,89 @@ export async function checkMilestones(
   groupId: string
 ): Promise<void> {
   try {
-    const [totalLogsResult, streakResult] = await Promise.all([
+    const [totalLogsResult, streakResult, goalRow, referralToken] = await Promise.all([
       db
         .selectFrom('progress_entries')
         .select(db.fn.count('id').as('count'))
         .where('user_id', '=', userId)
         .executeTakeFirst(),
       getCurrentStreak(userId, goalId),
+      db.selectFrom('goals').select('title').where('id', '=', goalId).executeTakeFirst(),
+      getOrCreateReferralToken(userId),
     ]);
 
     const totalLogs = Number(totalLogsResult?.count ?? 0);
+    const goalTitle = goalRow?.title ?? null;
 
-    const milestones: Array<{
-      key: string;
-      condition: boolean;
-      metadata: Record<string, unknown>;
-    }> = [
-      { key: 'first_log', condition: totalLogs === 1, metadata: { milestone_type: 'first_log' } },
+    const milestones: MilestoneConfig[] = [
+      {
+        key: 'first_log',
+        condition: totalLogs === 1,
+        count: 1,
+        cooldownDays: null,
+        goalScoped: false,
+        metadata: { milestone_type: 'first_log', milestone_key: 'first_log' },
+      },
       {
         key: 'streak_7',
         condition: streakResult === 7,
-        metadata: { milestone_type: 'streak', streak_count: 7 },
+        count: 7,
+        cooldownDays: 14,
+        goalScoped: true,
+        metadata: { milestone_type: 'streak', streak_count: 7, milestone_key: 'streak_7' },
+      },
+      {
+        key: 'streak_14',
+        condition: streakResult === 14,
+        count: 14,
+        cooldownDays: 30,
+        goalScoped: true,
+        metadata: { milestone_type: 'streak', streak_count: 14, milestone_key: 'streak_14' },
       },
       {
         key: 'streak_30',
         condition: streakResult === 30,
-        metadata: { milestone_type: 'streak', streak_count: 30 },
+        count: 30,
+        cooldownDays: 60,
+        goalScoped: true,
+        metadata: { milestone_type: 'streak', streak_count: 30, milestone_key: 'streak_30' },
+      },
+      {
+        key: 'streak_365',
+        condition: streakResult === 365,
+        count: 365,
+        cooldownDays: 365,
+        goalScoped: true,
+        metadata: { milestone_type: 'streak', streak_count: 365, milestone_key: 'streak_365' },
       },
       {
         key: 'total_logs_100',
         condition: totalLogs === 100,
-        metadata: { milestone_type: 'total_logs', count: 100 },
+        count: 100,
+        cooldownDays: null,
+        goalScoped: false,
+        metadata: { milestone_type: 'total_logs', count: 100, milestone_key: 'total_logs_100' },
+      },
+      {
+        key: 'total_logs_500',
+        condition: totalLogs === 500,
+        count: 500,
+        cooldownDays: null,
+        goalScoped: false,
+        metadata: { milestone_type: 'total_logs', count: 500, milestone_key: 'total_logs_500' },
       },
     ];
 
     for (const m of milestones) {
       if (!m.condition) continue;
 
-      // Deduplicate: insert into user_milestone_grants, skip if already granted
-      try {
-        await db
-          .insertInto('user_milestone_grants')
-          .values({
-            user_id: userId,
-            milestone_key: m.key,
-          })
-          .execute();
-      } catch (err: unknown) {
-        const pgErr = err as { code?: string };
-        if (pgErr.code === '23505') {
-          // Unique violation - already granted
-          continue;
-        }
-        throw err;
-      }
+      const dedupeKey = m.goalScoped ? `${m.key}:${goalId}` : m.key;
+      const allowed = await canAwardMilestone(userId, dedupeKey, m.cooldownDays);
+      if (!allowed) continue;
 
+      await upsertMilestoneGrant(userId, dedupeKey, m.goalScoped ? goalId : null);
+
+      const cardData = generateCardData(m.key, goalTitle, m.count, referralToken);
       await createNotification({
         user_id: userId,
         type: 'milestone_achieved',
@@ -331,6 +633,7 @@ export async function checkMilestones(
         group_id: groupId,
         goal_id: goalId,
         metadata: m.metadata,
+        shareable_card_data: cardData as unknown as Record<string, unknown>,
       });
     }
   } catch (err) {
@@ -353,7 +656,7 @@ async function getCurrentStreak(userId: string, goalId: string): Promise<number>
     .where('user_id', '=', userId)
     .where('goal_id', '=', goalId)
     .orderBy('period_start', 'desc')
-    .limit(120)
+    .limit(400)
     .execute();
 
   const dates = new Set(entries.map((e) => e.period_start));
@@ -363,12 +666,10 @@ async function getCurrentStreak(userId: string, goalId: string): Promise<number>
   const mostRecent = sortedDates[0];
   const today = new Date().toISOString().slice(0, 10);
 
-  // Streak only counts if most recent log is today or yesterday (consecutive)
-  const oneDayMs = 24 * 60 * 60 * 1000;
   const mostRecentDate = new Date(mostRecent + 'T12:00:00Z').getTime();
   const todayDate = new Date(today + 'T12:00:00Z').getTime();
 
-  if (mostRecentDate < todayDate - oneDayMs) {
+  if (mostRecentDate < todayDate - ONE_DAY_MS) {
     return 0;
   }
 
@@ -379,7 +680,7 @@ async function getCurrentStreak(userId: string, goalId: string): Promise<number>
     const dateStr = checkDate.toISOString().slice(0, 10);
     if (!dates.has(dateStr)) break;
     streak++;
-    checkDate.setTime(checkDate.getTime() - oneDayMs);
+    checkDate.setTime(checkDate.getTime() - ONE_DAY_MS);
   }
 
   return streak;
