@@ -2477,7 +2477,8 @@ data class NotificationItem(
     val group: NotificationGroup?,
     val goal: NotificationGoal?,
     val progress_entry_id: String?,
-    val metadata: Map<String, Any>?
+    val metadata: Map<String, Any>?,
+    val shareable_card_data: Map<String, Any>?
 )
 
 data class NotificationActor(
