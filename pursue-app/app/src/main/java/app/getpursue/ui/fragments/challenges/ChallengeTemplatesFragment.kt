@@ -19,8 +19,8 @@ import app.getpursue.data.network.ApiClient
 import app.getpursue.data.network.ApiException
 import app.getpursue.data.network.ChallengeTemplate
 import app.getpursue.ui.activities.MainAppActivity
+import app.getpursue.ui.adapters.ChallengeTemplateListItem
 import app.getpursue.ui.adapters.ChallengeTemplateAdapter
-import com.google.android.material.button.MaterialButton
 import com.google.android.material.chip.Chip
 import com.google.android.material.chip.ChipGroup
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -35,14 +35,19 @@ class ChallengeTemplatesFragment : Fragment() {
     private lateinit var categoryChipGroup: ChipGroup
     private lateinit var categoryScroll: View
     private lateinit var templatesRecycler: RecyclerView
-    private lateinit var customChallengeButton: MaterialButton
     private lateinit var errorText: TextView
 
     private lateinit var featuredAdapter: ChallengeTemplateAdapter
     private lateinit var listAdapter: ChallengeTemplateAdapter
 
     private var allTemplates: List<ChallengeTemplate> = emptyList()
-    private var selectedCategory: String? = null
+    private var selectedFilter: TemplateFilter = TemplateFilter.All
+
+    private sealed class TemplateFilter {
+        object All : TemplateFilter()
+        object Custom : TemplateFilter()
+        data class Category(val value: String) : TemplateFilter()
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -58,22 +63,27 @@ class ChallengeTemplatesFragment : Fragment() {
         categoryChipGroup = view.findViewById(R.id.category_chip_group)
         categoryScroll = view.findViewById(R.id.category_scroll)
         templatesRecycler = view.findViewById(R.id.templates_recycler)
-        customChallengeButton = view.findViewById(R.id.custom_challenge_button)
         errorText = view.findViewById(R.id.challenge_error_text)
 
-        featuredAdapter = ChallengeTemplateAdapter(emptyList(), featured = true) { template ->
-            openSetup(template.id)
-        }
-        listAdapter = ChallengeTemplateAdapter(emptyList(), featured = false) { template ->
-            openSetup(template.id)
-        }
+        featuredAdapter = ChallengeTemplateAdapter(
+            items = emptyList(),
+            featured = true,
+            onStartClick = { template -> openSetup(template.id) },
+            onCustomChallengeClick = { showPremiumUpsell() }
+        )
+        listAdapter = ChallengeTemplateAdapter(
+            items = emptyList(),
+            featured = false,
+            onStartClick = { template -> openSetup(template.id) },
+            onCustomChallengeClick = { showPremiumUpsell() }
+        )
 
         featuredRecycler.layoutManager = LinearLayoutManager(requireContext(), RecyclerView.HORIZONTAL, false)
         featuredRecycler.adapter = featuredAdapter
+        featuredRecycler.isNestedScrollingEnabled = false
         templatesRecycler.layoutManager = LinearLayoutManager(requireContext())
         templatesRecycler.adapter = listAdapter
-
-        customChallengeButton.setOnClickListener { showPremiumUpsell() }
+        templatesRecycler.isNestedScrollingEnabled = false
         loadTemplates()
     }
 
@@ -103,21 +113,36 @@ class ChallengeTemplatesFragment : Fragment() {
 
     private fun renderCategories(categories: List<String>) {
         categoryChipGroup.removeAllViews()
-        val allChip = createCategoryChip(getString(R.string.challenge_category_all), null)
+        val allChip = createFilterChip(
+            label = getString(R.string.challenge_category_all),
+            filter = TemplateFilter.All
+        )
         categoryChipGroup.addView(allChip)
+        categoryChipGroup.addView(
+            createFilterChip(
+                label = getString(R.string.challenge_category_custom),
+                filter = TemplateFilter.Custom
+            )
+        )
         categories.sorted().forEach { category ->
-            categoryChipGroup.addView(createCategoryChip(category.replaceFirstChar { it.uppercase() }, category))
+            categoryChipGroup.addView(
+                createFilterChip(
+                    label = category.replaceFirstChar { it.uppercase() },
+                    filter = TemplateFilter.Category(category)
+                )
+            )
         }
         allChip.isChecked = true
+        selectedFilter = TemplateFilter.All
     }
 
-    private fun createCategoryChip(label: String, categoryValue: String?): Chip {
+    private fun createFilterChip(label: String, filter: TemplateFilter): Chip {
         return Chip(requireContext()).apply {
             text = label
             isCheckable = true
             setOnCheckedChangeListener { _, isChecked ->
                 if (isChecked) {
-                    selectedCategory = categoryValue
+                    selectedFilter = filter
                     renderTemplateLists()
                 }
             }
@@ -125,16 +150,29 @@ class ChallengeTemplatesFragment : Fragment() {
     }
 
     private fun renderTemplateLists() {
-        val filtered = if (selectedCategory == null) {
-            allTemplates
-        } else {
-            allTemplates.filter { it.category == selectedCategory }
+        val featuredItems = allTemplates.filter { it.is_featured }
+        val listItems: List<ChallengeTemplateListItem> = when (val filter = selectedFilter) {
+            is TemplateFilter.All -> {
+                buildList {
+                    add(ChallengeTemplateListItem.CustomChallengeCard)
+                    addAll(allTemplates.map { ChallengeTemplateListItem.Template(it) })
+                }
+            }
+            is TemplateFilter.Custom -> {
+                listOf(ChallengeTemplateListItem.CustomChallengeCard)
+            }
+            is TemplateFilter.Category -> {
+                allTemplates
+                    .filter { it.category == filter.value }
+                    .map { ChallengeTemplateListItem.Template(it) }
+            }
         }
-        listAdapter.submit(filtered)
-        featuredAdapter.submit(allTemplates.filter { it.is_featured })
-        templatesRecycler.visibility = View.VISIBLE
-        featuredLabel.visibility = View.VISIBLE
-        featuredRecycler.visibility = View.VISIBLE
+
+        listAdapter.submitItems(listItems)
+        featuredAdapter.submitTemplates(featuredItems)
+        templatesRecycler.visibility = if (listItems.isEmpty()) View.GONE else View.VISIBLE
+        featuredLabel.visibility = if (featuredItems.isEmpty()) View.GONE else View.VISIBLE
+        featuredRecycler.visibility = if (featuredItems.isEmpty()) View.GONE else View.VISIBLE
         categoryScroll.visibility = View.VISIBLE
         errorText.visibility = View.GONE
     }

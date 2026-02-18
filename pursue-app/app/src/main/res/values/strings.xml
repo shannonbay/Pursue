@@ -367,6 +367,7 @@
     <string name="challenge_start_button">Start Challenge</string>
     <string name="challenge_duration_difficulty_format">%1$d days · %2$s</string>
     <string name="challenge_category_all">All</string>
+    <string name="challenge_category_custom">Custom</string>
     <string name="challenge_custom_title">Custom Challenge (Premium)</string>
     <string name="challenge_custom_subtitle">Create your own goals, duration, and challenge rules.</string>
     <string name="challenge_create_custom_button">Create Custom</string>

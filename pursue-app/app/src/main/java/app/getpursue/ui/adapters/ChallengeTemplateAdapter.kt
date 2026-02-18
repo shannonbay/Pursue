@@ -10,32 +10,67 @@ import app.getpursue.data.network.ChallengeTemplate
 import app.getpursue.utils.EmojiUtils
 import com.google.android.material.button.MaterialButton
 
-class ChallengeTemplateAdapter(
-    private var templates: List<ChallengeTemplate>,
-    private val featured: Boolean,
-    private val onStartClick: (ChallengeTemplate) -> Unit
-) : RecyclerView.Adapter<ChallengeTemplateAdapter.TemplateViewHolder>() {
+sealed class ChallengeTemplateListItem {
+    data class Template(val template: ChallengeTemplate) : ChallengeTemplateListItem()
+    object CustomChallengeCard : ChallengeTemplateListItem()
+}
 
-    fun submit(newTemplates: List<ChallengeTemplate>) {
-        templates = newTemplates
+class ChallengeTemplateAdapter(
+    private var items: List<ChallengeTemplateListItem>,
+    private val featured: Boolean,
+    private val onStartClick: (ChallengeTemplate) -> Unit,
+    private val onCustomChallengeClick: () -> Unit = {}
+) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+
+    companion object {
+        private const val VIEW_TYPE_TEMPLATE = 1
+        private const val VIEW_TYPE_CUSTOM = 2
+    }
+
+    fun submitTemplates(newTemplates: List<ChallengeTemplate>) {
+        items = newTemplates.map { ChallengeTemplateListItem.Template(it) }
         notifyDataSetChanged()
     }
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): TemplateViewHolder {
-        val resId = if (featured) {
-            R.layout.item_challenge_template_featured
-        } else {
-            R.layout.item_challenge_template
+    fun submitItems(newItems: List<ChallengeTemplateListItem>) {
+        items = newItems
+        notifyDataSetChanged()
+    }
+
+    override fun getItemViewType(position: Int): Int {
+        return when (items[position]) {
+            is ChallengeTemplateListItem.Template -> VIEW_TYPE_TEMPLATE
+            is ChallengeTemplateListItem.CustomChallengeCard -> VIEW_TYPE_CUSTOM
         }
-        val view = LayoutInflater.from(parent.context).inflate(resId, parent, false)
-        return TemplateViewHolder(view)
     }
 
-    override fun onBindViewHolder(holder: TemplateViewHolder, position: Int) {
-        holder.bind(templates[position], onStartClick)
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
+        val inflater = LayoutInflater.from(parent.context)
+        return when (viewType) {
+            VIEW_TYPE_CUSTOM -> {
+                val view = inflater.inflate(R.layout.item_challenge_template_custom, parent, false)
+                CustomTemplateViewHolder(view)
+            }
+            else -> {
+                val resId = if (featured) {
+                    R.layout.item_challenge_template_featured
+                } else {
+                    R.layout.item_challenge_template
+                }
+                val view = inflater.inflate(resId, parent, false)
+                TemplateViewHolder(view)
+            }
+        }
     }
 
-    override fun getItemCount(): Int = templates.size
+    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
+        when (val item = items[position]) {
+            is ChallengeTemplateListItem.Template -> (holder as TemplateViewHolder).bind(item.template, onStartClick)
+            is ChallengeTemplateListItem.CustomChallengeCard -> (holder as CustomTemplateViewHolder).bind(onCustomChallengeClick)
+        }
+    }
+
+    override fun getItemCount(): Int = items.size
 
     class TemplateViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         private val emoji: TextView = itemView.findViewById(R.id.template_emoji)
@@ -54,6 +89,15 @@ class ChallengeTemplateAdapter(
                 template.difficulty.replaceFirstChar { it.uppercase() }
             )
             startButton.setOnClickListener { onStartClick(template) }
+        }
+    }
+
+    class CustomTemplateViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+        private val actionButton: MaterialButton = itemView.findViewById(R.id.custom_challenge_button)
+
+        fun bind(onCustomChallengeClick: () -> Unit) {
+            itemView.setOnClickListener { onCustomChallengeClick() }
+            actionButton.setOnClickListener { onCustomChallengeClick() }
         }
     }
 }
