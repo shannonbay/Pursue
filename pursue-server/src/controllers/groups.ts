@@ -21,7 +21,7 @@ import {
   requireGroupCreator,
   requireActiveGroupMember,
 } from '../services/authorization.js';
-import { canUserJoinOrCreateGroup, validateExportDateRange } from '../services/subscription.service.js';
+import { canUserCreateOrJoinChallenge, canUserJoinOrCreateGroup, validateExportDateRange } from '../services/subscription.service.js';
 import { createGroupActivity, ACTIVITY_TYPES } from '../services/activity.service.js';
 import { createNotification } from '../services/notification.service.js';
 import { sendGroupNotification, sendNotificationToUser, sendPushNotification, sendToTopic, buildTopicName } from '../services/fcm.service.js';
@@ -122,6 +122,11 @@ export async function createGroup(
           'description',
           'icon_emoji',
           'icon_color',
+          'is_challenge',
+          'challenge_start_date',
+          'challenge_end_date',
+          'challenge_status',
+          'challenge_template_id',
           'creator_user_id',
           'created_at',
         ])
@@ -212,6 +217,11 @@ export async function createGroup(
       description: result.group.description,
       icon_emoji: result.group.icon_emoji,
       icon_color: result.group.icon_color,
+      is_challenge: result.group.is_challenge,
+      challenge_start_date: result.group.challenge_start_date,
+      challenge_end_date: result.group.challenge_end_date,
+      challenge_status: result.group.challenge_status,
+      challenge_template_id: result.group.challenge_template_id,
       has_icon: false,
       creator_user_id: result.group.creator_user_id,
       member_count: Number(memberCount.count),
@@ -254,6 +264,11 @@ export async function getGroup(
         'groups.description',
         'groups.icon_emoji',
         'groups.icon_color',
+        'groups.is_challenge',
+        'groups.challenge_start_date',
+        'groups.challenge_end_date',
+        'groups.challenge_status',
+        'groups.challenge_template_id',
         'groups.creator_user_id',
         'groups.created_at',
         db.fn.count('group_memberships.id').as('member_count'),
@@ -272,6 +287,11 @@ export async function getGroup(
       description: result.description,
       icon_emoji: result.icon_emoji,
       icon_color: result.icon_color,
+      is_challenge: result.is_challenge,
+      challenge_start_date: result.challenge_start_date,
+      challenge_end_date: result.challenge_end_date,
+      challenge_status: result.challenge_status,
+      challenge_template_id: result.challenge_template_id,
       has_icon: Boolean(result.has_icon),
       creator_user_id: result.creator_user_id,
       member_count: Number(result.member_count),
@@ -629,11 +649,35 @@ export async function approveMember(
       throw new ApplicationError('No pending request found', 404, 'NOT_FOUND');
     }
 
-    const { allowed, reason } = await canUserJoinOrCreateGroup(user_id);
+    const groupInfo = await db
+      .selectFrom('groups')
+      .select(['is_challenge', 'challenge_status'])
+      .where('id', '=', group_id)
+      .executeTakeFirstOrThrow();
+
+    const challengeLimitCheck = groupInfo.is_challenge
+      ? await canUserCreateOrJoinChallenge(user_id)
+      : null;
+
+    const regularLimitCheck = groupInfo.is_challenge
+      ? { allowed: true as const, reason: undefined as string | undefined }
+      : await canUserJoinOrCreateGroup(user_id);
+
+    const allowed = groupInfo.is_challenge
+      ? Boolean(challengeLimitCheck?.allowed)
+      : regularLimitCheck.allowed;
+    const reason = groupInfo.is_challenge
+      ? challengeLimitCheck?.reason
+      : regularLimitCheck.reason;
+
     if (!allowed) {
-      const message = reason === 'free_tier_limit_reached'
-        ? 'User has reached free tier group limit. Upgrade to Premium to approve.'
-        : 'User has reached maximum groups (10).';
+      const message = groupInfo.is_challenge
+        ? (reason === 'free_tier_limit_reached'
+            ? 'User has reached free tier active challenge limit. Upgrade to Premium to approve.'
+            : 'User has reached maximum active challenges (10).')
+        : (reason === 'free_tier_limit_reached'
+            ? 'User has reached free tier group limit. Upgrade to Premium to approve.'
+            : 'User has reached maximum groups (10).');
       throw new ApplicationError(message, 403, 'GROUP_LIMIT_REACHED');
     }
 
@@ -1197,6 +1241,12 @@ export async function getGroupInvite(
     await ensureGroupExists(group_id);
     await requireGroupMember(req.user.id, group_id);
 
+    const groupType = await db
+      .selectFrom('groups')
+      .select('is_challenge')
+      .where('id', '=', group_id)
+      .executeTakeFirstOrThrow();
+
     const invite = await db
       .selectFrom('invite_codes')
       .select(['code', 'created_at'])
@@ -1210,7 +1260,9 @@ export async function getGroupInvite(
 
     res.status(200).json({
       invite_code: invite.code,
-      share_url: `https://getpursue.app/join/${invite.code}`,
+      share_url: groupType.is_challenge
+        ? `https://getpursue.app/challenge/${invite.code}`
+        : `https://getpursue.app/join/${invite.code}`,
       created_at: invite.created_at,
     });
   } catch (error) {
@@ -1292,10 +1344,17 @@ export async function regenerateInviteCode(
         previous_code_revoked: oldCode?.code ?? null,
       };
     });
+    const groupType = await db
+      .selectFrom('groups')
+      .select('is_challenge')
+      .where('id', '=', group_id)
+      .executeTakeFirstOrThrow();
 
     res.status(200).json({
       invite_code: result.invite_code,
-      share_url: `https://getpursue.app/join/${result.invite_code}`,
+      share_url: groupType.is_challenge
+        ? `https://getpursue.app/challenge/${result.invite_code}`
+        : `https://getpursue.app/join/${result.invite_code}`,
       created_at: result.created_at,
       previous_code_revoked: result.previous_code_revoked,
     });
@@ -1320,7 +1379,13 @@ export async function joinGroup(
     // Find active invite code (not revoked)
     const invite = await db
       .selectFrom('invite_codes')
-      .select(['group_id', 'id'])
+      .innerJoin('groups', 'groups.id', 'invite_codes.group_id')
+      .select([
+        'invite_codes.group_id',
+        'invite_codes.id',
+        'groups.is_challenge',
+        'groups.challenge_status',
+      ])
       .where('code', '=', String(data.invite_code))
       .where('revoked_at', 'is', null)
       .executeTakeFirst();
@@ -1335,11 +1400,27 @@ export async function joinGroup(
       throw new ApplicationError('Already a member of this group', 409, 'ALREADY_MEMBER');
     }
 
-    const { allowed, reason } = await canUserJoinOrCreateGroup(req.user.id);
+    if (invite.is_challenge && ['completed', 'cancelled'].includes(invite.challenge_status ?? '')) {
+      throw new ApplicationError('This challenge has ended', 409, 'CHALLENGE_ENDED');
+    }
+
+    const challengeLimitCheck = invite.is_challenge
+      ? await canUserCreateOrJoinChallenge(req.user.id)
+      : null;
+    const regularLimitCheck = invite.is_challenge
+      ? { allowed: true as const, reason: undefined as string | undefined }
+      : await canUserJoinOrCreateGroup(req.user.id);
+    const allowed = invite.is_challenge ? Boolean(challengeLimitCheck?.allowed) : regularLimitCheck.allowed;
+    const reason = invite.is_challenge ? challengeLimitCheck?.reason : regularLimitCheck.reason;
+
     if (!allowed) {
-      const message = reason === 'free_tier_limit_reached'
-        ? 'Upgrade to Premium to join more groups'
-        : 'Maximum groups reached (10)';
+      const message = invite.is_challenge
+        ? (reason === 'free_tier_limit_reached'
+            ? 'Upgrade to Premium to join more active challenges'
+            : 'Maximum active challenges reached (10)')
+        : (reason === 'free_tier_limit_reached'
+            ? 'Upgrade to Premium to join more groups'
+            : 'Maximum groups reached (10)');
       throw new ApplicationError(message, 403, 'GROUP_LIMIT_REACHED');
     }
 

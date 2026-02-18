@@ -314,6 +314,20 @@ export async function createGoal(
     await ensureGroupExists(group_id);
     await requireGroupAdmin(req.user.id, group_id);
 
+    const groupMeta = await db
+      .selectFrom('groups')
+      .select(['is_challenge', 'challenge_status'])
+      .where('id', '=', group_id)
+      .executeTakeFirstOrThrow();
+
+    if (groupMeta.is_challenge && groupMeta.challenge_status === 'active') {
+      throw new ApplicationError(
+        'Goals cannot be modified while a challenge is active',
+        403,
+        'CHALLENGE_GOALS_LOCKED'
+      );
+    }
+
     const writeCheck = await canUserWriteInGroup(req.user.id, group_id);
     if (!writeCheck.allowed) {
       if (writeCheck.reason === 'group_selection_required') {

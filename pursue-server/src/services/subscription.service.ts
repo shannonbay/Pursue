@@ -3,6 +3,8 @@ import { db } from '../database/index.js';
 
 const FREE_GROUP_LIMIT = 1;
 const PREMIUM_GROUP_LIMIT = 10;
+const FREE_ACTIVE_CHALLENGE_LIMIT = 1;
+const PREMIUM_ACTIVE_CHALLENGE_LIMIT = 10;
 const FREE_EXPORT_DAYS = 30;
 const PREMIUM_EXPORT_DAYS = 365;
 const ABSOLUTE_MAX_EXPORT_DAYS = 730; // 24 months
@@ -40,6 +42,13 @@ export interface CanUserWriteInGroupResult {
   allowed: boolean;
   reason?: 'group_selection_required' | 'read_only';
   read_only_until?: Date;
+}
+
+export interface ChallengeEligibilityResult {
+  allowed: boolean;
+  reason?: 'free_tier_limit_reached' | 'premium_tier_limit_reached' | 'user_not_found';
+  current_count: number;
+  limit: number;
 }
 
 /**
@@ -213,6 +222,52 @@ export async function canUserJoinOrCreateGroup(userId: string): Promise<{ allowe
     };
   }
   return { allowed: true };
+}
+
+/**
+ * Count active challenge memberships for a user.
+ * Active challenges are upcoming or active; completed/cancelled do not count.
+ */
+export async function getActiveChallengeCount(userId: string): Promise<number> {
+  const row = await db
+    .selectFrom('group_memberships')
+    .innerJoin('groups', 'groups.id', 'group_memberships.group_id')
+    .where('group_memberships.user_id', '=', userId)
+    .where('group_memberships.status', '=', 'active')
+    .where('groups.is_challenge', '=', true)
+    .where('groups.challenge_status', 'in', ['upcoming', 'active'])
+    .select(db.fn.count('group_memberships.id').as('count'))
+    .executeTakeFirst();
+
+  return Number(row?.count ?? 0);
+}
+
+/**
+ * Check whether a user can create or join another active challenge.
+ */
+export async function canUserCreateOrJoinChallenge(userId: string): Promise<ChallengeEligibilityResult> {
+  const state = await getUserSubscriptionState(userId);
+  if (!state) {
+    return { allowed: false, reason: 'user_not_found', current_count: 0, limit: 0 };
+  }
+
+  const current = await getActiveChallengeCount(userId);
+  const limit = state.current_subscription_tier === 'premium'
+    ? PREMIUM_ACTIVE_CHALLENGE_LIMIT
+    : FREE_ACTIVE_CHALLENGE_LIMIT;
+
+  if (current >= limit) {
+    return {
+      allowed: false,
+      reason: state.current_subscription_tier === 'premium'
+        ? 'premium_tier_limit_reached'
+        : 'free_tier_limit_reached',
+      current_count: current,
+      limit,
+    };
+  }
+
+  return { allowed: true, current_count: current, limit };
 }
 
 /**

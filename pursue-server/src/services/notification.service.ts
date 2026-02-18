@@ -415,6 +415,8 @@ async function sendFcmForNotification(
       const streakCount = metadata?.streak_count as number | undefined;
       const count = metadata?.count as number | undefined;
       const milestoneKey = getMilestoneKeyFromMetadata(metadata);
+      const challengeName = (metadata?.challenge_name as string | undefined) ?? groupName;
+      const completionRate = metadata?.completion_rate as number | undefined;
 
       if (milestoneType === 'first_log') {
         notification = {
@@ -431,6 +433,14 @@ async function sendFcmForNotification(
           title: `\u{1F389} ${count} total logs!`,
           body: `You've reached ${count} total logs. Tap to share!`,
         };
+      } else if (milestoneType === 'challenge_completed') {
+        const pct = completionRate != null ? Math.round(completionRate * 100) : null;
+        notification = {
+          title: '\u{1F389} Challenge Complete!',
+          body: pct == null
+            ? `You finished ${challengeName}. Tap to share!`
+            : `You finished ${challengeName} with a ${pct}% completion rate. Tap to share!`,
+        };
       } else {
         notification = {
           title: '\u{1F389} Milestone achieved!',
@@ -442,6 +452,7 @@ async function sendFcmForNotification(
         data.milestone_key = milestoneKey;
         notification.image = getMilestonePreviewImageUrl(milestoneKey);
       }
+      if (group_id) data.group_id = group_id;
       data.shareable = 'true';
       break;
     }

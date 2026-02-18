@@ -207,6 +207,11 @@ async function createSchema(db: Kysely<Database>) {
       icon_data BYTEA,
       icon_mime_type VARCHAR(50),
       creator_user_id UUID NOT NULL REFERENCES users(id),
+      is_challenge BOOLEAN NOT NULL DEFAULT FALSE,
+      challenge_start_date DATE,
+      challenge_end_date DATE,
+      challenge_template_id UUID,
+      challenge_status VARCHAR(20),
       created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
       updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
       deleted_at TIMESTAMP WITH TIME ZONE
@@ -241,8 +246,115 @@ async function createSchema(db: Kysely<Database>) {
       ) THEN
         ALTER TABLE groups ADD COLUMN deleted_at TIMESTAMP WITH TIME ZONE;
       END IF;
+      IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = 'groups' AND column_name = 'is_challenge'
+      ) THEN
+        ALTER TABLE groups ADD COLUMN is_challenge BOOLEAN NOT NULL DEFAULT FALSE;
+      END IF;
+      IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = 'groups' AND column_name = 'challenge_start_date'
+      ) THEN
+        ALTER TABLE groups ADD COLUMN challenge_start_date DATE;
+      END IF;
+      IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = 'groups' AND column_name = 'challenge_end_date'
+      ) THEN
+        ALTER TABLE groups ADD COLUMN challenge_end_date DATE;
+      END IF;
+      IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = 'groups' AND column_name = 'challenge_template_id'
+      ) THEN
+        ALTER TABLE groups ADD COLUMN challenge_template_id UUID;
+      END IF;
+      IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = 'groups' AND column_name = 'challenge_status'
+      ) THEN
+        ALTER TABLE groups ADD COLUMN challenge_status VARCHAR(20);
+      END IF;
     END $$;
   `.execute(db);
+
+  await sql`
+    CREATE TABLE IF NOT EXISTS challenge_templates (
+      id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+      slug VARCHAR(100) UNIQUE NOT NULL,
+      title VARCHAR(200) NOT NULL,
+      description TEXT NOT NULL,
+      icon_emoji VARCHAR(10) NOT NULL,
+      duration_days INTEGER NOT NULL,
+      category VARCHAR(50) NOT NULL,
+      difficulty VARCHAR(20) NOT NULL DEFAULT 'moderate',
+      is_featured BOOLEAN NOT NULL DEFAULT FALSE,
+      sort_order INTEGER NOT NULL DEFAULT 0,
+      created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+      updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    )
+  `.execute(db);
+  await sql`CREATE INDEX IF NOT EXISTS idx_challenge_templates_category ON challenge_templates(category, sort_order)`.execute(db);
+  await sql`CREATE INDEX IF NOT EXISTS idx_challenge_templates_featured ON challenge_templates(is_featured, sort_order) WHERE is_featured = TRUE`.execute(db);
+
+  await sql`
+    CREATE TABLE IF NOT EXISTS challenge_template_goals (
+      id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+      template_id UUID NOT NULL REFERENCES challenge_templates(id) ON DELETE CASCADE,
+      title VARCHAR(200) NOT NULL,
+      description TEXT,
+      cadence VARCHAR(20) NOT NULL,
+      metric_type VARCHAR(20) NOT NULL,
+      target_value DECIMAL(10,2),
+      unit VARCHAR(50),
+      sort_order INTEGER NOT NULL DEFAULT 0,
+      UNIQUE(template_id, sort_order)
+    )
+  `.execute(db);
+  await sql`CREATE INDEX IF NOT EXISTS idx_template_goals_template ON challenge_template_goals(template_id, sort_order)`.execute(db);
+
+  await sql`
+    DO $$ BEGIN
+      IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint
+        WHERE conname = 'chk_groups_challenge_fields'
+      ) THEN
+        ALTER TABLE groups ADD CONSTRAINT chk_groups_challenge_fields CHECK (
+          (is_challenge = FALSE AND challenge_start_date IS NULL AND challenge_end_date IS NULL AND challenge_status IS NULL)
+          OR
+          (is_challenge = TRUE AND challenge_start_date IS NOT NULL AND challenge_end_date IS NOT NULL AND challenge_status IS NOT NULL)
+        );
+      END IF;
+      IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint
+        WHERE conname = 'chk_groups_challenge_dates'
+      ) THEN
+        ALTER TABLE groups ADD CONSTRAINT chk_groups_challenge_dates CHECK (
+          challenge_end_date IS NULL OR challenge_end_date >= challenge_start_date
+        );
+      END IF;
+      IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint
+        WHERE conname = 'chk_groups_challenge_status'
+      ) THEN
+        ALTER TABLE groups ADD CONSTRAINT chk_groups_challenge_status CHECK (
+          challenge_status IS NULL OR challenge_status IN ('upcoming', 'active', 'completed', 'cancelled')
+        );
+      END IF;
+      IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint
+        WHERE conname = 'fk_groups_challenge_template'
+      ) THEN
+        ALTER TABLE groups
+        ADD CONSTRAINT fk_groups_challenge_template
+        FOREIGN KEY (challenge_template_id) REFERENCES challenge_templates(id) ON DELETE SET NULL;
+      END IF;
+    END $$;
+  `.execute(db);
+
+  await sql`CREATE INDEX IF NOT EXISTS idx_groups_challenge_status ON groups(is_challenge, challenge_status) WHERE is_challenge = TRUE`.execute(db);
+  await sql`CREATE INDEX IF NOT EXISTS idx_groups_challenge_template ON groups(challenge_template_id) WHERE challenge_template_id IS NOT NULL`.execute(db);
 
   // Create group_memberships table
   await sql`
@@ -695,6 +807,8 @@ async function cleanDatabase(db: Kysely<Database>) {
       reminder_history,
       user_reminder_preferences,
       weekly_recaps_sent,
+      challenge_template_goals,
+      challenge_templates,
       progress_entries,
       goals,
       group_activities,

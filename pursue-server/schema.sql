@@ -102,12 +102,70 @@ CREATE TABLE groups (
   icon_data BYTEA,
   icon_mime_type VARCHAR(50),
   creator_user_id UUID NOT NULL REFERENCES users(id),
+  is_challenge BOOLEAN NOT NULL DEFAULT FALSE,
+  challenge_start_date DATE,
+  challenge_end_date DATE,
+  challenge_template_id UUID,
+  challenge_status VARCHAR(20) DEFAULT NULL,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   deleted_at TIMESTAMP WITH TIME ZONE -- NULL if active, timestamp if soft deleted
 );
 
 CREATE INDEX idx_groups_creator ON groups(creator_user_id);
+CREATE INDEX idx_groups_challenge_status ON groups(is_challenge, challenge_status) WHERE is_challenge = TRUE;
+CREATE INDEX idx_groups_challenge_template ON groups(challenge_template_id) WHERE challenge_template_id IS NOT NULL;
+
+ALTER TABLE groups ADD CONSTRAINT chk_groups_challenge_fields CHECK (
+  (is_challenge = FALSE AND challenge_start_date IS NULL AND challenge_end_date IS NULL AND challenge_status IS NULL)
+  OR
+  (is_challenge = TRUE AND challenge_start_date IS NOT NULL AND challenge_end_date IS NOT NULL AND challenge_status IS NOT NULL)
+);
+
+ALTER TABLE groups ADD CONSTRAINT chk_groups_challenge_dates CHECK (
+  challenge_end_date IS NULL OR challenge_end_date >= challenge_start_date
+);
+
+ALTER TABLE groups ADD CONSTRAINT chk_groups_challenge_status CHECK (
+  challenge_status IS NULL OR challenge_status IN ('upcoming', 'active', 'completed', 'cancelled')
+);
+
+-- Challenge templates
+CREATE TABLE challenge_templates (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  slug VARCHAR(100) UNIQUE NOT NULL,
+  title VARCHAR(200) NOT NULL,
+  description TEXT NOT NULL,
+  icon_emoji VARCHAR(10) NOT NULL,
+  duration_days INTEGER NOT NULL,
+  category VARCHAR(50) NOT NULL,
+  difficulty VARCHAR(20) NOT NULL DEFAULT 'moderate',
+  is_featured BOOLEAN NOT NULL DEFAULT FALSE,
+  sort_order INTEGER NOT NULL DEFAULT 0,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX idx_challenge_templates_category ON challenge_templates(category, sort_order);
+CREATE INDEX idx_challenge_templates_featured ON challenge_templates(is_featured, sort_order) WHERE is_featured = TRUE;
+
+CREATE TABLE challenge_template_goals (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  template_id UUID NOT NULL REFERENCES challenge_templates(id) ON DELETE CASCADE,
+  title VARCHAR(200) NOT NULL,
+  description TEXT,
+  cadence VARCHAR(20) NOT NULL,
+  metric_type VARCHAR(20) NOT NULL,
+  target_value DECIMAL(10,2),
+  unit VARCHAR(50),
+  sort_order INTEGER NOT NULL DEFAULT 0,
+  UNIQUE(template_id, sort_order)
+);
+
+CREATE INDEX idx_template_goals_template ON challenge_template_goals(template_id, sort_order);
+
+ALTER TABLE groups ADD CONSTRAINT fk_groups_challenge_template
+  FOREIGN KEY (challenge_template_id) REFERENCES challenge_templates(id) ON DELETE SET NULL;
 
 -- Group memberships
 CREATE TABLE group_memberships (
@@ -301,6 +359,9 @@ CREATE TRIGGER update_users_updated_at BEFORE UPDATE ON users
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 CREATE TRIGGER update_groups_updated_at BEFORE UPDATE ON groups
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_challenge_templates_updated_at BEFORE UPDATE ON challenge_templates
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 CREATE TRIGGER update_group_heat_updated_at BEFORE UPDATE ON group_heat

@@ -85,6 +85,11 @@ export interface GroupsTable {
   icon_data: Buffer | null;
   icon_mime_type: string | null;
   creator_user_id: string;
+  is_challenge: ColumnType<boolean, boolean | undefined, boolean>;
+  challenge_start_date: string | null; // DATE as YYYY-MM-DD
+  challenge_end_date: string | null; // DATE as YYYY-MM-DD
+  challenge_template_id: string | null;
+  challenge_status: ColumnType<'upcoming' | 'active' | 'completed' | 'cancelled' | null, string | null | undefined, string | null>;
   created_at: ColumnType<Date, string | undefined, never>;
   updated_at: ColumnType<Date, string | undefined, string | undefined>;
   deleted_at: ColumnType<Date | null, string | undefined, string | undefined>;
@@ -93,6 +98,42 @@ export interface GroupsTable {
 export type Group = Selectable<GroupsTable>;
 export type NewGroup = Insertable<GroupsTable>;
 export type GroupUpdate = Updateable<GroupsTable>;
+
+// Challenge templates table
+export interface ChallengeTemplatesTable {
+  id: Generated<string>;
+  slug: string;
+  title: string;
+  description: string;
+  icon_emoji: string;
+  duration_days: number;
+  category: string;
+  difficulty: ColumnType<'easy' | 'moderate' | 'hard', string | undefined, string>;
+  is_featured: ColumnType<boolean, boolean | undefined, boolean>;
+  sort_order: ColumnType<number, number | undefined, number>;
+  created_at: ColumnType<Date, string | undefined, never>;
+  updated_at: ColumnType<Date, string | undefined, string | undefined>;
+}
+
+export type ChallengeTemplate = Selectable<ChallengeTemplatesTable>;
+export type NewChallengeTemplate = Insertable<ChallengeTemplatesTable>;
+export type ChallengeTemplateUpdate = Updateable<ChallengeTemplatesTable>;
+
+// Challenge template goals table
+export interface ChallengeTemplateGoalsTable {
+  id: Generated<string>;
+  template_id: string;
+  title: string;
+  description: string | null;
+  cadence: string;
+  metric_type: string;
+  target_value: number | null;
+  unit: string | null;
+  sort_order: ColumnType<number, number | undefined, number>;
+}
+
+export type ChallengeTemplateGoal = Selectable<ChallengeTemplateGoalsTable>;
+export type NewChallengeTemplateGoal = Insertable<ChallengeTemplateGoalsTable>;
 
 // Group memberships table
 export interface GroupMembershipsTable {
@@ -431,6 +472,8 @@ export interface Database {
   password_reset_tokens: PasswordResetTokensTable;
   devices: DevicesTable;
   groups: GroupsTable;
+  challenge_templates: ChallengeTemplatesTable;
+  challenge_template_goals: ChallengeTemplateGoalsTable;
   group_memberships: GroupMembershipsTable;
   invite_codes: InviteCodesTable;
   goals: GoalsTable;
