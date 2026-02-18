@@ -446,6 +446,7 @@ export async function createTestNotification(
     goalId?: string;
     progressEntryId?: string;
     metadata?: Record<string, unknown>;
+    shareableCardData?: Record<string, unknown>;
     isRead?: boolean;
   }
 ): Promise<string> {
@@ -459,6 +460,7 @@ export async function createTestNotification(
       goal_id: options?.goalId ?? null,
       progress_entry_id: options?.progressEntryId ?? null,
       metadata: options?.metadata ?? null,
+      shareable_card_data: options?.shareableCardData ?? null,
       is_read: options?.isRead ?? false,
     })
     .returning('id')
