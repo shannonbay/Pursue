@@ -43,8 +43,11 @@ function calculateCircularStats(hours: number[]): {
   );
 
   // Circular std dev (in hours): sqrt(-2 * ln(R)) * (24 / 2π)
+  // Clamp R to [0, 1] before log: floating-point can yield R slightly > 1
+  // (e.g. sin²(x)+cos²(x) = 1.0000000000000002 for some angles), which makes
+  // log(R) > 0 → negative argument to sqrt → NaN.
   const circularStdDev =
-    R > 0 ? Math.sqrt(-2 * Math.log(R)) * (24 / TWO_PI) : 12;
+    R > 0 ? Math.sqrt(-2 * Math.log(Math.min(R, 1))) * (24 / TWO_PI) : 12;
 
   // For IQR: unwrap hours relative to circular mean, then use linear IQR
   const unwrapped = hours.map((h) => {
