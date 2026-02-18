@@ -200,11 +200,17 @@ class ProfileFragment : Fragment() {
                 val user = withContext(Dispatchers.IO) {
                     ApiClient.getMyUser(accessToken)
                 }
+                val groups = try {
+                    withContext(Dispatchers.IO) { ApiClient.getMyGroups(accessToken).groups }
+                } catch (e: Exception) {
+                    emptyList()
+                }
                 val subscription = try {
                     withContext(Dispatchers.IO) { ApiClient.getSubscription(accessToken) }
                 } catch (e: Exception) {
                     null
                 }
+                userGroupIds = groups.map { it.id }
                 
                 currentUser = user
                 
@@ -216,11 +222,27 @@ class ProfileFragment : Fragment() {
                     loadAvatar(user)
 
                     // Subscription status
+                    val activeChallengeCount = groups.count {
+                        it.is_challenge && (it.challenge_status == "upcoming" || it.challenge_status == "active")
+                    }
                     if (subscription != null) {
+                        val activeChallengeLimit = if (subscription.tier == "premium") 10 else 1
                         subscriptionStatus.text = if (subscription.tier == "premium")
-                            getString(R.string.subscription_premium_format, subscription.current_group_count, subscription.group_limit)
+                            getString(
+                                R.string.subscription_premium_format,
+                                subscription.current_group_count,
+                                subscription.group_limit,
+                                activeChallengeCount,
+                                activeChallengeLimit
+                            )
                         else
-                            getString(R.string.subscription_free_format, subscription.current_group_count, subscription.group_limit)
+                            getString(
+                                R.string.subscription_free_format,
+                                subscription.current_group_count,
+                                subscription.group_limit,
+                                activeChallengeCount,
+                                activeChallengeLimit
+                            )
                         val expiresAt = subscription.subscription_expires_at
                         if (subscription.tier == "premium" && !expiresAt.isNullOrBlank()) {
                             subscriptionRenews.visibility = View.VISIBLE
@@ -230,7 +252,7 @@ class ProfileFragment : Fragment() {
                         }
                         buttonUpgradePremium.visibility = if (subscription.tier == "premium") View.GONE else View.VISIBLE
                     } else {
-                        subscriptionStatus.text = getString(R.string.subscription_free_format, 0, 1)
+                        subscriptionStatus.text = getString(R.string.subscription_free_format, 0, 1, activeChallengeCount, 1)
                         subscriptionRenews.visibility = View.GONE
                         buttonUpgradePremium.visibility = View.VISIBLE
                     }

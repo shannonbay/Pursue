@@ -411,13 +411,14 @@ class MainAppActivity : AppCompatActivity(),
     }
 
     /**
-     * If user is over_limit (subscription expired, multiple groups), show dialog to select one group to keep.
+     * If user is over_limit (subscription expired, multiple regular groups), show dialog to select one regular group to keep.
      * Called with already-fetched groups from HomeFragment to avoid a duplicate getMyGroups call.
      */
     private fun checkOverLimitAndShowDialog(groups: List<Group>) {
         if (overLimitDialogShowing) return
         if (overLimitSelectionCompletedThisSession) return
-        if (groups.size <= 1) return
+        val regularGroups = groups.filter { !it.is_challenge }
+        if (regularGroups.size <= 1) return
         lifecycleScope.launch {
             val token = SecureTokenManager.Companion.getInstance(this@MainAppActivity).getAccessToken() ?: return@launch
             val subscription = try {
@@ -428,7 +429,7 @@ class MainAppActivity : AppCompatActivity(),
             if (!subscription.is_over_limit) {
                 return@launch
             }
-            runOnUiThread { showOverLimitDialog(token, groups) }
+            runOnUiThread { showOverLimitDialog(token, regularGroups) }
         }
     }
 

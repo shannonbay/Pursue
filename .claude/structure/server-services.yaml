@@ -39,11 +39,11 @@ files:
   subscription.service.ts:
     description: Subscription tier logic, group limits, export date validation, downgrade handling
     exports:
-      - name: getActiveGroupCount
+      - name: getActiveRegularGroupCount
         kind: function
         params: [{name: userId, type: string}]
         returns: Promise<number>
-        description: Count active group memberships
+        description: Count active regular (non-challenge) group memberships
       - name: getUserSubscriptionState
         kind: function
         params: [{name: userId, type: string}]

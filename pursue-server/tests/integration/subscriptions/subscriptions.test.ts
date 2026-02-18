@@ -3,6 +3,46 @@ import { app } from '../../../src/app';
 import { testDb } from '../../setup';
 import { createAuthenticatedUser, setUserPremium, createGroupWithGoal } from '../../helpers';
 
+function datePlus(days: number): string {
+  const d = new Date();
+  d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString().slice(0, 10);
+}
+
+async function seedTemplate(slug: string) {
+  const template = await testDb
+    .insertInto('challenge_templates')
+    .values({
+      slug,
+      title: `Template ${slug}`,
+      description: `Description for ${slug}`,
+      icon_emoji: 'T',
+      duration_days: 30,
+      category: 'fitness',
+      difficulty: 'moderate',
+      is_featured: false,
+      sort_order: 1,
+    })
+    .returning(['id'])
+    .executeTakeFirstOrThrow();
+
+  await testDb
+    .insertInto('challenge_template_goals')
+    .values({
+      template_id: template.id,
+      title: 'Goal',
+      description: null,
+      cadence: 'daily',
+      metric_type: 'binary',
+      target_value: null,
+      unit: null,
+      sort_order: 0,
+    })
+    .execute();
+
+  return template.id;
+}
+
 describe('GET /api/users/me/subscription', () => {
   it('returns subscription for free user with no groups', async () => {
     const { accessToken } = await createAuthenticatedUser();
@@ -81,6 +121,31 @@ describe('GET /api/users/me/subscription', () => {
     const response = await request(app).get('/api/users/me/subscription');
     expect(response.status).toBe(401);
   });
+
+  it('ignores active challenge memberships in current_group_count and groups_remaining', async () => {
+    const { accessToken } = await createAuthenticatedUser();
+    const templateId = await seedTemplate('subscription-ignore-challenge-count');
+
+    const challengeRes = await request(app)
+      .post('/api/challenges')
+      .set('Authorization', `Bearer ${accessToken}`)
+      .send({ template_id: templateId, start_date: datePlus(0) });
+    expect(challengeRes.status).toBe(201);
+
+    const response = await request(app)
+      .get('/api/users/me/subscription')
+      .set('Authorization', `Bearer ${accessToken}`);
+
+    expect(response.status).toBe(200);
+    expect(response.body).toMatchObject({
+      tier: 'free',
+      group_limit: 1,
+      current_group_count: 0,
+      groups_remaining: 1,
+      can_create_group: true,
+      can_join_group: true,
+    });
+  });
 });
 
 describe('GET /api/users/me/subscription/eligibility', () => {
@@ -120,6 +185,30 @@ describe('GET /api/users/me/subscription/eligibility', () => {
       current_count: 1,
       limit: 1,
       upgrade_required: true,
+    });
+  });
+
+  it('keeps eligibility available when user only has an active challenge', async () => {
+    const { accessToken } = await createAuthenticatedUser();
+    const templateId = await seedTemplate('eligibility-ignore-challenge-count');
+
+    const challengeRes = await request(app)
+      .post('/api/challenges')
+      .set('Authorization', `Bearer ${accessToken}`)
+      .send({ template_id: templateId, start_date: datePlus(0) });
+    expect(challengeRes.status).toBe(201);
+
+    const response = await request(app)
+      .get('/api/users/me/subscription/eligibility')
+      .set('Authorization', `Bearer ${accessToken}`);
+
+    expect(response.status).toBe(200);
+    expect(response.body).toMatchObject({
+      can_create_group: true,
+      can_join_group: true,
+      current_count: 0,
+      limit: 1,
+      upgrade_required: false,
     });
   });
 });
@@ -624,5 +713,83 @@ describe('Over-limit read-only enforcement', () => {
     expect(response.status).toBe(403);
     expect(response.body.error?.code).toBe('GROUP_READ_ONLY');
     expect(response.body.error?.message).toMatch(/read-only/);
+  });
+
+  it('allows progress in active challenge after downgrade selection while extra regular groups are read-only', async () => {
+    const { accessToken, userId } = await createAuthenticatedUser();
+    await setUserPremium(userId);
+    const templateId = await seedTemplate('downgrade-dual-keep-challenge-write');
+
+    const keepGroup = await request(app)
+      .post('/api/groups')
+      .set('Authorization', `Bearer ${accessToken}`)
+      .send({ name: 'Keep' });
+    const readOnlyGroup = await request(app)
+      .post('/api/groups')
+      .set('Authorization', `Bearer ${accessToken}`)
+      .send({ name: 'ReadOnly' });
+
+    const challengeRes = await request(app)
+      .post('/api/challenges')
+      .set('Authorization', `Bearer ${accessToken}`)
+      .send({ template_id: templateId, start_date: datePlus(0) });
+    expect(challengeRes.status).toBe(201);
+
+    const challengeGroupId = challengeRes.body.challenge.id;
+    await testDb
+      .updateTable('groups')
+      .set({
+        challenge_status: 'active',
+        challenge_start_date: datePlus(-1),
+        challenge_end_date: datePlus(10),
+      })
+      .where('id', '=', challengeGroupId)
+      .execute();
+
+    await testDb
+      .updateTable('user_subscriptions')
+      .set({
+        status: 'expired',
+        expires_at: new Date(Date.now() - 86400000),
+      })
+      .where('user_id', '=', userId)
+      .execute();
+    await testDb
+      .updateTable('users')
+      .set({ current_subscription_tier: 'free', subscription_status: 'over_limit', group_limit: 1 })
+      .where('id', '=', userId)
+      .execute();
+
+    const selectRes = await request(app)
+      .post('/api/subscriptions/downgrade/select-group')
+      .set('Authorization', `Bearer ${accessToken}`)
+      .send({ keep_group_id: keepGroup.body.id });
+    expect(selectRes.status).toBe(200);
+
+    const regularWriteAttempt = await request(app)
+      .post(`/api/groups/${readOnlyGroup.body.id}/goals`)
+      .set('Authorization', `Bearer ${accessToken}`)
+      .send({ title: 'Regular Read Only Goal', cadence: 'daily', metric_type: 'binary' });
+    expect(regularWriteAttempt.status).toBe(403);
+    expect(regularWriteAttempt.body.error?.code).toBe('GROUP_READ_ONLY');
+
+    const challengeGoal = await testDb
+      .selectFrom('goals')
+      .select('id')
+      .where('group_id', '=', challengeGroupId)
+      .executeTakeFirstOrThrow();
+
+    const challengeProgress = await request(app)
+      .post('/api/progress')
+      .set('Authorization', `Bearer ${accessToken}`)
+      .send({
+        goal_id: challengeGoal.id,
+        value: 1,
+        user_date: '2025-01-15',
+        user_timezone: 'America/New_York',
+      });
+
+    expect(challengeProgress.status).toBe(201);
+    expect(challengeProgress.body.goal_id).toBe(challengeGoal.id);
   });
 });

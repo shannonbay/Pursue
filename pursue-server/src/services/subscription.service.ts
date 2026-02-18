@@ -17,6 +17,7 @@ export interface UserSubscriptionState {
   current_subscription_tier: Tier;
   subscription_status: SubscriptionStatus;
   group_limit: number;
+  // Active regular (non-challenge) group memberships.
   current_group_count: number;
 }
 
@@ -52,22 +53,24 @@ export interface ChallengeEligibilityResult {
 }
 
 /**
- * Count active group memberships for a user (status = 'active' only).
+ * Count active regular (non-challenge) group memberships for a user.
  * Pending/declined do not count per spec.
  */
-export async function getActiveGroupCount(userId: string): Promise<number> {
+export async function getActiveRegularGroupCount(userId: string): Promise<number> {
   const row = await db
     .selectFrom('group_memberships')
-    .where('user_id', '=', userId)
-    .where('status', '=', 'active')
-    .select(db.fn.count('id').as('count'))
+    .innerJoin('groups', 'groups.id', 'group_memberships.group_id')
+    .where('group_memberships.user_id', '=', userId)
+    .where('group_memberships.status', '=', 'active')
+    .where('groups.is_challenge', '=', false)
+    .select(db.fn.count('group_memberships.id').as('count'))
     .executeTakeFirst();
   return Number(row?.count ?? 0);
 }
 
 /**
  * Get user's subscription state. Uses stored group_limit/current_subscription_tier
- * and recomputes current_group_count from active memberships.
+ * and recomputes current_group_count from active regular group memberships.
  */
 export async function getUserSubscriptionState(userId: string): Promise<UserSubscriptionState | null> {
   const user = await db
@@ -85,7 +88,7 @@ export async function getUserSubscriptionState(userId: string): Promise<UserSubs
 
   if (!user) return null;
 
-  const current_group_count = await getActiveGroupCount(userId);
+  const current_group_count = await getActiveRegularGroupCount(userId);
   const tier = (user.current_subscription_tier as Tier) ?? 'free';
   let status = (user.subscription_status as SubscriptionStatus) ?? 'active';
   const group_limit = Number(user.group_limit ?? FREE_GROUP_LIMIT);
@@ -136,10 +139,10 @@ export async function getUserSubscriptionState(userId: string): Promise<UserSubs
 }
 
 /**
- * Sync user row subscription fields from current subscription record and active group count.
+ * Sync user row subscription fields from current subscription record and active regular group count.
  */
 export async function updateSubscriptionStatus(userId: string): Promise<void> {
-  const activeCount = await getActiveGroupCount(userId);
+  const activeCount = await getActiveRegularGroupCount(userId);
   const sub = await db
     .selectFrom('user_subscriptions')
     .select(['id', 'tier', 'status', 'expires_at'])
@@ -317,9 +320,19 @@ export async function canUserWriteInGroup(
     }
   }
 
-  // For free-tier users with more groups than their limit, enforce read-only
-  // on non-kept groups after downgrade selection
+  // For free-tier users with more regular groups than their limit, enforce
+  // read-only on non-kept regular groups after downgrade selection.
   if (state.current_subscription_tier !== 'free' || state.current_group_count <= state.group_limit) {
+    return { allowed: true };
+  }
+
+  const targetGroup = await db
+    .selectFrom('groups')
+    .select(['is_challenge', 'challenge_status'])
+    .where('id', '=', groupId)
+    .executeTakeFirst();
+
+  if (targetGroup?.is_challenge && ['upcoming', 'active'].includes(targetGroup.challenge_status ?? '')) {
     return { allowed: true };
   }
 
@@ -551,6 +564,7 @@ export async function selectGroupOnDowngrade(
     .select(['group_memberships.group_id', 'groups.name'])
     .where('group_memberships.user_id', '=', userId)
     .where('group_memberships.status', '=', 'active')
+    .where('groups.is_challenge', '=', false)
     .execute();
 
   const kept = activeMemberships.find((m) => m.group_id === keepGroupId);
