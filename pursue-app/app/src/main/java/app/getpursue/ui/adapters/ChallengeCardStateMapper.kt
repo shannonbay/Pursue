@@ -3,6 +3,7 @@ package app.getpursue.ui.adapters
 import app.getpursue.models.Group
 import app.getpursue.utils.ChallengeDateUiUtils
 import java.time.LocalDate
+import java.time.LocalDateTime
 
 data class ChallengeCardUiState(
     val statusText: String,
@@ -12,16 +13,26 @@ data class ChallengeCardUiState(
 )
 
 object ChallengeCardStateMapper {
-    fun map(group: Group, today: LocalDate = LocalDate.now()): ChallengeCardUiState? {
+    fun map(
+        group: Group,
+        today: LocalDate = LocalDate.now(),
+        now: LocalDateTime = LocalDateTime.now()
+    ): ChallengeCardUiState? {
         if (!group.is_challenge) return null
         val start = group.challenge_start_date?.let { parseDate(it) } ?: return null
         val end = group.challenge_end_date?.let { parseDate(it) } ?: return null
-        val status = group.challenge_status ?: "active"
+        val status = ChallengeDateUiUtils.effectiveStatus(
+            startDate = start,
+            endDate = end,
+            serverStatus = group.challenge_status,
+            today = today
+        )
         val progress = ChallengeDateUiUtils.computeDayProgress(
             startDate = start,
             endDate = end,
             status = status,
-            today = today
+            today = today,
+            now = now
         )
         return ChallengeCardUiState(
             statusText = status.replaceFirstChar { it.uppercase() },
@@ -39,4 +50,3 @@ object ChallengeCardStateMapper {
         }
     }
 }
-

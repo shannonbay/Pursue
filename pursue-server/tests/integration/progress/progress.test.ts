@@ -82,14 +82,25 @@ describe('POST /api/progress', () => {
       const today = todayInTz();
       const tomorrow = format(new Date(Date.now() + 24 * 60 * 60 * 1000), 'yyyy-MM-dd');
       const yesterday = format(subDays(new Date(), 1), 'yyyy-MM-dd');
+      const twentyDaysAgo = format(subDays(new Date(), 20), 'yyyy-MM-dd');
+      const thirtyDaysAgo = format(subDays(new Date(), 30), 'yyyy-MM-dd');
+
+      const challengeStartDate = status === 'upcoming'
+        ? tomorrow
+        : status === 'completed'
+          ? thirtyDaysAgo
+          : yesterday;
+      const challengeEndDate = status === 'completed'
+        ? twentyDaysAgo
+        : format(new Date(Date.now() + 10 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd');
 
       await testDb
         .updateTable('groups')
         .set({
           is_challenge: true,
           challenge_status: status,
-          challenge_start_date: status === 'upcoming' ? tomorrow : yesterday,
-          challenge_end_date: format(new Date(Date.now() + 10 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd'),
+          challenge_start_date: challengeStartDate,
+          challenge_end_date: challengeEndDate,
         })
         .where('id', '=', groupId)
         .execute();
@@ -133,6 +144,38 @@ describe('POST /api/progress', () => {
 
       expect(response.status).toBe(201);
       expect(response.body.goal_id).toBe(goalId);
+    });
+
+    it('should reject progress when challenge_status is active but local date is before challenge start', async () => {
+      const { accessToken } = await createAuthenticatedUser();
+      const { groupId, goalId } = await createGroupWithGoal(accessToken);
+      const today = todayInTz();
+      const tomorrow = format(new Date(Date.now() + 24 * 60 * 60 * 1000), 'yyyy-MM-dd');
+      const tenDaysOut = format(new Date(Date.now() + 10 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd');
+
+      await testDb
+        .updateTable('groups')
+        .set({
+          is_challenge: true,
+          challenge_status: 'active',
+          challenge_start_date: tomorrow,
+          challenge_end_date: tenDaysOut,
+        })
+        .where('id', '=', groupId)
+        .execute();
+
+      const response = await request(app)
+        .post('/api/progress')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send({
+          goal_id: goalId,
+          value: 1,
+          user_date: today,
+          user_timezone: TEST_TIMEZONE,
+        });
+
+      expect(response.status).toBe(403);
+      expect(response.body.error?.code).toBe('CHALLENGE_NOT_ACTIVE');
     });
   });
 

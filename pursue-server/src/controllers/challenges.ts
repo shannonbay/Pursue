@@ -15,7 +15,12 @@ import {
 import { ensureGroupExists, requireGroupCreator, requireGroupMember } from '../services/authorization.js';
 import { createGroupActivity } from '../services/activity.service.js';
 import { sendGroupNotification } from '../services/fcm.service.js';
-import { getChallengeCompletionRateForUser, updateChallengeStatuses } from '../services/challenges.service.js';
+import {
+  getChallengeCompletionRateForUser,
+  processChallengeCompletionPushes,
+  updateChallengeStatuses,
+} from '../services/challenges.service.js';
+import { getDateInTimezone } from '../utils/timezone.js';
 
 function generateInviteCode(): string {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -147,7 +152,12 @@ export async function createChallenge(
     }
 
     const data = CreateChallengeSchema.parse(req.body);
-    const today = isoDate(new Date());
+    const creator = await db
+      .selectFrom('users')
+      .select('timezone')
+      .where('id', '=', req.user.id)
+      .executeTakeFirst();
+    const today = getDateInTimezone(creator?.timezone ?? 'UTC');
     if (data.start_date < today) {
       throw new ApplicationError('start_date must be today or in the future', 400, 'VALIDATION_ERROR');
     }
@@ -384,7 +394,12 @@ export async function listChallenges(
     }
 
     const query = GetChallengesSchema.parse(req.query);
-    const today = isoDate(new Date());
+    const user = await db
+      .selectFrom('users')
+      .select('timezone')
+      .where('id', '=', req.user.id)
+      .executeTakeFirst();
+    const today = getDateInTimezone(user?.timezone ?? 'UTC');
 
     let q = db
       .selectFrom('group_memberships')
@@ -530,6 +545,32 @@ export async function updateChallengeStatusesJob(
     }
 
     const result = await updateChallengeStatuses();
+    res.status(200).json({
+      success: true,
+      ...result,
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+// POST /api/internal/jobs/process-challenge-completion-pushes
+export async function processChallengeCompletionPushesJob(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const jobKey = req.headers['x-internal-job-key'];
+    const expectedKey = process.env.INTERNAL_JOB_KEY;
+    if (!expectedKey) {
+      throw new ApplicationError('Internal server error', 500, 'INTERNAL_ERROR');
+    }
+    if (jobKey !== expectedKey) {
+      throw new ApplicationError('Unauthorized', 401, 'UNAUTHORIZED');
+    }
+
+    const result = await processChallengeCompletionPushes();
     res.status(200).json({
       success: true,
       ...result,

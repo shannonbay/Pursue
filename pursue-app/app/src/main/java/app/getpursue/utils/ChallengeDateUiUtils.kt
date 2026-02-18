@@ -1,6 +1,7 @@
 package app.getpursue.utils
 
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
 
 object ChallengeDateUiUtils {
@@ -15,7 +16,8 @@ object ChallengeDateUiUtils {
         startDate: LocalDate,
         endDate: LocalDate,
         status: String?,
-        today: LocalDate = LocalDate.now()
+        today: LocalDate = LocalDate.now(),
+        now: LocalDateTime = LocalDateTime.now()
     ): DayProgress {
         val totalDays = totalDays(startDate, endDate)
         if (totalDays <= 0) {
@@ -25,9 +27,20 @@ object ChallengeDateUiUtils {
         return when (status) {
             "upcoming" -> {
                 val daysUntil = ChronoUnit.DAYS.between(today, startDate).coerceAtLeast(0)
+                val hoursUntilStart = if (daysUntil == 1L) {
+                    val startAt = startDate.atStartOfDay()
+                    val minutesUntil = ChronoUnit.MINUTES.between(now, startAt)
+                    if (minutesUntil in 1..1439) ((minutesUntil + 59) / 60).toInt() else null
+                } else {
+                    null
+                }
                 DayProgress(
                     dayLabel = "Day 0/$totalDays",
-                    daysRemainingLabel = if (daysUntil == 0L) "Starts today" else "Starts in $daysUntil day${if (daysUntil == 1L) "" else "s"}",
+                    daysRemainingLabel = when {
+                        hoursUntilStart != null -> "Starts in $hoursUntilStart hour${if (hoursUntilStart == 1) "" else "s"}"
+                        daysUntil == 0L -> "Starts today"
+                        else -> "Starts in $daysUntil day${if (daysUntil == 1L) "" else "s"}"
+                    },
                     progressPercent = 0
                 )
             }
@@ -64,10 +77,21 @@ object ChallengeDateUiUtils {
         return (ChronoUnit.DAYS.between(startDate, endDate) + 1).toInt()
     }
 
+    fun effectiveStatus(
+        startDate: LocalDate,
+        endDate: LocalDate,
+        serverStatus: String?,
+        today: LocalDate = LocalDate.now()
+    ): String {
+        if (serverStatus == "cancelled") return "cancelled"
+        if (today.isBefore(startDate)) return "upcoming"
+        if (today.isAfter(endDate)) return "completed"
+        return "active"
+    }
+
     private fun currentDay(startDate: LocalDate, endDate: LocalDate, today: LocalDate): Int {
         if (today.isBefore(startDate)) return 0
         if (today.isAfter(endDate)) return totalDays(startDate, endDate)
         return (ChronoUnit.DAYS.between(startDate, today) + 1).toInt()
     }
 }
-

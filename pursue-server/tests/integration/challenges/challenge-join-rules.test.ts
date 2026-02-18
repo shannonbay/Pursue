@@ -89,7 +89,7 @@ describe('Challenge join rules', () => {
     const createRes = await request(app)
       .post('/api/challenges')
       .set('Authorization', `Bearer ${creator.accessToken}`)
-      .send({ template_id: templateId, start_date: datePlus(0) });
+      .send({ template_id: templateId, start_date: datePlus(1) });
     const groupId = createRes.body.challenge.id;
 
     const inviteRes = await request(app)
@@ -98,7 +98,11 @@ describe('Challenge join rules', () => {
 
     await testDb
       .updateTable('groups')
-      .set({ challenge_status: 'completed' })
+      .set({
+        challenge_status: 'completed',
+        challenge_start_date: datePlus(-10),
+        challenge_end_date: datePlus(-1),
+      })
       .where('id', '=', groupId)
       .execute();
     const completedJoin = await request(app)
@@ -134,7 +138,60 @@ describe('Challenge join rules', () => {
     const challenge = await request(app)
       .post('/api/challenges')
       .set('Authorization', `Bearer ${user.accessToken}`)
-      .send({ template_id: templateId, start_date: datePlus(0) });
+      .send({ template_id: templateId, start_date: datePlus(1) });
     expect(challenge.status).toBe(201);
+  });
+
+  it('uses joiner local date to determine whether challenge has ended', async () => {
+    const creator = await createAuthenticatedUser(randomEmail());
+    const laggingJoiner = await createAuthenticatedUser(randomEmail());
+    const leadingJoiner = await createAuthenticatedUser(randomEmail());
+    const templateId = await seedTemplate('join-local-date-window');
+
+    const createRes = await request(app)
+      .post('/api/challenges')
+      .set('Authorization', `Bearer ${creator.accessToken}`)
+      .send({ template_id: templateId, start_date: datePlus(1) });
+    const groupId = createRes.body.challenge.id;
+    const laggingDate = new Date().toLocaleDateString('en-CA', { timeZone: 'Pacific/Pago_Pago' });
+
+    await testDb
+      .updateTable('groups')
+      .set({
+        challenge_status: 'active',
+        challenge_start_date: datePlus(-20),
+        challenge_end_date: laggingDate,
+      })
+      .where('id', '=', groupId)
+      .execute();
+
+    await testDb
+      .updateTable('users')
+      .set({ timezone: 'Pacific/Kiritimati' })
+      .where('id', '=', leadingJoiner.userId)
+      .execute();
+
+    await testDb
+      .updateTable('users')
+      .set({ timezone: 'Pacific/Pago_Pago' })
+      .where('id', '=', laggingJoiner.userId)
+      .execute();
+
+    const inviteRes = await request(app)
+      .get(`/api/groups/${groupId}/invite`)
+      .set('Authorization', `Bearer ${creator.accessToken}`);
+
+    const laggingJoinResponse = await request(app)
+      .post('/api/groups/join')
+      .set('Authorization', `Bearer ${laggingJoiner.accessToken}`)
+      .send({ invite_code: inviteRes.body.invite_code });
+    expect(laggingJoinResponse.status).toBe(200);
+
+    const leadingJoinResponse = await request(app)
+      .post('/api/groups/join')
+      .set('Authorization', `Bearer ${leadingJoiner.accessToken}`)
+      .send({ invite_code: inviteRes.body.invite_code });
+    expect(leadingJoinResponse.status).toBe(409);
+    expect(leadingJoinResponse.body.error?.code).toBe('CHALLENGE_ENDED');
   });
 });

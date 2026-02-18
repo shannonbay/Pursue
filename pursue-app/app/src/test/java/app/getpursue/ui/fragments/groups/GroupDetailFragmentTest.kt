@@ -48,6 +48,8 @@ import org.robolectric.annotation.LooperMode
 import org.robolectric.shadows.ShadowAlertDialog
 import org.robolectric.shadows.ShadowToast
 import java.time.Duration
+import java.time.LocalDate
+import java.time.LocalDateTime
 
 /**
  * Unit tests for GroupDetailFragment.
@@ -493,6 +495,70 @@ class GroupDetailFragmentTest {
             context.getString(R.string.fab_invite_members), membersContentDesc)
         assertEquals("FAB should show Add goal in Goals tab",
             context.getString(R.string.fab_add_goal), goalsContentDesc)
+    }
+
+    @Test
+    fun `challenge header shows hour countdown when start is under 24h away`() {
+        launchFragment()
+
+        fragment.nowProvider = { LocalDateTime.of(2026, 2, 28, 18, 0) }
+
+        val detail = GroupDetailResponse(
+            id = testGroupId,
+            name = testGroupName,
+            description = null,
+            icon_emoji = null,
+            icon_color = null,
+            has_icon = false,
+            creator_user_id = "creator_123",
+            member_count = 5,
+            created_at = "2024-01-01T00:00:00Z",
+            user_role = "creator",
+            is_challenge = true,
+            challenge_start_date = LocalDate.of(2026, 3, 1).toString(),
+            challenge_end_date = LocalDate.of(2026, 3, 10).toString(),
+            challenge_status = "upcoming"
+        )
+
+        val method = GroupDetailFragment::class.java.getDeclaredMethod("updateChallengeHeader", GroupDetailResponse::class.java)
+        method.isAccessible = true
+        method.invoke(fragment, detail)
+
+        val header = fragment.view?.findViewById<TextView>(R.id.challenge_header_day_progress)
+        assertNotNull(header)
+        assertTrue(header!!.text.toString().contains("Starts in 6 hours"))
+    }
+
+    @Test
+    fun `challenge header shows day countdown when start is more than 24h away`() {
+        launchFragment()
+
+        fragment.nowProvider = { LocalDateTime.of(2026, 2, 28, 18, 0) }
+
+        val detail = GroupDetailResponse(
+            id = testGroupId,
+            name = testGroupName,
+            description = null,
+            icon_emoji = null,
+            icon_color = null,
+            has_icon = false,
+            creator_user_id = "creator_123",
+            member_count = 5,
+            created_at = "2024-01-01T00:00:00Z",
+            user_role = "creator",
+            is_challenge = true,
+            challenge_start_date = LocalDate.of(2026, 3, 2).toString(),
+            challenge_end_date = LocalDate.of(2026, 3, 10).toString(),
+            challenge_status = "upcoming"
+        )
+
+        val method = GroupDetailFragment::class.java.getDeclaredMethod("updateChallengeHeader", GroupDetailResponse::class.java)
+        method.isAccessible = true
+        method.invoke(fragment, detail)
+
+        val header = fragment.view?.findViewById<TextView>(R.id.challenge_header_day_progress)
+        assertNotNull(header)
+        assertTrue(header!!.text.toString().contains("Starts in 2 days"))
     }
 
     @Test

@@ -38,6 +38,7 @@ import {
 } from '../services/exportProgress.service.js';
 import { logger } from '../utils/logger.js';
 import { getGroupHeat, initializeGroupHeat } from '../services/heat.service.js';
+import { getDateInTimezone } from '../utils/timezone.js';
 import ExcelJS from 'exceljs';
 import path from 'node:path';
 import fs from 'node:fs/promises';
@@ -1385,6 +1386,8 @@ export async function joinGroup(
         'invite_codes.id',
         'groups.is_challenge',
         'groups.challenge_status',
+        'groups.challenge_start_date',
+        'groups.challenge_end_date',
       ])
       .where('code', '=', String(data.invite_code))
       .where('revoked_at', 'is', null)
@@ -1400,8 +1403,20 @@ export async function joinGroup(
       throw new ApplicationError('Already a member of this group', 409, 'ALREADY_MEMBER');
     }
 
-    if (invite.is_challenge && ['completed', 'cancelled'].includes(invite.challenge_status ?? '')) {
-      throw new ApplicationError('This challenge has ended', 409, 'CHALLENGE_ENDED');
+    if (invite.is_challenge) {
+      if (invite.challenge_status === 'cancelled') {
+        throw new ApplicationError('This challenge has ended', 409, 'CHALLENGE_ENDED');
+      }
+
+      const user = await db
+        .selectFrom('users')
+        .select('timezone')
+        .where('id', '=', req.user.id)
+        .executeTakeFirst();
+      const userLocalDate = getDateInTimezone(user?.timezone ?? 'UTC');
+      if (invite.challenge_end_date && userLocalDate > invite.challenge_end_date) {
+        throw new ApplicationError('This challenge has ended', 409, 'CHALLENGE_ENDED');
+      }
     }
 
     const challengeLimitCheck = invite.is_challenge

@@ -18,6 +18,7 @@ import { canUserWriteInGroup } from '../services/subscription.service.js';
 import { createGroupActivity, ACTIVITY_TYPES } from '../services/activity.service.js';
 import { checkMilestones } from '../services/notification.service.js';
 import { sendToTopic, buildTopicName } from '../services/fcm.service.js';
+import { computeChallengeWindowStatus } from '../utils/timezone.js';
 
 // Helper: Format date to YYYY-MM-DD string
 function formatPeriodStart(date: Date | string): string {
@@ -84,16 +85,25 @@ export async function createProgress(
 
     const groupMeta = await db
       .selectFrom('groups')
-      .select(['is_challenge', 'challenge_status'])
+      .select(['is_challenge', 'challenge_status', 'challenge_start_date', 'challenge_end_date'])
       .where('id', '=', goal.group_id)
       .executeTakeFirst();
 
-    if (groupMeta?.is_challenge && groupMeta.challenge_status !== 'active') {
-      throw new ApplicationError(
-        'Progress can only be logged for active challenges.',
-        403,
-        'CHALLENGE_NOT_ACTIVE'
+    if (groupMeta?.is_challenge) {
+      const windowStatus = computeChallengeWindowStatus(
+        data.user_date,
+        groupMeta.challenge_start_date,
+        groupMeta.challenge_end_date,
+        groupMeta.challenge_status
       );
+
+      if (windowStatus !== 'active') {
+        throw new ApplicationError(
+          'Progress can only be logged for active challenges.',
+          403,
+          'CHALLENGE_NOT_ACTIVE'
+        );
+      }
     }
 
     const writeCheck = await canUserWriteInGroup(req.user.id, goal.group_id);

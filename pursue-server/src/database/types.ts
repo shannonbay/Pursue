@@ -340,6 +340,23 @@ export type UserNotification = Selectable<UserNotificationsTable>;
 export type NewUserNotification = Insertable<UserNotificationsTable>;
 export type UserNotificationUpdate = Updateable<UserNotificationsTable>;
 
+// Deferred challenge completion push queue
+export interface ChallengeCompletionPushQueueTable {
+  id: Generated<string>;
+  group_id: string;
+  user_id: string;
+  send_at: Date;
+  status: ColumnType<'pending' | 'sent' | 'failed', 'pending' | 'sent' | 'failed' | undefined, 'pending' | 'sent' | 'failed'>;
+  attempt_count: ColumnType<number, number | undefined, number>;
+  last_error: string | null;
+  created_at: ColumnType<Date, string | undefined, never>;
+  updated_at: ColumnType<Date, string | undefined, string | undefined>;
+}
+
+export type ChallengeCompletionPushQueue = Selectable<ChallengeCompletionPushQueueTable>;
+export type NewChallengeCompletionPushQueue = Insertable<ChallengeCompletionPushQueueTable>;
+export type ChallengeCompletionPushQueueUpdate = Updateable<ChallengeCompletionPushQueueTable>;
+
 // User milestone grants table (deduplication for milestone notifications)
 export interface UserMilestoneGrantsTable {
   id: Generated<string>;
@@ -488,6 +505,7 @@ export interface Database {
   progress_photos: ProgressPhotosTable;
   photo_upload_log: PhotoUploadLogTable;
   user_notifications: UserNotificationsTable;
+  challenge_completion_push_queue: ChallengeCompletionPushQueueTable;
   user_milestone_grants: UserMilestoneGrantsTable;
   referral_tokens: ReferralTokensTable;
   group_heat: GroupHeatTable;

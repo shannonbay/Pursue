@@ -4,6 +4,7 @@ import app.getpursue.models.Group
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.time.LocalDate
 
 class TodayGoalsFilterUtilsTest {
 
@@ -13,7 +14,7 @@ class TodayGoalsFilterUtilsTest {
             id = "g1",
             name = "Regular Group",
             description = null,
-            icon_emoji = "📁",
+            icon_emoji = null,
             has_icon = false,
             member_count = 3,
             role = "member",
@@ -21,40 +22,38 @@ class TodayGoalsFilterUtilsTest {
             updated_at = null,
             is_challenge = false
         )
-        assertTrue(TodayGoalsFilterUtils.shouldIncludeGroup(group))
+        assertTrue(TodayGoalsFilterUtils.shouldIncludeGroup(group, LocalDate.of(2026, 2, 10)))
     }
 
     @Test
-    fun `includes active challenges only`() {
-        val active = baseChallenge("active")
-        val upcoming = baseChallenge("upcoming")
-        val completed = baseChallenge("completed")
-        val cancelled = baseChallenge("cancelled")
-        val unknown = baseChallenge(null)
+    fun `includes challenge only when effective local status is active`() {
+        val today = LocalDate.of(2026, 2, 10)
+        val upcoming = baseChallenge(start = "2026-02-11", end = "2026-03-10", status = "active")
+        val active = baseChallenge(start = "2026-02-01", end = "2026-03-10", status = "upcoming")
+        val completed = baseChallenge(start = "2026-01-01", end = "2026-02-09", status = "active")
+        val cancelled = baseChallenge(start = "2026-02-01", end = "2026-03-10", status = "cancelled")
 
-        assertTrue(TodayGoalsFilterUtils.shouldIncludeGroup(active))
-        assertFalse(TodayGoalsFilterUtils.shouldIncludeGroup(upcoming))
-        assertFalse(TodayGoalsFilterUtils.shouldIncludeGroup(completed))
-        assertFalse(TodayGoalsFilterUtils.shouldIncludeGroup(cancelled))
-        assertFalse(TodayGoalsFilterUtils.shouldIncludeGroup(unknown))
+        assertFalse(TodayGoalsFilterUtils.shouldIncludeGroup(upcoming, today))
+        assertTrue(TodayGoalsFilterUtils.shouldIncludeGroup(active, today))
+        assertFalse(TodayGoalsFilterUtils.shouldIncludeGroup(completed, today))
+        assertFalse(TodayGoalsFilterUtils.shouldIncludeGroup(cancelled, today))
     }
 
-    private fun baseChallenge(status: String?): Group {
+    private fun baseChallenge(start: String, end: String, status: String?): Group {
         return Group(
             id = "c1",
             name = "Challenge",
             description = null,
-            icon_emoji = "🏆",
+            icon_emoji = null,
             has_icon = false,
             member_count = 5,
             role = "member",
             joined_at = "2026-02-01T00:00:00Z",
             updated_at = null,
             is_challenge = true,
-            challenge_start_date = "2026-02-20",
-            challenge_end_date = "2026-03-20",
+            challenge_start_date = start,
+            challenge_end_date = end,
             challenge_status = status
         )
     }
 }
-

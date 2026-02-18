@@ -785,7 +785,7 @@ describe('Over-limit read-only enforcement', () => {
       .send({
         goal_id: challengeGoal.id,
         value: 1,
-        user_date: '2025-01-15',
+        user_date: datePlus(0),
         user_timezone: 'America/New_York',
       });
 

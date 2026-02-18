@@ -613,6 +613,26 @@ async function createSchema(db: Kysely<Database>) {
     ON user_notifications(user_id, type) WHERE shareable_card_data IS NOT NULL
   `.execute(db);
 
+  await sql`
+    CREATE TABLE IF NOT EXISTS challenge_completion_push_queue (
+      id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+      group_id UUID NOT NULL REFERENCES groups(id) ON DELETE CASCADE,
+      user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      send_at TIMESTAMP WITH TIME ZONE NOT NULL,
+      status VARCHAR(20) NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'sent', 'failed')),
+      attempt_count INTEGER NOT NULL DEFAULT 0,
+      last_error TEXT,
+      created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+      UNIQUE(group_id, user_id)
+    )
+  `.execute(db);
+  await sql`
+    CREATE INDEX IF NOT EXISTS idx_challenge_completion_push_queue_pending
+    ON challenge_completion_push_queue(status, send_at)
+    WHERE status = 'pending'
+  `.execute(db);
+
   // Create user_milestone_grants table
   await sql`
     CREATE TABLE IF NOT EXISTS user_milestone_grants (
@@ -796,6 +816,7 @@ async function cleanDatabase(db: Kysely<Database>) {
   // All tables listed explicitly to avoid issues with CASCADE not reaching all tables
   await sql`
     TRUNCATE TABLE
+      challenge_completion_push_queue,
       user_notifications,
       user_milestone_grants,
       referral_tokens,

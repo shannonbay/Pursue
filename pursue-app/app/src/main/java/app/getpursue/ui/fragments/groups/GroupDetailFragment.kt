@@ -71,6 +71,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.IOException
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.TimeZone
 
@@ -110,6 +111,7 @@ class GroupDetailFragment : Fragment() {
 
     private var groupId: String? = null
     private var groupDetail: GroupDetailResponse? = null
+    internal var nowProvider: () -> LocalDateTime = { LocalDateTime.now() }
     
     private lateinit var groupIconContainer: FrameLayout
     private lateinit var groupIconImage: ImageView
@@ -284,7 +286,7 @@ class GroupDetailFragment : Fragment() {
             detail.user_role == "admin" || detail.user_role == "creator"
         } ?: false
         val isActiveChallenge = groupDetail?.let { detail ->
-            detail.is_challenge && detail.challenge_status == "active"
+            detail.is_challenge && effectiveChallengeStatus(detail) == "active"
         } ?: false
 
         when (tabPosition) {
@@ -527,8 +529,9 @@ class GroupDetailFragment : Fragment() {
                     menu.findItem(R.id.menu_manage_members).isVisible = isAdmin
                     menu.findItem(R.id.menu_invite_members).isVisible = isAdmin
                     menu.findItem(R.id.menu_regenerate_invite).isVisible = isAdmin
+                    val challengeStatus = effectiveChallengeStatus(detail)
                     menu.findItem(R.id.menu_cancel_challenge).isVisible =
-                        isCreator && detail.is_challenge && (detail.challenge_status == "upcoming" || detail.challenge_status == "active")
+                        isCreator && detail.is_challenge && (challengeStatus == "upcoming" || challengeStatus == "active")
                     menu.findItem(R.id.menu_delete_group).isVisible = isCreator
                 }
             }
@@ -1016,7 +1019,7 @@ class GroupDetailFragment : Fragment() {
         val goalsTabFragment = childFragmentManager.fragments.firstOrNull {
             it is GoalsTabFragment
         } as? GoalsTabFragment
-        goalsTabFragment?.updateChallengeLoggingStatus(detail.is_challenge, detail.challenge_status)
+        goalsTabFragment?.updateChallengeLoggingStatus(detail.is_challenge, effectiveChallengeStatus(detail))
         val activeGoalsCount = goalsTabFragment?.getActiveGoalsCount() ?: 0
 
         updateGoalsCountSubtitle(detail.member_count, activeGoalsCount)
@@ -1090,10 +1093,19 @@ class GroupDetailFragment : Fragment() {
 
         val startDate = parseChallengeDate(detail.challenge_start_date)
         val endDate = parseChallengeDate(detail.challenge_end_date)
+        val now = nowProvider()
+        val localToday = now.toLocalDate()
         val progress = ChallengeDateUiUtils.computeDayProgress(
             startDate = startDate,
             endDate = endDate,
-            status = detail.challenge_status
+            status = ChallengeDateUiUtils.effectiveStatus(
+                startDate = startDate,
+                endDate = endDate,
+                serverStatus = detail.challenge_status,
+                today = localToday
+            ),
+            today = localToday,
+            now = now
         )
 
         challengeHeaderContainer.visibility = View.VISIBLE
@@ -1108,6 +1120,18 @@ class GroupDetailFragment : Fragment() {
         } catch (_: Exception) {
             LocalDate.now()
         }
+    }
+
+    private fun effectiveChallengeStatus(detail: GroupDetailResponse): String {
+        if (!detail.is_challenge) return detail.challenge_status ?: "active"
+        val start = detail.challenge_start_date?.let { parseChallengeDate(it) }
+        val end = detail.challenge_end_date?.let { parseChallengeDate(it) }
+        if (start == null || end == null) return detail.challenge_status ?: "active"
+        return ChallengeDateUiUtils.effectiveStatus(
+            startDate = start,
+            endDate = end,
+            serverStatus = detail.challenge_status
+        )
     }
 
     private fun shareChallenge() {

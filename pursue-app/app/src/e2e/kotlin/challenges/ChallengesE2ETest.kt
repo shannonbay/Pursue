@@ -8,10 +8,12 @@ import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
 import java.time.LocalDate
+import java.time.ZoneOffset
 
 class ChallengesE2ETest : E2ETest() {
 
     private fun datePlus(days: Long): String = LocalDate.now().plusDays(days).toString()
+    private fun dateTodayUtc(): String = LocalDate.now(ZoneOffset.UTC).toString()
 
     private suspend fun firstTemplateId(accessToken: String): String {
         val templates = api.getChallengeTemplates(accessToken)
@@ -136,14 +138,14 @@ class ChallengesE2ETest : E2ETest() {
         val first = api.createChallenge(
             accessToken = user.access_token,
             templateId = templateId,
-            startDate = datePlus(0)
+            startDate = datePlus(1)
         )
         trackGroup(first.challenge.id)
 
         val second = api.createChallenge(
             accessToken = other.access_token,
             templateId = templateId,
-            startDate = datePlus(0)
+            startDate = datePlus(1)
         )
         trackGroup(second.challenge.id)
 
@@ -172,7 +174,7 @@ class ChallengesE2ETest : E2ETest() {
         val challenge = api.createChallenge(
             accessToken = creator.access_token,
             templateId = templateId,
-            startDate = datePlus(0)
+            startDate = datePlus(1)
         )
         trackGroup(challenge.challenge.id)
 
@@ -185,7 +187,7 @@ class ChallengesE2ETest : E2ETest() {
             api.createChallenge(
                 accessToken = joiner.access_token,
                 templateId = templateId,
-                startDate = datePlus(0)
+                startDate = datePlus(1)
             )
         } catch (e: ApiException) {
             exception = e
@@ -205,17 +207,23 @@ class ChallengesE2ETest : E2ETest() {
         val created = api.createChallenge(
             accessToken = user.access_token,
             templateId = templateId,
-            startDate = datePlus(0),
+            startDate = datePlus(1),
             groupName = "List Challenge ${System.currentTimeMillis()}"
         )
         trackGroup(created.challenge.id)
 
-        val list = api.getChallenges(user.access_token, status = "active")
+        val expectedStatus = created.challenge.challenge_status
+        val list = api.getChallenges(user.access_token, status = expectedStatus)
         val item = list.challenges.find { it.id == created.challenge.id }
 
         assertThat(item).isNotNull()
+        assertThat(item!!.challenge_status).isEqualTo(expectedStatus)
         assertThat(item!!.total_days).isAtLeast(1)
-        assertThat(item.days_elapsed).isAtLeast(1)
+        if (expectedStatus == "active") {
+            assertThat(item.days_elapsed).isAtLeast(1)
+        } else {
+            assertThat(item.days_elapsed).isEqualTo(0)
+        }
         assertThat(item.days_remaining).isAtLeast(1)
         assertThat(item.my_completion_rate).isAtLeast(0.0)
     }
@@ -298,7 +306,7 @@ class ChallengesE2ETest : E2ETest() {
         val activeChallenge = api.createChallenge(
             accessToken = user.access_token,
             templateId = templateId,
-            startDate = datePlus(0)
+            startDate = dateTodayUtc()
         )
         trackGroup(activeChallenge.challenge.id)
 
