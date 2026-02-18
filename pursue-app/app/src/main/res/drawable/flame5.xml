@@ -23,7 +23,7 @@
                             android:centerY="338"
                             android:gradientRadius="300"
                             android:type="radial">
-                            <item android:offset="0" android:color="#9900c8ff" />
+                            <item android:offset="0" android:color="#ff00c8ff" />
                             <item android:offset="1" android:color="#0000c8ff" />
                         </gradient>
                     </aapt:attr>
