@@ -93,6 +93,7 @@ My TODOs
 - Subscriptions
 - Context menu for ignoring goals (should be stored in frontend)
 - Invite Deep links don't work yet
+- Challenge card deep links
 - Unit tests for plan pending_approvals_screen
 - Go through Backend-Spec-Approval-Queue-Updates.md and implement and test
 - E2E tests for Backend-Spec-Approval-Queue-Updates.md including declines and E2E tests group count shouldn't change til approved, can't see goals or log progress until approved
@@ -109,7 +110,11 @@ My TODOs
 - app announcements
 - Password reset e-mails
 - about section in app with link to public issues repository and e-mail address for feedback
- 
+ - Ask for reviews
+- Home Fragment Group cards don't have valid active goals count
+- My Progress Fragment
+- Shareable Challenge Cards for invites to challenges
+- Remove Invite Friends button
 
 TODO: Redis-backed sliding-window limits
 
