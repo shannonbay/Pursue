@@ -563,6 +563,10 @@ curl -X POST http://localhost:3000/api/internal/jobs/weekly-recap \
 -d '{"forceGroupId": "8a752a57-cb94-40eb-a381-97928ea90e60", "forceWeekEnd": "2026-02-16"}'
 ```
 
+## How to animate Animated Vector Drawings (AVDs)
+Draw the before and after .svg in InkScape, then import to shapeshifter
+https://shapeshifter.design/
+
 ## Archived Documents
 
 

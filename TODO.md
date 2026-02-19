@@ -115,6 +115,7 @@ My TODOs
 - My Progress Fragment
 - Shareable Challenge Cards for invites to challenges
 - Remove Invite Friends button
+- Premium users can create custom challenges
 
 TODO: Redis-backed sliding-window limits
 

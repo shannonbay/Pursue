@@ -78,6 +78,7 @@ Robolectric doesn't mock Bitmap/Color. Use minimal valid JPEG bytes (SOI, APP0, 
 - **Server**: E2ETest uses `@BeforeClass` + `LocalServerConfig.isServerAvailable()` and `assumeTrue`; skips class if server down.
 - **Cleanup**: `deleteUser`/`deleteGroup` are no-ops if backend has no DELETE. `@After` still invokes them; use `trackUser`/`trackGroup`.
 - **Premium for E2E:** Start the backend with `NODE_ENV=test` so the mock token is accepted. The shared test user is upgraded to premium via `POST /api/subscriptions/upgrade` with `purchase_token: 'mock-token-e2e'`. Example: `NODE_ENV=test npm run dev` (PowerShell: `$env:NODE_ENV='test'; npm run dev`).
+- **Internal jobs:** Start the backend with `INTERNAL_JOB_KEY=test-internal-job-key`
 
 ### Rate Limiting (429)
 
