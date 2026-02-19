@@ -200,7 +200,6 @@ WITH seed_goals (template_slug, title, description, cadence, metric_type, target
     ('10k-steps-daily', '10,000 steps', 'Walk at least 10,000 steps today.', 'daily', 'numeric', 10000, 'steps', 0),
     ('couch-to-5k', 'Run today', 'Complete your run session for the day.', 'daily', 'binary', NULL, NULL, 0),
     ('100-pushups-a-day', '100 pushups', 'Complete 100 pushups today.', 'daily', 'numeric', 100, 'pushups', 0),
-    ('30-day-yoga', 'Yoga session', 'Complete one yoga session today.', 'daily', 'binary', NULL, NULL, 0),
     ('10k-steps-week', '10,000 steps', 'Hit 10,000 steps today.', 'daily', 'numeric', 10000, 'steps', 0),
     ('plank-challenge', 'Plank hold', 'Hold a plank today.', 'daily', 'duration', 60, 'seconds', 0),
     ('morning-workout', 'Workout before 9am', 'Finish a workout before 9am.', 'daily', 'binary', NULL, NULL, 0),
@@ -211,7 +210,6 @@ WITH seed_goals (template_slug, title, description, cadence, metric_type, target
     ('50-books-year', 'Read today', 'Do your daily reading session.', 'daily', 'binary', NULL, NULL, 0),
     ('50-books-year', 'Finish 1 book', 'Complete one book this week.', 'weekly', 'numeric', 1, 'books', 1),
 
-    ('21-day-meditation', 'Meditate 10 min', 'Meditate for 10 minutes.', 'daily', 'duration', 10, 'minutes', 0),
     ('gratitude-journal-30', 'Gratitude entry', 'Write your gratitude list today.', 'daily', 'binary', NULL, NULL, 0),
     ('no-social-30', 'No social media today', 'Avoid social media for the day.', 'daily', 'binary', NULL, NULL, 0),
     ('8-glasses-water', '8 glasses of water', 'Drink 8 glasses of water today.', 'daily', 'numeric', 8, 'glasses', 0),
@@ -221,7 +219,6 @@ WITH seed_goals (template_slug, title, description, cadence, metric_type, target
 
     ('30-day-no-sugar', 'No added sugar today', 'Avoid all added sugar today.', 'daily', 'binary', NULL, NULL, 0),
     ('whole30', 'Whole foods only', 'Eat whole foods only today.', 'daily', 'binary', NULL, NULL, 0),
-    ('meatless-monday-month', 'No meat Monday', 'Stay meatless on Monday.', 'weekly', 'binary', NULL, NULL, 0),
     ('cook-at-home', 'Cooked at home', 'Cook at home today.', 'daily', 'binary', NULL, NULL, 0),
     ('no-alcohol-30', 'No alcohol today', 'Avoid alcohol for the day.', 'daily', 'binary', NULL, NULL, 0),
 
