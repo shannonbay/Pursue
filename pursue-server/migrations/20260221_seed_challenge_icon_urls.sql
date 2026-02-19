@@ -25,7 +25,7 @@ UPDATE challenge_templates SET icon_url = 'res://drawable/ic_icon_lightning' WHE
 UPDATE challenge_templates SET icon_url = 'res://drawable/ic_icon_salad' WHERE slug = 'whole30';
 UPDATE challenge_templates SET icon_url = 'res://drawable/ic_icon_frypan' WHERE slug = 'cook-at-home';
 UPDATE challenge_templates SET icon_url = 'res://drawable/ic_icon_socialmediaban' WHERE slug = 'no-alcohol-30';
-UPDATE challenge_templates SET icon_url = 'res://drawable/ic_icon_lightning' WHERE slug = '8-glasses-water';
+UPDATE challenge_templates SET icon_url = 'res://drawable/ic_icon_water' WHERE slug = '8-glasses-water';
 
 UPDATE challenge_templates SET icon_url = 'res://drawable/ic_icon_laptop' WHERE slug = '30-days-coding';
 UPDATE challenge_templates SET icon_url = 'res://drawable/ic_icon_speaking' WHERE slug = 'language-learning-sprint';

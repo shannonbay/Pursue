@@ -140,6 +140,7 @@ class IconPickerBottomSheet : BottomSheetDialogFragment() {
             IconItem("ic_icon_strength", "Strength", "Fitness"),
             IconItem("ic_icon_steps", "Steps", "Fitness"),
             IconItem("ic_icon_salad", "Salad", "Health"),
+            IconItem("ic_icon_water", "Hydration", "Health"),
             IconItem("ic_icon_coldshower", "Cold Shower", "Health"),
             IconItem("ic_icon_sleep", "Sleep", "Health"),
             IconItem("ic_icon_brain", "Mindset", "Health"),
