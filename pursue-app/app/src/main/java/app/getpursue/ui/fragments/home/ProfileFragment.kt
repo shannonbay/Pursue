@@ -216,8 +216,9 @@ class ProfileFragment : Fragment() {
                 
                 // Ensure UI operations run on main thread with looper to avoid issues in tests
                 Handler(Looper.getMainLooper()).post {
+                    if (!isAdded) return@post
                     displayName.text = user.display_name
-                    
+
                     // Load avatar
                     loadAvatar(user)
 
@@ -288,7 +289,8 @@ class ProfileFragment : Fragment() {
 
     private fun loadAvatar(user: User? = currentUser) {
         val userToLoad = user ?: currentUser ?: return
-        
+        if (!isAdded) return
+
         if (userToLoad.has_avatar) {
             // Load avatar from API using Glide
             val imageUrl = "${ApiClient.getBaseUrl()}/users/${userToLoad.id}/avatar"
@@ -435,6 +437,7 @@ class ProfileFragment : Fragment() {
                 
                 // Ensure UI operations run on main thread with looper to avoid issues in tests
                 Handler(Looper.getMainLooper()).post {
+                    if (!isAdded) return@post
                     // Reload avatar
                     currentUser?.let { loadAvatar(it) }
 
@@ -445,11 +448,13 @@ class ProfileFragment : Fragment() {
             } catch (e: ApiException) {
                 Log.e("ProfileFragment", "Failed to upload avatar", e)
                 Handler(Looper.getMainLooper()).post {
+                    if (!isAdded) return@post
                     Toast.makeText(requireContext(), getString(R.string.profile_picture_upload_failed), Toast.LENGTH_SHORT).show()
                 }
             } catch (e: Exception) {
                 Log.e("ProfileFragment", "Error uploading avatar", e)
                 Handler(Looper.getMainLooper()).post {
+                    if (!isAdded) return@post
                     Toast.makeText(requireContext(), getString(R.string.profile_picture_upload_failed), Toast.LENGTH_SHORT).show()
                 }
             } finally {
@@ -482,6 +487,7 @@ class ProfileFragment : Fragment() {
                 
                 // Ensure UI operations run on main thread with looper to avoid issues in tests
                 Handler(Looper.getMainLooper()).post {
+                    if (!isAdded) return@post
                     // Reload avatar (will show letter avatar)
                     currentUser?.let { loadAvatar(it) }
 
@@ -492,11 +498,13 @@ class ProfileFragment : Fragment() {
             } catch (e: ApiException) {
                 Log.e("ProfileFragment", "Failed to delete avatar", e)
                 Handler(Looper.getMainLooper()).post {
+                    if (!isAdded) return@post
                     Toast.makeText(requireContext(), getString(R.string.profile_picture_delete_failed), Toast.LENGTH_SHORT).show()
                 }
             } catch (e: Exception) {
                 Log.e("ProfileFragment", "Error deleting avatar", e)
                 Handler(Looper.getMainLooper()).post {
+                    if (!isAdded) return@post
                     Toast.makeText(requireContext(), getString(R.string.profile_picture_delete_failed), Toast.LENGTH_SHORT).show()
                 }
             } finally {
