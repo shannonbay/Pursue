@@ -134,17 +134,39 @@ class IconPickerBottomSheet : BottomSheetDialogFragment() {
 
         private val icons = listOf(
             // Fitness & Health
-            IconItem("ic_icon_runningman", "Running", "Fitness"),
-            IconItem("ic_icon_book", "Book", "Reading"),
+            IconItem("ic_icon_running", "Running", "Fitness"),
+            IconItem("ic_icon_walking", "Walking", "Fitness"),
+            IconItem("ic_icon_planking", "Planking", "Fitness"),
+            IconItem("ic_icon_strength", "Strength", "Fitness"),
+            IconItem("ic_icon_steps", "Steps", "Fitness"),
             IconItem("ic_icon_salad", "Salad", "Health"),
-            IconItem("ic_icon_frypan", "Frypan", "Diet"),
-            IconItem("ic_icon_fitness", "Fitness", "Fitness"),
-            IconItem("ic_icon_meditation", "Meditation", "Health"),
+            IconItem("ic_icon_coldshower", "Cold Shower", "Health"),
+            IconItem("ic_icon_sleep", "Sleep", "Health"),
+            IconItem("ic_icon_brain", "Mindset", "Health"),
+            
+            // Diet & Cooking
+            IconItem("ic_icon_frypan", "Cooking", "Diet"),
+            
             // Learning & Productivity
-            IconItem("ic_icon_reading", "Reading", "Learning"),
-            IconItem("ic_icon_coding", "Coding", "Learning"),
+            IconItem("ic_icon_book", "Reading", "Learning"),
+            IconItem("ic_icon_books", "Studying", "Learning"),
+            IconItem("ic_icon_journal", "Journal", "Learning"),
+            IconItem("ic_icon_laptop", "Coding", "Learning"),
+            IconItem("ic_icon_speaking", "Public Speaking", "Learning"),
+            IconItem("ic_icon_inbox", "Inbox Zero", "Productivity"),
+            IconItem("ic_icon_alarmclock", "Waking Up", "Productivity"),
+            IconItem("ic_icon_lightning", "Focus", "Productivity"),
+            IconItem("ic_icon_socialmediaban", "Social Media Ban", "Productivity"),
+            
+            // Finance & Faith
+            IconItem("ic_icon_cash", "Saving", "Finance"),
+            IconItem("ic_icon_budgeting", "Budgeting", "Finance"),
+            IconItem("ic_icon_prayer", "Prayer", "Faith"),
+            IconItem("ic_icon_prayerhands", "Prayer Hands", "Faith"),
+            
             // General
-            IconItem("ic_icon_star", "Star", "General")
+            IconItem("ic_icon_sunrise", "Early Morning", "General"),
+            IconItem("ic_icon_phone", "Screen Time", "General")
         )
 
         override fun onCreateView(
