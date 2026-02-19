@@ -276,6 +276,12 @@ async function createSchema(db: Kysely<Database>) {
       ) THEN
         ALTER TABLE groups ADD COLUMN challenge_status VARCHAR(20);
       END IF;
+      IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = 'groups' AND column_name = 'challenge_invite_card_data'
+      ) THEN
+        ALTER TABLE groups ADD COLUMN challenge_invite_card_data JSONB;
+      END IF;
     END $$;
   `.execute(db);
 

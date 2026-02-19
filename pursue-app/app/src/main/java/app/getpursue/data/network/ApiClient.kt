@@ -2317,7 +2317,8 @@ data class PatchGroupIconResponse(
 data class GetInviteCodeResponse(
     val invite_code: String,
     val share_url: String,
-    val created_at: String
+    val created_at: String,
+    val invite_card_data: ChallengeInviteCardData? = null
 )
 
 /** Response from POST /api/groups/:group_id/invite/regenerate */
@@ -2325,7 +2326,8 @@ data class RegenerateInviteResponse(
     val invite_code: String,
     val share_url: String,
     val created_at: String,
-    val previous_code_revoked: String? = null
+    val previous_code_revoked: String? = null,
+    val invite_card_data: ChallengeInviteCardData? = null
 )
 
 data class JoinGroupRequest(
@@ -2408,6 +2410,20 @@ data class ChallengeGoal(
     val unit: String?
 )
 
+data class ChallengeInviteCardData(
+    val card_type: String,
+    val title: String,
+    val subtitle: String,
+    val icon_emoji: String,
+    val cta_text: String,
+    val background_gradient: List<String>,
+    val invite_url: String,
+    val referral_token: String,
+    val share_url: String,
+    val qr_url: String,
+    val generated_at: String
+)
+
 data class ChallengeSummary(
     val id: String,
     val name: String,
@@ -2419,7 +2435,8 @@ data class ChallengeSummary(
     val member_count: Int,
     val goals: List<ChallengeGoal>,
     val invite_code: String,
-    val invite_url: String
+    val invite_url: String,
+    val invite_card_data: ChallengeInviteCardData? = null
 )
 
 data class CreateChallengeResponse(

@@ -28,6 +28,11 @@ import { sendGroupNotification, sendNotificationToUser, sendPushNotification, se
 import { uploadGroupIcon, deleteGroupIcon } from '../services/storage.service.js';
 import { getSignedUrl } from '../services/gcs.service.js';
 import {
+  attachInviteCardAttribution,
+  buildChallengeInviteCardBase,
+  type ChallengeInviteCardBaseData,
+} from '../services/challengeInviteCard.service.js';
+import {
   sanitizeSheetName,
   sanitizeFilename,
   addLetterhead,
@@ -82,6 +87,36 @@ function formatDisplayNameShort(displayName: string): string {
   const last = parts[parts.length - 1] ?? '';
   const lastInitial = last.charAt(0).toUpperCase();
   return `${first} ${lastInitial}.`;
+}
+
+function parseChallengeInviteCardBase(
+  value: Record<string, unknown> | null
+): ChallengeInviteCardBaseData | null {
+  if (!value) return null;
+  if (
+    value.card_type !== 'challenge_invite' ||
+    typeof value.title !== 'string' ||
+    typeof value.subtitle !== 'string' ||
+    typeof value.icon_emoji !== 'string' ||
+    typeof value.cta_text !== 'string' ||
+    !Array.isArray(value.background_gradient) ||
+    value.background_gradient.length !== 2 ||
+    typeof value.background_gradient[0] !== 'string' ||
+    typeof value.background_gradient[1] !== 'string' ||
+    typeof value.invite_url !== 'string'
+  ) {
+    return null;
+  }
+
+  return {
+    card_type: 'challenge_invite',
+    title: value.title,
+    subtitle: value.subtitle,
+    icon_emoji: value.icon_emoji,
+    cta_text: value.cta_text,
+    background_gradient: [value.background_gradient[0], value.background_gradient[1]],
+    invite_url: value.invite_url,
+  };
 }
 
 // POST /api/groups
@@ -1242,9 +1277,16 @@ export async function getGroupInvite(
     await ensureGroupExists(group_id);
     await requireGroupMember(req.user.id, group_id);
 
-    const groupType = await db
+    const groupInfo = await db
       .selectFrom('groups')
-      .select('is_challenge')
+      .select([
+        'is_challenge',
+        'name',
+        'icon_emoji',
+        'challenge_start_date',
+        'challenge_end_date',
+        'challenge_invite_card_data',
+      ])
       .where('id', '=', group_id)
       .executeTakeFirstOrThrow();
 
@@ -1259,13 +1301,40 @@ export async function getGroupInvite(
       throw new ApplicationError('No active invite code found', 404, 'NOT_FOUND');
     }
 
-    res.status(200).json({
+    let inviteCardData: Record<string, unknown> | undefined;
+    if (groupInfo.is_challenge) {
+      let base = parseChallengeInviteCardBase(groupInfo.challenge_invite_card_data);
+      if (!base && groupInfo.challenge_start_date && groupInfo.challenge_end_date) {
+        base = buildChallengeInviteCardBase({
+          challengeName: groupInfo.name,
+          startDate: groupInfo.challenge_start_date,
+          endDate: groupInfo.challenge_end_date,
+          iconEmoji: groupInfo.icon_emoji,
+          inviteCode: invite.code,
+        });
+        await db
+          .updateTable('groups')
+          .set({ challenge_invite_card_data: base, updated_at: new Date().toISOString() })
+          .where('id', '=', group_id)
+          .execute();
+      }
+      if (base) {
+        inviteCardData = await attachInviteCardAttribution(base, invite.code, req.user.id);
+      }
+    }
+
+    const response: Record<string, unknown> = {
       invite_code: invite.code,
-      share_url: groupType.is_challenge
+      share_url: groupInfo.is_challenge
         ? `https://getpursue.app/challenge/${invite.code}`
         : `https://getpursue.app/join/${invite.code}`,
       created_at: invite.created_at,
-    });
+    };
+    if (inviteCardData) {
+      response.invite_card_data = inviteCardData;
+    }
+
+    res.status(200).json(response);
   } catch (error) {
     next(error);
   }
@@ -1289,6 +1358,17 @@ export async function regenerateInviteCode(
 
     const result = await db.transaction().execute(async (trx) => {
       const now = new Date();
+      const groupInfo = await trx
+        .selectFrom('groups')
+        .select([
+          'is_challenge',
+          'name',
+          'icon_emoji',
+          'challenge_start_date',
+          'challenge_end_date',
+        ])
+        .where('id', '=', group_id)
+        .executeTakeFirstOrThrow();
 
       // 1. Revoke old active code
       const oldCode = await trx
@@ -1339,26 +1419,52 @@ export async function regenerateInviteCode(
         })
         .execute();
 
+      let challengeInviteCardBase: ChallengeInviteCardBaseData | null = null;
+      if (groupInfo.is_challenge && groupInfo.challenge_start_date && groupInfo.challenge_end_date) {
+        challengeInviteCardBase = buildChallengeInviteCardBase({
+          challengeName: groupInfo.name,
+          startDate: groupInfo.challenge_start_date,
+          endDate: groupInfo.challenge_end_date,
+          iconEmoji: groupInfo.icon_emoji,
+          inviteCode: invite.code,
+        });
+        await trx
+          .updateTable('groups')
+          .set({
+            challenge_invite_card_data: challengeInviteCardBase,
+            updated_at: new Date().toISOString(),
+          })
+          .where('id', '=', group_id)
+          .execute();
+      }
+
       return {
         invite_code: invite.code,
         created_at: invite.created_at,
         previous_code_revoked: oldCode?.code ?? null,
+        is_challenge: groupInfo.is_challenge,
+        challenge_invite_card_base: challengeInviteCardBase,
       };
     });
-    const groupType = await db
-      .selectFrom('groups')
-      .select('is_challenge')
-      .where('id', '=', group_id)
-      .executeTakeFirstOrThrow();
 
-    res.status(200).json({
+    const response: Record<string, unknown> = {
       invite_code: result.invite_code,
-      share_url: groupType.is_challenge
+      share_url: result.is_challenge
         ? `https://getpursue.app/challenge/${result.invite_code}`
         : `https://getpursue.app/join/${result.invite_code}`,
       created_at: result.created_at,
       previous_code_revoked: result.previous_code_revoked,
-    });
+    };
+
+    if (result.is_challenge && result.challenge_invite_card_base) {
+      response.invite_card_data = await attachInviteCardAttribution(
+        result.challenge_invite_card_base,
+        result.invite_code,
+        req.user.id
+      );
+    }
+
+    res.status(200).json(response);
   } catch (error) {
     next(error);
   }

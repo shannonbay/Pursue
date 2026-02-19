@@ -55,6 +55,7 @@ class ShareableMilestoneCardActivity : AppCompatActivity() {
         const val EXTRA_NOTIFICATION_ID = "extra_notification_id"
         const val EXTRA_CARD_DATA_JSON = "extra_card_data_json"
         const val EXTRA_AUTO_ACTION = "extra_auto_action"
+        const val EXTRA_GROUP_ID = "extra_group_id"
 
         const val ACTION_GENERIC_SHARE = "generic_share"
 
@@ -62,17 +63,20 @@ class ShareableMilestoneCardActivity : AppCompatActivity() {
             context: Context,
             notificationId: String,
             cardDataJson: String?,
-            autoAction: String? = null
+            autoAction: String? = null,
+            groupId: String? = null
         ): Intent {
             return Intent(context, ShareableMilestoneCardActivity::class.java).apply {
                 putExtra(EXTRA_NOTIFICATION_ID, notificationId)
                 putExtra(EXTRA_CARD_DATA_JSON, cardDataJson)
                 putExtra(EXTRA_AUTO_ACTION, autoAction)
+                putExtra(EXTRA_GROUP_ID, groupId)
             }
         }
     }
 
     private data class ShareableCardData(
+        val cardType: String,
         val milestoneType: String,
         val title: String,
         val subtitle: String,
@@ -101,6 +105,7 @@ class ShareableMilestoneCardActivity : AppCompatActivity() {
 
     private val gson = Gson()
     private var notificationId: String = ""
+    private var groupId: String? = null
     private var cardData: ShareableCardData? = null
     private var chooserReceiverRegistered = false
 
@@ -161,6 +166,7 @@ class ShareableMilestoneCardActivity : AppCompatActivity() {
         chooserReceiverRegistered = true
 
         notificationId = intent.getStringExtra(EXTRA_NOTIFICATION_ID).orEmpty()
+        groupId = intent.getStringExtra(EXTRA_GROUP_ID)
         val cardJson = intent.getStringExtra(EXTRA_CARD_DATA_JSON)
         val autoAction = intent.getStringExtra(EXTRA_AUTO_ACTION)
 
@@ -228,13 +234,14 @@ class ShareableMilestoneCardActivity : AppCompatActivity() {
 
     private fun parseCardDataFromMap(map: Map<String, Any>?): ShareableCardData? {
         if (map == null) return null
-        val milestoneType = map["milestone_type"] as? String ?: return null
+        val cardType = map["card_type"] as? String ?: "milestone"
+        val milestoneType = map["milestone_type"] as? String ?: cardType
         val title = map["title"] as? String ?: return null
         val subtitle = map["subtitle"] as? String ?: "Pursue Goals"
         val statValue = map["stat_value"]?.toString() ?: ""
         val statLabel = map["stat_label"] as? String ?: ""
-        val quote = map["quote"] as? String ?: ""
-        val goalIcon = map["goal_icon_emoji"] as? String ?: "\uD83C\uDFAF"
+        val quote = map["quote"] as? String ?: (map["cta_text"] as? String ?: "")
+        val goalIcon = (map["icon_emoji"] as? String) ?: (map["goal_icon_emoji"] as? String) ?: "\uD83C\uDFAF"
         val shareUrl = map["share_url"] as? String
         val qrUrl = map["qr_url"] as? String
 
@@ -247,6 +254,7 @@ class ShareableMilestoneCardActivity : AppCompatActivity() {
         }
 
         return ShareableCardData(
+            cardType = cardType,
             milestoneType = milestoneType,
             title = title,
             subtitle = subtitle,
@@ -261,11 +269,24 @@ class ShareableMilestoneCardActivity : AppCompatActivity() {
     }
 
     private fun renderCard(data: ShareableCardData) {
+        supportActionBar?.title = if (data.cardType == "challenge_invite") {
+            getString(R.string.challenge_invite_card_title)
+        } else {
+            getString(R.string.shareable_card_title)
+        }
         titleText.text = data.title
         subtitleText.text = data.subtitle
         statValueText.text = data.statValue
         statLabelText.text = data.statLabel
-        quoteText.text = getString(R.string.shareable_card_quote_template, data.quote)
+        if (data.cardType == "challenge_invite") {
+            quoteText.text = data.quote
+            statValueText.visibility = View.GONE
+            statLabelText.visibility = View.GONE
+        } else {
+            quoteText.text = getString(R.string.shareable_card_quote_template, data.quote)
+            statValueText.visibility = View.VISIBLE
+            statLabelText.visibility = View.VISIBLE
+        }
         goalIconText.text = data.goalIconEmoji
 
         cardRoot.contentDescription = getString(
@@ -290,13 +311,19 @@ class ShareableMilestoneCardActivity : AppCompatActivity() {
             qrImage.visibility = View.GONE
         }
 
-        trackEvent(
-            "milestone_card_viewed",
-            mapOf(
-                "notification_id" to notificationId,
-                "milestone_type" to data.milestoneType
+        if (data.cardType == "challenge_invite") {
+            val props = mutableMapOf("card_type" to data.cardType)
+            groupId?.let { props["group_id"] = it }
+            trackEvent("challenge_card_viewed", props)
+        } else {
+            trackEvent(
+                "milestone_card_viewed",
+                mapOf(
+                    "notification_id" to notificationId,
+                    "milestone_type" to data.milestoneType
+                )
             )
-        )
+        }
     }
 
     private fun maybeRunAutoAction(autoAction: String?) {
@@ -348,13 +375,22 @@ class ShareableMilestoneCardActivity : AppCompatActivity() {
 
         try {
             startActivity(chooserIntent)
-            trackEvent(
-                "milestone_card_shared_generic",
-                mapOf(
-                    "notification_id" to notificationId,
-                    "milestone_type" to data.milestoneType
+            if (data.cardType == "challenge_invite") {
+                val props = mutableMapOf(
+                    "share_method" to "generic",
+                    "card_type" to data.cardType
                 )
-            )
+                groupId?.let { props["group_id"] = it }
+                trackEvent("challenge_invite_shared", props)
+            } else {
+                trackEvent(
+                    "milestone_card_shared_generic",
+                    mapOf(
+                        "notification_id" to notificationId,
+                        "milestone_type" to data.milestoneType
+                    )
+                )
+            }
         } catch (_: Exception) {
             Toast.makeText(this, getString(R.string.shareable_card_share_failed), Toast.LENGTH_SHORT).show()
         }
@@ -374,13 +410,22 @@ class ShareableMilestoneCardActivity : AppCompatActivity() {
 
         try {
             startActivity(intent)
-            trackEvent(
-                "milestone_card_shared_instagram",
-                mapOf(
-                    "notification_id" to notificationId,
-                    "milestone_type" to data.milestoneType
+            if (data.cardType == "challenge_invite") {
+                val props = mutableMapOf(
+                    "share_method" to "instagram",
+                    "card_type" to data.cardType
                 )
-            )
+                groupId?.let { props["group_id"] = it }
+                trackEvent("challenge_invite_shared", props)
+            } else {
+                trackEvent(
+                    "milestone_card_shared_instagram",
+                    mapOf(
+                        "notification_id" to notificationId,
+                        "milestone_type" to data.milestoneType
+                    )
+                )
+            }
         } catch (_: Exception) {
             shareGeneric()
             trackEvent(
@@ -441,7 +486,11 @@ class ShareableMilestoneCardActivity : AppCompatActivity() {
 
     private fun buildShareText(data: ShareableCardData): String {
         val url = data.shareUrl ?: "https://getpursue.app"
-        return getString(R.string.shareable_card_share_text, url)
+        return if (data.cardType == "challenge_invite") {
+            getString(R.string.challenge_share_text, data.title, url)
+        } else {
+            getString(R.string.shareable_card_share_text, url)
+        }
     }
 
     private fun isInstagramInstalled(): Boolean {

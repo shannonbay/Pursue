@@ -304,6 +304,7 @@ describe('GET /api/groups/:group_id/invite', () => {
     expect(response.body.invite_code).toMatch(/^PURSUE-[A-Z0-9]{6}-[A-Z0-9]{6}$/);
     expect(response.body).toHaveProperty('share_url');
     expect(response.body).toHaveProperty('created_at');
+    expect(response.body).not.toHaveProperty('invite_card_data');
   });
 
   it('should return 403 for non-member', async () => {
@@ -399,6 +400,95 @@ describe('POST /api/groups/:group_id/invite/regenerate', () => {
 
     expect(response.status).toBe(404);
     expect(response.body.error.code).toBe('INVALID_INVITE_CODE');
+  });
+});
+
+describe('Challenge invite card data', () => {
+  async function seedTemplate(slug: string): Promise<string> {
+    const template = await testDb
+      .insertInto('challenge_templates')
+      .values({
+        slug,
+        title: `Template ${slug}`,
+        description: 'Template description',
+        icon_emoji: 'T',
+        duration_days: 30,
+        category: 'fitness',
+        difficulty: 'moderate',
+        is_featured: false,
+        sort_order: 1,
+      })
+      .returning('id')
+      .executeTakeFirstOrThrow();
+
+    await testDb
+      .insertInto('challenge_template_goals')
+      .values({
+        template_id: template.id,
+        title: 'Template goal',
+        description: null,
+        cadence: 'daily',
+        metric_type: 'binary',
+        target_value: null,
+        unit: null,
+        sort_order: 0,
+      })
+      .execute();
+
+    return template.id;
+  }
+
+  it('returns invite_card_data for challenge invites', async () => {
+    const { accessToken } = await createAuthenticatedUser('challenge-invite-owner@example.com');
+    const templateId = await seedTemplate('groups-challenge-invite-card');
+
+    const createChallenge = await request(app)
+      .post('/api/challenges')
+      .set('Authorization', `Bearer ${accessToken}`)
+      .send({ template_id: templateId, start_date: new Date().toISOString().slice(0, 10) });
+    expect(createChallenge.status).toBe(201);
+
+    const groupId = createChallenge.body.challenge.id;
+    const response = await request(app)
+      .get(`/api/groups/${groupId}/invite`)
+      .set('Authorization', `Bearer ${accessToken}`);
+
+    expect(response.status).toBe(200);
+    expect(response.body.invite_card_data).toMatchObject({
+      card_type: 'challenge_invite',
+      cta_text: 'Are you in?',
+    });
+    expect(response.body.invite_card_data.share_url).toContain(`/challenge/${response.body.invite_code}`);
+    expect(response.body.invite_card_data.qr_url).toContain(`/challenge/${response.body.invite_code}`);
+    expect(response.body.invite_card_data.share_url).toContain('ref=');
+    expect(response.body.invite_card_data.qr_url).toContain('ref=');
+  });
+
+  it('regenerates challenge invite card data with the new invite code', async () => {
+    const { accessToken } = await createAuthenticatedUser('challenge-invite-regenerate@example.com');
+    const templateId = await seedTemplate('groups-challenge-invite-regenerate');
+
+    const createChallenge = await request(app)
+      .post('/api/challenges')
+      .set('Authorization', `Bearer ${accessToken}`)
+      .send({ template_id: templateId, start_date: new Date().toISOString().slice(0, 10) });
+    expect(createChallenge.status).toBe(201);
+
+    const groupId = createChallenge.body.challenge.id;
+    const beforeInvite = await request(app)
+      .get(`/api/groups/${groupId}/invite`)
+      .set('Authorization', `Bearer ${accessToken}`);
+    const oldCode = beforeInvite.body.invite_code;
+
+    const regenerate = await request(app)
+      .post(`/api/groups/${groupId}/invite/regenerate`)
+      .set('Authorization', `Bearer ${accessToken}`);
+
+    expect(regenerate.status).toBe(200);
+    expect(regenerate.body.invite_code).not.toBe(oldCode);
+    expect(regenerate.body.invite_card_data.invite_url).toContain(`/challenge/${regenerate.body.invite_code}`);
+    expect(regenerate.body.invite_card_data.share_url).toContain(`/challenge/${regenerate.body.invite_code}`);
+    expect(regenerate.body.invite_card_data.qr_url).toContain(`/challenge/${regenerate.body.invite_code}`);
   });
 });
 

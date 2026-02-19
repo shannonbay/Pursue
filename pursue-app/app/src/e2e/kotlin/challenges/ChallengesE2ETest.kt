@@ -374,4 +374,92 @@ class ChallengesE2ETest : E2ETest() {
         assertThat(details.challenge_end_date).isNotNull()
         assertThat(details.challenge_status).isNotNull()
     }
+
+    @Test
+    fun `challenge create returns invite referral card data`() = runTest {
+        val user = testDataHelper.createTestUser(api, displayName = "Invite Card Creator")
+        trackUser(user.user!!.id)
+        val templateId = firstTemplateId(user.access_token)
+
+        val created = api.createChallenge(
+            accessToken = user.access_token,
+            templateId = templateId,
+            startDate = datePlus(1)
+        )
+        trackGroup(created.challenge.id)
+
+        val card = created.challenge.invite_card_data
+        assertThat(card).isNotNull()
+        assertThat(card!!.card_type).isEqualTo("challenge_invite")
+        assertThat(card.invite_url).contains("/challenge/${created.challenge.invite_code}")
+        assertThat(card.share_url).contains("/challenge/${created.challenge.invite_code}")
+        assertThat(card.qr_url).contains("/challenge/${created.challenge.invite_code}")
+        assertThat(card.share_url).contains("utm_source=share")
+        assertThat(card.qr_url).contains("utm_source=qr")
+        assertThat(card.share_url).contains("utm_medium=challenge_card")
+        assertThat(card.qr_url).contains("utm_medium=challenge_card")
+        assertThat(card.share_url).contains("ref=")
+        assertThat(card.qr_url).contains("ref=")
+        assertThat(card.share_url).doesNotContain(user.user!!.id)
+        assertThat(card.qr_url).doesNotContain(user.user!!.id)
+    }
+
+    @Test
+    fun `challenge invite endpoint returns referral card data and regenerate updates code`() = runTest {
+        val user = testDataHelper.createTestUser(api, displayName = "Invite Card Endpoint")
+        trackUser(user.user!!.id)
+        val templateId = firstTemplateId(user.access_token)
+
+        val created = api.createChallenge(
+            accessToken = user.access_token,
+            templateId = templateId,
+            startDate = datePlus(1)
+        )
+        trackGroup(created.challenge.id)
+
+        val invite = api.getGroupInviteCode(user.access_token, created.challenge.id)
+        val inviteCard = invite.invite_card_data
+        assertThat(inviteCard).isNotNull()
+        assertThat(inviteCard!!.invite_url).contains("/challenge/${invite.invite_code}")
+        assertThat(inviteCard.share_url).contains("/challenge/${invite.invite_code}")
+        assertThat(inviteCard.qr_url).contains("/challenge/${invite.invite_code}")
+
+        val regenerated = api.regenerateInviteCode(user.access_token, created.challenge.id)
+        val regeneratedCard = regenerated.invite_card_data
+        assertThat(regenerated.invite_code).isNotEqualTo(invite.invite_code)
+        assertThat(regeneratedCard).isNotNull()
+        assertThat(regeneratedCard!!.invite_url).contains("/challenge/${regenerated.invite_code}")
+        assertThat(regeneratedCard.share_url).contains("/challenge/${regenerated.invite_code}")
+        assertThat(regeneratedCard.qr_url).contains("/challenge/${regenerated.invite_code}")
+    }
+
+    @Test
+    fun `challenge invite referral token is stable per user and different across users`() = runTest {
+        val creator = testDataHelper.createTestUser(api, displayName = "Invite Token Creator")
+        trackUser(creator.user!!.id)
+        val member = testDataHelper.createTestUser(api, displayName = "Invite Token Member")
+        trackUser(member.user!!.id)
+        val templateId = firstTemplateId(creator.access_token)
+
+        val created = api.createChallenge(
+            accessToken = creator.access_token,
+            templateId = templateId,
+            startDate = datePlus(1)
+        )
+        trackGroup(created.challenge.id)
+
+        val initialInvite = api.getGroupInviteCode(creator.access_token, created.challenge.id)
+        api.joinGroup(member.access_token, initialInvite.invite_code)
+
+        val creatorInviteA = api.getGroupInviteCode(creator.access_token, created.challenge.id)
+        val creatorInviteB = api.getGroupInviteCode(creator.access_token, created.challenge.id)
+        val memberInvite = api.getGroupInviteCode(member.access_token, created.challenge.id)
+
+        val creatorTokenA = creatorInviteA.invite_card_data!!.referral_token
+        val creatorTokenB = creatorInviteB.invite_card_data!!.referral_token
+        val memberToken = memberInvite.invite_card_data!!.referral_token
+
+        assertThat(creatorTokenA).isEqualTo(creatorTokenB)
+        assertThat(memberToken).isNotEqualTo(creatorTokenA)
+    }
 }

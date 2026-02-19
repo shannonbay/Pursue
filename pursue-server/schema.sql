@@ -107,6 +107,7 @@ CREATE TABLE groups (
   challenge_end_date DATE,
   challenge_template_id UUID,
   challenge_status VARCHAR(20) DEFAULT NULL,
+  challenge_invite_card_data JSONB,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   deleted_at TIMESTAMP WITH TIME ZONE -- NULL if active, timestamp if soft deleted

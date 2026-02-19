@@ -382,6 +382,7 @@
     <string name="challenge_goals_included">Goals Included</string>
     <string name="challenge_create_failed">Failed to create challenge</string>
     <string name="challenge_share_button">Share</string>
+    <string name="challenge_invite_card_title">Challenge Invite</string>
     <string name="challenge_invite_button">Invite Friends</string>
     <string name="challenge_share_text">Join my challenge "%1$s" on Pursue: %2$s</string>
     <string name="challenge_share_failed">Failed to share challenge</string>

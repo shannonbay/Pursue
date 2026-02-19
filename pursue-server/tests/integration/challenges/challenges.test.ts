@@ -100,6 +100,16 @@ describe('Challenges API', () => {
     expect(response.body.challenge.challenge_status).toBe('upcoming');
     expect(response.body.challenge.challenge_template_id).toBe(template.id);
     expect(response.body.challenge.goals.length).toBe(2);
+    expect(response.body.challenge.invite_card_data).toMatchObject({
+      card_type: 'challenge_invite',
+      cta_text: 'Are you in?',
+    });
+    expect(response.body.challenge.invite_card_data.share_url).toContain('/challenge/');
+    expect(response.body.challenge.invite_card_data.qr_url).toContain('/challenge/');
+    expect(response.body.challenge.invite_card_data.share_url).toContain('ref=');
+    expect(response.body.challenge.invite_card_data.qr_url).toContain('ref=');
+    expect(response.body.challenge.invite_card_data.share_url).not.toContain(user.userId);
+    expect(response.body.challenge.invite_card_data.qr_url).not.toContain(user.userId);
   });
 
   it('rejects custom challenges for free users', async () => {

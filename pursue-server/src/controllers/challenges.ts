@@ -21,6 +21,10 @@ import {
   updateChallengeStatuses,
 } from '../services/challenges.service.js';
 import { getDateInTimezone } from '../utils/timezone.js';
+import {
+  attachInviteCardAttribution,
+  buildChallengeInviteCardBase,
+} from '../services/challengeInviteCard.service.js';
 
 function generateInviteCode(): string {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -183,6 +187,7 @@ export async function createChallenge(
 
     let template: {
       id: string;
+      slug: string;
       title: string;
       icon_emoji: string;
       duration_days: number;
@@ -201,7 +206,7 @@ export async function createChallenge(
     if (fromTemplate) {
       template = await db
         .selectFrom('challenge_templates')
-        .select(['id', 'title', 'icon_emoji', 'duration_days'])
+        .select(['id', 'slug', 'title', 'icon_emoji', 'duration_days'])
         .where('id', '=', data.template_id!)
         .executeTakeFirst() ?? null;
       if (!template) {
@@ -251,6 +256,27 @@ export async function createChallenge(
     const iconEmoji = data.icon_emoji ?? template?.icon_emoji ?? null;
 
     const created = await db.transaction().execute(async (trx) => {
+      let inviteCode = '';
+      for (let attempt = 0; attempt < 12; attempt++) {
+        inviteCode = generateInviteCode();
+        const existing = await trx
+          .selectFrom('invite_codes')
+          .select('id')
+          .where('code', '=', inviteCode)
+          .executeTakeFirst();
+        if (!existing) break;
+      }
+      if (!inviteCode) {
+        throw new ApplicationError('Failed to generate invite code', 500, 'CODE_GENERATION_FAILED');
+      }
+      const inviteCardBase = buildChallengeInviteCardBase({
+        challengeName: groupName,
+        startDate: data.start_date,
+        endDate,
+        iconEmoji,
+        inviteCode,
+      });
+
       const group = await trx
         .insertInto('groups')
         .values({
@@ -264,6 +290,7 @@ export async function createChallenge(
           challenge_end_date: endDate,
           challenge_template_id: template?.id ?? null,
           challenge_status: status,
+          challenge_invite_card_data: inviteCardBase,
         })
         .returning([
           'id',
@@ -275,6 +302,7 @@ export async function createChallenge(
           'challenge_end_date',
           'challenge_status',
           'challenge_template_id',
+          'challenge_invite_card_data',
           'created_at',
         ])
         .executeTakeFirstOrThrow();
@@ -304,20 +332,6 @@ export async function createChallenge(
           }))
         )
         .execute();
-
-      let inviteCode = '';
-      for (let attempt = 0; attempt < 12; attempt++) {
-        inviteCode = generateInviteCode();
-        const existing = await trx
-          .selectFrom('invite_codes')
-          .select('id')
-          .where('code', '=', inviteCode)
-          .executeTakeFirst();
-        if (!existing) break;
-      }
-      if (!inviteCode) {
-        throw new ApplicationError('Failed to generate invite code', 500, 'CODE_GENERATION_FAILED');
-      }
 
       await trx
         .insertInto('invite_codes')
@@ -351,8 +365,15 @@ export async function createChallenge(
         .orderBy('created_at', 'asc')
         .execute();
 
-      return { group, goals, inviteCode };
+      return { group, goals, inviteCode, inviteCardBase };
     });
+
+    const inviteCardData = await attachInviteCardAttribution(
+      created.inviteCardBase,
+      created.inviteCode,
+      req.user.id,
+      template?.slug ?? 'challenge_invite'
+    );
 
     res.status(201).json({
       challenge: {
@@ -375,6 +396,7 @@ export async function createChallenge(
         })),
         invite_code: created.inviteCode,
         invite_url: `https://getpursue.app/challenge/${created.inviteCode}`,
+        invite_card_data: inviteCardData,
       },
     });
   } catch (error) {

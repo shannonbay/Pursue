@@ -304,7 +304,8 @@ class NotificationsFragment : Fragment() {
             context = requireContext(),
             notificationId = item.id,
             cardDataJson = cardDataJson,
-            autoAction = autoAction
+            autoAction = autoAction,
+            groupId = item.group?.id
         )
         startActivity(intent)
     }

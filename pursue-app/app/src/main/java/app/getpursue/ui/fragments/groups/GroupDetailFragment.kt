@@ -49,6 +49,7 @@ import app.getpursue.data.network.ApiException
 import app.getpursue.models.GroupDetailResponse
 import app.getpursue.models.GroupMember
 import app.getpursue.ui.activities.GroupDetailActivity
+import app.getpursue.ui.activities.ShareableMilestoneCardActivity
 import app.getpursue.ui.fragments.goals.CreateGoalFragment
 import app.getpursue.ui.views.IconPickerBottomSheet
 import app.getpursue.ui.views.InviteMembersBottomSheet
@@ -64,6 +65,7 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.tabs.TabLayout
 import com.google.android.material.tabs.TabLayoutMediator
 import com.google.android.material.textfield.TextInputEditText
+import com.google.gson.Gson
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
@@ -82,6 +84,7 @@ import java.util.TimeZone
  * header with group icon and details, and context-aware FAB.
  */
 class GroupDetailFragment : Fragment() {
+    private val gson = Gson()
 
     companion object {
         private const val ARG_GROUP_ID = "group_id"
@@ -1145,16 +1148,29 @@ class GroupDetailFragment : Fragment() {
                 }
                 val invite = withContext(Dispatchers.IO) { ApiClient.getGroupInviteCode(token, gid) }
                 val detail = groupDetail
-                val shareText = getString(
-                    R.string.challenge_share_text,
-                    detail?.name ?: getString(R.string.start_challenge),
-                    invite.share_url
-                )
-                val intent = Intent(Intent.ACTION_SEND).apply {
-                    type = "text/plain"
-                    putExtra(Intent.EXTRA_TEXT, shareText)
+                val inviteCardData = invite.invite_card_data
+                if (inviteCardData != null) {
+                    val cardJson = gson.toJson(inviteCardData)
+                    val intent = ShareableMilestoneCardActivity.createIntent(
+                        context = requireContext(),
+                        notificationId = "",
+                        cardDataJson = cardJson,
+                        autoAction = null,
+                        groupId = gid
+                    )
+                    startActivity(intent)
+                } else {
+                    val shareText = getString(
+                        R.string.challenge_share_text,
+                        detail?.name ?: getString(R.string.start_challenge),
+                        invite.share_url
+                    )
+                    val intent = Intent(Intent.ACTION_SEND).apply {
+                        type = "text/plain"
+                        putExtra(Intent.EXTRA_TEXT, shareText)
+                    }
+                    startActivity(Intent.createChooser(intent, getString(R.string.challenge_share_button)))
                 }
-                startActivity(Intent.createChooser(intent, getString(R.string.challenge_share_button)))
             } catch (e: ApiException) {
                 Toast.makeText(requireContext(), e.message ?: getString(R.string.challenge_share_failed), Toast.LENGTH_SHORT).show()
             } catch (_: Exception) {
