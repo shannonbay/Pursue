@@ -903,11 +903,16 @@ Generated when the challenge completes. Uses the existing shareable milestone ca
 
 ### 8.3 UTM Tracking for Challenge Shares
 
-Challenge invite links use UTM parameters for attribution:
+Challenge invite links use UTM parameters plus an opaque referral token for attribution:
 
 ```
-https://getpursue.app/challenge/{invite_code}?utm_source=share&utm_medium=challenge_card&utm_campaign={template_slug}&utm_content={user_id}
+https://getpursue.app/challenge/{invite_code}?utm_source=share&utm_medium=challenge_card&utm_campaign={template_slug}&ref={referral_token}
 ```
+
+Notes:
+- Do not include raw `user_id` in share URLs.
+- `referral_token` is a generated opaque code that maps server-side to the sharing user/context.
+- Keep `utm_content` optional for campaign variants, but do not use it for user identity.
 
 **Landing page behavior for challenge links:**
 1. Track UTM parameters
