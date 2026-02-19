@@ -68,13 +68,25 @@ class ChallengeLifecycleE2ETest : E2ETest() {
         assertThat(job.success).isTrue()
 
         if (job.completion_notifications > 0 || job.completed > 0) {
-            val notifications = api.getNotifications(user.access_token, limit = 50)
-            val completion = notifications.notifications.find {
-                it.type == "milestone_achieved" &&
-                    it.metadata?.get("milestone_type") == "challenge_completed"
-            }
-            assertThat(completion).isNotNull()
-            assertThat(completion!!.shareable_card_data).isNotNull()
+            val completionCard = api.getFirstChallengeCompletionCard(user.access_token, limit = 50)
+            assertThat(completionCard).isNotNull()
+
+            assertThat(completionCard!!.card_type).isEqualTo("challenge_completion")
+            assertThat(completionCard.milestone_type).isEqualTo("challenge_completed")
+            assertThat(completionCard.background_image_url).contains("/assets/challenge_completion_background.png")
+            assertThat(completionCard.background_gradient).isNotNull()
+            assertThat(completionCard.share_url).contains("utm_source=share")
+            assertThat(completionCard.share_url).contains("utm_medium=challenge_completion_card")
+            assertThat(completionCard.share_url).contains("utm_campaign=challenge_completed")
+            assertThat(completionCard.share_url).contains("ref=")
+            assertThat(completionCard.qr_url).contains("utm_source=qr")
+            assertThat(completionCard.qr_url).contains("utm_medium=challenge_completion_card")
+            assertThat(completionCard.qr_url).contains("utm_campaign=challenge_completed")
+            assertThat(completionCard.qr_url).contains("ref=")
+            assertThat(completionCard.share_url).doesNotContain("/challenge/")
+            assertThat(completionCard.qr_url).doesNotContain("/challenge/")
+            assertThat(completionCard.share_url).doesNotContain(user.user!!.id)
+            assertThat(completionCard.qr_url).doesNotContain(user.user!!.id)
 
             val activity = api.getGroupActivity(user.access_token, challenge.challenge.id, limit = 50)
             assertThat(activity.activities.any { it.activity_type == "challenge_completed" }).isTrue()

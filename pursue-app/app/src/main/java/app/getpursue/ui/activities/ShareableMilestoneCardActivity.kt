@@ -29,6 +29,10 @@ import app.getpursue.R
 import app.getpursue.data.auth.SecureTokenManager
 import app.getpursue.data.network.ApiClient
 import com.bumptech.glide.Glide
+import com.bumptech.glide.load.DataSource
+import com.bumptech.glide.load.engine.GlideException
+import com.bumptech.glide.request.RequestListener
+import com.bumptech.glide.request.target.Target
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.card.MaterialCardView
 import com.google.gson.Gson
@@ -275,10 +279,14 @@ class ShareableMilestoneCardActivity : AppCompatActivity() {
     }
 
     private fun renderCard(data: ShareableCardData) {
-        supportActionBar?.title = if (data.cardType == "challenge_invite") {
-            getString(R.string.challenge_invite_card_title)
-        } else {
-            getString(R.string.shareable_card_title)
+        supportActionBar?.title = when (data.cardType) {
+            "challenge_invite" -> getString(R.string.challenge_invite_card_title)
+            "challenge_completion" -> getString(R.string.challenge_completion_card_title)
+            else -> getString(R.string.shareable_card_title)
+        }
+        btnShare.text = when (data.cardType) {
+            "challenge_completion" -> getString(R.string.challenge_completion_btn_share_primary)
+            else -> getString(R.string.shareable_card_btn_share_primary)
         }
         titleText.text = data.title
         subtitleText.text = data.subtitle
@@ -308,11 +316,33 @@ class ShareableMilestoneCardActivity : AppCompatActivity() {
             GradientDrawable.Orientation.TOP_BOTTOM,
             intArrayOf(top, bottom)
         )
-        if (data.cardType == "challenge_invite" && !data.backgroundImageUrl.isNullOrBlank()) {
+        if (!data.backgroundImageUrl.isNullOrBlank()) {
             backgroundImage.visibility = View.VISIBLE
-            gradientLayer.visibility = View.GONE
+            gradientLayer.visibility = View.VISIBLE
             Glide.with(this)
                 .load(data.backgroundImageUrl)
+                .listener(object : RequestListener<android.graphics.drawable.Drawable> {
+                    override fun onLoadFailed(
+                        e: GlideException?,
+                        model: Any?,
+                        target: Target<android.graphics.drawable.Drawable>,
+                        isFirstResource: Boolean
+                    ): Boolean {
+                        gradientLayer.visibility = View.VISIBLE
+                        return false
+                    }
+
+                    override fun onResourceReady(
+                        resource: android.graphics.drawable.Drawable,
+                        model: Any,
+                        target: Target<android.graphics.drawable.Drawable>,
+                        dataSource: DataSource,
+                        isFirstResource: Boolean
+                    ): Boolean {
+                        gradientLayer.visibility = View.GONE
+                        return false
+                    }
+                })
                 .centerCrop()
                 .into(backgroundImage)
         } else {
@@ -400,6 +430,14 @@ class ShareableMilestoneCardActivity : AppCompatActivity() {
                 )
                 groupId?.let { props["group_id"] = it }
                 trackEvent("challenge_invite_shared", props)
+            } else if (data.cardType == "challenge_completion") {
+                val props = mutableMapOf(
+                    "share_method" to "generic",
+                    "card_type" to data.cardType
+                )
+                groupId?.let { props["group_id"] = it }
+                completionRatePercent(data)?.let { props["completion_rate"] = it }
+                trackEvent("challenge_completed_card_shared", props)
             } else {
                 trackEvent(
                     "milestone_card_shared_generic",
@@ -435,6 +473,14 @@ class ShareableMilestoneCardActivity : AppCompatActivity() {
                 )
                 groupId?.let { props["group_id"] = it }
                 trackEvent("challenge_invite_shared", props)
+            } else if (data.cardType == "challenge_completion") {
+                val props = mutableMapOf(
+                    "share_method" to "instagram",
+                    "card_type" to data.cardType
+                )
+                groupId?.let { props["group_id"] = it }
+                completionRatePercent(data)?.let { props["completion_rate"] = it }
+                trackEvent("challenge_completed_card_shared", props)
             } else {
                 trackEvent(
                     "milestone_card_shared_instagram",
@@ -446,13 +492,15 @@ class ShareableMilestoneCardActivity : AppCompatActivity() {
             }
         } catch (_: Exception) {
             shareGeneric()
-            trackEvent(
-                "milestone_card_shared_instagram_fallback",
-                mapOf(
-                    "notification_id" to notificationId,
-                    "milestone_type" to data.milestoneType
+            if (data.cardType != "challenge_completion") {
+                trackEvent(
+                    "milestone_card_shared_instagram_fallback",
+                    mapOf(
+                        "notification_id" to notificationId,
+                        "milestone_type" to data.milestoneType
+                    )
                 )
-            )
+            }
         }
     }
 
@@ -504,11 +552,16 @@ class ShareableMilestoneCardActivity : AppCompatActivity() {
 
     private fun buildShareText(data: ShareableCardData): String {
         val url = data.shareUrl ?: "https://getpursue.app"
-        return if (data.cardType == "challenge_invite") {
-            getString(R.string.challenge_share_text, data.title, url)
-        } else {
-            getString(R.string.shareable_card_share_text, url)
+        return when (data.cardType) {
+            "challenge_invite" -> getString(R.string.challenge_share_text, data.title, url)
+            "challenge_completion" -> getString(R.string.challenge_completion_share_text, data.subtitle, url)
+            else -> getString(R.string.shareable_card_share_text, url)
         }
+    }
+
+    private fun completionRatePercent(data: ShareableCardData): String? {
+        val digits = data.statValue.filter { it.isDigit() }
+        return if (digits.isNotEmpty()) digits else null
     }
 
     private fun isInstagramInstalled(): Boolean {

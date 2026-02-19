@@ -16,6 +16,43 @@ describe('Challenge lifecycle job', () => {
     expect(response.status).toBe(401);
   });
 
+  it('accepts force_now in test mode and validates invalid values', async () => {
+    const creator = await createAuthenticatedUser(randomEmail());
+
+    const group = await testDb
+      .insertInto('groups')
+      .values({
+        name: 'Force Now Challenge',
+        creator_user_id: creator.userId,
+        is_challenge: true,
+        challenge_start_date: '2026-01-01',
+        challenge_end_date: '2026-01-01',
+        challenge_status: 'active',
+      })
+      .returning('id')
+      .executeTakeFirstOrThrow();
+
+    const invalid = await request(app)
+      .post('/api/internal/jobs/update-challenge-statuses')
+      .set('x-internal-job-key', process.env.INTERNAL_JOB_KEY!)
+      .send({ force_now: 'not-a-date' });
+    expect(invalid.status).toBe(400);
+    expect(invalid.body.error?.code).toBe('VALIDATION_ERROR');
+
+    const valid = await request(app)
+      .post('/api/internal/jobs/update-challenge-statuses')
+      .set('x-internal-job-key', process.env.INTERNAL_JOB_KEY!)
+      .send({ force_now: '2030-01-01T00:00:00.000Z' });
+    expect(valid.status).toBe(200);
+
+    const row = await testDb
+      .selectFrom('groups')
+      .select('challenge_status')
+      .where('id', '=', group.id)
+      .executeTakeFirstOrThrow();
+    expect(row.challenge_status).toBe('completed');
+  });
+
   it('requires internal job key for completion push processor', async () => {
     const response = await request(app).post('/api/internal/jobs/process-challenge-completion-pushes');
     expect(response.status).toBe(401);
@@ -45,7 +82,7 @@ describe('Challenge lifecycle job', () => {
         creator_user_id: creator.userId,
         is_challenge: true,
         challenge_start_date: datePlus(-10),
-        challenge_end_date: datePlus(-1),
+        challenge_end_date: datePlus(-2),
         challenge_status: 'active',
         icon_emoji: 'Y',
       })
@@ -79,7 +116,7 @@ describe('Challenge lifecycle job', () => {
         goal_id: goal.id,
         user_id: member.userId,
         value: 1,
-        period_start: datePlus(-1),
+        period_start: datePlus(-2),
       })
       .execute();
 
@@ -115,6 +152,26 @@ describe('Challenge lifecycle job', () => {
     expect(notifications.length).toBeGreaterThanOrEqual(2);
     expect(notifications.every((n) => (n.metadata as any)?.milestone_type === 'challenge_completed')).toBe(true);
     expect(notifications.every((n) => n.shareable_card_data != null)).toBe(true);
+    for (const notification of notifications) {
+      const card = notification.shareable_card_data as Record<string, unknown>;
+      expect(card.card_type).toBe('challenge_completion');
+      expect(card.milestone_type).toBe('challenge_completed');
+      expect(card.background_image_url).toEqual(expect.stringContaining('/assets/challenge_completion_background.png'));
+      expect(card.background_gradient).toEqual(expect.any(Array));
+      expect(card.referral_token).toEqual(expect.any(String));
+      expect(card.share_url).toEqual(expect.any(String));
+      expect(card.qr_url).toEqual(expect.any(String));
+      expect(String(card.share_url)).toContain('utm_source=share');
+      expect(String(card.qr_url)).toContain('utm_source=qr');
+      expect(String(card.share_url)).toContain('utm_medium=challenge_completion_card');
+      expect(String(card.qr_url)).toContain('utm_medium=challenge_completion_card');
+      expect(String(card.share_url)).toContain('ref=');
+      expect(String(card.qr_url)).toContain('ref=');
+      expect(String(card.share_url)).not.toContain('/challenge/');
+      expect(String(card.qr_url)).not.toContain('/challenge/');
+      expect(String(card.share_url)).not.toContain(notification.user_id);
+      expect(String(card.qr_url)).not.toContain(notification.user_id);
+    }
 
     const activity = await testDb
       .selectFrom('group_activities')

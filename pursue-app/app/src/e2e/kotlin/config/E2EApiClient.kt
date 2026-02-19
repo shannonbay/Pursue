@@ -36,9 +36,12 @@ import app.getpursue.data.network.GetReactionsResponse
 import app.getpursue.data.network.NudgesSentTodayResponse
 import app.getpursue.data.network.SendNudgeResponse
 import app.getpursue.data.network.NotificationsResponse
+import app.getpursue.data.network.NotificationItem
+import app.getpursue.data.network.ChallengeCompletionCardData
 import app.getpursue.data.network.UnreadCountResponse
 import app.getpursue.data.network.MarkAllReadResponse
 import app.getpursue.data.network.MarkNotificationReadResponse
+import app.getpursue.data.network.toChallengeCompletionCardDataOrNull
 import app.getpursue.data.network.MemberProgressResponse
 import app.getpursue.data.network.HeatHistoryResponse
 import app.getpursue.data.network.WeeklyRecapJobResponse
@@ -502,6 +505,24 @@ class E2EApiClient(private val context: Context) {
         return ApiClient.getNotifications("", limit, beforeId)
     }
 
+    suspend fun getChallengeCompletionNotifications(
+        accessToken: String,
+        limit: Int = 50
+    ): List<NotificationItem> {
+        val safeLimit = limit.coerceIn(1, 50)
+        return getNotifications(accessToken, limit = safeLimit).notifications.filter {
+            it.type == "milestone_achieved" && it.metadata?.get("milestone_type") == "challenge_completed"
+        }
+    }
+
+    suspend fun getFirstChallengeCompletionCard(
+        accessToken: String,
+        limit: Int = 50
+    ): ChallengeCompletionCardData? {
+        return getChallengeCompletionNotifications(accessToken, limit)
+            .firstNotNullOfOrNull { it.toChallengeCompletionCardDataOrNull() }
+    }
+
     suspend fun getUnreadCount(accessToken: String): UnreadCountResponse {
         storeTokenIfPresent(accessToken)
         return ApiClient.getUnreadCount("")
@@ -589,8 +610,9 @@ class E2EApiClient(private val context: Context) {
 
     // No storeTokenIfPresent call — internal job uses x-internal-job-key, not Bearer auth
     suspend fun triggerChallengeStatusUpdateJob(
-        internalJobKey: String
+        internalJobKey: String,
+        forceNow: String? = null
     ): ChallengeStatusUpdateJobResponse {
-        return ApiClient.triggerChallengeStatusUpdateJob(internalJobKey)
+        return ApiClient.triggerChallengeStatusUpdateJob(internalJobKey, forceNow)
     }
 }

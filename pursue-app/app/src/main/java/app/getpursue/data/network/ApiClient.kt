@@ -2006,13 +2006,19 @@ object ApiClient {
     /**
      * Trigger challenge status lifecycle job.
      * Uses x-internal-job-key header instead of Bearer auth.
+     * In test mode, forceNow (ISO-8601 datetime) can override server clock for deterministic tests.
      */
     suspend fun triggerChallengeStatusUpdateJob(
-        internalJobKey: String
+        internalJobKey: String,
+        forceNow: String? = null
     ): ChallengeStatusUpdateJobResponse {
+        val bodyMap = mutableMapOf<String, Any>()
+        forceNow?.let { bodyMap["force_now"] = it }
+        val requestBody = gson.toJson(bodyMap).toRequestBody(jsonMediaType)
+
         val request = Request.Builder()
             .url("$baseUrl/internal/jobs/update-challenge-statuses")
-            .post("{}".toRequestBody(jsonMediaType))
+            .post(requestBody)
             .addHeader("Content-Type", "application/json")
             .addHeader("x-internal-job-key", internalJobKey)
             .build()
@@ -2727,6 +2733,65 @@ data class NotificationItem(
     val metadata: Map<String, Any>?,
     val shareable_card_data: Map<String, Any>?
 )
+
+data class ChallengeCompletionCardData(
+    val card_type: String,
+    val milestone_type: String,
+    val title: String,
+    val subtitle: String,
+    val stat_value: String,
+    val stat_label: String,
+    val quote: String,
+    val goal_icon_emoji: String?,
+    val background_gradient: List<String>?,
+    val background_image_url: String?,
+    val referral_token: String?,
+    val share_url: String?,
+    val qr_url: String?,
+    val generated_at: String?
+)
+
+private fun Any?.asCardStringOrNull(): String? = when (this) {
+    null -> null
+    is String -> this
+    is Number -> this.toString()
+    is Boolean -> this.toString()
+    else -> this.toString()
+}
+
+private fun Any?.asCardStringListOrNull(): List<String>? {
+    val list = this as? List<*> ?: return null
+    return list.mapNotNull { it?.toString() }
+}
+
+fun NotificationItem.toChallengeCompletionCardDataOrNull(): ChallengeCompletionCardData? {
+    if (type != "milestone_achieved") return null
+    if (metadata?.get("milestone_type").asCardStringOrNull() != "challenge_completed") return null
+
+    val card = shareable_card_data ?: return null
+    val milestoneType = card["milestone_type"].asCardStringOrNull() ?: return null
+    if (milestoneType != "challenge_completed") return null
+
+    val title = card["title"].asCardStringOrNull() ?: return null
+    val subtitle = card["subtitle"].asCardStringOrNull() ?: return null
+
+    return ChallengeCompletionCardData(
+        card_type = card["card_type"].asCardStringOrNull() ?: "challenge_completion",
+        milestone_type = milestoneType,
+        title = title,
+        subtitle = subtitle,
+        stat_value = card["stat_value"].asCardStringOrNull().orEmpty(),
+        stat_label = card["stat_label"].asCardStringOrNull().orEmpty(),
+        quote = card["quote"].asCardStringOrNull().orEmpty(),
+        goal_icon_emoji = card["goal_icon_emoji"].asCardStringOrNull(),
+        background_gradient = card["background_gradient"].asCardStringListOrNull(),
+        background_image_url = card["background_image_url"].asCardStringOrNull(),
+        referral_token = card["referral_token"].asCardStringOrNull(),
+        share_url = card["share_url"].asCardStringOrNull(),
+        qr_url = card["qr_url"].asCardStringOrNull(),
+        generated_at = card["generated_at"].asCardStringOrNull()
+    )
+}
 
 data class NotificationActor(
     val id: String,

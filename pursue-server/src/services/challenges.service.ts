@@ -2,6 +2,7 @@ import { db } from '../database/index.js';
 import { logger } from '../utils/logger.js';
 import { createNotification } from './notification.service.js';
 import { sendNotificationToUser } from './fcm.service.js';
+import { getOrCreateReferralToken } from './referral.service.js';
 import {
   addDaysDateOnly,
   computeDeferredSendAt,
@@ -10,6 +11,9 @@ import {
 } from '../utils/timezone.js';
 
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
+const SHARE_BASE_URL = process.env.PURSUE_SHARE_BASE_URL ?? 'https://getpursue.app';
+const CARD_ASSET_BASE_URL = process.env.PURSUE_CARD_ASSET_BASE_URL ?? 'https://api.getpursue.app';
+const CHALLENGE_COMPLETION_BACKGROUND_PATH = '/assets/challenge_completion_background.png';
 
 function daysInclusive(start: string, end: string): number {
   const s = new Date(`${start}T12:00:00Z`).getTime();
@@ -41,13 +45,28 @@ function maxDateStr(a: string, b: string): string {
   return a > b ? a : b;
 }
 
+function buildChallengeCompletionShareUrl(referralToken: string): string {
+  return `${SHARE_BASE_URL}?utm_source=share&utm_medium=challenge_completion_card&utm_campaign=challenge_completed&ref=${encodeURIComponent(referralToken)}`;
+}
+
+function buildChallengeCompletionQrUrl(referralToken: string): string {
+  return `${SHARE_BASE_URL}?utm_source=qr&utm_medium=challenge_completion_card&utm_campaign=challenge_completed&ref=${encodeURIComponent(referralToken)}`;
+}
+
+function buildChallengeCompletionBackgroundUrl(): string {
+  const normalizedBase = CARD_ASSET_BASE_URL.replace(/\/+$/, '');
+  return `${normalizedBase}${CHALLENGE_COMPLETION_BACKGROUND_PATH}`;
+}
+
 function buildChallengeCompletionCardData(
   challengeName: string,
   completionRate: number,
-  iconEmoji: string | null
+  iconEmoji: string | null,
+  referralToken: string
 ): Record<string, unknown> {
   const percent = Math.round(completionRate * 100);
   return {
+    card_type: 'challenge_completion',
     milestone_type: 'challenge_completed',
     title: 'Challenge complete!',
     subtitle: challengeName,
@@ -56,6 +75,10 @@ function buildChallengeCompletionCardData(
     quote: 'You finished what you started',
     goal_icon_emoji: iconEmoji ?? '\u{1F3C6}',
     background_gradient: ['#1976D2', '#1565C0'],
+    background_image_url: buildChallengeCompletionBackgroundUrl(),
+    referral_token: referralToken,
+    share_url: buildChallengeCompletionShareUrl(referralToken),
+    qr_url: buildChallengeCompletionQrUrl(referralToken),
     generated_at: new Date().toISOString(),
   };
 }
@@ -170,8 +193,14 @@ async function sendChallengeCompletionNotifications(groupId: string): Promise<nu
       challenge.challenge_start_date,
       challenge.challenge_end_date
     );
+    const referralToken = await getOrCreateReferralToken(member.user_id);
 
-    const cardData = buildChallengeCompletionCardData(challenge.name, completionRate, challenge.icon_emoji);
+    const cardData = buildChallengeCompletionCardData(
+      challenge.name,
+      completionRate,
+      challenge.icon_emoji,
+      referralToken
+    );
     const notificationId = await createNotification({
       user_id: member.user_id,
       type: 'milestone_achieved',

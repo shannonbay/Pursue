@@ -147,8 +147,7 @@ WITH seed_templates (slug, title, description, icon_emoji, duration_days, catego
     ('read-nt-260-days', 'Read the New Testament in 260 Days', 'Read one chapter per day.', '📚', 260, 'reading', 'easy', FALSE, 2),
     ('book-a-month', 'Book a Month', 'Read for 30 minutes each day.', '📘', 30, 'reading', 'easy', FALSE, 3),
     ('50-books-year', '50 Books in a Year', 'Sustain daily reading and weekly book progress.', '📗', 365, 'reading', 'hard', FALSE, 4),
-    ('read-quran-30', 'Read the Quran in 30 Days', 'Read 20 pages per day for 30 days.', '📙', 30, 'reading', 'moderate', FALSE, 5),
-
+    
     -- Wellness
     ('21-day-meditation', '21-Day Meditation', 'Meditate 10 minutes daily.', '🧠', 21, 'wellness', 'easy', TRUE, 1),
     ('gratitude-journal-30', '30-Day Gratitude Journal', 'Write daily gratitude entries.', '📝', 30, 'wellness', 'easy', FALSE, 2),
@@ -211,7 +210,6 @@ WITH seed_goals (template_slug, title, description, cadence, metric_type, target
     ('book-a-month', 'Read 30 minutes', 'Read for at least 30 minutes.', 'daily', 'duration', 30, 'minutes', 0),
     ('50-books-year', 'Read today', 'Do your daily reading session.', 'daily', 'binary', NULL, NULL, 0),
     ('50-books-year', 'Finish 1 book', 'Complete one book this week.', 'weekly', 'numeric', 1, 'books', 1),
-    ('read-quran-30', 'Read 20 pages', 'Read 20 pages today.', 'daily', 'numeric', 20, 'pages', 0),
 
     ('21-day-meditation', 'Meditate 10 min', 'Meditate for 10 minutes.', 'daily', 'duration', 10, 'minutes', 0),
     ('gratitude-journal-30', 'Gratitude entry', 'Write your gratitude list today.', 'daily', 'binary', NULL, NULL, 0),

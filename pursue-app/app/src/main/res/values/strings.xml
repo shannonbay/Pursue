@@ -25,6 +25,7 @@
     <string name="notification_milestone_first">You logged your first progress!</string>
     <string name="notification_milestone_streak">You hit a %1$d-day streak on %2$s!</string>
     <string name="notification_milestone_total_logs">You reached 100 total logs!</string>
+    <string name="notification_milestone_challenge_completed">Challenge complete: %1$s (%2$d%% completion)!</string>
     <string name="notification_weekly_recap">📊 %1$s — Week in Review</string>
     <string name="shareable_card_title">Your Achievement</string>
     <string name="shareable_card_unavailable">This milestone card is unavailable</string>
@@ -34,6 +35,7 @@
     <string name="shareable_card_share_chooser_title">Share your achievement</string>
     <string name="shareable_card_share_text">Check out my progress on Pursue! %1$s</string>
     <string name="shareable_card_btn_share_primary">Share Your Achievement</string>
+    <string name="challenge_completion_btn_share_primary">Share Challenge Completion</string>
     <string name="shareable_card_btn_share_instagram">Share to Instagram Stories</string>
     <string name="shareable_card_btn_save">Save to Photos</string>
     <string name="shareable_card_branding_line_1">Track goals with friends on Pursue</string>
@@ -382,9 +384,13 @@
     <string name="challenge_goals_included">Goals Included</string>
     <string name="challenge_create_failed">Failed to create challenge</string>
     <string name="challenge_share_button">Share</string>
+    <string name="challenge_share_result_button">Share Result</string>
     <string name="challenge_invite_card_title">Challenge Invite</string>
+    <string name="challenge_completion_card_title">Challenge Complete</string>
     <string name="challenge_invite_button">Invite Friends</string>
+    <string name="challenge_default_name">your challenge</string>
     <string name="challenge_share_text">Join my challenge "%1$s" on Pursue: %2$s</string>
+    <string name="challenge_completion_share_text">I completed %1$s on Pursue! %2$s</string>
     <string name="challenge_share_failed">Failed to share challenge</string>
     <string name="challenge_cancel_confirmation">Cancel this challenge for all members?</string>
     <string name="challenge_cancel_success">Challenge cancelled</string>

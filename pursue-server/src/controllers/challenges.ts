@@ -568,7 +568,16 @@ export async function updateChallengeStatusesJob(
       throw new ApplicationError('Unauthorized', 401, 'UNAUTHORIZED');
     }
 
-    const result = await updateChallengeStatuses();
+    let forcedNow: Date | undefined;
+    if (process.env.NODE_ENV === 'test' && typeof req.body?.force_now === 'string') {
+      const parsed = new Date(req.body.force_now);
+      if (Number.isNaN(parsed.getTime())) {
+        throw new ApplicationError('force_now must be a valid ISO-8601 datetime', 400, 'VALIDATION_ERROR');
+      }
+      forcedNow = parsed;
+    }
+
+    const result = await updateChallengeStatuses(forcedNow ?? new Date());
     res.status(200).json({
       success: true,
       ...result,

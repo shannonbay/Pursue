@@ -121,6 +121,16 @@ class NotificationAdapter(
                             context.getString(R.string.notification_milestone_streak, count, goalTitle.ifEmpty { "your goal" })
                         }
                         "total_logs" -> context.getString(R.string.notification_milestone_total_logs)
+                        "challenge_completed" -> {
+                            val challengeName = item.metadata?.get("challenge_name") as? String
+                            val completionRate = ((item.metadata?.get("completion_rate") as? Number)?.toDouble() ?: 0.0) * 100
+                            val rounded = completionRate.toInt().coerceIn(0, 100)
+                            context.getString(
+                                R.string.notification_milestone_challenge_completed,
+                                challengeName ?: context.getString(R.string.challenge_default_name),
+                                rounded
+                            )
+                        }
                         else -> context.getString(R.string.notification_milestone_first)
                     }
                 }

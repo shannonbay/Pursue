@@ -46,6 +46,7 @@ import app.getpursue.data.auth.SecureTokenManager
 import app.getpursue.data.fcm.FcmTopicManager
 import app.getpursue.data.network.ApiClient
 import app.getpursue.data.network.ApiException
+import app.getpursue.data.network.toChallengeCompletionCardDataOrNull
 import app.getpursue.models.GroupDetailResponse
 import app.getpursue.models.GroupMember
 import app.getpursue.ui.activities.GroupDetailActivity
@@ -1115,6 +1116,17 @@ class GroupDetailFragment : Fragment() {
         challengeHeaderTitle.text = detail.name
         challengeHeaderDayProgress.text = "${progress.dayLabel} · ${progress.daysRemainingLabel}"
         challengeHeaderProgressBar.progress = progress.progressPercent
+
+        val status = effectiveChallengeStatus(detail)
+        if (status == "completed") {
+            challengeInviteButton.visibility = View.GONE
+            challengeShareButton.text = getString(R.string.challenge_share_result_button)
+            challengeShareButton.setOnClickListener { shareChallengeResult() }
+        } else {
+            challengeInviteButton.visibility = View.VISIBLE
+            challengeShareButton.text = getString(R.string.challenge_share_button)
+            challengeShareButton.setOnClickListener { shareChallenge() }
+        }
     }
 
     private fun parseChallengeDate(value: String): LocalDate {
@@ -1170,6 +1182,47 @@ class GroupDetailFragment : Fragment() {
                         putExtra(Intent.EXTRA_TEXT, shareText)
                     }
                     startActivity(Intent.createChooser(intent, getString(R.string.challenge_share_button)))
+                }
+            } catch (e: ApiException) {
+                Toast.makeText(requireContext(), e.message ?: getString(R.string.challenge_share_failed), Toast.LENGTH_SHORT).show()
+            } catch (_: Exception) {
+                Toast.makeText(requireContext(), getString(R.string.challenge_share_failed), Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    private fun shareChallengeResult() {
+        val gid = groupId ?: return
+        lifecycleScope.launch {
+            try {
+                val token = SecureTokenManager.getInstance(requireContext()).getAccessToken()
+                if (token == null) {
+                    Toast.makeText(requireContext(), getString(R.string.error_unauthorized_message), Toast.LENGTH_SHORT).show()
+                    return@launch
+                }
+                val notifications = withContext(Dispatchers.IO) { ApiClient.getNotifications(token, limit = 60) }
+                val match = notifications.notifications.firstOrNull { notif ->
+                    notif.group?.id == gid && notif.toChallengeCompletionCardDataOrNull() != null
+                }
+                if (match != null) {
+                    val cardJson = gson.toJson(match.shareable_card_data)
+                    val intent = ShareableMilestoneCardActivity.createIntent(
+                        context = requireContext(),
+                        notificationId = match.id,
+                        cardDataJson = cardJson,
+                        autoAction = null,
+                        groupId = gid
+                    )
+                    startActivity(intent)
+                } else {
+                    val detail = groupDetail
+                    val challengeName = detail?.name ?: getString(R.string.challenge_default_name)
+                    val shareText = getString(R.string.challenge_completion_share_text, challengeName, "https://getpursue.app")
+                    val intent = Intent(Intent.ACTION_SEND).apply {
+                        type = "text/plain"
+                        putExtra(Intent.EXTRA_TEXT, shareText)
+                    }
+                    startActivity(Intent.createChooser(intent, getString(R.string.challenge_share_result_button)))
                 }
             } catch (e: ApiException) {
                 Toast.makeText(requireContext(), e.message ?: getString(R.string.challenge_share_failed), Toast.LENGTH_SHORT).show()
