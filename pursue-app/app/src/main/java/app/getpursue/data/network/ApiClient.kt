@@ -780,14 +780,16 @@ object ApiClient {
         name: String,
         description: String? = null,
         iconEmoji: String? = null,
-        iconColor: String? = null
+        iconColor: String? = null,
+        iconUrl: String? = null
     ): CreateGroupResponse {
         val requestBody = gson.toJson(
             CreateGroupRequest(
                 name = name,
                 description = description,
                 icon_emoji = iconEmoji,
-                icon_color = iconColor
+                icon_color = iconColor,
+                icon_url = iconUrl
             )
         ).toRequestBody(jsonMediaType)
         
@@ -835,13 +837,15 @@ object ApiClient {
         name: String? = null,
         description: String? = null,
         iconEmoji: String? = null,
-        iconColor: String? = null
+        iconColor: String? = null,
+        iconUrl: String? = null
     ): PatchGroupResponse {
         val toSend = JsonObject()
         name?.let { toSend.addProperty("name", it) }
         description?.let { toSend.addProperty("description", it) }
         iconEmoji?.let { toSend.addProperty("icon_emoji", it) }
         iconColor?.let { toSend.addProperty("icon_color", it) }
+        iconUrl?.let { toSend.addProperty("icon_url", it) }
         val requestBody = toSend.toString().toRequestBody(jsonMediaType)
 
         val request = Request.Builder()
@@ -2277,7 +2281,8 @@ data class CreateGroupRequest(
     val name: String,
     val description: String? = null,
     val icon_emoji: String? = null,
-    val icon_color: String? = null
+    val icon_color: String? = null,
+    val icon_url: String? = null
 )
 
 /**
@@ -2304,6 +2309,7 @@ data class PatchGroupResponse(
     val description: String?,
     val icon_emoji: String?,
     val icon_color: String?,
+    val icon_url: String? = null,
     val has_icon: Boolean,
     val updated_at: String
 )
@@ -2374,6 +2380,7 @@ data class ChallengeTemplate(
     val title: String,
     val description: String,
     val icon_emoji: String,
+    val icon_url: String? = null,
     val duration_days: Int,
     val category: String,
     val difficulty: String,

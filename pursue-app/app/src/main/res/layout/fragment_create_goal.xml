@@ -68,52 +68,6 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/back_button">
 
-            <!-- Icon Section -->
-            <TextView
-                android:id="@+id/icon_label"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:fontFamily="sans-serif-medium"
-                android:text="@string/goal_icon_label"
-                android:textColor="@color/on_surface_variant"
-                android:textSize="12sp" />
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:gravity="center_vertical"
-                android:orientation="horizontal">
-
-                <FrameLayout
-                    android:id="@+id/icon_container"
-                    android:layout_width="64dp"
-                    android:layout_height="64dp"
-                    android:background="@drawable/circle_background"
-                    android:backgroundTint="@color/primary"
-                    android:contentDescription="@string/goal_icon_label">
-
-                    <TextView
-                        android:id="@+id/icon_preview"
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:gravity="center"
-                        android:text="@string/default_goal_icon"
-                        android:textSize="32sp"
-                        tools:text="🎯" />
-                </FrameLayout>
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/button_choose_icon"
-                    style="@style/Widget.MaterialComponents.Button.TextButton"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="16dp"
-                    android:contentDescription="@string/choose_icon"
-                    android:text="@string/choose_icon"
-                    android:textColor="@color/primary" />
-            </LinearLayout>
-
             <!-- Goal Title -->
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/input_goal_title"

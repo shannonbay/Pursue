@@ -124,6 +124,7 @@ export async function getChallengeTemplates(
         title: template.title,
         description: template.description,
         icon_emoji: template.icon_emoji,
+        icon_url: template.icon_url ?? null,
         duration_days: template.duration_days,
         category: template.category,
         difficulty: template.difficulty,
@@ -190,6 +191,7 @@ export async function createChallenge(
       slug: string;
       title: string;
       icon_emoji: string;
+      icon_url: string | null;
       duration_days: number;
     } | null = null;
     let goalsToCreate: Array<{
@@ -206,7 +208,7 @@ export async function createChallenge(
     if (fromTemplate) {
       template = await db
         .selectFrom('challenge_templates')
-        .select(['id', 'slug', 'title', 'icon_emoji', 'duration_days'])
+        .select(['id', 'slug', 'title', 'icon_emoji', 'icon_url', 'duration_days'])
         .where('id', '=', data.template_id!)
         .executeTakeFirst() ?? null;
       if (!template) {
@@ -254,6 +256,7 @@ export async function createChallenge(
     const status = data.start_date <= today ? 'active' : 'upcoming';
     const groupName = data.group_name ?? template?.title ?? 'Challenge';
     const iconEmoji = data.icon_emoji ?? template?.icon_emoji ?? null;
+    const iconUrl = data.icon_url ?? template?.icon_url ?? null;
 
     const created = await db.transaction().execute(async (trx) => {
       let inviteCode = '';
@@ -284,6 +287,7 @@ export async function createChallenge(
           description: data.group_description ?? null,
           icon_emoji: iconEmoji,
           icon_color: null,
+          icon_url: iconUrl,
           creator_user_id: req.user!.id,
           is_challenge: true,
           challenge_start_date: data.start_date,
@@ -433,6 +437,7 @@ export async function listChallenges(
         'groups.id',
         'groups.name',
         'groups.icon_emoji',
+        'groups.icon_url',
         'groups.challenge_start_date',
         'groups.challenge_end_date',
         'groups.challenge_status',
@@ -475,6 +480,7 @@ export async function listChallenges(
         id: row.id,
         name: row.name,
         icon_emoji: row.icon_emoji,
+        icon_url: row.icon_url ?? null,
         challenge_start_date: startDate,
         challenge_end_date: endDate,
         challenge_status: row.challenge_status,

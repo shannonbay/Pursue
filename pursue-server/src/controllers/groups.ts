@@ -152,6 +152,7 @@ export async function createGroup(
           description: data.description ?? null,
           icon_emoji: data.icon_emoji ?? null,
           icon_color: data.icon_color ?? null,
+          icon_url: data.icon_url ?? null,
           creator_user_id: userId,
         })
         .returning([
@@ -160,6 +161,7 @@ export async function createGroup(
           'description',
           'icon_emoji',
           'icon_color',
+          'icon_url',
           'is_challenge',
           'challenge_start_date',
           'challenge_end_date',
@@ -255,6 +257,7 @@ export async function createGroup(
       description: result.group.description,
       icon_emoji: result.group.icon_emoji,
       icon_color: result.group.icon_color,
+      icon_url: result.group.icon_url ?? null,
       is_challenge: result.group.is_challenge,
       challenge_start_date: result.group.challenge_start_date,
       challenge_end_date: result.group.challenge_end_date,
@@ -302,6 +305,7 @@ export async function getGroup(
         'groups.description',
         'groups.icon_emoji',
         'groups.icon_color',
+        'groups.icon_url',
         'groups.is_challenge',
         'groups.challenge_start_date',
         'groups.challenge_end_date',
@@ -325,6 +329,7 @@ export async function getGroup(
       description: result.description,
       icon_emoji: result.icon_emoji,
       icon_color: result.icon_color,
+      icon_url: result.icon_url ?? null,
       is_challenge: result.is_challenge,
       challenge_start_date: result.challenge_start_date,
       challenge_end_date: result.challenge_end_date,
@@ -375,6 +380,7 @@ export async function updateGroup(
     if (data.description !== undefined) updates.description = data.description ?? null;
     if (data.icon_emoji !== undefined) updates.icon_emoji = data.icon_emoji ?? null;
     if (data.icon_color !== undefined) updates.icon_color = data.icon_color ?? null;
+    if (data.icon_url !== undefined) updates.icon_url = data.icon_url ?? null;
 
     if (Object.keys(updates).length === 0) {
       // No updates, return current group
@@ -386,6 +392,7 @@ export async function updateGroup(
           'description',
           'icon_emoji',
           'icon_color',
+          'icon_url',
           'updated_at',
           sql<boolean>`icon_data IS NOT NULL`.as('has_icon'),
         ])
@@ -397,6 +404,7 @@ export async function updateGroup(
         description: group.description,
         icon_emoji: group.icon_emoji,
         icon_color: group.icon_color,
+        icon_url: group.icon_url ?? null,
         has_icon: Boolean(group.has_icon),
         updated_at: group.updated_at,
       });
@@ -424,6 +432,7 @@ export async function updateGroup(
         'description',
         'icon_emoji',
         'icon_color',
+        'icon_url',
         'updated_at',
       ])
       .executeTakeFirstOrThrow();
@@ -449,6 +458,7 @@ export async function updateGroup(
       description: group.description,
       icon_emoji: group.icon_emoji,
       icon_color: group.icon_color,
+      icon_url: group.icon_url ?? null,
       has_icon: Boolean(hasIconResult.has_icon),
       updated_at: group.updated_at,
     });
@@ -485,6 +495,7 @@ export const uploadIcon = [
           'id',
           'icon_emoji',
           'icon_color',
+          'icon_url',
           'updated_at',
           sql<boolean>`icon_data IS NOT NULL`.as('has_icon'),
         ])
@@ -496,6 +507,7 @@ export const uploadIcon = [
         has_icon: Boolean(group.has_icon),
         icon_emoji: group.icon_emoji,
         icon_color: group.icon_color,
+        icon_url: group.icon_url ?? null,
         updated_at: group.updated_at,
       });
     } catch (error) {
@@ -571,6 +583,7 @@ export async function deleteIcon(
           'id',
           'icon_emoji',
           'icon_color',
+          'icon_url',
           'updated_at',
           sql<boolean>`icon_data IS NOT NULL`.as('has_icon'),
         ])
@@ -582,6 +595,7 @@ export async function deleteIcon(
         has_icon: Boolean(group.has_icon),
         icon_emoji: group.icon_emoji,
         icon_color: group.icon_color,
+        icon_url: group.icon_url ?? null,
         updated_at: group.updated_at,
       });
   } catch (error) {

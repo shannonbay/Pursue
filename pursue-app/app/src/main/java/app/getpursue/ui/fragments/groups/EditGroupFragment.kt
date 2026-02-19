@@ -22,6 +22,7 @@ import app.getpursue.data.network.ApiClient
 import app.getpursue.data.network.ApiException
 import app.getpursue.ui.activities.GroupDetailActivity
 import app.getpursue.ui.views.IconPickerBottomSheet
+import app.getpursue.utils.IconUrlUtils
 import app.getpursue.R
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -43,6 +44,7 @@ class EditGroupFragment : Fragment() {
         private const val ARG_DESCRIPTION = "description"
         private const val ARG_ICON_EMOJI = "icon_emoji"
         private const val ARG_ICON_COLOR = "icon_color"
+        private const val ARG_ICON_URL = "icon_url"
         private const val ARG_HAS_ICON = "has_icon"
         private const val ARG_IS_CREATOR = "is_creator"
 
@@ -52,6 +54,7 @@ class EditGroupFragment : Fragment() {
             description: String?,
             iconEmoji: String?,
             iconColor: String?,
+            iconUrl: String?,
             hasIcon: Boolean,
             isCreator: Boolean
         ): EditGroupFragment {
@@ -62,6 +65,7 @@ class EditGroupFragment : Fragment() {
                     putString(ARG_DESCRIPTION, description ?: "")
                     putString(ARG_ICON_EMOJI, iconEmoji ?: "")
                     putString(ARG_ICON_COLOR, iconColor ?: "")
+                    putString(ARG_ICON_URL, iconUrl ?: "")
                     putBoolean(ARG_HAS_ICON, hasIcon)
                     putBoolean(ARG_IS_CREATOR, isCreator)
                 }
@@ -70,6 +74,7 @@ class EditGroupFragment : Fragment() {
     }
 
     private lateinit var iconPreview: TextView
+    private lateinit var iconImage: android.widget.ImageView
     private lateinit var iconContainer: FrameLayout
     private lateinit var chooseIconButton: MaterialButton
     private lateinit var groupNameInput: TextInputLayout
@@ -83,6 +88,7 @@ class EditGroupFragment : Fragment() {
 
     private var selectedEmoji: String? = null
     private var selectedColor: String = IconPickerBottomSheet.Companion.getRandomDefaultColor()
+    private var selectedIconUrl: String? = null
 
     private fun groupId(): String = requireArguments().getString(ARG_GROUP_ID)!!
     private fun initialName(): String = requireArguments().getString(ARG_NAME) ?: ""
@@ -91,6 +97,8 @@ class EditGroupFragment : Fragment() {
         requireArguments().getString(ARG_ICON_EMOJI)?.takeIf { it.isNotEmpty() }
     private fun initialIconColor(): String? =
         requireArguments().getString(ARG_ICON_COLOR)?.takeIf { it.isNotEmpty() }
+    private fun initialIconUrl(): String? =
+        requireArguments().getString(ARG_ICON_URL)?.takeIf { it.isNotEmpty() }
     private fun isCreator(): Boolean = requireArguments().getBoolean(ARG_IS_CREATOR)
 
     override fun onCreateView(
@@ -105,6 +113,7 @@ class EditGroupFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         iconPreview = view.findViewById(R.id.icon_preview)
+        iconImage = view.findViewById(R.id.icon_image)
         iconContainer = view.findViewById(R.id.icon_container)
         chooseIconButton = view.findViewById(R.id.button_choose_icon)
         groupNameInput = view.findViewById(R.id.input_group_name)
@@ -118,6 +127,7 @@ class EditGroupFragment : Fragment() {
 
         selectedEmoji = initialIconEmoji()
         selectedColor = initialIconColor() ?: IconPickerBottomSheet.Companion.getRandomDefaultColor()
+        selectedIconUrl = initialIconUrl()
         groupNameEdit.setText(initialName())
         descriptionEdit.setText(initialDescription())
 
@@ -157,11 +167,19 @@ class EditGroupFragment : Fragment() {
     }
 
     private fun updateIconPreview() {
-        if (selectedEmoji != null) {
-            iconPreview.text = selectedEmoji
+        if (selectedIconUrl != null) {
+            iconImage.visibility = View.VISIBLE
+            iconPreview.visibility = View.GONE
+            IconUrlUtils.loadInto(requireContext(), selectedIconUrl!!, iconImage)
         } else {
-            val name = groupNameEdit.text?.toString()?.take(1)?.uppercase() ?: "?"
-            iconPreview.text = name
+            iconImage.visibility = View.GONE
+            iconPreview.visibility = View.VISIBLE
+            if (selectedEmoji != null) {
+                iconPreview.text = selectedEmoji
+            } else {
+                val name = groupNameEdit.text?.toString()?.take(1)?.uppercase() ?: "?"
+                iconPreview.text = name
+            }
         }
         try {
             iconContainer.backgroundTintList = ColorStateList.valueOf(Color.parseColor(selectedColor))
@@ -175,8 +193,14 @@ class EditGroupFragment : Fragment() {
             initialColor = selectedColor
         )
         sheet.setIconSelectionListener(object : IconPickerBottomSheet.IconSelectionListener {
-            override fun onIconSelected(emoji: String?, color: String?) {
-                if (emoji != null) selectedEmoji = emoji
+            override fun onIconSelected(emoji: String?, color: String?, iconUrl: String?) {
+                if (emoji != null) {
+                    selectedEmoji = emoji
+                    selectedIconUrl = null
+                } else if (iconUrl != null) {
+                    selectedIconUrl = iconUrl
+                    selectedEmoji = null
+                }
                 if (color != null) selectedColor = color
                 updateIconPreview()
             }
@@ -229,6 +253,7 @@ class EditGroupFragment : Fragment() {
         val description = descriptionEdit.text?.toString()?.trim()?.takeIf { it.isNotEmpty() }
         val iconEmoji = selectedEmoji
         val iconColor = if (selectedEmoji != null) selectedColor else null
+        val iconUrl = selectedIconUrl
 
         showLoading(true)
         viewLifecycleOwner.lifecycleScope.launch {
@@ -248,7 +273,8 @@ class EditGroupFragment : Fragment() {
                         name = name,
                         description = description,
                         iconEmoji = iconEmoji,
-                        iconColor = iconColor
+                        iconColor = iconColor,
+                        iconUrl = iconUrl
                     )
                 }
                 if (!isAdded) return@launch

@@ -134,7 +134,7 @@ class IconPickerBottomSheetTest {
 
         launchBottomSheet()
         bottomSheet.setIconSelectionListener(object : IconPickerBottomSheet.IconSelectionListener {
-            override fun onIconSelected(emoji: String?, color: String?) {
+            override fun onIconSelected(emoji: String?, color: String?, iconUrl: String?) {
                 listenerCalled = true
                 selectedEmoji = emoji
                 selectedColor = color
@@ -416,7 +416,7 @@ class IconPickerBottomSheetTest {
 
         launchBottomSheet()
         bottomSheet.setIconSelectionListener(object : IconPickerBottomSheet.IconSelectionListener {
-            override fun onIconSelected(emoji: String?, color: String?) {
+            override fun onIconSelected(emoji: String?, color: String?, iconUrl: String?) {
                 listenerCalled = true
                 receivedEmoji = emoji
                 receivedColor = color

@@ -484,7 +484,8 @@ class GroupDetailFragment : Fragment() {
                         hasIcon = response.has_icon,
                         iconEmoji = response.icon_emoji,
                         iconColor = response.icon_color,
-                        groupNameText = response.name
+                        groupNameText = response.name,
+                        iconUrl = response.icon_url
                     )
                     setupIconTapForAdmin(response)
 
@@ -550,6 +551,7 @@ class GroupDetailFragment : Fragment() {
                                 description = detail.description,
                                 iconEmoji = detail.icon_emoji,
                                 iconColor = detail.icon_color,
+                                iconUrl = detail.icon_url,
                                 hasIcon = detail.has_icon,
                                 isCreator = detail.user_role == "creator"
                             )
@@ -975,7 +977,7 @@ class GroupDetailFragment : Fragment() {
             initialColor = detail.icon_color ?: IconPickerBottomSheet.Companion.getRandomDefaultColor()
         )
         sheet.setIconSelectionListener(object : IconPickerBottomSheet.IconSelectionListener {
-            override fun onIconSelected(emoji: String?, color: String?) {
+            override fun onIconSelected(emoji: String?, color: String?, iconUrl: String?) {
                 viewLifecycleOwner.lifecycleScope.launch {
                     try {
                         if (!isAdded) return@launch
@@ -990,7 +992,8 @@ class GroupDetailFragment : Fragment() {
                                 accessToken = token,
                                 groupId = gid,
                                 iconEmoji = emoji,
-                                iconColor = if (emoji != null) color else null
+                                iconColor = if (emoji != null) color else null,
+                                iconUrl = iconUrl
                             )
                         }
                         if (!isAdded) return@launch
@@ -1004,7 +1007,8 @@ class GroupDetailFragment : Fragment() {
                             hasIcon = d.has_icon,
                             iconEmoji = d.icon_emoji,
                             iconColor = d.icon_color,
-                            groupNameText = d.name
+                            groupNameText = d.name,
+                            iconUrl = d.icon_url
                         )
                     } catch (e: ApiException) {
                         if (!isAdded) return@launch
@@ -1308,9 +1312,21 @@ class GroupDetailFragment : Fragment() {
         hasIcon: Boolean,
         iconEmoji: String?,
         iconColor: String?,
-        groupNameText: String
+        groupNameText: String,
+        iconUrl: String? = null
     ) {
         val fallbackColor = ContextCompat.getColor(requireContext(), R.color.primary)
+        // Priority 1: icon_url (bundled res:// or remote https://)
+        if (iconUrl != null) {
+            val loaded = app.getpursue.utils.IconUrlUtils.loadInto(requireContext(), iconUrl, groupIconImage)
+            if (loaded) {
+                groupIconImage.visibility = View.VISIBLE
+                groupIconEmoji.visibility = View.GONE
+                groupIconLetter.visibility = View.GONE
+                return
+            }
+        }
+        // Priority 2: BYTEA icon from server
         if (hasIcon && groupId != null) {
             groupIconImage.visibility = View.VISIBLE
             groupIconEmoji.visibility = View.GONE

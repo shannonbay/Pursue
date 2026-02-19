@@ -277,7 +277,9 @@
     <!-- Icon Picker -->
     <string name="icon_picker_title">Choose Group Icon</string>
     <string name="icon_picker_title_goal">Choose Goal Icon</string>
+    <string name="icons_tab">Icons</string>
     <string name="emoji_tab">Emoji</string>
+    <string name="icon_content_description">Icon</string>
     <string name="upload_tab">Upload</string>
     <string name="color_tab">Color</string>
     <string name="search_emoji">Search emoji…</string>

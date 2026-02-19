@@ -7,6 +7,7 @@ import android.text.TextWatcher
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageView
 import android.widget.TextView
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.GridLayoutManager
@@ -17,23 +18,25 @@ import com.google.android.material.tabs.TabLayout
 import com.google.android.material.tabs.TabLayoutMediator
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import app.getpursue.R
+import app.getpursue.utils.IconUrlUtils
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.textfield.TextInputEditText
 
 /**
- * Bottom sheet for selecting group icon (emoji, color, or upload).
- * 
+ * Bottom sheet for selecting group icon (icons, emoji, color, or upload).
+ *
  * Implements the icon picker UI from section 4.8 of the UI spec.
  */
 class IconPickerBottomSheet : BottomSheetDialogFragment() {
 
     interface IconSelectionListener {
-        fun onIconSelected(emoji: String?, color: String?)
+        fun onIconSelected(emoji: String?, color: String?, iconUrl: String? = null)
     }
 
     private var listener: IconSelectionListener? = null
     private var selectedEmoji: String? = null
     private var selectedColor: String = getRandomDefaultColor()
+    private var selectedIconUrl: String? = null
 
     fun setIconSelectionListener(listener: IconSelectionListener) {
         this.listener = listener
@@ -71,9 +74,10 @@ class IconPickerBottomSheet : BottomSheetDialogFragment() {
 
         TabLayoutMediator(tabLayout, viewPager) { tab, position ->
             tab.text = when (position) {
-                0 -> getString(R.string.emoji_tab)
-                1 -> getString(R.string.upload_tab)
-                2 -> getString(R.string.color_tab)
+                0 -> getString(R.string.icons_tab)
+                1 -> getString(R.string.emoji_tab)
+                2 -> getString(R.string.upload_tab)
+                3 -> getString(R.string.color_tab)
                 else -> ""
             }
         }.attach()
@@ -85,6 +89,7 @@ class IconPickerBottomSheet : BottomSheetDialogFragment() {
 
     fun getSelectedEmoji(): String? = selectedEmoji
     fun getSelectedColor(): String = selectedColor
+    fun getSelectedIconUrl(): String? = selectedIconUrl
 
     fun setSelectedEmoji(emoji: String?) {
         selectedEmoji = emoji
@@ -94,8 +99,12 @@ class IconPickerBottomSheet : BottomSheetDialogFragment() {
         selectedColor = color
     }
 
+    fun setSelectedIconUrl(iconUrl: String?) {
+        selectedIconUrl = iconUrl
+    }
+
     fun notifyIconSelected() {
-        listener?.onIconSelected(selectedEmoji, selectedColor)
+        listener?.onIconSelected(selectedEmoji, selectedColor, selectedIconUrl)
         dismiss()
     }
 
@@ -103,15 +112,62 @@ class IconPickerBottomSheet : BottomSheetDialogFragment() {
      * ViewPager adapter for icon picker tabs.
      */
     private class IconPickerPagerAdapter(fragment: Fragment) : FragmentStateAdapter(fragment) {
-        override fun getItemCount(): Int = 3
+        override fun getItemCount(): Int = 4
 
         override fun createFragment(position: Int): Fragment {
             return when (position) {
-                0 -> EmojiPickerFragment()
-                1 -> UploadPickerFragment()
-                2 -> ColorPickerFragment()
+                0 -> IconsGridFragment()
+                1 -> EmojiPickerFragment()
+                2 -> UploadPickerFragment()
+                3 -> ColorPickerFragment()
                 else -> throw IllegalArgumentException("Invalid position: $position")
             }
+        }
+    }
+
+    /**
+     * Bundled icons grid fragment.
+     */
+    class IconsGridFragment : Fragment() {
+
+        data class IconItem(val drawableName: String, val label: String, val category: String)
+
+        private val icons = listOf(
+            // Fitness & Health
+            IconItem("ic_icon_runningman", "Running", "Fitness"),
+            IconItem("ic_icon_book", "Book", "Reading"),
+            IconItem("ic_icon_salad", "Salad", "Health"),
+            IconItem("ic_icon_frypan", "Frypan", "Diet"),
+            IconItem("ic_icon_fitness", "Fitness", "Fitness"),
+            IconItem("ic_icon_meditation", "Meditation", "Health"),
+            // Learning & Productivity
+            IconItem("ic_icon_reading", "Reading", "Learning"),
+            IconItem("ic_icon_coding", "Coding", "Learning"),
+            // General
+            IconItem("ic_icon_star", "Star", "General")
+        )
+
+        override fun onCreateView(
+            inflater: LayoutInflater,
+            container: ViewGroup?,
+            savedInstanceState: Bundle?
+        ): View {
+            return inflater.inflate(R.layout.fragment_icon_picker_icons, container, false)
+        }
+
+        override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+            super.onViewCreated(view, savedInstanceState)
+
+            val iconsGrid = view.findViewById<RecyclerView>(R.id.icons_grid)
+            val adapter = IconGridAdapter(requireContext(), icons) { iconItem ->
+                val bottomSheet = parentFragment as? IconPickerBottomSheet
+                bottomSheet?.setSelectedIconUrl("res://drawable/${iconItem.drawableName}")
+                bottomSheet?.setSelectedEmoji(null)
+                bottomSheet?.notifyIconSelected()
+            }
+
+            iconsGrid.layoutManager = GridLayoutManager(requireContext(), 4)
+            iconsGrid.adapter = adapter
         }
     }
 
@@ -145,6 +201,7 @@ class IconPickerBottomSheet : BottomSheetDialogFragment() {
             val adapter = EmojiAdapter(emojis) { emoji ->
                 val bottomSheet = parentFragment as? IconPickerBottomSheet
                 bottomSheet?.setSelectedEmoji(emoji)
+                bottomSheet?.setSelectedIconUrl(null)
                 // If no color selected yet, use random default
                 if (bottomSheet?.getSelectedColor() == null) {
                     bottomSheet?.setSelectedColor(getRandomDefaultColor())
@@ -225,6 +282,7 @@ class IconPickerBottomSheet : BottomSheetDialogFragment() {
             val adapter = ColorAdapter(colors) { color ->
                 bottomSheet?.setSelectedColor(color)
                 previewContainer.setBackgroundColor(Color.parseColor(color))
+                bottomSheet?.setSelectedIconUrl(null)
                 // Notify parent of color change and dismiss bottom sheet
                 bottomSheet?.notifyIconSelected()
             }
@@ -265,6 +323,41 @@ class IconPickerBottomSheet : BottomSheetDialogFragment() {
             emojis = newEmojis
             notifyDataSetChanged()
         }
+    }
+
+    /**
+     * Icon grid adapter for bundled icon drawables.
+     */
+    private class IconGridAdapter(
+        private val context: android.content.Context,
+        private val icons: List<IconsGridFragment.IconItem>,
+        private val onIconClick: (IconsGridFragment.IconItem) -> Unit
+    ) : RecyclerView.Adapter<IconGridAdapter.IconViewHolder>() {
+
+        class IconViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+            val iconImage: ImageView = itemView.findViewById(R.id.icon_image)
+            val iconLabel: TextView = itemView.findViewById(R.id.icon_label)
+        }
+
+        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): IconViewHolder {
+            val view = LayoutInflater.from(parent.context)
+                .inflate(R.layout.item_icon_picker_icon, parent, false)
+            return IconViewHolder(view)
+        }
+
+        override fun onBindViewHolder(holder: IconViewHolder, position: Int) {
+            val item = icons[position]
+            val resId = IconUrlUtils.resolveDrawableResId(context, "res://drawable/${item.drawableName}")
+            if (resId != 0) {
+                holder.iconImage.setImageResource(resId)
+            }
+            holder.iconLabel.text = item.label
+            holder.itemView.setOnClickListener {
+                onIconClick(item)
+            }
+        }
+
+        override fun getItemCount(): Int = icons.size
     }
 
     /**
@@ -310,14 +403,14 @@ class IconPickerBottomSheet : BottomSheetDialogFragment() {
             "#C2185B", // Pink
             "#00796B"  // Teal
         )
-        
+
         /**
          * Returns a randomly selected color from the available icon background colors.
          */
         fun getRandomDefaultColor(): String {
             return AVAILABLE_COLORS.random()
         }
-        
+
         fun newInstance(
             titleRes: Int = R.string.icon_picker_title,
             initialEmoji: String? = null,

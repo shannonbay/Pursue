@@ -41,6 +41,7 @@ export const CreateChallengeSchema = z
     group_name: z.string().min(1).max(100).optional(),
     group_description: z.string().max(500).optional(),
     icon_emoji: z.string().max(10).optional(),
+    icon_url: z.string().max(500).optional(),
     goals: z.array(ChallengeGoalSchema).max(10).optional(),
   })
   .strict();

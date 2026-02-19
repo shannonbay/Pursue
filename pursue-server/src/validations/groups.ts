@@ -27,6 +27,7 @@ export const CreateGroupSchema = z
     description: z.string().max(500).optional(),
     icon_emoji: optionalEmoji,
     icon_color: hexColor.optional(),
+    icon_url: z.string().max(500).optional(),
     initial_goals: z.array(InitialGoalSchema).optional()
   })
   .strict();
@@ -36,7 +37,8 @@ export const UpdateGroupSchema = z
     name: z.string().min(1).max(100).optional(),
     description: z.string().max(500).optional(),
     icon_emoji: optionalEmoji,
-    icon_color: hexColor.optional()
+    icon_color: hexColor.optional(),
+    icon_url: z.string().max(500).nullable().optional()
   })
   .strict();
 

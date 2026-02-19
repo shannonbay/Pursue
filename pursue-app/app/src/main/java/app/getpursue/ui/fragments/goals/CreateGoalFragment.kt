@@ -15,6 +15,7 @@ import android.widget.ArrayAdapter
 import android.widget.AutoCompleteTextView
 import android.widget.FrameLayout
 import android.widget.ImageButton
+import android.widget.ImageView
 import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
@@ -28,6 +29,7 @@ import app.getpursue.data.network.ApiException
 import app.getpursue.ui.activities.GroupDetailActivity
 import app.getpursue.ui.activities.MainAppActivity
 import app.getpursue.ui.views.IconPickerBottomSheet
+import app.getpursue.utils.IconUrlUtils
 import app.getpursue.R
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.button.MaterialButtonToggleGroup
@@ -64,8 +66,6 @@ class CreateGoalFragment : Fragment() {
 
     // State variables
     private var groupId: String? = null
-    private var selectedEmoji: String = "\uD83C\uDFAF" // Default: 🎯
-    private var selectedColor: String = IconPickerBottomSheet.Companion.getRandomDefaultColor()
     private var selectedCadence: String = "weekly"
     private var selectedMetricType: String = "binary"
     private var selectedUnit: String? = null
@@ -76,9 +76,6 @@ class CreateGoalFragment : Fragment() {
     private lateinit var backButton: ImageButton
     private lateinit var saveButton: ImageButton
     private lateinit var saveButtonBottom: MaterialButton
-    private lateinit var iconContainer: FrameLayout
-    private lateinit var iconPreview: TextView
-    private lateinit var chooseIconButton: MaterialButton
     private lateinit var goalTitleInput: TextInputLayout
     private lateinit var goalTitleEdit: TextInputEditText
     private lateinit var cadenceToggleGroup: MaterialButtonToggleGroup
@@ -116,7 +113,6 @@ class CreateGoalFragment : Fragment() {
 
         initViews(view)
         setupHeader()
-        setupIconPicker()
         setupTitleInput()
         setupCadenceToggle()
         setupMetricTypeToggle()
@@ -134,9 +130,6 @@ class CreateGoalFragment : Fragment() {
         backButton = view.findViewById(R.id.back_button)
         saveButton = view.findViewById(R.id.save_button)
         saveButtonBottom = view.findViewById(R.id.button_save_bottom)
-        iconContainer = view.findViewById(R.id.icon_container)
-        iconPreview = view.findViewById(R.id.icon_preview)
-        chooseIconButton = view.findViewById(R.id.button_choose_icon)
         goalTitleInput = view.findViewById(R.id.input_goal_title)
         goalTitleEdit = view.findViewById(R.id.edit_goal_title)
         cadenceToggleGroup = view.findViewById(R.id.cadence_toggle_group)
@@ -162,49 +155,6 @@ class CreateGoalFragment : Fragment() {
 
         saveButtonBottom.setOnClickListener {
             createGoal()
-        }
-    }
-
-    private fun setupIconPicker() {
-        updateIconPreview()
-
-        chooseIconButton.setOnClickListener {
-            hideKeyboard()
-            showIconPicker()
-        }
-
-        iconContainer.setOnClickListener {
-            hideKeyboard()
-            showIconPicker()
-        }
-    }
-
-    private fun showIconPicker() {
-        val bottomSheet = IconPickerBottomSheet.Companion.newInstance(R.string.icon_picker_title_goal)
-        bottomSheet.setIconSelectionListener(object : IconPickerBottomSheet.IconSelectionListener {
-            override fun onIconSelected(emoji: String?, color: String?) {
-                if (emoji != null) {
-                    selectedEmoji = emoji
-                    hasUnsavedChanges = true
-                }
-                if (color != null) {
-                    selectedColor = color
-                    hasUnsavedChanges = true
-                }
-                updateIconPreview()
-            }
-        })
-        bottomSheet.show(childFragmentManager, "IconPickerBottomSheet")
-    }
-
-    private fun updateIconPreview() {
-        iconPreview.text = selectedEmoji
-        try {
-            iconContainer.backgroundTintList = ColorStateList.valueOf(
-                Color.parseColor(selectedColor)
-            )
-        } catch (e: IllegalArgumentException) {
-            // Keep default color if parsing fails
         }
     }
 
@@ -558,7 +508,6 @@ class CreateGoalFragment : Fragment() {
             saveButtonBottom.isEnabled = !show
             backButton.isEnabled = !show
             goalTitleEdit.isEnabled = !show
-            chooseIconButton.isEnabled = !show
             targetValueEdit.isEnabled = !show
             unitDropdown.isEnabled = !show
             startDateEdit.isEnabled = !show

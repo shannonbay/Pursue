@@ -3,11 +3,13 @@ package app.getpursue.ui.adapters
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import app.getpursue.R
 import app.getpursue.data.network.ChallengeTemplate
 import app.getpursue.utils.EmojiUtils
+import app.getpursue.utils.IconUrlUtils
 import com.google.android.material.button.MaterialButton
 
 sealed class ChallengeTemplateListItem {
@@ -74,13 +76,26 @@ class ChallengeTemplateAdapter(
 
     class TemplateViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         private val emoji: TextView = itemView.findViewById(R.id.template_emoji)
+        private val iconImage: ImageView = itemView.findViewById(R.id.template_icon_image)
         private val title: TextView = itemView.findViewById(R.id.template_title)
         private val description: TextView = itemView.findViewById(R.id.template_description)
         private val durationDifficulty: TextView = itemView.findViewById(R.id.template_duration_difficulty)
         private val startButton: MaterialButton = itemView.findViewById(R.id.template_start_button)
 
         fun bind(template: ChallengeTemplate, onStartClick: (ChallengeTemplate) -> Unit) {
-            emoji.text = EmojiUtils.normalizeOrFallback(template.icon_emoji, "🏆")
+            // Priority 1: icon_url (bundled or remote)
+            if (template.icon_url != null) {
+                val loaded = IconUrlUtils.loadInto(itemView.context, template.icon_url, iconImage)
+                if (loaded) {
+                    iconImage.visibility = View.VISIBLE
+                    emoji.visibility = View.GONE
+                } else {
+                    showEmojiFallback(template.icon_emoji)
+                }
+            } else {
+                showEmojiFallback(template.icon_emoji)
+            }
+
             title.text = template.title
             description.text = template.description
             durationDifficulty.text = itemView.context.getString(
@@ -89,6 +104,12 @@ class ChallengeTemplateAdapter(
                 template.difficulty.replaceFirstChar { it.uppercase() }
             )
             startButton.setOnClickListener { onStartClick(template) }
+        }
+
+        private fun showEmojiFallback(iconEmoji: String?) {
+            iconImage.visibility = View.GONE
+            emoji.visibility = View.VISIBLE
+            emoji.text = EmojiUtils.normalizeOrFallback(iconEmoji, "🏆")
         }
     }
 

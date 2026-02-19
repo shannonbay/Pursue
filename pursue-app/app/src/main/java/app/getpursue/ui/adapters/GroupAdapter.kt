@@ -19,6 +19,7 @@ import app.getpursue.models.Group
 import app.getpursue.utils.EmojiUtils
 import app.getpursue.utils.GrayscaleTransformation
 import app.getpursue.utils.HeatUtils
+import app.getpursue.utils.IconUrlUtils
 import app.getpursue.utils.RelativeTimeUtils
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.engine.DiskCacheStrategy
@@ -65,8 +66,14 @@ class GroupAdapter(
         private var heatAnimationCallback: Animatable2.AnimationCallback? = null
 
         fun bind(group: Group, onGroupClick: (Group) -> Unit) {
-            // Handle group icon display
-            if (group.has_icon) {
+            // Handle group icon display — priority: icon_url > has_icon (BYTEA) > emoji
+            val iconUrlLoaded = if (group.icon_url != null) {
+                groupIconImage.visibility = View.VISIBLE
+                groupIconEmoji.visibility = View.GONE
+                IconUrlUtils.loadInto(itemView.context, group.icon_url, groupIconImage)
+            } else false
+
+            if (!iconUrlLoaded && group.has_icon) {
                 // Show image, hide emoji
                 groupIconImage.visibility = View.VISIBLE
                 groupIconEmoji.visibility = View.GONE
@@ -91,7 +98,7 @@ class GroupAdapter(
                     groupIconImage.colorFilter = null
                 }
                 requestBuilder.into(groupIconImage)
-            } else {
+            } else if (!iconUrlLoaded) {
                 // Show emoji, hide image (circle background tinted by icon_color)
                 groupIconImage.visibility = View.GONE
                 groupIconEmoji.visibility = View.VISIBLE

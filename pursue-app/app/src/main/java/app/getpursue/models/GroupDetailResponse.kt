@@ -9,6 +9,7 @@ data class GroupDetailResponse(
     val description: String?,
     val icon_emoji: String?,
     val icon_color: String?,
+    val icon_url: String? = null,
     val has_icon: Boolean,
     val creator_user_id: String,
     val member_count: Int,

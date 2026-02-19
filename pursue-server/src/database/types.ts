@@ -82,6 +82,7 @@ export interface GroupsTable {
   description: string | null;
   icon_emoji: string | null;
   icon_color: string | null;
+  icon_url: string | null;
   icon_data: Buffer | null;
   icon_mime_type: string | null;
   creator_user_id: string;
@@ -107,6 +108,7 @@ export interface ChallengeTemplatesTable {
   title: string;
   description: string;
   icon_emoji: string;
+  icon_url: string | null;
   duration_days: number;
   category: string;
   difficulty: ColumnType<'easy' | 'moderate' | 'hard', string | undefined, string>;

@@ -14,6 +14,7 @@ data class Group(
     val description: String?,
     val icon_emoji: String?,
     val icon_color: String? = null, // hex color for emoji background (e.g. "#1976D2")
+    val icon_url: String? = null, // bundled icon URI (res://drawable/...) or remote URL (https://...)
     val has_icon: Boolean, // true if group has an icon image (BYTEA), false otherwise
     val member_count: Int,
     val role: String, // "creator", "admin", or "member"
