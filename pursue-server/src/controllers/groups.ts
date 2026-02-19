@@ -103,6 +103,7 @@ function parseChallengeInviteCardBase(
     value.background_gradient.length !== 2 ||
     typeof value.background_gradient[0] !== 'string' ||
     typeof value.background_gradient[1] !== 'string' ||
+    typeof value.background_image_url !== 'string' ||
     typeof value.invite_url !== 'string'
   ) {
     return null;
@@ -115,6 +116,7 @@ function parseChallengeInviteCardBase(
     icon_emoji: value.icon_emoji,
     cta_text: value.cta_text,
     background_gradient: [value.background_gradient[0], value.background_gradient[1]],
+    background_image_url: value.background_image_url,
     invite_url: value.invite_url,
   };
 }
@@ -1301,6 +1303,7 @@ export async function getGroupInvite(
       throw new ApplicationError('No active invite code found', 404, 'NOT_FOUND');
     }
 
+    const assetBaseUrl = `${req.protocol}://${req.get('host')}`;
     let inviteCardData: Record<string, unknown> | undefined;
     if (groupInfo.is_challenge) {
       let base = parseChallengeInviteCardBase(groupInfo.challenge_invite_card_data);
@@ -1319,7 +1322,7 @@ export async function getGroupInvite(
           .execute();
       }
       if (base) {
-        inviteCardData = await attachInviteCardAttribution(base, invite.code, req.user.id);
+        inviteCardData = await attachInviteCardAttribution(base, invite.code, req.user.id, 'challenge_invite', assetBaseUrl);
       }
     }
 
@@ -1460,7 +1463,9 @@ export async function regenerateInviteCode(
       response.invite_card_data = await attachInviteCardAttribution(
         result.challenge_invite_card_base,
         result.invite_code,
-        req.user.id
+        req.user.id,
+        'challenge_invite',
+        `${req.protocol}://${req.get('host')}`
       );
     }
 

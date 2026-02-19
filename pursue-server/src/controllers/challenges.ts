@@ -368,11 +368,13 @@ export async function createChallenge(
       return { group, goals, inviteCode, inviteCardBase };
     });
 
+    const assetBaseUrl = `${req.protocol}://${req.get('host')}`;
     const inviteCardData = await attachInviteCardAttribution(
       created.inviteCardBase,
       created.inviteCode,
       req.user.id,
-      template?.slug ?? 'challenge_invite'
+      template?.slug ?? 'challenge_invite',
+      assetBaseUrl
     );
 
     res.status(201).json({

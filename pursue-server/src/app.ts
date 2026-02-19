@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
+import path from 'node:path';
 import { db } from './database/index.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { apiLimiter } from './middleware/rateLimiter.js';
@@ -96,6 +97,9 @@ app.get('/health', async (_req, res) => {
     });
   }
 });
+
+// Static assets for shareable cards and server-hosted media.
+app.use('/assets', express.static(path.join(process.cwd(), 'assets')));
 
 // Temporary: Log all /api/users/avatar requests (only if DEBUG_AVATAR is enabled)
 const DEBUG_AVATAR = process.env.DEBUG_AVATAR === 'true';

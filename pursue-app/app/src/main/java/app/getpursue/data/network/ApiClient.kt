@@ -2417,6 +2417,7 @@ data class ChallengeInviteCardData(
     val icon_emoji: String,
     val cta_text: String,
     val background_gradient: List<String>,
+    val background_image_url: String? = null,
     val invite_url: String,
     val referral_token: String,
     val share_url: String,

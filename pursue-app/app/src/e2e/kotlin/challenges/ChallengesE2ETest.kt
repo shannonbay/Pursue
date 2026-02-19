@@ -391,6 +391,7 @@ class ChallengesE2ETest : E2ETest() {
         val card = created.challenge.invite_card_data
         assertThat(card).isNotNull()
         assertThat(card!!.card_type).isEqualTo("challenge_invite")
+        assertThat(card.background_image_url).isNotNull()
         assertThat(card.invite_url).contains("/challenge/${created.challenge.invite_code}")
         assertThat(card.share_url).contains("/challenge/${created.challenge.invite_code}")
         assertThat(card.qr_url).contains("/challenge/${created.challenge.invite_code}")
@@ -420,7 +421,8 @@ class ChallengesE2ETest : E2ETest() {
         val invite = api.getGroupInviteCode(user.access_token, created.challenge.id)
         val inviteCard = invite.invite_card_data
         assertThat(inviteCard).isNotNull()
-        assertThat(inviteCard!!.invite_url).contains("/challenge/${invite.invite_code}")
+        assertThat(inviteCard!!.background_image_url).isNotNull()
+        assertThat(inviteCard.invite_url).contains("/challenge/${invite.invite_code}")
         assertThat(inviteCard.share_url).contains("/challenge/${invite.invite_code}")
         assertThat(inviteCard.qr_url).contains("/challenge/${invite.invite_code}")
 

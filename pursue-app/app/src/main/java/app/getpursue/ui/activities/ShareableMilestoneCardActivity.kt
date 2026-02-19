@@ -28,6 +28,7 @@ import androidx.lifecycle.lifecycleScope
 import app.getpursue.R
 import app.getpursue.data.auth.SecureTokenManager
 import app.getpursue.data.network.ApiClient
+import com.bumptech.glide.Glide
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.card.MaterialCardView
 import com.google.gson.Gson
@@ -85,11 +86,13 @@ class ShareableMilestoneCardActivity : AppCompatActivity() {
         val quote: String,
         val goalIconEmoji: String,
         val backgroundGradient: List<String>,
+        val backgroundImageUrl: String?,
         val shareUrl: String?,
         val qrUrl: String?
     )
 
     private lateinit var cardRoot: MaterialCardView
+    private lateinit var backgroundImage: ImageView
     private lateinit var gradientLayer: View
     private lateinit var qrImage: ImageView
     private lateinit var titleText: TextView
@@ -138,6 +141,7 @@ class ShareableMilestoneCardActivity : AppCompatActivity() {
         supportActionBar?.title = getString(R.string.shareable_card_title)
 
         cardRoot = findViewById(R.id.milestone_card_root)
+        backgroundImage = findViewById(R.id.milestone_card_background_image)
         gradientLayer = findViewById(R.id.milestone_card_gradient)
         qrImage = findViewById(R.id.card_qr)
         titleText = findViewById(R.id.card_title)
@@ -244,6 +248,7 @@ class ShareableMilestoneCardActivity : AppCompatActivity() {
         val goalIcon = (map["icon_emoji"] as? String) ?: (map["goal_icon_emoji"] as? String) ?: "\uD83C\uDFAF"
         val shareUrl = map["share_url"] as? String
         val qrUrl = map["qr_url"] as? String
+        val backgroundImageUrl = map["background_image_url"] as? String
 
         val gradientRaw = map["background_gradient"] as? List<*>
         val gradient = if (gradientRaw != null && gradientRaw.size >= 2) {
@@ -263,6 +268,7 @@ class ShareableMilestoneCardActivity : AppCompatActivity() {
             quote = quote,
             goalIconEmoji = goalIcon,
             backgroundGradient = gradient,
+            backgroundImageUrl = backgroundImageUrl,
             shareUrl = shareUrl,
             qrUrl = qrUrl
         )
@@ -302,6 +308,18 @@ class ShareableMilestoneCardActivity : AppCompatActivity() {
             GradientDrawable.Orientation.TOP_BOTTOM,
             intArrayOf(top, bottom)
         )
+        if (data.cardType == "challenge_invite" && !data.backgroundImageUrl.isNullOrBlank()) {
+            backgroundImage.visibility = View.VISIBLE
+            gradientLayer.visibility = View.GONE
+            Glide.with(this)
+                .load(data.backgroundImageUrl)
+                .centerCrop()
+                .into(backgroundImage)
+        } else {
+            backgroundImage.visibility = View.GONE
+            gradientLayer.visibility = View.VISIBLE
+            backgroundImage.setImageDrawable(null)
+        }
 
         val qrContent = data.qrUrl ?: data.shareUrl
         if (!qrContent.isNullOrBlank()) {

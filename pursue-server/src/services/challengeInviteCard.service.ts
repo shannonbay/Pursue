@@ -1,8 +1,10 @@
 import { getOrCreateReferralToken } from './referral.service.js';
 
 const SHARE_BASE_URL = process.env.PURSUE_SHARE_BASE_URL ?? 'https://getpursue.app';
+const CARD_ASSET_BASE_URL = process.env.PURSUE_CARD_ASSET_BASE_URL ?? 'https://api.getpursue.app';
 const DEFAULT_CTA_TEXT = 'Are you in?';
 const DEFAULT_GRADIENT: [string, string] = ['#E53935', '#C62828'];
+const REFERRAL_CARD_BACKGROUND_PATH = '/assets/referral_card_background.png';
 
 export interface ChallengeInviteCardBaseData extends Record<string, unknown> {
   card_type: 'challenge_invite';
@@ -11,6 +13,7 @@ export interface ChallengeInviteCardBaseData extends Record<string, unknown> {
   icon_emoji: string;
   cta_text: string;
   background_gradient: [string, string];
+  background_image_url: string;
   invite_url: string;
 }
 
@@ -51,6 +54,7 @@ export function buildChallengeInviteCardBase(
     icon_emoji: input.iconEmoji ?? '\u{1F3AF}',
     cta_text: DEFAULT_CTA_TEXT,
     background_gradient: DEFAULT_GRADIENT,
+    background_image_url: REFERRAL_CARD_BACKGROUND_PATH,
     invite_url: buildChallengeLink(input.inviteCode),
   };
 }
@@ -65,15 +69,33 @@ function buildAttributedUrl(
   return `${base}?utm_source=${encodeURIComponent(source)}&utm_medium=challenge_card&utm_campaign=${encodeURIComponent(campaign)}&ref=${encodeURIComponent(token)}`;
 }
 
+function resolveBackgroundImageUrl(raw: string | null | undefined, assetBaseUrl?: string): string {
+  const value = raw?.trim();
+  if (!value) return `${CARD_ASSET_BASE_URL}${REFERRAL_CARD_BACKGROUND_PATH}`;
+  const normalizedBase = (assetBaseUrl?.trim() || CARD_ASSET_BASE_URL).replace(/\/+$/, '');
+  if (value.includes(REFERRAL_CARD_BACKGROUND_PATH)) {
+    return `${normalizedBase}${REFERRAL_CARD_BACKGROUND_PATH}`;
+  }
+  if (value.startsWith('http://') || value.startsWith('https://')) return value;
+  const normalizedPath = value.startsWith('/') ? value : `/${value}`;
+  return `${normalizedBase}${normalizedPath}`;
+}
+
 export async function attachInviteCardAttribution(
   base: ChallengeInviteCardBaseData,
   inviteCode: string,
   requesterUserId: string,
-  campaign = 'challenge_invite'
+  campaign = 'challenge_invite',
+  assetBaseUrl?: string
 ): Promise<ChallengeInviteCardData> {
   const referralToken = await getOrCreateReferralToken(requesterUserId);
+  const backgroundImageUrl = resolveBackgroundImageUrl(
+    typeof base.background_image_url === 'string' ? base.background_image_url : undefined,
+    assetBaseUrl
+  );
   return {
     ...base,
+    background_image_url: backgroundImageUrl,
     referral_token: referralToken,
     share_url: buildAttributedUrl(inviteCode, referralToken, 'share', campaign),
     qr_url: buildAttributedUrl(inviteCode, referralToken, 'qr', campaign),
