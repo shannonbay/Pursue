@@ -166,7 +166,8 @@ class IconPickerBottomSheet : BottomSheetDialogFragment() {
             
             // General
             IconItem("ic_icon_sunrise", "Early Morning", "General"),
-            IconItem("ic_icon_phone", "Screen Time", "General")
+            IconItem("ic_icon_phone", "Screen Time", "General"),
+            IconItem("ic_icon_handshake", "Agreement", "General")
         )
 
         override fun onCreateView(
