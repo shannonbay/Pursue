@@ -11,8 +11,6 @@ import android.net.Network
 import android.net.NetworkCapabilities
 import android.net.NetworkRequest
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
 import android.util.Log
 import android.graphics.Typeface
 import android.view.LayoutInflater
@@ -102,6 +100,8 @@ class MainAppActivity : AppCompatActivity(),
 
     private var notificationBadgeView: TextView? = null
     private var lastBadgeCount: Int = 0
+    private var networkCallbackRegistered = false
+    private var lastNotificationFetchTime: Long = 0L
     private val purchasesUpdatedListener = PurchasesUpdatedListener { billingResult, purchases ->
         if (billingResult.responseCode == BillingClient.BillingResponseCode.OK && purchases != null) {
             for (purchase in purchases) {
@@ -193,16 +193,8 @@ class MainAppActivity : AppCompatActivity(),
 
         observeUnreadBadgeCount()
 
-        // Setup network connectivity monitoring
+        // Setup connectivity manager (callback registered/unregistered in onResume/onPause)
         connectivityManager = getSystemService(ConnectivityManager::class.java)
-        val networkRequest = NetworkRequest.Builder()
-            .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
-            .addCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
-            .build()
-        connectivityManager.registerNetworkCallback(networkRequest, networkCallback)
-
-        // Retry FCM registration after a delay so the first frame can render
-        Handler(Looper.getMainLooper()).postDelayed({ retryFcmRegistrationIfNeeded() }, 2000)
 
         // Request notification permission once per install (Android 13+)
         requestNotificationPermissionIfNeeded()
@@ -352,17 +344,49 @@ class MainAppActivity : AppCompatActivity(),
 
     override fun onResume() {
         super.onResume()
-        fetchUnreadNotificationCount()
+        registerNetworkCallback()
+        retryFcmRegistrationIfNeeded()
+        fetchUnreadNotificationCountThrottled()
     }
 
-    private fun fetchUnreadNotificationCount() {
+    override fun onPause() {
+        super.onPause()
+        unregisterNetworkCallback()
+    }
+
+    private fun registerNetworkCallback() {
+        if (networkCallbackRegistered) return
+        try {
+            val networkRequest = NetworkRequest.Builder()
+                .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+                .addCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
+                .build()
+            connectivityManager.registerNetworkCallback(networkRequest, networkCallback)
+            networkCallbackRegistered = true
+        } catch (e: Exception) {
+            Log.w("MainAppActivity", "Failed to register network callback", e)
+        }
+    }
+
+    private fun unregisterNetworkCallback() {
+        if (!networkCallbackRegistered) return
+        try {
+            connectivityManager.unregisterNetworkCallback(networkCallback)
+            networkCallbackRegistered = false
+        } catch (e: Exception) {
+            Log.d("MainAppActivity", "Network callback already unregistered")
+        }
+    }
+
+    private fun fetchUnreadNotificationCountThrottled() {
+        val now = System.currentTimeMillis()
+        if (now - lastNotificationFetchTime < NOTIFICATION_FETCH_INTERVAL_MS) return
+        lastNotificationFetchTime = now
         lifecycleScope.launch {
             try {
                 val token = SecureTokenManager.Companion.getInstance(this@MainAppActivity).getAccessToken()
-                Log.d("MainAppActivity", "fetchUnreadNotificationCount: token=${if (token != null) "present" else "null"}")
                 if (token != null) {
                     UnreadBadgeManager.fetchUnreadCount(token)
-                    Log.d("MainAppActivity", "fetchUnreadNotificationCount: fetched count=${UnreadBadgeManager.unreadCount.value}")
                 }
             } catch (e: Exception) {
                 Log.e("MainAppActivity", "Failed to fetch unread notification count", e)
@@ -401,13 +425,7 @@ class MainAppActivity : AppCompatActivity(),
 
     override fun onDestroy() {
         super.onDestroy()
-        // Unregister network callback
-        try {
-            connectivityManager.unregisterNetworkCallback(networkCallback)
-        } catch (e: Exception) {
-            // Ignore if already unregistered
-            Log.d("MainAppActivity", "Network callback already unregistered")
-        }
+        unregisterNetworkCallback()
     }
 
     /**
@@ -853,6 +871,7 @@ class MainAppActivity : AppCompatActivity(),
 
     companion object {
         private const val KEY_NOTIFICATION_PERMISSION_REQUESTED = "notification_permission_requested"
+        private const val NOTIFICATION_FETCH_INTERVAL_MS = 5 * 60 * 1000L // 5 minutes
         const val EXTRA_OPEN_PREMIUM = "extra_open_premium"
     }
 }

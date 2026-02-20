@@ -11,7 +11,6 @@ import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import app.getpursue.data.auth.SecureTokenManager
-import app.getpursue.data.network.ApiClient
 import app.getpursue.data.notifications.NotificationPreferences
 import app.getpursue.data.notifications.UnreadBadgeManager
 import app.getpursue.ui.activities.GroupDetailActivity
@@ -64,27 +63,19 @@ class PursueFirebaseMessagingService : FirebaseMessagingService() {
         fcmManager.cacheToken(token)
         
         // Re-register with server if user is authenticated
+        // Note: FCM topic subscriptions survive token rotation — Firebase handles
+        // re-subscription automatically, so we only need to register the new token
+        // with our backend.
         serviceScope.launch {
             try {
                 val tokenManager = SecureTokenManager.Companion.getInstance(applicationContext)
                 val accessToken = tokenManager.getAccessToken()
-                
+
                 if (accessToken != null) {
-                    // Register the new token with the server
                     FcmRegistrationHelper.registerFcmTokenIfNeeded(
                         applicationContext,
                         accessToken
                     )
-
-                    // Resubscribe to all FCM topics after token refresh
-                    try {
-                        val groupsResponse = ApiClient.getMyGroups(accessToken)
-                        val groupIds = groupsResponse.groups.map { it.id }
-                        FcmTopicManager.resubscribeToAllTopics(applicationContext, groupIds)
-                        Log.d(TAG, "Resubscribed to FCM topics for ${groupIds.size} groups")
-                    } catch (e: Exception) {
-                        Log.w(TAG, "Failed to resubscribe to FCM topics", e)
-                    }
                 } else {
                     Log.d(TAG, "User not authenticated, will register token on next login")
                 }

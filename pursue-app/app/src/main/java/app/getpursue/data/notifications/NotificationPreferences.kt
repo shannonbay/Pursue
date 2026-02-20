@@ -5,6 +5,8 @@ import android.content.SharedPreferences
 import app.getpursue.data.fcm.FcmTopicManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 
 /**
@@ -19,6 +21,13 @@ object NotificationPreferences {
     private const val KEY_NOTIFY_PROGRESS_LOGS = "notify_progress_logs"
     private const val KEY_NOTIFY_GROUP_EVENTS = "notify_group_events"
     private const val KEY_NOTIFY_NUDGES = "notify_nudges"
+
+    // Single shared scope for topic subscription work. SupervisorJob ensures
+    // one failure doesn't cancel other ongoing work. Previous pending topic
+    // updates are cancelled when a new preference change comes in.
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private var progressLogsJob: Job? = null
+    private var groupEventsJob: Job? = null
 
     private fun prefs(context: Context): SharedPreferences =
         context.applicationContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
@@ -46,11 +55,7 @@ object NotificationPreferences {
 
     /**
      * Update progress logs preference and manage FCM topic subscriptions.
-     * Use this method instead of setNotifyProgressLogs when you have access to the user's group IDs.
-     *
-     * @param context Android context
-     * @param enabled Whether to enable progress log notifications
-     * @param groupIds List of group IDs the user is a member of
+     * Cancels any pending progress-logs topic update before starting a new one.
      */
     fun setNotifyProgressLogsWithTopics(
         context: Context,
@@ -58,7 +63,8 @@ object NotificationPreferences {
         groupIds: List<String>
     ) {
         setNotifyProgressLogs(context, enabled)
-        CoroutineScope(Dispatchers.IO).launch {
+        progressLogsJob?.cancel()
+        progressLogsJob = scope.launch {
             FcmTopicManager.updatePreferenceForAllGroups(
                 groupIds,
                 FcmTopicManager.TOPIC_PROGRESS_LOGS,
@@ -69,11 +75,7 @@ object NotificationPreferences {
 
     /**
      * Update group events preference and manage FCM topic subscriptions.
-     * Use this method instead of setNotifyGroupEvents when you have access to the user's group IDs.
-     *
-     * @param context Android context
-     * @param enabled Whether to enable group event notifications
-     * @param groupIds List of group IDs the user is a member of
+     * Cancels any pending group-events topic update before starting a new one.
      */
     fun setNotifyGroupEventsWithTopics(
         context: Context,
@@ -81,7 +83,8 @@ object NotificationPreferences {
         groupIds: List<String>
     ) {
         setNotifyGroupEvents(context, enabled)
-        CoroutineScope(Dispatchers.IO).launch {
+        groupEventsJob?.cancel()
+        groupEventsJob = scope.launch {
             FcmTopicManager.updatePreferenceForAllGroups(
                 groupIds,
                 FcmTopicManager.TOPIC_GROUP_EVENTS,
