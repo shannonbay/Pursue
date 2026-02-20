@@ -72,12 +72,14 @@ class ChallengeSetupFragment : Fragment() {
         viewLifecycleOwner.lifecycleScope.launch {
             setLoading(true)
             try {
-                val token = SecureTokenManager.Companion.getInstance(requireContext()).getAccessToken()
+                val context = context ?: return@launch
+                val token = SecureTokenManager.Companion.getInstance(context).getAccessToken()
                 if (token == null) {
                     showError(getString(R.string.error_unauthorized_message))
                     return@launch
                 }
                 val templates = withContext(Dispatchers.IO) { ApiClient.getChallengeTemplates(token) }
+                if (!isAdded) return@launch
                 selectedTemplate = templates.templates.find { it.id == templateId }
                 val template = selectedTemplate
                 if (template == null) {
@@ -87,23 +89,29 @@ class ChallengeSetupFragment : Fragment() {
                 selectedStartDate = LocalDate.now().plusDays(1)
                 bindTemplate(template)
             } catch (e: ApiException) {
-                showError(e.message ?: getString(R.string.error_loading_challenge_templates))
-            } catch (_: Exception) {
-                showError(getString(R.string.error_loading_challenge_templates))
+                if (isAdded) {
+                    showError(e.message ?: getString(R.string.error_loading_challenge_templates))
+                }
+            } catch (e: Exception) {
+                if (e is kotlinx.coroutines.CancellationException) throw e
+                if (isAdded) {
+                    showError(getString(R.string.error_loading_challenge_templates))
+                }
             } finally {
-                setLoading(false)
+                if (isAdded) setLoading(false)
             }
         }
     }
 
     private fun bindTemplate(template: ChallengeTemplate) {
+        val currentContext = context ?: return
         titleText.text = template.title
         descriptionText.text = template.description
         nameEdit.setText(template.title)
         renderDates(template.duration_days)
         goalsContainer.removeAllViews()
         template.goals.forEach { goal ->
-            val goalView = LayoutInflater.from(requireContext())
+            val goalView = LayoutInflater.from(currentContext)
                 .inflate(android.R.layout.simple_list_item_1, goalsContainer, false) as TextView
             goalView.text = "• ${goal.title} (${goal.cadence})"
             goalsContainer.addView(goalView)
@@ -111,15 +119,18 @@ class ChallengeSetupFragment : Fragment() {
     }
 
     private fun showDatePicker() {
+        val currentContext = context ?: return
         val today = LocalDate.now()
         val max = today.plusDays(30)
         val current = selectedStartDate
         val picker = DatePickerDialog(
-            requireContext(),
+            currentContext,
             { _, year, month, dayOfMonth ->
                 val picked = LocalDate.of(year, month + 1, dayOfMonth)
                 if (picked.isBefore(today) || picked.isAfter(max)) {
-                    Toast.makeText(requireContext(), getString(R.string.challenge_invalid_start_date), Toast.LENGTH_SHORT).show()
+                    if (isAdded) {
+                        Toast.makeText(currentContext, getString(R.string.challenge_invalid_start_date), Toast.LENGTH_SHORT).show()
+                    }
                     return@DatePickerDialog
                 }
                 selectedStartDate = picked
@@ -136,6 +147,7 @@ class ChallengeSetupFragment : Fragment() {
     }
 
     private fun renderDates(durationDays: Int) {
+        if (!isAdded) return
         val formatter = DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)
         startDateButton.text = selectedStartDate.format(formatter)
         val endDate = selectedStartDate.plusDays(durationDays.toLong() - 1L)
@@ -150,7 +162,8 @@ class ChallengeSetupFragment : Fragment() {
         val template = selectedTemplate ?: return
         val challengeName = nameEdit.text?.toString()?.trim().orEmpty()
         if (challengeName.isBlank()) {
-            Toast.makeText(requireContext(), getString(R.string.group_name_error), Toast.LENGTH_SHORT).show()
+            val currentContext = context ?: return
+            Toast.makeText(currentContext, getString(R.string.group_name_error), Toast.LENGTH_SHORT).show()
             return
         }
         val covenant = CovenantBottomSheet.newInstance(isChallenge = true)
@@ -168,7 +181,8 @@ class ChallengeSetupFragment : Fragment() {
         viewLifecycleOwner.lifecycleScope.launch {
             setLoading(true)
             try {
-                val token = SecureTokenManager.Companion.getInstance(requireContext()).getAccessToken()
+                val context = context ?: return@launch
+                val token = SecureTokenManager.Companion.getInstance(context).getAccessToken()
                 if (token == null) {
                     showError(getString(R.string.error_unauthorized_message))
                     return@launch
@@ -181,9 +195,10 @@ class ChallengeSetupFragment : Fragment() {
                         groupName = challengeName
                     )
                 }
+                if (!isAdded) return@launch
                 val group = response.challenge
                 startActivity(
-                    Intent(requireContext(), GroupDetailActivity::class.java).apply {
+                    Intent(context, GroupDetailActivity::class.java).apply {
                         putExtra(GroupDetailActivity.EXTRA_GROUP_ID, group.id)
                         putExtra(GroupDetailActivity.EXTRA_GROUP_NAME, group.name)
                         putExtra(GroupDetailActivity.EXTRA_GROUP_HAS_ICON, false)
@@ -195,14 +210,19 @@ class ChallengeSetupFragment : Fragment() {
                 )
                 requireActivity().supportFragmentManager.popBackStack(null, 1)
             } catch (e: ApiException) {
-                when (e.errorCode) {
-                    "PREMIUM_REQUIRED", "GROUP_LIMIT_REACHED" -> showUpgradeDialog(e.message ?: "")
-                    else -> showError(e.message ?: getString(R.string.challenge_create_failed))
+                if (isAdded) {
+                    when (e.errorCode) {
+                        "PREMIUM_REQUIRED", "GROUP_LIMIT_REACHED" -> showUpgradeDialog(e.message ?: "")
+                        else -> showError(e.message ?: getString(R.string.challenge_create_failed))
+                    }
                 }
-            } catch (_: Exception) {
-                showError(getString(R.string.challenge_create_failed))
+            } catch (e: Exception) {
+                if (e is kotlinx.coroutines.CancellationException) throw e
+                if (isAdded) {
+                    showError(getString(R.string.challenge_create_failed))
+                }
             } finally {
-                setLoading(false)
+                if (isAdded) setLoading(false)
             }
         }
     }
@@ -215,11 +235,13 @@ class ChallengeSetupFragment : Fragment() {
     }
 
     private fun showError(message: String) {
-        Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
+        val currentContext = context ?: return
+        Toast.makeText(currentContext, message, Toast.LENGTH_SHORT).show()
     }
 
     private fun showUpgradeDialog(message: String) {
-        MaterialAlertDialogBuilder(requireContext())
+        val currentContext = context ?: return
+        MaterialAlertDialogBuilder(currentContext)
             .setTitle(getString(R.string.upgrade_to_premium))
             .setMessage(if (message.isBlank()) getString(R.string.challenge_custom_premium_message) else message)
             .setNegativeButton(getString(R.string.maybe_later), null)

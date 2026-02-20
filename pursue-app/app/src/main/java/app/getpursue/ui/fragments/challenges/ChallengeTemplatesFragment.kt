@@ -91,7 +91,8 @@ class ChallengeTemplatesFragment : Fragment() {
         viewLifecycleOwner.lifecycleScope.launch {
             showLoading(true)
             try {
-                val token = SecureTokenManager.Companion.getInstance(requireContext()).getAccessToken()
+                val context = context ?: return@launch
+                val token = SecureTokenManager.Companion.getInstance(context).getAccessToken()
                 if (token == null) {
                     showError(getString(R.string.error_unauthorized_message))
                     return@launch
@@ -99,45 +100,51 @@ class ChallengeTemplatesFragment : Fragment() {
                 val response = withContext(Dispatchers.IO) {
                     ApiClient.getChallengeTemplates(token)
                 }
+                if (!isAdded) return@launch
                 allTemplates = response.templates
                 renderCategories(response.categories)
                 renderTemplateLists()
                 showLoading(false)
             } catch (e: ApiException) {
-                showError(e.message ?: getString(R.string.error_loading_challenge_templates))
-            } catch (_: Exception) {
-                showError(getString(R.string.error_loading_challenge_templates))
+                if (isAdded) {
+                    showError(e.message ?: getString(R.string.error_loading_challenge_templates))
+                }
+            } catch (e: Exception) {
+                if (e is kotlinx.coroutines.CancellationException) throw e
+                if (isAdded) {
+                    showError(getString(R.string.error_loading_challenge_templates))
+                }
             }
         }
     }
 
     private fun renderCategories(categories: List<String>) {
+        if (!isAdded) return
         categoryChipGroup.removeAllViews()
         val allChip = createFilterChip(
             label = getString(R.string.challenge_category_all),
             filter = TemplateFilter.All
-        )
+        ) ?: return
         categoryChipGroup.addView(allChip)
         categoryChipGroup.addView(
             createFilterChip(
                 label = getString(R.string.challenge_category_custom),
                 filter = TemplateFilter.Custom
-            )
+            ) ?: return
         )
         categories.sorted().forEach { category ->
-            categoryChipGroup.addView(
-                createFilterChip(
-                    label = category.replaceFirstChar { it.uppercase() },
-                    filter = TemplateFilter.Category(category)
-                )
-            )
+            createFilterChip(
+                label = category.replaceFirstChar { it.uppercase() },
+                filter = TemplateFilter.Category(category)
+            )?.let { categoryChipGroup.addView(it) }
         }
         allChip.isChecked = true
         selectedFilter = TemplateFilter.All
     }
 
-    private fun createFilterChip(label: String, filter: TemplateFilter): Chip {
-        return Chip(requireContext()).apply {
+    private fun createFilterChip(label: String, filter: TemplateFilter): Chip? {
+        val currentContext = context ?: return null
+        return Chip(currentContext).apply {
             text = label
             isCheckable = true
             setOnCheckedChangeListener { _, isChecked ->
@@ -182,10 +189,11 @@ class ChallengeTemplatesFragment : Fragment() {
     }
 
     private fun showError(message: String) {
+        val currentContext = context ?: return
         showLoading(false)
         errorText.visibility = View.VISIBLE
         errorText.text = message
-        Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
+        Toast.makeText(currentContext, message, Toast.LENGTH_SHORT).show()
     }
 
     private fun openSetup(templateId: String) {
