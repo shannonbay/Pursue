@@ -18,6 +18,7 @@ import app.getpursue.data.network.ApiClient
 import app.getpursue.data.network.ApiException
 import app.getpursue.data.network.ChallengeTemplate
 import app.getpursue.ui.activities.GroupDetailActivity
+import app.getpursue.ui.activities.OrientationActivity
 import app.getpursue.ui.views.CovenantBottomSheet
 import app.getpursue.ui.activities.MainAppActivity
 import app.getpursue.utils.EmojiUtils
@@ -197,18 +198,24 @@ class ChallengeSetupFragment : Fragment() {
                 }
                 if (!isAdded) return@launch
                 val group = response.challenge
-                startActivity(
-                    Intent(context, GroupDetailActivity::class.java).apply {
-                        putExtra(GroupDetailActivity.EXTRA_GROUP_ID, group.id)
-                        putExtra(GroupDetailActivity.EXTRA_GROUP_NAME, group.name)
-                        putExtra(GroupDetailActivity.EXTRA_GROUP_HAS_ICON, false)
-                        putExtra(
-                            GroupDetailActivity.EXTRA_GROUP_ICON_EMOJI,
-                            EmojiUtils.normalizeOrFallback(template.icon_emoji, "🏆")
-                        )
-                    }
-                )
-                requireActivity().supportFragmentManager.popBackStack(null, 1)
+                val intent = Intent(context, GroupDetailActivity::class.java).apply {
+                    putExtra(GroupDetailActivity.EXTRA_GROUP_ID, group.id)
+                    putExtra(GroupDetailActivity.EXTRA_GROUP_NAME, group.name)
+                    putExtra(GroupDetailActivity.EXTRA_GROUP_HAS_ICON, false)
+                    putExtra(
+                        GroupDetailActivity.EXTRA_GROUP_ICON_EMOJI,
+                        EmojiUtils.normalizeOrFallback(template.icon_emoji, "🏆")
+                    )
+                    putExtra(GroupDetailActivity.EXTRA_OPEN_INVITE_SHEET, true)
+                }
+
+                val currentActivity = requireActivity()
+                if (currentActivity is OrientationActivity) {
+                    currentActivity.completeOrientation(intent)
+                } else {
+                    startActivity(intent)
+                    requireActivity().supportFragmentManager.popBackStack(null, 1)
+                }
             } catch (e: ApiException) {
                 if (isAdded) {
                     when (e.errorCode) {

@@ -218,6 +218,7 @@ class OrientationCreateGroupFragment : Fragment() {
                     putExtra(GroupDetailActivity.EXTRA_GROUP_NAME, groupName)
                     putExtra(GroupDetailActivity.EXTRA_GROUP_HAS_ICON, selectedEmoji != null)
                     putExtra(GroupDetailActivity.EXTRA_GROUP_ICON_EMOJI, selectedEmoji)
+                    putExtra(GroupDetailActivity.EXTRA_OPEN_INVITE_SHEET, true)
                 }
                 (requireActivity() as OrientationActivity).completeOrientation(intent)
             } catch (e: ApiException) {

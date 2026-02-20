@@ -29,6 +29,7 @@ class GroupDetailActivity : AppCompatActivity() {
         const val EXTRA_GROUP_ICON_EMOJI = "extra_group_icon_emoji"
         const val EXTRA_INITIAL_TAB = "extra_initial_tab"
         const val EXTRA_OPEN_PENDING_APPROVALS = "extra_open_pending_approvals"
+        const val EXTRA_OPEN_INVITE_SHEET = "extra_open_invite_sheet"
         const val RESULT_GROUP_DELETED = 1001
         const val RESULT_LEFT_GROUP = 1002
     }
@@ -75,6 +76,7 @@ class GroupDetailActivity : AppCompatActivity() {
         // Load GroupDetailFragment on first launch
         val initialTab = intent.getIntExtra(EXTRA_INITIAL_TAB, -1)
         val openPendingApprovals = intent.getBooleanExtra(EXTRA_OPEN_PENDING_APPROVALS, false)
+        val openInviteSheet = intent.getBooleanExtra(EXTRA_OPEN_INVITE_SHEET, false)
         if (savedInstanceState == null && groupId != null) {
             supportFragmentManager.commit {
                 replace(
@@ -84,7 +86,8 @@ class GroupDetailActivity : AppCompatActivity() {
                         groupName = groupName,
                         hasIcon = hasIcon,
                         iconEmoji = iconEmoji,
-                        initialTabIndex = initialTab
+                        initialTabIndex = initialTab,
+                        openInviteSheet = openInviteSheet
                     )
                 )
             }

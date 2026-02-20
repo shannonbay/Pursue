@@ -93,13 +93,15 @@ class GroupDetailFragment : Fragment() {
         private const val ARG_GROUP_HAS_ICON = "group_has_icon"
         private const val ARG_GROUP_ICON_EMOJI = "group_icon_emoji"
         private const val ARG_INITIAL_TAB = "initial_tab"
+        private const val ARG_OPEN_INVITE_SHEET = "open_invite_sheet"
 
         fun newInstance(
             groupId: String,
             groupName: String,
             hasIcon: Boolean = false,
             iconEmoji: String? = null,
-            initialTabIndex: Int = -1
+            initialTabIndex: Int = -1,
+            openInviteSheet: Boolean = false
         ): GroupDetailFragment {
             return GroupDetailFragment().apply {
                 arguments = Bundle().apply {
@@ -108,6 +110,7 @@ class GroupDetailFragment : Fragment() {
                     putBoolean(ARG_GROUP_HAS_ICON, hasIcon)
                     putString(ARG_GROUP_ICON_EMOJI, iconEmoji)
                     putInt(ARG_INITIAL_TAB, initialTabIndex)
+                    putBoolean(ARG_OPEN_INVITE_SHEET, openInviteSheet)
                 }
             }
         }
@@ -115,6 +118,7 @@ class GroupDetailFragment : Fragment() {
 
     private var groupId: String? = null
     private var groupDetail: GroupDetailResponse? = null
+    private var hasOpenedInitialInviteSheet = false
     internal var nowProvider: () -> LocalDateTime = { LocalDateTime.now() }
     
     private lateinit var groupIconContainer: FrameLayout
@@ -506,6 +510,12 @@ class GroupDetailFragment : Fragment() {
 
                         val currentItem = viewPager.currentItem
                         updateFABForTab(currentItem, -1)
+
+                        // Show invite sheet if requested and not yet shown
+                        if (arguments?.getBoolean(ARG_OPEN_INVITE_SHEET) == true && !hasOpenedInitialInviteSheet) {
+                            hasOpenedInitialInviteSheet = true
+                            showInviteMembersSheet()
+                        }
                     }, 50)
                 }
             } catch (e: ApiException) {

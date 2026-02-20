@@ -16,8 +16,6 @@ import app.getpursue.ui.fragments.orientation.OrientationJoinFragment
  */
 class OrientationActivity : AppCompatActivity() {
 
-    private var hasLaunchedSubActivity = false
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_orientation)
@@ -32,31 +30,7 @@ class OrientationActivity : AppCompatActivity() {
             supportFragmentManager.commit {
                 replace(R.id.fragment_container, OrientationJoinFragment.newInstance())
             }
-        } else {
-            hasLaunchedSubActivity = savedInstanceState.getBoolean("has_launched_sub", false)
         }
-    }
-
-    override fun onSaveInstanceState(outState: Bundle) {
-        super.onSaveInstanceState(outState)
-        outState.putBoolean("has_launched_sub", hasLaunchedSubActivity)
-    }
-
-    override fun onResume() {
-        super.onResume()
-        // If we launched a sub-activity (GroupDetailActivity from ChallengeSetup)
-        // and came back, just finish orientation — the user already has a group/challenge
-        if (hasLaunchedSubActivity) {
-            completeOrientation()
-        }
-    }
-
-    override fun startActivity(intent: Intent?) {
-        // Detect when ChallengeSetupFragment launches GroupDetailActivity
-        if (intent?.component?.className == GroupDetailActivity::class.java.name) {
-            hasLaunchedSubActivity = true
-        }
-        super.startActivity(intent)
     }
 
     /**
@@ -69,8 +43,11 @@ class OrientationActivity : AppCompatActivity() {
             .apply()
 
         if (destinationIntent != null) {
-            destinationIntent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-            startActivity(destinationIntent)
+            // Use TaskStackBuilder to insert MainAppActivity behind the destination
+            androidx.core.app.TaskStackBuilder.create(this)
+                .addNextIntent(Intent(this, MainAppActivity::class.java))
+                .addNextIntent(destinationIntent)
+                .startActivities()
         } else {
             val intent = Intent(this, MainAppActivity::class.java)
             intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
@@ -78,6 +55,7 @@ class OrientationActivity : AppCompatActivity() {
         }
         finish()
     }
+
 
     companion object {
         const val KEY_ORIENTATION_STARTED = "orientation_started"

@@ -1,5 +1,6 @@
 package app.getpursue.ui.fragments.groups
 
+import android.content.Intent
 import android.content.res.ColorStateList
 import android.graphics.Color
 import android.os.Bundle
@@ -251,16 +252,19 @@ class CreateGroupFragment : Fragment() {
                 Handler(Looper.getMainLooper()).post {
                     showLoading(false)
                     Toast.makeText(requireContext(), getString(R.string.group_created), Toast.LENGTH_SHORT).show()
-                    
-                    // Navigate back to home (group detail not implemented yet)
-                    requireActivity().supportFragmentManager.popBackStack()
-                    
-                    // Refresh groups list if HomeFragment is visible
-                    val homeFragment = requireActivity().supportFragmentManager
-                        .findFragmentByTag("HomeFragment")
-                    if (homeFragment is HomeFragment) {
-                        // HomeFragment will refresh on resume
+
+                    // Navigate to GroupDetailActivity for the new group
+                    val intent = Intent(requireContext(), app.getpursue.ui.activities.GroupDetailActivity::class.java).apply {
+                        putExtra(app.getpursue.ui.activities.GroupDetailActivity.EXTRA_GROUP_ID, response.id)
+                        putExtra(app.getpursue.ui.activities.GroupDetailActivity.EXTRA_GROUP_NAME, response.name)
+                        putExtra(app.getpursue.ui.activities.GroupDetailActivity.EXTRA_GROUP_HAS_ICON, response.has_icon)
+                        putExtra(app.getpursue.ui.activities.GroupDetailActivity.EXTRA_GROUP_ICON_EMOJI, response.icon_emoji)
+                        putExtra(app.getpursue.ui.activities.GroupDetailActivity.EXTRA_OPEN_INVITE_SHEET, true)
                     }
+                    startActivity(intent)
+
+                    // Remove CreateGroupFragment from backstack so back from Detail goes to Home
+                    requireActivity().supportFragmentManager.popBackStack()
                 }
             } catch (e: ApiException) {
                 if (!isAdded) return@launch
