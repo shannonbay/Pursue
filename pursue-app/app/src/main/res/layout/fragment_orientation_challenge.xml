@@ -136,52 +136,12 @@
 
         </com.google.android.material.card.MaterialCardView>
 
-        <!-- Loading -->
-        <ProgressBar
-            android:id="@+id/templates_loading"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:layout_marginTop="24dp"
-            android:visibility="gone" />
-
-        <!-- Error text -->
-        <TextView
-            android:id="@+id/templates_error"
+        <!-- Embedded ChallengeTemplatesFragment -->
+        <androidx.fragment.app.FragmentContainerView
+            android:id="@+id/challenge_templates_container"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:textAppearance="?attr/textAppearanceBodyMedium"
-            android:textColor="?attr/colorError"
-            android:visibility="gone" />
-
-        <!-- Featured label -->
-        <TextView
-            android:id="@+id/featured_label"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="24dp"
-            android:text="@string/challenge_featured"
-            android:textAppearance="?attr/textAppearanceTitleMedium"
-            android:visibility="gone" />
-
-        <!-- Featured templates horizontal scroll -->
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/featured_recycler"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:clipToPadding="false"
-            android:visibility="gone" />
-
-        <!-- All templates vertical list -->
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/templates_recycler"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:nestedScrollingEnabled="false"
-            android:visibility="gone" />
+            android:layout_height="400dp"
+            android:layout_marginTop="16dp" />
 
         <!-- "I'd rather create my own group" -->
         <com.google.android.material.button.MaterialButton
