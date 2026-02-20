@@ -18,6 +18,7 @@ import app.getpursue.data.network.ApiClient
 import app.getpursue.data.network.ApiException
 import app.getpursue.data.network.ChallengeTemplate
 import app.getpursue.ui.activities.GroupDetailActivity
+import app.getpursue.ui.views.CovenantBottomSheet
 import app.getpursue.ui.activities.MainAppActivity
 import app.getpursue.utils.EmojiUtils
 import com.google.android.material.button.MaterialButton
@@ -152,6 +153,18 @@ class ChallengeSetupFragment : Fragment() {
             Toast.makeText(requireContext(), getString(R.string.group_name_error), Toast.LENGTH_SHORT).show()
             return
         }
+        val covenant = CovenantBottomSheet.newInstance(isChallenge = true)
+        covenant.setCovenantListener(object : CovenantBottomSheet.CovenantListener {
+            override fun onCovenantAccepted() {
+                performCreateChallenge()
+            }
+        })
+        covenant.show(childFragmentManager, "CovenantBottomSheet")
+    }
+
+    private fun performCreateChallenge() {
+        val template = selectedTemplate ?: return
+        val challengeName = nameEdit.text?.toString()?.trim().orEmpty()
         viewLifecycleOwner.lifecycleScope.launch {
             setLoading(true)
             try {

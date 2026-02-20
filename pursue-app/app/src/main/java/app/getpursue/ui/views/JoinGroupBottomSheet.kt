@@ -82,7 +82,7 @@ class JoinGroupBottomSheet : BottomSheetDialogFragment() {
             if (::editCode.isInitialized && ::inputLayout.isInitialized) {
                 editCode.setText(code)
                 inputLayout.error = null
-                performJoin(code)
+                showCovenant(code)
             }
         } else {
             Toast.makeText(requireContext(), getString(R.string.invite_code_invalid), Toast.LENGTH_SHORT).show()
@@ -139,12 +139,17 @@ class JoinGroupBottomSheet : BottomSheetDialogFragment() {
         }
         inputLayout.error = null
 
-        MaterialAlertDialogBuilder(requireContext())
-            .setTitle(getString(R.string.join_group_confirm_title))
-            .setMessage(getString(R.string.enter_invite_code) + "\n$code")
-            .setNegativeButton(getString(R.string.cancel), null)
-            .setPositiveButton(getString(R.string.join_group)) { _, _ -> performJoin(code) }
-            .show()
+        showCovenant(code)
+    }
+
+    private fun showCovenant(code: String) {
+        val covenant = CovenantBottomSheet.newInstance(isChallenge = false)
+        covenant.setCovenantListener(object : CovenantBottomSheet.CovenantListener {
+            override fun onCovenantAccepted() {
+                performJoin(code)
+            }
+        })
+        covenant.show(childFragmentManager, "CovenantBottomSheet")
     }
 
     private fun performJoin(code: String) {

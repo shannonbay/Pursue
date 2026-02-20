@@ -733,4 +733,15 @@
     <string name="heat_inferno">Inferno</string>
     <string name="heat_supernova">Supernova</string>
 
+    <!-- Covenant -->
+    <string name="covenant_title">THE PURSUE COVENANT</string>
+    <string name="covenant_body">I\'m joining this group to grow,\nnot to judge.\n\nI\'ll cheer for others on their good days\nand have grace for them on their hard ones —\nincluding myself.\n\nProgress here is personal.\nI won\'t compare to compete.\nI won\'t use what I see to criticise\nor shame.\n\nI\'ll show up honestly,\nencourage generously,\nand remember that everyone here\nis pursuing something that matters to them.</string>
+    <string name="covenant_challenge_line">I\'m taking on this challenge alongside others, not against them.\n</string>
+    <string name="covenant_hold_to_commit">Hold to commit</string>
+    <string name="covenant_committed">✓ Committed</string>
+    <string name="covenant_tap_fallback">Can\'t long-press? Tap here instead.</string>
+    <string name="covenant_confirm_title">Join this group?</string>
+    <string name="covenant_confirm_message">By joining, you accept the Pursue Covenant.</string>
+    <string name="covenant_confirm_join">Join</string>
+
 </resources>

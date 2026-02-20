@@ -24,6 +24,7 @@ import app.getpursue.data.auth.SecureTokenManager
 import app.getpursue.data.network.ApiClient
 import app.getpursue.data.network.ApiException
 import app.getpursue.ui.fragments.home.HomeFragment
+import app.getpursue.ui.views.CovenantBottomSheet
 import app.getpursue.ui.views.IconPickerBottomSheet
 import app.getpursue.utils.IconUrlUtils
 import app.getpursue.R
@@ -202,6 +203,16 @@ class CreateGroupFragment : Fragment() {
             return
         }
 
+        val covenant = CovenantBottomSheet.newInstance(isChallenge = false)
+        covenant.setCovenantListener(object : CovenantBottomSheet.CovenantListener {
+            override fun onCovenantAccepted() {
+                performCreateGroup()
+            }
+        })
+        covenant.show(childFragmentManager, "CovenantBottomSheet")
+    }
+
+    private fun performCreateGroup() {
         val name = groupNameEdit.text?.toString()?.trim() ?: ""
         val description = descriptionEdit.text?.toString()?.trim()?.takeIf { it.isNotEmpty() }
         val iconEmoji = selectedEmoji
