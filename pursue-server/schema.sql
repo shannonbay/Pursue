@@ -607,3 +607,17 @@ CREATE INDEX idx_weekly_recaps_sent_week_end ON weekly_recaps_sent(week_end);
 COMMENT ON TABLE weekly_recaps_sent IS 'Tracks which weekly recaps have been sent to prevent duplicate notifications';
 COMMENT ON COLUMN weekly_recaps_sent.week_end IS 'Sunday date marking the end of the recap week (YYYY-MM-DD)';
 COMMENT ON COLUMN group_memberships.weekly_recap_enabled IS 'Whether the member wants to receive weekly recap notifications for this group';
+
+-- Challenge Suggestion Log
+CREATE TABLE challenge_suggestion_log (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  sent_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  dismissed_at TIMESTAMP WITH TIME ZONE,
+  converted BOOLEAN DEFAULT FALSE,     -- User created/joined a challenge after this
+  UNIQUE(user_id)
+);
+
+CREATE INDEX idx_challenge_suggestion_user ON challenge_suggestion_log(user_id);
+
+COMMENT ON TABLE challenge_suggestion_log IS 'Tracks challenge suggestions sent to users to avoid nagging and enforce rate limits';

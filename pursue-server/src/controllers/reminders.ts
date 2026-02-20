@@ -23,6 +23,7 @@ import {
   getPattern,
   getDefaultPreferences,
 } from '../services/smartReminders/index.js';
+import { processChallengeSuggestions } from '../services/challenges.service.js';
 import { logger } from '../utils/logger.js';
 
 // =============================================================================
@@ -62,14 +63,16 @@ export async function processRemindersJob(
     logger.info('Starting process reminders job');
 
     const result = await processReminders();
+    const suggestionsSent = await processChallengeSuggestions();
 
-    logger.info('Process reminders job completed', result);
+    logger.info('Process reminders job completed', { ...result, suggestionsSent });
 
     res.status(200).json({
       success: true,
       sent: result.sent,
       skipped: result.skipped,
       errors: result.errors,
+      suggestions_sent: suggestionsSent,
     });
   } catch (error) {
     next(error);

@@ -8,7 +8,9 @@ import {
   computeDeferredSendAt,
   getCurrentDateUtcMinus12,
   getCurrentDateUtcPlus14,
+  getDateInTimezone,
 } from '../utils/timezone.js';
+import { sql } from 'kysely';
 
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 const SHARE_BASE_URL = process.env.PURSUE_SHARE_BASE_URL ?? 'https://getpursue.app';
@@ -81,6 +83,221 @@ function buildChallengeCompletionCardData(
     qr_url: buildChallengeCompletionQrUrl(referralToken),
     generated_at: new Date().toISOString(),
   };
+}
+
+/**
+ * Send challenge countdown notifications (starts tomorrow, day 1, halfway, 3 days left, final day)
+ */
+export async function sendChallengeCountdownNotifications(now: Date = new Date()): Promise<number> {
+  // Find all active or upcoming challenges and their members
+  const challengesAndMembers = await db
+    .selectFrom('groups as g')
+    .innerJoin('group_memberships as gm', 'g.id', 'gm.group_id')
+    .innerJoin('users as u', 'gm.user_id', 'u.id')
+    .select([
+      'g.id as group_id',
+      'g.name',
+      'g.challenge_start_date',
+      'g.challenge_end_date',
+      'gm.user_id',
+      'u.timezone',
+    ])
+    .where('g.is_challenge', '=', true)
+    .where('g.challenge_status', 'in', ['upcoming', 'active'])
+    .where('gm.status', '=', 'active')
+    .execute();
+
+  let sent = 0;
+  for (const row of challengesAndMembers) {
+    if (!row.challenge_start_date || !row.challenge_end_date) continue;
+
+    const timezone = row.timezone ?? 'UTC';
+    const userLocalDate = getDateInTimezone(timezone, now);
+    
+    let type: 'challenge_starts_tomorrow' | 'challenge_started' | 'challenge_countdown' | null = null;
+    let countdownType: string | null = null;
+
+    const startDate = row.challenge_start_date;
+    const endDate = row.challenge_end_date;
+    
+    if (userLocalDate === addDaysDateOnly(startDate, -1)) {
+      type = 'challenge_starts_tomorrow';
+    } else if (userLocalDate === startDate) {
+      type = 'challenge_started';
+    } else if (userLocalDate === endDate) {
+      type = 'challenge_countdown';
+      countdownType = 'final_day';
+    } else if (userLocalDate === addDaysDateOnly(endDate, -2)) {
+      type = 'challenge_countdown';
+      countdownType = 'three_days_left';
+    } else {
+      const totalDays = daysInclusive(startDate, endDate);
+      const halfwayDay = Math.floor(totalDays / 2);
+      if (userLocalDate === addDaysDateOnly(startDate, halfwayDay)) {
+        type = 'challenge_countdown';
+        countdownType = 'halfway';
+      }
+    }
+
+    if (type) {
+      const metadata = countdownType ? { countdown_type: countdownType } : {};
+      
+      const existing = await db
+        .selectFrom('user_notifications')
+        .select('id')
+        .where('user_id', '=', row.user_id)
+        .where('group_id', '=', row.group_id)
+        .where('type', '=', type)
+        .where((eb) => {
+          if (countdownType) {
+            return eb('metadata', '@>', metadata);
+          }
+          // For types without countdownType, we check if they were sent "today" or "recently" 
+          // Since it's once per day milestones, we can just check if any exists for this group/user/type.
+          // In a real scenario, you might want to check the created_at date to allow repeating challenges.
+          // But for a single challenge instance, group_id + user_id + type is enough.
+          return eb.val(true);
+        })
+        .executeTakeFirst();
+
+      if (!existing) {
+        await createNotification({
+          user_id: row.user_id,
+          type,
+          group_id: row.group_id,
+          metadata,
+        });
+        sent++;
+      }
+    }
+  }
+
+  return sent;
+}
+
+export async function processChallengeSuggestions(now: Date = new Date()): Promise<number> {
+  const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+  const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+  const sevenDaysAgoStr = sevenDaysAgo.toISOString().slice(0, 10);
+
+  // 1. Identify users who:
+  // - Have at least 1 active group membership
+  // - Have never created or joined a challenge
+  // - Have not had a suggestion in the last 30 days
+  // - Are active (logged in 5 of last 7 days)
+  
+  // Note: we check for any challenge membership to stop suggestions forever once they join one
+  const candidates = await db
+    .selectFrom('users as u')
+    .innerJoin('group_memberships as gm', 'u.id', 'gm.user_id')
+    .select([
+      'u.id',
+      'u.display_name',
+      'u.timezone',
+    ])
+    .distinct()
+    .where('u.deleted_at', 'is', null)
+    .where('gm.status', '=', 'active')
+    // No challenge involvement
+    .where(({ not, exists, selectFrom }) =>
+      not(
+        exists(
+          selectFrom('group_memberships as cgm')
+            .innerJoin('groups as cg', 'cg.id', 'cgm.group_id')
+            .whereRef('cgm.user_id', '=', 'u.id')
+            .where('cg.is_challenge', '=', true)
+        )
+      )
+    )
+    // No recent suggestion
+    .where(({ not, exists, selectFrom }) =>
+      not(
+        exists(
+          selectFrom('challenge_suggestion_log as csl')
+            .whereRef('csl.user_id', '=', 'u.id')
+            .where((eb) =>
+              eb.or([
+                eb('csl.sent_at', '>', thirtyDaysAgo),
+                eb('csl.dismissed_at', '>', thirtyDaysAgo)
+              ])
+            )
+        )
+      )
+    )
+    // Logged in 5 of last 7 days
+    .where(({ exists, selectFrom }) =>
+      exists(
+        selectFrom('progress_entries as pe')
+          .select(sql`count(distinct period_start)`.as('days_logged'))
+          .whereRef('pe.user_id', '=', 'u.id')
+          .where('pe.period_start', '>=', sevenDaysAgoStr)
+          .having(sql`count(distinct period_start)`, '>=', 5)
+      )
+    )
+    .execute();
+
+  let sent = 0;
+  for (const user of candidates) {
+    // Check if it's a good time to send (during their typical active window)
+    const pattern = await db
+      .selectFrom('user_logging_patterns')
+      .select(['typical_hour_start', 'typical_hour_end'])
+      .where('user_id', '=', user.id)
+      .where('day_of_week', '=', -1) // general pattern
+      .orderBy('confidence_score', 'desc')
+      .executeTakeFirst();
+
+    const timezone = user.timezone ?? 'UTC';
+    let userHour: number;
+    try {
+      const userTime = new Intl.DateTimeFormat('en-US', {
+        hour: 'numeric',
+        hour12: false,
+        timeZone: timezone
+      }).format(now);
+      userHour = parseInt(userTime, 10);
+    } catch {
+      userHour = now.getUTCHours();
+    }
+
+    const startHour = pattern?.typical_hour_start ?? 9;
+    const endHour = pattern?.typical_hour_end ?? 21;
+
+    // Send only if user is within their active window (or default 9-21)
+    if (userHour >= startHour && userHour <= endHour) {
+      const notificationId = await createNotification({
+        user_id: user.id,
+        type: 'challenge_suggestion',
+        actor_user_id: null,
+        group_id: null,
+        goal_id: null,
+        metadata: {},
+      });
+
+      if (notificationId) {
+        await db
+          .insertInto('challenge_suggestion_log')
+          .values({
+            user_id: user.id,
+            sent_at: new Date().toISOString(),
+          })
+          .onConflict((oc) =>
+            oc.column('user_id').doUpdateSet({
+              sent_at: new Date().toISOString(),
+              dismissed_at: null,
+            })
+          )
+          .execute();
+        
+        sent++;
+      }
+    }
+  }
+
+  if (sent > 0) {
+    logger.info(`Sent ${sent} challenge suggestions`);
+  }
+  return sent;
 }
 
 export async function getChallengeCompletionRateForUser(
@@ -294,11 +511,14 @@ export interface ChallengeStatusUpdateResult {
   completed: number;
   completion_notifications: number;
   completion_pushes_queued: number;
+  countdown_notifications: number;
 }
 
 export async function updateChallengeStatuses(now: Date = new Date()): Promise<ChallengeStatusUpdateResult> {
   const activationBoundaryDate = getCurrentDateUtcPlus14(now);
   const completionBoundaryDate = getCurrentDateUtcMinus12(now);
+
+  const countdown_notifications = await sendChallengeCountdownNotifications(now);
 
   const activatedRows = await db
     .updateTable('groups')
@@ -340,6 +560,7 @@ export async function updateChallengeStatuses(now: Date = new Date()): Promise<C
     completed: completedGroups.length,
     completion_notifications: completionNotifications,
     completion_pushes_queued: completionPushesQueued,
+    countdown_notifications,
   };
 
   logger.info('updateChallengeStatuses completed', result);

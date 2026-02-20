@@ -484,6 +484,19 @@ export interface WeeklyRecapsSentTable {
 export type WeeklyRecapSent = Selectable<WeeklyRecapsSentTable>;
 export type NewWeeklyRecapSent = Insertable<WeeklyRecapsSentTable>;
 
+// Challenge suggestion log table (track suggestions to avoid nagging)
+export interface ChallengeSuggestionLogTable {
+  id: Generated<string>;
+  user_id: string;
+  sent_at: ColumnType<Date, string | undefined, string | undefined>;
+  dismissed_at: ColumnType<Date | null, string | null | undefined, string | null | undefined>;
+  converted: ColumnType<boolean, boolean | undefined, boolean>;
+}
+
+export type ChallengeSuggestionLog = Selectable<ChallengeSuggestionLogTable>;
+export type NewChallengeSuggestionLog = Insertable<ChallengeSuggestionLogTable>;
+export type ChallengeSuggestionLogUpdate = Updateable<ChallengeSuggestionLogTable>;
+
 // Database interface combining all tables
 export interface Database {
   users: UsersTable;
@@ -517,4 +530,5 @@ export interface Database {
   reminder_history: ReminderHistoryTable;
   user_reminder_preferences: UserReminderPreferencesTable;
   weekly_recaps_sent: WeeklyRecapsSentTable;
+  challenge_suggestion_log: ChallengeSuggestionLogTable;
 }

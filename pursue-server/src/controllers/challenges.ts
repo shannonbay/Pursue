@@ -369,6 +369,13 @@ export async function createChallenge(
         .orderBy('created_at', 'asc')
         .execute();
 
+      await trx
+        .updateTable('challenge_suggestion_log')
+        .set({ converted: true })
+        .where('user_id', '=', req.user!.id)
+        .where('converted', '=', false)
+        .execute();
+
       return { group, goals, inviteCode, inviteCardBase };
     });
 
@@ -613,6 +620,36 @@ export async function processChallengeCompletionPushesJob(
     res.status(200).json({
       success: true,
       ...result,
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * PATCH /api/challenges/suggestions/dismiss
+ * Dismiss the current challenge suggestion for the user.
+ */
+export async function dismissChallengeSuggestion(
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    if (!req.user) {
+      throw new ApplicationError('Unauthorized', 401, 'UNAUTHORIZED');
+    }
+
+    const now = new Date();
+    await db
+      .updateTable('challenge_suggestion_log')
+      .set({ dismissed_at: now.toISOString() })
+      .where('user_id', '=', req.user.id)
+      .execute();
+
+    res.status(200).json({
+      success: true,
+      dismissed_at: now.toISOString(),
     });
   } catch (error) {
     next(error);

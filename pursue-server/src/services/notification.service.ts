@@ -230,7 +230,11 @@ export type NotificationType =
   | 'promoted_to_admin'
   | 'removed_from_group'
   | 'milestone_achieved'
-  | 'join_request_received';
+  | 'join_request_received'
+  | 'challenge_suggestion'
+  | 'challenge_starts_tomorrow'
+  | 'challenge_started'
+  | 'challenge_countdown';
 
 export interface CreateNotificationParams {
   user_id: string;
@@ -416,6 +420,52 @@ async function sendFcmForNotification(
       };
       if (group_id) data.group_id = group_id;
       break;
+    case 'challenge_suggestion':
+      notification = {
+        title: 'Ready for a challenge? \u{1F3C6}',
+        body: 'Start a 30-day challenge with your friends. Pick from dozens of templates!',
+      };
+      break;
+    case 'challenge_starts_tomorrow':
+      notification = {
+        title: '\u{1F3C1} Challenge starts tomorrow!',
+        body: `${groupName} kicks off tomorrow. Make sure your group is ready!`,
+      };
+      if (group_id) data.group_id = group_id;
+      break;
+    case 'challenge_started':
+      notification = {
+        title: '\u{1F680} Day 1 \u2014 let\'s go!',
+        body: `Your ${groupName} challenge starts today. Log your first entry!`,
+      };
+      if (group_id) data.group_id = group_id;
+      break;
+    case 'challenge_countdown': {
+      const milestoneType = metadata?.countdown_type as string;
+      if (milestoneType === 'halfway') {
+        notification = {
+          title: '\u{1F525} Halfway there!',
+          body: `You're halfway through ${groupName}! Keep pushing.`,
+        };
+      } else if (milestoneType === 'three_days_left') {
+        notification = {
+          title: '\u23F0 3 days left!',
+          body: `Just 3 more days in your ${groupName} challenge. Don't stop now!`,
+        };
+      } else if (milestoneType === 'final_day') {
+        notification = {
+          title: '\u{1F3C6} Last day!',
+          body: `It's the final day of ${groupName}. Finish strong!`,
+        };
+      } else {
+        notification = {
+          title: 'Challenge Update',
+          body: `Keep up the great work in ${groupName}!`,
+        };
+      }
+      if (group_id) data.group_id = group_id;
+      break;
+    }
     default:
       return;
   }

@@ -1578,6 +1578,15 @@ export async function joinGroup(
     // Create activity for join request
     await createGroupActivity(invite.group_id, ACTIVITY_TYPES.JOIN_REQUEST, req.user.id);
 
+    if (invite.is_challenge) {
+      await db
+        .updateTable('challenge_suggestion_log')
+        .set({ converted: true })
+        .where('user_id', '=', req.user!.id)
+        .where('converted', '=', false)
+        .execute();
+    }
+
     // Get group and active member count for response
     const group = await db
       .selectFrom('groups')
