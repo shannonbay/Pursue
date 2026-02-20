@@ -30,6 +30,9 @@ class MainActivity : AppCompatActivity() {
         if (hasIdentity()) {
             if (fcmIntent != null) {
                 startActivity(fcmIntent)
+            } else if (isOrientationPending()) {
+                // User started orientation but didn't complete it (app killed mid-flow)
+                startActivity(OrientationActivity.newIntent(this))
             } else {
                 startActivity(Intent(this, MainAppActivity::class.java))
             }
@@ -71,6 +74,17 @@ class MainActivity : AppCompatActivity() {
         val tokenManager = SecureTokenManager.Companion.getInstance(this)
         return tokenManager.hasTokens() || prefs.getBoolean(KEY_HAS_IDENTITY, false)
     }
+
+    /**
+     * Returns true if orientation was started but not completed
+     * (e.g., app killed mid-orientation flow).
+     */
+    private fun isOrientationPending(): Boolean {
+        val started = prefs.getBoolean(OrientationActivity.KEY_ORIENTATION_STARTED, false)
+        val completed = prefs.getBoolean(OrientationActivity.KEY_ORIENTATION_COMPLETED, false)
+        return started && !completed
+    }
+
     companion object {
         const val PREFS_NAME = "pursue_prefs"
         const val KEY_HAS_IDENTITY = "has_identity"

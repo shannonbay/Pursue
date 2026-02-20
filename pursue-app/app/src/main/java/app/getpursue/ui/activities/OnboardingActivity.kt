@@ -169,8 +169,10 @@ class OnboardingActivity : AppCompatActivity(),
 
     override fun onSignUp(displayName: String, email: String, password: String) {
         // Registration is handled in SignUpEmailFragment (API call, token storage, FCM registration)
-        // Success toast is shown in SignUpEmailFragment, so just navigate to main app
-        startActivity(Intent(this, MainAppActivity::class.java))
+        // Success toast is shown in SignUpEmailFragment, so navigate to orientation for new users
+        val intent = OrientationActivity.newIntent(this)
+        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        startActivity(intent)
         finish()
     }
 
@@ -295,7 +297,7 @@ class OnboardingActivity : AppCompatActivity(),
                     Log.w("OnboardingActivity", "FCM token registration failed", e)
                 }
 
-                // Navigate to main app (ensure UI operations run on main thread)
+                // Navigate to main app or orientation (ensure UI operations run on main thread)
                 runOnUiThread {
                     val successMessage = if (response.is_new_user) {
                         getString(R.string.account_created_google)
@@ -304,10 +306,14 @@ class OnboardingActivity : AppCompatActivity(),
                     }
                     Toast.makeText(this@OnboardingActivity, successMessage, Toast.LENGTH_SHORT).show()
 
-                    // Start MainAppActivity with flags to ensure fresh instance and clear task stack
-                    val intent = Intent(this@OnboardingActivity, MainAppActivity::class.java)
+                    val intent = if (response.is_new_user) {
+                        Log.d("OnboardingActivity", "New user — navigating to OrientationActivity")
+                        OrientationActivity.newIntent(this@OnboardingActivity)
+                    } else {
+                        Log.d("OnboardingActivity", "Returning user — navigating to MainAppActivity")
+                        Intent(this@OnboardingActivity, MainAppActivity::class.java)
+                    }
                     intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-                    Log.d("OnboardingActivity", "Navigating to MainAppActivity after Google sign-in")
                     startActivity(intent)
                     finish()
                 }

@@ -750,4 +750,33 @@
     <string name="covenant_confirm_message">By joining, you accept the Pursue Covenant.</string>
     <string name="covenant_confirm_join">Join</string>
 
+    <!-- Orientation Flow -->
+    <string name="orientation_skip">Skip</string>
+    <string name="orientation_join_title">Been invited to a group?</string>
+    <string name="orientation_join_description">If someone sent you an invite code, enter it below to join their group.</string>
+    <string name="orientation_join_button">Join Group</string>
+    <string name="orientation_scan_qr">Scan QR Code</string>
+    <string name="orientation_no_invite_code">I don\'t have an invite code</string>
+    <string name="orientation_step_x_of_3">Step %1$d of 3</string>
+    <string name="orientation_challenge_title">Try a challenge!</string>
+    <string name="orientation_challenge_description">Challenges are time-boxed goals — like "30-Day No Sugar" or "Read Every Day for a Week." Pick a template and start today.</string>
+    <string name="orientation_info_card_title">What\'s the difference between groups and challenges?</string>
+    <string name="orientation_info_card_groups">🔄 Groups are ongoing\nOpen-ended accountability with no end date. Perfect for daily habits and long-term goals you want to track forever.</string>
+    <string name="orientation_info_card_challenges">🏆 Challenges are time-boxed\nA fixed number of days with a clear start and end. Great for building new habits or trying something for a set period.</string>
+    <string name="orientation_info_card_both">Both include all the same features — reactions, nudges, progress tracking, and group activity feed.</string>
+    <string name="orientation_create_own_group">I\'d rather create my own group</string>
+    <string name="orientation_create_title">Create your group</string>
+    <string name="orientation_create_description">Groups are ongoing — perfect for daily habits and weekly goals with friends. No end date, just consistent accountability.</string>
+    <string name="orientation_group_name_hint">Group Name (e.g. Morning Runners)</string>
+    <string name="orientation_goal_hint">Your first goal (e.g. Run 30 minutes)</string>
+    <string name="orientation_create_button">Create Group</string>
+    <string name="orientation_cadence_daily">Daily</string>
+    <string name="orientation_cadence_weekly">Weekly</string>
+    <string name="orientation_cadence_monthly">Monthly</string>
+    <string name="orientation_type_binary">Yes/No</string>
+    <string name="orientation_type_numeric">Numeric</string>
+    <string name="orientation_target_hint">Target (optional, e.g. 30)</string>
+    <string name="orientation_unit_hint">Unit (optional, e.g. minutes)</string>
+    <string name="orientation_invite_code_error">Invalid or expired invite code. Check with your friend and try again.</string>
+
 </resources>
