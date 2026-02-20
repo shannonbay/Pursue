@@ -226,11 +226,15 @@ class ShareableMilestoneCardActivity : AppCompatActivity() {
 
     private suspend fun loadCardDataFromNotificationId(id: String) {
         val token = SecureTokenManager.getInstance(this).getAccessToken() ?: return
-        val response = withContext(Dispatchers.IO) {
-            ApiClient.getNotifications(token, limit = 60, beforeId = null)
+        try {
+            val response = withContext(Dispatchers.IO) {
+                ApiClient.getNotifications(token, limit = 50, beforeId = null)
+            }
+            val item = response.notifications.firstOrNull { it.id == id } ?: return
+            cardData = parseCardDataFromMap(item.shareable_card_data)
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to load notification for card", e)
         }
-        val item = response.notifications.firstOrNull { it.id == id } ?: return
-        cardData = parseCardDataFromMap(item.shareable_card_data)
     }
 
     private fun parseCardData(cardJson: String?): ShareableCardData? {

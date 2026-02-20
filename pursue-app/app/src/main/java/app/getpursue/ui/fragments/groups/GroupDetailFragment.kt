@@ -1204,7 +1204,7 @@ class GroupDetailFragment : Fragment() {
                     Toast.makeText(requireContext(), getString(R.string.error_unauthorized_message), Toast.LENGTH_SHORT).show()
                     return@launch
                 }
-                val notifications = withContext(Dispatchers.IO) { ApiClient.getNotifications(token, limit = 60) }
+                val notifications = withContext(Dispatchers.IO) { ApiClient.getNotifications(token, limit = 50) }
                 val match = notifications.notifications.firstOrNull { notif ->
                     notif.group?.id == gid && notif.toChallengeCompletionCardDataOrNull() != null
                 }
