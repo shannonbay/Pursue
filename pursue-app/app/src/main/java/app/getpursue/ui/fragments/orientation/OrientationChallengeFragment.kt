@@ -26,9 +26,6 @@ class OrientationChallengeFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        infoCardContent = view.findViewById(R.id.info_card_content)
-        infoCardChevron = view.findViewById(R.id.info_card_chevron)
-
         // Setup progress dots for step 2
         setupProgressDots(view.findViewById(R.id.progress_dots), 2)
 
@@ -38,9 +35,6 @@ class OrientationChallengeFragment : Fragment() {
         }
         view.findViewById<MaterialButton>(R.id.button_skip).setOnClickListener { goToStep3() }
         view.findViewById<MaterialButton>(R.id.button_create_own).setOnClickListener { goToStep3() }
-
-        // Expandable info card
-        view.findViewById<View>(R.id.info_card_header).setOnClickListener { toggleInfoCard() }
 
         // Embed ChallengeTemplatesFragment
         if (savedInstanceState == null) {
