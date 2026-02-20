@@ -30,6 +30,10 @@
             android:exported="false" />
 
         <activity
+            android:name="app.getpursue.ui.activities.OrientationActivity"
+            android:exported="false" />
+
+        <activity
             android:name="app.getpursue.ui.activities.GroupDetailActivity"
             android:exported="false"
             android:parentActivityName="app.getpursue.ui.activities.MainAppActivity" />
@@ -67,6 +71,10 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths" />
         </provider>
+
+        <meta-data
+            android:name="com.google.mlkit.vision.DEPENDENCIES"
+            android:value="barcode_ui" />
 
     </application>
 

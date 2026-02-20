@@ -19,8 +19,9 @@ import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
-import com.journeyapps.barcodescanner.ScanContract
-import com.journeyapps.barcodescanner.ScanOptions
+import com.google.mlkit.vision.codescanner.GmsBarcodeScannerOptions
+import com.google.mlkit.vision.codescanner.GmsBarcodeScanning
+import com.google.mlkit.vision.barcode.common.Barcode
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -73,22 +74,6 @@ class JoinGroupBottomSheet : BottomSheetDialogFragment() {
     private lateinit var editCode: TextInputEditText
     private lateinit var buttonJoin: View
 
-    private val barcodeLauncher = registerForActivityResult(ScanContract()) { result ->
-        if (!isAdded) return@registerForActivityResult
-        val contents = result.contents
-        if (contents.isNullOrBlank()) return@registerForActivityResult
-        val code = parseInviteCodeFromScan(contents)
-        if (code != null) {
-            if (::editCode.isInitialized && ::inputLayout.isInitialized) {
-                editCode.setText(code)
-                inputLayout.error = null
-                showCovenant(code)
-            }
-        } else {
-            Toast.makeText(requireContext(), getString(R.string.invite_code_invalid), Toast.LENGTH_SHORT).show()
-        }
-    }
-
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -114,11 +99,38 @@ class JoinGroupBottomSheet : BottomSheetDialogFragment() {
         }
 
         view.findViewById<View>(R.id.button_scan).setOnClickListener {
-            val options = ScanOptions().apply {
-                setDesiredBarcodeFormats(ScanOptions.QR_CODE)
-                setPrompt(getString(R.string.scan_code))
-            }
-            barcodeLauncher.launch(options)
+            val options = GmsBarcodeScannerOptions.Builder()
+                .setBarcodeFormats(Barcode.FORMAT_QR_CODE)
+                .enableAutoZoom()
+                .build()
+
+            val scanner = GmsBarcodeScanning.getClient(requireContext(), options)
+
+            scanner.startScan()
+                .addOnSuccessListener { barcode: Barcode ->
+                    // Use a safe check for context and fragment state
+                    val currentContext = context
+                    if (!isAdded || currentContext == null) return@addOnSuccessListener
+
+                    val contents = barcode.rawValue
+                    if (contents.isNullOrBlank()) return@addOnSuccessListener
+
+                    val code = parseInviteCodeFromScan(contents)
+
+                    if (code != null) {
+                        // Update UI safely
+                        editCode.setText(code)
+                        inputLayout.error = null
+
+                        // Post to the main queue to ensure the Fragment is fully resumed
+                        // before launching another UI piece (the Covenant)
+                        view?.post {
+                            if (isAdded) showCovenant(code)
+                        }
+                    } else {
+                        Toast.makeText(currentContext, R.string.invite_code_invalid, Toast.LENGTH_SHORT).show()
+                    }
+                }
         }
 
         view.findViewById<View>(R.id.button_cancel).setOnClickListener { dismiss() }
@@ -143,6 +155,8 @@ class JoinGroupBottomSheet : BottomSheetDialogFragment() {
     }
 
     private fun showCovenant(code: String) {
+        if (!isAdded || isStateSaved) return
+        
         val covenant = CovenantBottomSheet.newInstance(isChallenge = false)
         covenant.setCovenantListener(object : CovenantBottomSheet.CovenantListener {
             override fun onCovenantAccepted() {

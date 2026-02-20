@@ -111,10 +111,10 @@ dependencies {
     // Image cropping
     implementation(libs.imageCropper)
     implementation(libs.zxing)
-    // QR scanning (JoinGroupBottomSheet); exclude transitive zxing core to use our 3.5.3
-    implementation(libs.zxing.android.embedded) {
-        exclude(group = "com.google.zxing", module = "core")
-    }
+
+    // QR scanning (JoinGroupBottomSheet)
+    implementation(libs.googleCodeScanner)
+    implementation(libs.mlkitBarcodeCommon)
 
     // Google Play Billing (subscriptions)
     implementation(libs.billing.ktx)

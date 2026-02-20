@@ -28,7 +28,8 @@ glide = "4.16.0"
 glideOkHttp = "4.12.0"
 imageCropper = "4.5.0"
 zxing = "3.5.3"
-zxingAndroidEmbedded = "4.3.0"
+playServicesCodeScanner = "16.1.0"
+mlkitBarcodeCommon = "17.0.0"
 truth = "1.1.5"
 okhttpLogging = "4.12.0"
 billing = "6.1.0"
@@ -64,7 +65,8 @@ glide = { group = "com.github.bumptech.glide", name = "glide", version.ref = "gl
 glideOkHttp = { group = "com.github.bumptech.glide", name = "okhttp3-integration", version.ref = "glideOkHttp" }
 imageCropper = { group = "com.vanniktech", name = "android-image-cropper", version.ref = "imageCropper" }
 zxing = { group = "com.google.zxing", name = "core", version.ref = "zxing" }
-zxing-android-embedded = { group = "com.journeyapps", name = "zxing-android-embedded", version.ref = "zxingAndroidEmbedded" }
+googleCodeScanner = { group = "com.google.android.gms", name = "play-services-code-scanner", version.ref = "playServicesCodeScanner" }
+mlkitBarcodeCommon = { group = "com.google.mlkit", name = "barcode-scanning-common", version.ref = "mlkitBarcodeCommon" }
 truth = { group = "com.google.truth", name = "truth", version.ref = "truth" }
 okhttpLogging = { group = "com.squareup.okhttp3", name = "logging-interceptor", version.ref = "okhttpLogging" }
 billing-ktx = { group = "com.android.billingclient", name = "billing-ktx", version.ref = "billing" }
