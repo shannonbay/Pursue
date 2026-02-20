@@ -10,7 +10,7 @@ UPDATE challenge_templates SET icon_url = 'res://drawable/ic_icon_walking' WHERE
 UPDATE challenge_templates SET icon_url = 'res://drawable/ic_icon_planking' WHERE slug = 'plank-challenge';
 UPDATE challenge_templates SET icon_url = 'res://drawable/ic_icon_sunrise' WHERE slug = 'morning-workout';
 
-UPDATE challenge_templates SET icon_url = 'res://drawable/ic_icon_books' WHERE slug = 'read-bible-one-year';
+UPDATE challenge_templates SET icon_url = 'res://drawable/ic_icon_book' WHERE slug = 'read-bible-one-year';
 UPDATE challenge_templates SET icon_url = 'res://drawable/ic_icon_book' WHERE slug = 'read-nt-260-days';
 UPDATE challenge_templates SET icon_url = 'res://drawable/ic_icon_book' WHERE slug = 'book-a-month';
 UPDATE challenge_templates SET icon_url = 'res://drawable/ic_icon_books' WHERE slug = '50-books-year';
@@ -19,12 +19,12 @@ UPDATE challenge_templates SET icon_url = 'res://drawable/ic_icon_journal' WHERE
 UPDATE challenge_templates SET icon_url = 'res://drawable/ic_icon_socialmediaban' WHERE slug = 'no-social-30';
 UPDATE challenge_templates SET icon_url = 'res://drawable/ic_icon_sleep' WHERE slug = '7-hours-sleep';
 UPDATE challenge_templates SET icon_url = 'res://drawable/ic_icon_phone' WHERE slug = 'digital-detox-weekend';
-UPDATE challenge_templates SET icon_url = 'res://drawable/ic_icon_coldshower' WHERE slug = 'cold-shower-30';
+UPDATE challenge_templates SET icon_url = 'res://drawable/ic_icon_socialmediaban' WHERE slug = 'cold-shower-30';
 
 UPDATE challenge_templates SET icon_url = 'res://drawable/ic_icon_lightning' WHERE slug = '30-day-no-sugar';
 UPDATE challenge_templates SET icon_url = 'res://drawable/ic_icon_salad' WHERE slug = 'whole30';
 UPDATE challenge_templates SET icon_url = 'res://drawable/ic_icon_frypan' WHERE slug = 'cook-at-home';
-UPDATE challenge_templates SET icon_url = 'res://drawable/ic_icon_socialmediaban' WHERE slug = 'no-alcohol-30';
+UPDATE challenge_templates SET icon_url = 'res://drawable/ic_icon_lightning' WHERE slug = 'no-alcohol-30';
 UPDATE challenge_templates SET icon_url = 'res://drawable/ic_icon_water' WHERE slug = '8-glasses-water';
 
 UPDATE challenge_templates SET icon_url = 'res://drawable/ic_icon_laptop' WHERE slug = '30-days-coding';
