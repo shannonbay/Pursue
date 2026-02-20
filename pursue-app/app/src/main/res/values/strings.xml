@@ -33,8 +33,11 @@
     <string name="shareable_card_save_failed">Could not save image</string>
     <string name="shareable_card_share_failed">Could not open share options</string>
     <string name="shareable_card_share_chooser_title">Share your achievement</string>
+    <string name="challenge_invite_share_chooser_title">Share Challenge</string>
+    <string name="challenge_completion_share_chooser_title">Share Challenge Completion</string>
     <string name="shareable_card_share_text">Check out my progress on Pursue! %1$s</string>
     <string name="shareable_card_btn_share_primary">Share Your Achievement</string>
+    <string name="challenge_invite_btn_share_primary">Share Challenge</string>
     <string name="challenge_completion_btn_share_primary">Share Challenge Completion</string>
     <string name="shareable_card_btn_share_instagram">Share to Instagram Stories</string>
     <string name="shareable_card_btn_save">Save to Photos</string>

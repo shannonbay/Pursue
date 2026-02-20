@@ -289,6 +289,7 @@ class ShareableMilestoneCardActivity : AppCompatActivity() {
             else -> getString(R.string.shareable_card_title)
         }
         btnShare.text = when (data.cardType) {
+            "challenge_invite" -> getString(R.string.challenge_invite_btn_share_primary)
             "challenge_completion" -> getString(R.string.challenge_completion_btn_share_primary)
             else -> getString(R.string.shareable_card_btn_share_primary)
         }
@@ -410,9 +411,15 @@ class ShareableMilestoneCardActivity : AppCompatActivity() {
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         }
 
+        val chooserTitle = when (data.cardType) {
+            "challenge_invite" -> getString(R.string.challenge_invite_share_chooser_title)
+            "challenge_completion" -> getString(R.string.challenge_completion_share_chooser_title)
+            else -> getString(R.string.shareable_card_share_chooser_title)
+        }
+
         val chooserIntent = Intent.createChooser(
             shareIntent,
-            getString(R.string.shareable_card_share_chooser_title)
+            chooserTitle
         )
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP_MR1) {
             val callbackIntent = Intent(ACTION_CHOOSER_TARGET_SELECTED).setPackage(packageName)
