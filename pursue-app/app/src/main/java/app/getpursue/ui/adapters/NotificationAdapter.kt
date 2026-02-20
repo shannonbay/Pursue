@@ -134,6 +134,18 @@ class NotificationAdapter(
                         else -> context.getString(R.string.notification_milestone_first)
                     }
                 }
+                "challenge_suggestion" -> context.getString(R.string.notification_challenge_suggestion)
+                "challenge_starts_tomorrow" -> context.getString(R.string.notification_challenge_starts_tomorrow, groupName)
+                "challenge_started" -> context.getString(R.string.notification_challenge_started, groupName)
+                "challenge_countdown" -> {
+                    val countdownType = item.metadata?.get("countdown_type") as? String
+                    when (countdownType) {
+                        "halfway" -> context.getString(R.string.notification_challenge_halfway, groupName)
+                        "three_days_left" -> context.getString(R.string.notification_challenge_three_days, groupName)
+                        "final_day" -> context.getString(R.string.notification_challenge_final_day, groupName)
+                        else -> context.getString(R.string.notification_challenge_suggestion)
+                    }
+                }
                 else -> (item.actor?.display_name ?: "Someone") + " — notification"
             }
         }
@@ -150,6 +162,12 @@ class NotificationAdapter(
                 avatar.scaleType = ImageView.ScaleType.CENTER_INSIDE
                 avatar.setBackgroundResource(R.color.white)
                 avatarOverlay.visibility = View.GONE
+                return
+            }
+            if (item.type == "challenge_suggestion") {
+                avatar.setImageResource(R.drawable.ic_pursue_logo) // Use logo as base
+                avatar.scaleType = ImageView.ScaleType.CENTER_INSIDE
+                avatar.setBackgroundResource(R.color.white)
                 return
             }
             avatar.scaleType = ImageView.ScaleType.CENTER_CROP
@@ -202,6 +220,28 @@ class NotificationAdapter(
                     avatarOverlay.text = "⭐"
                     avatarOverlay.visibility = View.VISIBLE
                 }
+                "challenge_suggestion" -> {
+                    avatarOverlay.text = "🏆"
+                    avatarOverlay.visibility = View.VISIBLE
+                }
+                "challenge_starts_tomorrow" -> {
+                    avatarOverlay.text = "🏁"
+                    avatarOverlay.visibility = View.VISIBLE
+                }
+                "challenge_started" -> {
+                    avatarOverlay.text = "🚀"
+                    avatarOverlay.visibility = View.VISIBLE
+                }
+                "challenge_countdown" -> {
+                    val countdownType = item.metadata?.get("countdown_type") as? String
+                    avatarOverlay.text = when (countdownType) {
+                        "halfway" -> "🔥"
+                        "three_days_left" -> "⏰"
+                        "final_day" -> "🏆"
+                        else -> "🏆"
+                    }
+                    avatarOverlay.visibility = View.VISIBLE
+                }
                 else -> avatarOverlay.visibility = View.GONE
             }
         }
@@ -211,6 +251,12 @@ class NotificationAdapter(
                 "milestone_achieved" -> R.color.milestone_gold_border to true
                 "membership_approved" -> R.color.approved_green_border to true
                 "membership_rejected", "removed_from_group" -> R.color.on_surface_variant to true
+                "challenge_starts_tomorrow" -> R.color.primary to true
+                "challenge_countdown" -> {
+                    val countdownType = item.metadata?.get("countdown_type") as? String
+                    if (countdownType == "final_day") R.color.milestone_gold_border to true
+                    else 0 to false
+                }
                 else -> 0 to false
             }
             leftAccent.visibility = if (visible) View.VISIBLE else View.GONE

@@ -85,7 +85,8 @@ class MainAppActivity : AppCompatActivity(),
     NavigationBarView.OnItemSelectedListener,
     HomeFragment.Callbacks,
     TodayFragment.Callbacks,
-    ProfileFragment.Callbacks {
+    ProfileFragment.Callbacks,
+    NotificationsFragment.Callbacks {
 
     private lateinit var bottomNavigation: BottomNavigationView
     private lateinit var connectivityManager: ConnectivityManager
@@ -777,6 +778,10 @@ class MainAppActivity : AppCompatActivity(),
         GoogleSignInHelper(this).signOut()
         FcmTokenManager.getInstance(this).clearToken()
         authRepository.signOut()
+    }
+
+    override fun onChallengeSuggestionClicked() {
+        onStartChallenge()
     }
 
     // endregion

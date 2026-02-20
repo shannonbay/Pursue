@@ -40,6 +40,10 @@ import kotlinx.coroutines.withContext
  */
 class NotificationsFragment : Fragment() {
 
+    interface Callbacks {
+        fun onChallengeSuggestionClicked()
+    }
+
     companion object {
         fun newInstance(): NotificationsFragment = NotificationsFragment()
     }
@@ -236,6 +240,9 @@ class NotificationsFragment : Fragment() {
             "removed_from_group" -> {
                 Snackbar.make(requireView(), getString(R.string.no_longer_member_toast), Snackbar.LENGTH_SHORT).show()
             }
+            "challenge_suggestion" -> {
+                (activity as? Callbacks)?.onChallengeSuggestionClicked()
+            }
             "join_request_received" -> {
                 val groupId = item.group?.id
                 val groupName = item.group?.name ?: ""
@@ -269,7 +276,7 @@ class NotificationsFragment : Fragment() {
                 val groupName = item.group?.name ?: ""
                 if (groupId != null) {
                     val initialTab = when (item.type) {
-                        "nudge_received" -> 0
+                        "nudge_received", "challenge_starts_tomorrow", "challenge_started", "challenge_countdown" -> 0
                         "reaction_received", "milestone_achieved" -> 2
                         else -> 1
                     }
