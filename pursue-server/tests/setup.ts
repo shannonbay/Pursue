@@ -204,6 +204,7 @@ async function createSchema(db: Kysely<Database>) {
       description TEXT,
       icon_emoji VARCHAR(10),
       icon_color VARCHAR(7),
+      icon_url TEXT,
       icon_data BYTEA,
       icon_mime_type VARCHAR(50),
       creator_user_id UUID NOT NULL REFERENCES users(id),
@@ -282,6 +283,12 @@ async function createSchema(db: Kysely<Database>) {
       ) THEN
         ALTER TABLE groups ADD COLUMN challenge_invite_card_data JSONB;
       END IF;
+      IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = 'groups' AND column_name = 'icon_url'
+      ) THEN
+        ALTER TABLE groups ADD COLUMN icon_url TEXT;
+      END IF;
     END $$;
   `.execute(db);
 
@@ -292,6 +299,7 @@ async function createSchema(db: Kysely<Database>) {
       title VARCHAR(200) NOT NULL,
       description TEXT NOT NULL,
       icon_emoji VARCHAR(10) NOT NULL,
+      icon_url TEXT,
       duration_days INTEGER NOT NULL,
       category VARCHAR(50) NOT NULL,
       difficulty VARCHAR(20) NOT NULL DEFAULT 'moderate',
@@ -303,6 +311,17 @@ async function createSchema(db: Kysely<Database>) {
   `.execute(db);
   await sql`CREATE INDEX IF NOT EXISTS idx_challenge_templates_category ON challenge_templates(category, sort_order)`.execute(db);
   await sql`CREATE INDEX IF NOT EXISTS idx_challenge_templates_featured ON challenge_templates(is_featured, sort_order) WHERE is_featured = TRUE`.execute(db);
+  await sql`
+    DO $$
+    BEGIN
+      IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = 'challenge_templates' AND column_name = 'icon_url'
+      ) THEN
+        ALTER TABLE challenge_templates ADD COLUMN icon_url TEXT;
+      END IF;
+    END $$;
+  `.execute(db);
 
   await sql`
     CREATE TABLE IF NOT EXISTS challenge_template_goals (

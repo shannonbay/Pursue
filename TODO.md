@@ -116,7 +116,8 @@ My TODOs
 - Shareable Challenge Cards for invites to challenges
 - Remove Invite Friends button
 - Premium users can create custom challenges
-- whole photo in activity log doesn't respond to touch to zoom
+- Onboarding flow
+- Notifications for challenges
 
 TODO: Redis-backed sliding-window limits
 

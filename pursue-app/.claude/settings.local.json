@@ -14,7 +14,15 @@
       "Bash(git commit:*)",
       "WebSearch",
       "Bash(./gradlew:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "mcp__ChunkHound__code_research",
+      "Bash(dir:*)",
+      "Bash(findstr:*)",
+      "Bash(ls:*)",
+      "WebFetch(domain:github.com)",
+      "Bash(npm test:*)",
+      "Bash(npx jest:*)",
+      "Bash(git status:*)"
     ]
   },
   "enabledMcpjsonServers": [

@@ -108,3 +108,15 @@ See [TESTING.md](TESTING.md) for detailed unit test patterns and [E2ETESTING.md]
 ## Android-Specific Conventions
 
 When working on Android layouts and fragments: (1) Check which Activity hosts the fragment before casting — fragments may be in GroupDetailActivity, not MainAppActivity. (2) Verify LinearLayout and other imports aren't accidentally removed during edits. (3) Test visibility of UI elements after layout changes.
+
+## Source Control and Commits
+
+**NEVER stage or commit changes unless specifically and explicitly requested by the user.** 
+
+The development lifecycle should always be:
+1. **Research & Strategy**: Map the codebase and propose a plan.
+2. **Execution**: Apply surgical changes and verify with tests.
+3. **Verification**: Request the user to perform User Acceptance Testing (UAT).
+4. **Finality**: ONLY commit when the user provides an unambiguous "commit" instruction after successful UAT.
+
+Automated commits during the execution phase are prohibited.
