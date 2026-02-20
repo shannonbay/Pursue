@@ -108,7 +108,6 @@ class JoinGroupBottomSheet : BottomSheetDialogFragment() {
 
             scanner.startScan()
                 .addOnSuccessListener { barcode: Barcode ->
-                    // Use a safe check for context and fragment state
                     val currentContext = context
                     if (!isAdded || currentContext == null) return@addOnSuccessListener
 
@@ -118,12 +117,9 @@ class JoinGroupBottomSheet : BottomSheetDialogFragment() {
                     val code = parseInviteCodeFromScan(contents)
 
                     if (code != null) {
-                        // Update UI safely
                         editCode.setText(code)
                         inputLayout.error = null
-
-                        // Post to the main queue to ensure the Fragment is fully resumed
-                        // before launching another UI piece (the Covenant)
+                        // Fast-track to covenant affirmation
                         view?.post {
                             if (isAdded) showCovenant(code)
                         }

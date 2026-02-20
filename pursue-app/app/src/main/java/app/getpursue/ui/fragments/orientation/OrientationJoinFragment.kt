@@ -88,7 +88,10 @@ class OrientationJoinFragment : Fragment() {
                     if (code != null) {
                         editCode.setText(code)
                         inputLayout.error = null
-                        showCovenant(code)
+                        // Fast-track to covenant affirmation
+                        view?.post {
+                            if (isAdded) showCovenant(code)
+                        }
                     } else {
                         Toast.makeText(requireContext(), getString(R.string.invite_code_invalid), Toast.LENGTH_SHORT).show()
                     }
