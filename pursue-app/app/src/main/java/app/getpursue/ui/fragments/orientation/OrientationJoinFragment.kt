@@ -40,6 +40,21 @@ class OrientationJoinFragment : Fragment() {
     private lateinit var buttonSkip: MaterialButton
     private lateinit var buttonNoCode: MaterialButton
 
+    private var pendingInviteCode: String? = null
+
+    override fun onResume() {
+        super.onResume()
+        // If we have a code from a scan that happened while we weren't ready, show it now
+        pendingInviteCode?.let { code ->
+            if (isAdded && !isStateSaved) {
+                editCode.setText(code)
+                inputLayout.error = null
+                showCovenant(code)
+                pendingInviteCode = null
+            }
+        }
+    }
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -81,16 +96,20 @@ class OrientationJoinFragment : Fragment() {
 
             scanner.startScan()
                 .addOnSuccessListener { barcode: Barcode ->
-                    if (!isAdded) return@addOnSuccessListener
                     val contents = barcode.rawValue
                     if (contents.isNullOrBlank()) return@addOnSuccessListener
                     val code = JoinGroupBottomSheet.parseInviteCodeFromScan(contents)
                     if (code != null) {
-                        editCode.setText(code)
-                        inputLayout.error = null
-                        // Fast-track to covenant affirmation
-                        view?.post {
-                            if (isAdded) showCovenant(code)
+                        if (isAdded && !isStateSaved) {
+                            editCode.setText(code)
+                            inputLayout.error = null
+                            // Fast-track to covenant affirmation
+                            view?.post {
+                                if (isAdded) showCovenant(code)
+                            }
+                        } else {
+                            // Fragment is not ready, handled in onResume
+                            pendingInviteCode = code
                         }
                     } else {
                         Toast.makeText(requireContext(), getString(R.string.invite_code_invalid), Toast.LENGTH_SHORT).show()
