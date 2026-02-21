@@ -14,6 +14,7 @@ import app.getpursue.data.fcm.FcmTopicManager
 import app.getpursue.data.network.ApiClient
 import app.getpursue.data.network.ApiException
 import app.getpursue.ui.activities.GroupDetailActivity
+import app.getpursue.utils.HapticFeedbackUtils
 import app.getpursue.R
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -129,6 +130,7 @@ class JoinGroupBottomSheet : BottomSheetDialogFragment() {
                     val code = parseInviteCodeFromScan(contents)
 
                     if (code != null) {
+                        HapticFeedbackUtils.vibrateClick(requireContext())
                         if (isAdded && !isStateSaved) {
                             editCode.setText(code)
                             inputLayout.error = null

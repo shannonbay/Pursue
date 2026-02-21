@@ -21,6 +21,7 @@ import app.getpursue.ui.activities.GroupDetailActivity
 import app.getpursue.ui.activities.OrientationActivity
 import app.getpursue.ui.views.CovenantBottomSheet
 import app.getpursue.ui.views.JoinGroupBottomSheet
+import app.getpursue.utils.HapticFeedbackUtils
 import com.google.mlkit.vision.codescanner.GmsBarcodeScannerOptions
 import com.google.mlkit.vision.codescanner.GmsBarcodeScanning
 import com.google.android.material.button.MaterialButton
@@ -100,6 +101,7 @@ class OrientationJoinFragment : Fragment() {
                     if (contents.isNullOrBlank()) return@addOnSuccessListener
                     val code = JoinGroupBottomSheet.parseInviteCodeFromScan(contents)
                     if (code != null) {
+                        HapticFeedbackUtils.vibrateClick(requireContext())
                         if (isAdded && !isStateSaved) {
                             editCode.setText(code)
                             inputLayout.error = null
