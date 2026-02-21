@@ -25,6 +25,8 @@ import app.getpursue.models.TodayGoalsResponse
 import app.getpursue.ui.adapters.TodayGoalAdapter
 import app.getpursue.ui.fragments.goals.GoalDetailFragment
 import app.getpursue.ui.handlers.GoalLogProgressHandler
+import app.getpursue.ui.views.OnboardingTooltip
+import app.getpursue.data.prefs.OnboardingPrefs
 import com.google.android.material.snackbar.Snackbar
 import kotlinx.coroutines.Dispatchers
 import java.time.LocalDate
@@ -130,6 +132,16 @@ class TodayFragment : Fragment() {
                     ).show()
                 }
             }
+        }, onFirstGoalBound = { anchor ->
+            val prefs = OnboardingPrefs.getInstance(requireContext())
+            if (!prefs.hasShownTapToLogTooltip) {
+                anchor.post {
+                    if (isAdded) {
+                        OnboardingTooltip.show(anchor, R.string.onboarding_tap_to_log_tooltip)
+                        prefs.hasShownTapToLogTooltip = true
+                    }
+                }
+            }
         })
         goalsRecyclerView.adapter = adapter
 
@@ -233,6 +245,16 @@ class TodayFragment : Fragment() {
                                 "Navigation failed: ${e.message}",
                                 Toast.LENGTH_SHORT
                             ).show()
+                        }
+                    }
+                }, onFirstGoalBound = { anchor ->
+                    val prefs = OnboardingPrefs.getInstance(requireContext())
+                    if (!prefs.hasShownTapToLogTooltip) {
+                        anchor.post {
+                            if (isAdded) {
+                                OnboardingTooltip.show(anchor, R.string.onboarding_tap_to_log_tooltip)
+                                prefs.hasShownTapToLogTooltip = true
+                            }
                         }
                     }
                 })

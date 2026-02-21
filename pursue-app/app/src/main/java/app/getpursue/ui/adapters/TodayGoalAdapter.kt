@@ -22,13 +22,16 @@ import com.google.android.material.card.MaterialCardView
 class TodayGoalAdapter(
     private val groups: List<TodayGroup>,
     private val onGoalClick: (TodayGoal, String) -> Unit, // (goal, groupId)
-    private val onArrowClick: (TodayGoal) -> Unit = {}
+    private val onArrowClick: (TodayGoal) -> Unit = {},
+    private val onFirstGoalBound: (View) -> Unit = {}
 ) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     companion object {
         private const val TYPE_GROUP_HEADER = 0
         private const val TYPE_GOAL = 1
     }
+
+    private var hasCalledFirstGoalBound = false
 
     private data class Item(val type: Int, val group: TodayGroup? = null, val goal: TodayGoal? = null)
 
@@ -61,7 +64,13 @@ class TodayGoalAdapter(
             else -> {
                 when (holder) {
                     is GroupHeaderViewHolder -> holder.bind(item.group!!)
-                    is GoalViewHolder -> holder.bind(item.goal!!, item.group!!.group_id, onGoalClick, onArrowClick)
+                    is GoalViewHolder -> {
+                        holder.bind(item.goal!!, item.group!!.group_id, onGoalClick, onArrowClick)
+                        if (!hasCalledFirstGoalBound) {
+                            hasCalledFirstGoalBound = true
+                            onFirstGoalBound(holder.itemView.findViewById(R.id.goal_card))
+                        }
+                    }
                 }
             }
         }

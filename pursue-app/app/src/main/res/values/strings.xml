@@ -779,4 +779,7 @@
     <string name="orientation_unit_hint">Unit (optional, e.g. minutes)</string>
     <string name="orientation_invite_code_error">Invalid or expired invite code. Check with your friend and try again.</string>
 
+    <!-- Onboarding Tooltips -->
+    <string name="onboarding_tap_to_log_tooltip">Tap the goal title to log progress</string>
+
 </resources>

@@ -30,6 +30,8 @@ import app.getpursue.ui.fragments.goals.CreateGoalFragment
 import app.getpursue.ui.views.ErrorStateView
 import app.getpursue.ui.fragments.goals.GoalDetailFragment
 import app.getpursue.ui.adapters.GroupGoalsAdapter
+import app.getpursue.ui.views.OnboardingTooltip
+import app.getpursue.data.prefs.OnboardingPrefs
 import app.getpursue.R
 import app.getpursue.data.auth.SecureTokenManager
 import app.getpursue.models.GroupGoal
@@ -374,7 +376,7 @@ class GoalsTabFragment : Fragment() {
                 goalsListContainer.addView(headerView)
 
                 // Add goal cards for this cadence
-                cadenceGoals.forEach { goal ->
+                cadenceGoals.forEachIndexed { index, goal ->
                     val goalCardView = LayoutInflater.from(requireContext())
                         .inflate(R.layout.item_goal_card, goalsListContainer, false)
 
@@ -410,6 +412,19 @@ class GoalsTabFragment : Fragment() {
                     }
 
                     goalsListContainer.addView(goalCardView)
+
+                    // Show tooltip on the very first goal card ever seen
+                    if (cadence == cadences.first { goalsByCadence[it]?.isNotEmpty() == true } && index == 0) {
+                        val prefs = OnboardingPrefs.getInstance(requireContext())
+                        if (!prefs.hasShownTapToLogTooltip) {
+                            goalCardView.post {
+                                if (isAdded) {
+                                    OnboardingTooltip.show(goalCard, R.string.onboarding_tap_to_log_tooltip)
+                                    prefs.hasShownTapToLogTooltip = true
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
