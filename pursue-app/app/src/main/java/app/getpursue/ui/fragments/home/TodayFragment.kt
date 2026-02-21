@@ -100,7 +100,7 @@ class TodayFragment : Fragment() {
             fragment = this,
             snackbarParentView = swipeRefreshLayout,
             tokenSupplier = {
-                SecureTokenManager.Companion.getInstance(requireContext()).getAccessToken()
+                context?.let { SecureTokenManager.Companion.getInstance(it).getAccessToken() }
             },
             userDate = userDate,
             userTimezone = userTimezone,
@@ -200,14 +200,15 @@ class TodayFragment : Fragment() {
             }
 
             try {
-                if (!isAdded) return@launch
-                val tokenManager = SecureTokenManager.Companion.getInstance(requireContext())
+                val ctx = context ?: return@launch
+                val tokenManager = SecureTokenManager.Companion.getInstance(ctx)
                 val accessToken = tokenManager.getAccessToken()
 
                 if (accessToken == null) {
-                    if (!isAdded) return@launch
-                    updateUiState(TodayUiState.ERROR, ErrorStateView.ErrorType.UNAUTHORIZED)
-                    swipeRefreshLayout.isRefreshing = false
+                    if (isAdded) {
+                        updateUiState(TodayUiState.ERROR, ErrorStateView.ErrorType.UNAUTHORIZED)
+                        swipeRefreshLayout.isRefreshing = false
+                    }
                     return@launch
                 }
 
@@ -248,12 +249,12 @@ class TodayFragment : Fragment() {
                         }
                     }
                 }, onFirstGoalBound = { anchor ->
-                    val prefs = OnboardingPrefs.getInstance(requireContext())
-                    if (!prefs.hasShownTapToLogTooltip) {
+                    val onboardingPrefs = OnboardingPrefs.getInstance(requireContext())
+                    if (!onboardingPrefs.hasShownTapToLogTooltip) {
                         anchor.post {
                             if (isAdded) {
                                 OnboardingTooltip.show(anchor, R.string.onboarding_tap_to_log_tooltip)
-                                prefs.hasShownTapToLogTooltip = true
+                                onboardingPrefs.hasShownTapToLogTooltip = true
                             }
                         }
                     }
@@ -288,14 +289,8 @@ class TodayFragment : Fragment() {
                     updateUiState(TodayUiState.ERROR, errorType)
                 }
 
-                // Show error toast on main thread
-                if (isAdded) {
-                    requireActivity().runOnUiThread {
-                        if (isAdded) {
-                            Toast.makeText(requireContext(), getString(R.string.error_failed_to_load_goals), Toast.LENGTH_SHORT).show()
-                        }
-                    }
-                }
+                // Show error toast
+                Toast.makeText(context ?: return@launch, getString(R.string.error_failed_to_load_goals), Toast.LENGTH_SHORT).show()
             } catch (e: Exception) {
                 // Check if fragment is still attached before updating UI
                 if (!isAdded) return@launch
@@ -308,14 +303,8 @@ class TodayFragment : Fragment() {
                     updateUiState(TodayUiState.ERROR, ErrorStateView.ErrorType.NETWORK)
                 }
 
-                // Show error toast on main thread
-                if (isAdded) {
-                    requireActivity().runOnUiThread {
-                        if (isAdded) {
-                            Toast.makeText(requireContext(), getString(R.string.error_failed_to_load_goals), Toast.LENGTH_SHORT).show()
-                        }
-                    }
-                }
+                // Show error toast
+                Toast.makeText(context ?: return@launch, getString(R.string.error_failed_to_load_goals), Toast.LENGTH_SHORT).show()
             } finally {
                 if (isAdded) {
                     swipeRefreshLayout.isRefreshing = false

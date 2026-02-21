@@ -190,7 +190,7 @@ class GoalsTabFragment : Fragment() {
             fragment = this,
             snackbarParentView = getSnackbarParentView(),
             tokenSupplier = {
-                SecureTokenManager.Companion.getInstance(requireContext()).getAccessToken()
+                context?.let { SecureTokenManager.Companion.getInstance(it).getAccessToken() }
             },
             userDate = userDate,
             userTimezone = userTimezone,
@@ -237,12 +237,13 @@ class GoalsTabFragment : Fragment() {
             }
 
             try {
-                val tokenManager = SecureTokenManager.Companion.getInstance(requireContext())
+                val ctx = context ?: return@launch
+                val tokenManager = SecureTokenManager.Companion.getInstance(ctx)
                 val accessToken = tokenManager.getAccessToken()
 
                 if (accessToken == null) {
                     updateUiState(GoalsUiState.ERROR, ErrorStateView.ErrorType.UNAUTHORIZED)
-                    Handler(Looper.getMainLooper()).post {
+                    if (isAdded) {
                         swipeRefreshLayout.isRefreshing = false
                     }
                     return@launch
@@ -288,6 +289,7 @@ class GoalsTabFragment : Fragment() {
                     }
                 }
 
+                if (!isAdded) return@launch
                 nudgedUserIds = (nudgesResponse?.nudged_user_ids ?: emptyList()).toMutableSet()
 
                 // Map API response to GroupGoal model
@@ -297,29 +299,27 @@ class GoalsTabFragment : Fragment() {
 
                 cachedGoals = goals
 
-                Handler(Looper.getMainLooper()).post {
-                    // Notify parent fragment to update header with goal count
-                    notifyParentGoalsLoaded(goals.size)
+                // Notify parent fragment to update header with goal count
+                notifyParentGoalsLoaded(goals.size)
 
-                    if (goals.isEmpty()) {
-                        updateUiState(GoalsUiState.SUCCESS_EMPTY)
-                    } else {
-                        // Populate ScrollView with goal cards
-                        populateGoalsScrollView(goals)
-                        updateUiState(GoalsUiState.SUCCESS_WITH_DATA)
-                    }
-                    swipeRefreshLayout.isRefreshing = false
+                if (goals.isEmpty()) {
+                    updateUiState(GoalsUiState.SUCCESS_EMPTY)
+                } else {
+                    // Populate ScrollView with goal cards
+                    populateGoalsScrollView(goals)
+                    updateUiState(GoalsUiState.SUCCESS_WITH_DATA)
                 }
+                swipeRefreshLayout.isRefreshing = false
             } catch (e: ApiException) {
                 cachedGoals = emptyList()
-                Handler(Looper.getMainLooper()).post {
+                if (isAdded) {
                     val errorType = ErrorStateView.errorTypeFromApiException(e)
                     updateUiState(GoalsUiState.ERROR, errorType)
                     swipeRefreshLayout.isRefreshing = false
                 }
             } catch (e: Exception) {
                 cachedGoals = emptyList()
-                Handler(Looper.getMainLooper()).post {
+                if (isAdded) {
                     updateUiState(GoalsUiState.ERROR, ErrorStateView.ErrorType.NETWORK)
                     swipeRefreshLayout.isRefreshing = false
                 }
@@ -578,7 +578,8 @@ class GoalsTabFragment : Fragment() {
         goalId: String,
         groupId: String
     ) {
-        val tokenManager = SecureTokenManager.Companion.getInstance(requireContext())
+        val ctx = context ?: return
+        val tokenManager = SecureTokenManager.Companion.getInstance(ctx)
         val accessToken = tokenManager.getAccessToken() ?: return
 
         loadingNudgeUserIds.add(recipientUserId)
@@ -596,33 +597,30 @@ class GoalsTabFragment : Fragment() {
                         senderLocalDate = senderLocalDate
                     )
                 }
+                if (!isAdded) return@launch
                 nudgedUserIds.add(recipientUserId)
                 loadingNudgeUserIds.remove(recipientUserId)
-                Handler(Looper.getMainLooper()).post {
-                    populateGoalsScrollView(cachedGoals)
-                    Snackbar.make(getSnackbarParentView(), getString(R.string.nudge_sent, recipientDisplayName), Snackbar.LENGTH_SHORT).show()
-                }
+                populateGoalsScrollView(cachedGoals)
+                Snackbar.make(getSnackbarParentView(), getString(R.string.nudge_sent, recipientDisplayName), Snackbar.LENGTH_SHORT).show()
             } catch (e: ApiException) {
+                if (!isAdded) return@launch
                 loadingNudgeUserIds.remove(recipientUserId)
-                Handler(Looper.getMainLooper()).post {
+                populateGoalsScrollView(cachedGoals)
+                val message = when (e.errorCode) {
+                    "ALREADY_NUDGED_TODAY" -> getString(R.string.already_nudged_today, recipientDisplayName)
+                    "DAILY_SEND_LIMIT" -> getString(R.string.nudge_daily_limit)
+                    else -> getString(R.string.nudge_failed)
+                }
+                Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
+                if (e.errorCode == "ALREADY_NUDGED_TODAY") {
+                    nudgedUserIds.add(recipientUserId)
                     populateGoalsScrollView(cachedGoals)
-                    val message = when (e.errorCode) {
-                        "ALREADY_NUDGED_TODAY" -> getString(R.string.already_nudged_today, recipientDisplayName)
-                        "DAILY_SEND_LIMIT" -> getString(R.string.nudge_daily_limit)
-                        else -> getString(R.string.nudge_failed)
-                    }
-                    Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
-                    if (e.errorCode == "ALREADY_NUDGED_TODAY") {
-                        nudgedUserIds.add(recipientUserId)
-                        populateGoalsScrollView(cachedGoals)
-                    }
                 }
             } catch (e: Exception) {
+                if (!isAdded) return@launch
                 loadingNudgeUserIds.remove(recipientUserId)
-                Handler(Looper.getMainLooper()).post {
-                    populateGoalsScrollView(cachedGoals)
-                    Toast.makeText(requireContext(), R.string.nudge_failed, Toast.LENGTH_SHORT).show()
-                }
+                populateGoalsScrollView(cachedGoals)
+                Toast.makeText(requireContext(), R.string.nudge_failed, Toast.LENGTH_SHORT).show()
             }
         }
     }

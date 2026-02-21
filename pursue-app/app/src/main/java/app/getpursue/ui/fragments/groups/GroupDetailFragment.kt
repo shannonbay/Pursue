@@ -456,11 +456,14 @@ class GroupDetailFragment : Fragment() {
 
         lifecycleScope.launch {
             try {
-                val tokenManager = SecureTokenManager.Companion.getInstance(requireContext())
+                val context = context ?: return@launch
+                val tokenManager = SecureTokenManager.Companion.getInstance(context)
                 val accessToken = tokenManager.getAccessToken()
 
                 if (accessToken == null) {
-                    Toast.makeText(requireContext(), "Session expired. Please sign in again.", Toast.LENGTH_SHORT).show()
+                    if (isAdded) {
+                        Toast.makeText(context, "Session expired. Please sign in again.", Toast.LENGTH_SHORT).show()
+                    }
                     return@launch
                 }
 
@@ -480,51 +483,51 @@ class GroupDetailFragment : Fragment() {
                     Pair(details, membersList)
                 }
 
+                if (!isAdded) return@launch
                 groupDetail = response
 
-                Handler(Looper.getMainLooper()).post {
-                    updateHeader(response, members)
-                    loadGroupIcon(
-                        hasIcon = response.has_icon,
-                        iconEmoji = response.icon_emoji,
-                        iconColor = response.icon_color,
-                        groupNameText = response.name,
-                        iconUrl = response.icon_url
+                updateHeader(response, members)
+                loadGroupIcon(
+                    hasIcon = response.has_icon,
+                    iconEmoji = response.icon_emoji,
+                    iconColor = response.icon_color,
+                    groupNameText = response.name,
+                    iconUrl = response.icon_url
+                )
+                setupIconTapForAdmin(response)
+
+                viewPager.postDelayed({
+                    if (!isAdded) return@postDelayed
+                    val isAdmin = response.user_role == "admin" || response.user_role == "creator"
+                    val goalsTabFragment = childFragmentManager.fragments.firstOrNull {
+                        it is GoalsTabFragment
+                    } as? GoalsTabFragment
+                    goalsTabFragment?.updateAdminStatus(isAdmin)
+                    goalsTabFragment?.updateChallengeLoggingStatus(
+                        response.is_challenge,
+                        response.challenge_status
                     )
-                    setupIconTapForAdmin(response)
+                    val membersTabFragment = childFragmentManager.fragments.firstOrNull {
+                        it is MembersTabFragment
+                    } as? MembersTabFragment
+                    membersTabFragment?.updateAdminStatus(isAdmin)
 
-                    viewPager.postDelayed({
-                        val isAdmin = response.user_role == "admin" || response.user_role == "creator"
-                        val goalsTabFragment = childFragmentManager.fragments.firstOrNull {
-                            it is GoalsTabFragment
-                        } as? GoalsTabFragment
-                        goalsTabFragment?.updateAdminStatus(isAdmin)
-                        goalsTabFragment?.updateChallengeLoggingStatus(
-                            response.is_challenge,
-                            response.challenge_status
-                        )
-                        val membersTabFragment = childFragmentManager.fragments.firstOrNull {
-                            it is MembersTabFragment
-                        } as? MembersTabFragment
-                        membersTabFragment?.updateAdminStatus(isAdmin)
+                    val currentItem = viewPager.currentItem
+                    updateFABForTab(currentItem, -1)
 
-                        val currentItem = viewPager.currentItem
-                        updateFABForTab(currentItem, -1)
-
-                        // Show invite sheet if requested and not yet shown
-                        if (arguments?.getBoolean(ARG_OPEN_INVITE_SHEET) == true && !hasOpenedInitialInviteSheet) {
-                            hasOpenedInitialInviteSheet = true
-                            showInviteMembersSheet()
-                        }
-                    }, 50)
-                }
+                    // Show invite sheet if requested and not yet shown
+                    if (arguments?.getBoolean(ARG_OPEN_INVITE_SHEET) == true && !hasOpenedInitialInviteSheet) {
+                        hasOpenedInitialInviteSheet = true
+                        showInviteMembersSheet()
+                    }
+                }, 50)
             } catch (e: ApiException) {
-                Handler(Looper.getMainLooper()).post {
-                    Toast.makeText(requireContext(), "Failed to load group details: ${e.message}", Toast.LENGTH_SHORT).show()
+                context?.let { ctx ->
+                    Toast.makeText(ctx, "Failed to load group details: ${e.message}", Toast.LENGTH_SHORT).show()
                 }
             } catch (e: Exception) {
-                Handler(Looper.getMainLooper()).post {
-                    Toast.makeText(requireContext(), "Failed to load group details. Please try again.", Toast.LENGTH_SHORT).show()
+                context?.let { ctx ->
+                    Toast.makeText(ctx, "Failed to load group details. Please try again.", Toast.LENGTH_SHORT).show()
                 }
             }
         }
@@ -623,24 +626,28 @@ class GroupDetailFragment : Fragment() {
             .setPositiveButton(getString(R.string.delete)) { _, _ ->
                 lifecycleScope.launch {
                     try {
-                        if (!isAdded) return@launch
-                        val tokenManager = SecureTokenManager.Companion.getInstance(requireContext())
+                        val ctx = context ?: return@launch
+                        val tokenManager = SecureTokenManager.Companion.getInstance(ctx)
                         val token = tokenManager.getAccessToken()
                         if (token == null) {
-                            Toast.makeText(requireContext(), getString(R.string.error_unauthorized_message), Toast.LENGTH_SHORT).show()
+                            Toast.makeText(ctx, getString(R.string.error_unauthorized_message), Toast.LENGTH_SHORT).show()
                             return@launch
                         }
                         withContext(Dispatchers.IO) { ApiClient.deleteGroup(token, gid) }
                         if (!isAdded) return@launch
-                        Toast.makeText(requireContext(), getString(R.string.group_deleted_toast), Toast.LENGTH_SHORT).show()
-                        requireActivity().setResult(GroupDetailActivity.Companion.RESULT_GROUP_DELETED)
-                        requireActivity().finish()
+                        Toast.makeText(ctx, getString(R.string.group_deleted_toast), Toast.LENGTH_SHORT).show()
+                        activity?.let {
+                            it.setResult(GroupDetailActivity.Companion.RESULT_GROUP_DELETED)
+                            it.finish()
+                        }
                     } catch (e: ApiException) {
-                        if (!isAdded) return@launch
-                        Toast.makeText(requireContext(), e.message ?: getString(R.string.error_failed_to_load_groups), Toast.LENGTH_SHORT).show()
+                        context?.let { ctx ->
+                            Toast.makeText(ctx, e.message ?: getString(R.string.error_failed_to_load_groups), Toast.LENGTH_SHORT).show()
+                        }
                     } catch (e: Exception) {
-                        if (!isAdded) return@launch
-                        Toast.makeText(requireContext(), getString(R.string.error_failed_to_load_groups), Toast.LENGTH_SHORT).show()
+                        context?.let { ctx ->
+                            Toast.makeText(ctx, getString(R.string.error_failed_to_load_groups), Toast.LENGTH_SHORT).show()
+                        }
                     }
                 }
             }
@@ -687,22 +694,24 @@ class GroupDetailFragment : Fragment() {
     private fun performRegenerateInvite(gid: String) {
         lifecycleScope.launch {
             try {
-                if (!isAdded) return@launch
-                val tokenManager = SecureTokenManager.Companion.getInstance(requireContext())
+                val ctx = context ?: return@launch
+                val tokenManager = SecureTokenManager.Companion.getInstance(ctx)
                 val token = tokenManager.getAccessToken()
                 if (token == null) {
-                    Toast.makeText(requireContext(), getString(R.string.error_unauthorized_message), Toast.LENGTH_SHORT).show()
+                    Toast.makeText(ctx, getString(R.string.error_unauthorized_message), Toast.LENGTH_SHORT).show()
                     return@launch
                 }
                 withContext(Dispatchers.IO) { ApiClient.regenerateInviteCode(token, gid) }
                 if (!isAdded) return@launch
-                Toast.makeText(requireContext(), getString(R.string.regenerate_code_success), Toast.LENGTH_SHORT).show()
+                Toast.makeText(ctx, getString(R.string.regenerate_code_success), Toast.LENGTH_SHORT).show()
             } catch (e: ApiException) {
-                if (!isAdded) return@launch
-                Toast.makeText(requireContext(), e.message ?: getString(R.string.regenerate_code_failed), Toast.LENGTH_SHORT).show()
+                context?.let { ctx ->
+                    Toast.makeText(ctx, e.message ?: getString(R.string.regenerate_code_failed), Toast.LENGTH_SHORT).show()
+                }
             } catch (e: Exception) {
-                if (!isAdded) return@launch
-                Toast.makeText(requireContext(), getString(R.string.regenerate_code_failed), Toast.LENGTH_SHORT).show()
+                context?.let { ctx ->
+                    Toast.makeText(ctx, getString(R.string.regenerate_code_failed), Toast.LENGTH_SHORT).show()
+                }
             }
         }
     }
@@ -715,36 +724,30 @@ class GroupDetailFragment : Fragment() {
             .setPositiveButton(getString(R.string.menu_leave_group)) { _, _ ->
                 lifecycleScope.launch {
                     try {
-                        if (!isAdded) return@launch
-                        val tokenManager = SecureTokenManager.Companion.getInstance(requireContext())
+                        val ctx = context ?: return@launch
+                        val tokenManager = SecureTokenManager.Companion.getInstance(ctx)
                         val token = tokenManager.getAccessToken()
                         if (token == null) {
-                            Handler(Looper.getMainLooper()).post {
-                                if (isAdded) Toast.makeText(requireContext(), getString(R.string.error_unauthorized_message), Toast.LENGTH_SHORT).show()
-                            }
+                            if (isAdded) Toast.makeText(ctx, getString(R.string.error_unauthorized_message), Toast.LENGTH_SHORT).show()
                             return@launch
                         }
                         withContext(Dispatchers.IO) { ApiClient.leaveGroup(token, gid) }
                         // Unsubscribe from FCM topics for this group
                         FcmTopicManager.unsubscribeFromGroupTopics(gid)
                         if (!isAdded) return@launch
-                        Handler(Looper.getMainLooper()).post {
-                            if (isAdded) {
-                                Toast.makeText(requireContext(), getString(R.string.leave_group_toast), Toast.LENGTH_SHORT).show()
-                                requireActivity().setResult(GroupDetailActivity.Companion.RESULT_LEFT_GROUP)
-                                requireActivity().finish()
-                            }
+                        Toast.makeText(ctx, getString(R.string.leave_group_toast), Toast.LENGTH_SHORT).show()
+                        activity?.let {
+                            it.setResult(GroupDetailActivity.Companion.RESULT_LEFT_GROUP)
+                            it.finish()
                         }
                     } catch (e: ApiException) {
-                        if (!isAdded) return@launch
                         val msg = e.message ?: getString(R.string.error_failed_to_load_groups)
-                        Handler(Looper.getMainLooper()).post {
-                            if (isAdded) Toast.makeText(requireContext(), msg, Toast.LENGTH_SHORT).show()
+                        context?.let { ctx ->
+                            Toast.makeText(ctx, msg, Toast.LENGTH_SHORT).show()
                         }
                     } catch (e: Exception) {
-                        if (!isAdded) return@launch
-                        Handler(Looper.getMainLooper()).post {
-                            if (isAdded) Toast.makeText(requireContext(), getString(R.string.error_failed_to_load_groups), Toast.LENGTH_SHORT).show()
+                        context?.let { ctx ->
+                            Toast.makeText(ctx, getString(R.string.error_failed_to_load_groups), Toast.LENGTH_SHORT).show()
                         }
                     }
                 }
@@ -799,36 +802,35 @@ class GroupDetailFragment : Fragment() {
             val defaultFilename = "Pursue_Progress_${sanitizedName}_${startDate}_to_${endDate}.xlsx"
 
             lifecycleScope.launch {
-                val token = SecureTokenManager.Companion.getInstance(requireContext()).getAccessToken()
+                val ctx = context ?: return@launch
+                val token = SecureTokenManager.Companion.getInstance(ctx).getAccessToken()
                 if (token == null) {
-                    Handler(Looper.getMainLooper()).post {
+                    if (isAdded) {
                         dialog.dismiss()
-                        Toast.makeText(requireContext(), getString(R.string.error_unauthorized_message), Toast.LENGTH_SHORT).show()
+                        Toast.makeText(ctx, getString(R.string.error_unauthorized_message), Toast.LENGTH_SHORT).show()
                     }
                     return@launch
                 }
                 val validation = try {
                     withContext(Dispatchers.IO) { ApiClient.validateExportRange(token, gid, startDate, endDate) }
                 } catch (e: ApiException) {
-                    Handler(Looper.getMainLooper()).post {
+                    if (isAdded) {
                         dialog.dismiss()
-                        Toast.makeText(requireContext(), e.message ?: getString(R.string.export_progress_failed), Toast.LENGTH_SHORT).show()
+                        Toast.makeText(ctx, e.message ?: getString(R.string.export_progress_failed), Toast.LENGTH_SHORT).show()
                     }
                     return@launch
                 }
-                Handler(Looper.getMainLooper()).post {
-                    if (!isAdded) return@post
-                    if (!validation.valid) {
-                        dialog.dismiss()
-                        showExportLimitReachedDialog(startDate, endDate, validation.requested_days, validation.max_days_allowed)
-                    } else {
-                        pendingExportGid = gid
-                        pendingExportStartDate = startDate
-                        pendingExportEndDate = endDate
-                        pendingExportUserTimezone = userTimezone
-                        dialog.dismiss()
-                        createDocumentLauncher.launch(defaultFilename)
-                    }
+                if (!isAdded) return@launch
+                if (!validation.valid) {
+                    dialog.dismiss()
+                    showExportLimitReachedDialog(startDate, endDate, validation.requested_days, validation.max_days_allowed)
+                } else {
+                    pendingExportGid = gid
+                    pendingExportStartDate = startDate
+                    pendingExportEndDate = endDate
+                    pendingExportUserTimezone = userTimezone
+                    dialog.dismiss()
+                    createDocumentLauncher.launch(defaultFilename)
                 }
             }
         }
@@ -874,14 +876,13 @@ class GroupDetailFragment : Fragment() {
 
         lifecycleScope.launch {
             try {
-                val tokenManager = SecureTokenManager.Companion.getInstance(requireContext())
+                val ctx = context ?: return@launch
+                val tokenManager = SecureTokenManager.Companion.getInstance(ctx)
                 val token = tokenManager.getAccessToken()
                 if (token == null) {
-                    Handler(Looper.getMainLooper()).post {
-                        if (isAdded) {
-                            progressDialog.dismiss()
-                            Toast.makeText(requireContext(), getString(R.string.error_unauthorized_message), Toast.LENGTH_SHORT).show()
-                        }
+                    if (isAdded) {
+                        progressDialog.dismiss()
+                        Toast.makeText(ctx, getString(R.string.error_unauthorized_message), Toast.LENGTH_SHORT).show()
                     }
                     return@launch
                 }
@@ -889,39 +890,31 @@ class GroupDetailFragment : Fragment() {
                     ApiClient.exportGroupProgress(token, gid, startDate, endDate, userTimezone)
                 }
                 if (!isAdded) {
-                    Handler(Looper.getMainLooper()).post { progressDialog.dismiss() }
+                    progressDialog.dismiss()
                     return@launch
                 }
                 withContext(Dispatchers.IO) {
-                    requireContext().contentResolver.openOutputStream(uri)?.use { it.write(bytes) }
+                    ctx.contentResolver.openOutputStream(uri)?.use { it.write(bytes) }
                         ?: throw IOException("Failed to open output stream")
                 }
-                Handler(Looper.getMainLooper()).post {
-                    if (isAdded) {
-                        progressDialog.dismiss()
-                        showExportSuccessDialog(uri)
-                    }
+                if (isAdded) {
+                    progressDialog.dismiss()
+                    showExportSuccessDialog(uri)
                 }
             } catch (e: ApiException) {
-                Handler(Looper.getMainLooper()).post {
-                    if (isAdded) {
-                        progressDialog.dismiss()
-                        Toast.makeText(requireContext(), e.message ?: getString(R.string.export_progress_failed), Toast.LENGTH_SHORT).show()
-                    }
+                if (isAdded) {
+                    progressDialog.dismiss()
+                    Toast.makeText(context ?: return@launch, e.message ?: getString(R.string.export_progress_failed), Toast.LENGTH_SHORT).show()
                 }
             } catch (e: IOException) {
-                Handler(Looper.getMainLooper()).post {
-                    if (isAdded) {
-                        progressDialog.dismiss()
-                        Toast.makeText(requireContext(), getString(R.string.export_progress_failed), Toast.LENGTH_SHORT).show()
-                    }
+                if (isAdded) {
+                    progressDialog.dismiss()
+                    Toast.makeText(context ?: return@launch, getString(R.string.export_progress_failed), Toast.LENGTH_SHORT).show()
                 }
             } catch (e: Exception) {
-                Handler(Looper.getMainLooper()).post {
-                    if (isAdded) {
-                        progressDialog.dismiss()
-                        Toast.makeText(requireContext(), getString(R.string.export_progress_failed), Toast.LENGTH_SHORT).show()
-                    }
+                if (isAdded) {
+                    progressDialog.dismiss()
+                    Toast.makeText(context ?: return@launch, getString(R.string.export_progress_failed), Toast.LENGTH_SHORT).show()
                 }
             }
         }
@@ -990,11 +983,11 @@ class GroupDetailFragment : Fragment() {
             override fun onIconSelected(emoji: String?, color: String?, iconUrl: String?) {
                 viewLifecycleOwner.lifecycleScope.launch {
                     try {
-                        if (!isAdded) return@launch
-                        val tokenManager = SecureTokenManager.Companion.getInstance(requireContext())
+                        val ctx = context ?: return@launch
+                        val tokenManager = SecureTokenManager.Companion.getInstance(ctx)
                         val token = tokenManager.getAccessToken()
                         if (token == null) {
-                            Toast.makeText(requireContext(), getString(R.string.error_unauthorized_message), Toast.LENGTH_SHORT).show()
+                            Toast.makeText(ctx, getString(R.string.error_unauthorized_message), Toast.LENGTH_SHORT).show()
                             return@launch
                         }
                         withContext(Dispatchers.IO) {
@@ -1007,7 +1000,7 @@ class GroupDetailFragment : Fragment() {
                             )
                         }
                         if (!isAdded) return@launch
-                        Toast.makeText(requireContext(), getString(R.string.group_updated_toast), Toast.LENGTH_SHORT).show()
+                        Toast.makeText(ctx, getString(R.string.group_updated_toast), Toast.LENGTH_SHORT).show()
                         groupDetail = detail.copy(
                             icon_emoji = emoji,
                             icon_color = if (emoji != null) color else detail.icon_color
@@ -1021,11 +1014,13 @@ class GroupDetailFragment : Fragment() {
                             iconUrl = d.icon_url
                         )
                     } catch (e: ApiException) {
-                        if (!isAdded) return@launch
-                        Toast.makeText(requireContext(), e.message ?: getString(R.string.error_failed_to_load_groups), Toast.LENGTH_SHORT).show()
+                        context?.let { ctx ->
+                            Toast.makeText(ctx, e.message ?: getString(R.string.error_failed_to_load_groups), Toast.LENGTH_SHORT).show()
+                        }
                     } catch (e: Exception) {
-                        if (!isAdded) return@launch
-                        Toast.makeText(requireContext(), getString(R.string.error_failed_to_load_groups), Toast.LENGTH_SHORT).show()
+                        context?.let { ctx ->
+                            Toast.makeText(ctx, getString(R.string.error_failed_to_load_groups), Toast.LENGTH_SHORT).show()
+                        }
                     }
                 }
             }
@@ -1167,9 +1162,10 @@ class GroupDetailFragment : Fragment() {
         val gid = groupId ?: return
         lifecycleScope.launch {
             try {
-                val token = SecureTokenManager.getInstance(requireContext()).getAccessToken()
+                val ctx = context ?: return@launch
+                val token = SecureTokenManager.getInstance(ctx).getAccessToken()
                 if (token == null) {
-                    Toast.makeText(requireContext(), getString(R.string.error_unauthorized_message), Toast.LENGTH_SHORT).show()
+                    Toast.makeText(ctx, getString(R.string.error_unauthorized_message), Toast.LENGTH_SHORT).show()
                     return@launch
                 }
                 val invite = withContext(Dispatchers.IO) { ApiClient.getGroupInviteCode(token, gid) }
@@ -1178,7 +1174,7 @@ class GroupDetailFragment : Fragment() {
                 if (inviteCardData != null) {
                     val cardJson = gson.toJson(inviteCardData)
                     val intent = ShareableMilestoneCardActivity.createIntent(
-                        context = requireContext(),
+                        context = ctx,
                         notificationId = "",
                         cardDataJson = cardJson,
                         autoAction = null,
@@ -1198,9 +1194,13 @@ class GroupDetailFragment : Fragment() {
                     startActivity(Intent.createChooser(intent, getString(R.string.challenge_share_button)))
                 }
             } catch (e: ApiException) {
-                Toast.makeText(requireContext(), e.message ?: getString(R.string.challenge_share_failed), Toast.LENGTH_SHORT).show()
+                context?.let { ctx ->
+                    Toast.makeText(ctx, e.message ?: getString(R.string.challenge_share_failed), Toast.LENGTH_SHORT).show()
+                }
             } catch (_: Exception) {
-                Toast.makeText(requireContext(), getString(R.string.challenge_share_failed), Toast.LENGTH_SHORT).show()
+                context?.let { ctx ->
+                    Toast.makeText(ctx, getString(R.string.challenge_share_failed), Toast.LENGTH_SHORT).show()
+                }
             }
         }
     }
@@ -1209,9 +1209,10 @@ class GroupDetailFragment : Fragment() {
         val gid = groupId ?: return
         lifecycleScope.launch {
             try {
-                val token = SecureTokenManager.getInstance(requireContext()).getAccessToken()
+                val ctx = context ?: return@launch
+                val token = SecureTokenManager.getInstance(ctx).getAccessToken()
                 if (token == null) {
-                    Toast.makeText(requireContext(), getString(R.string.error_unauthorized_message), Toast.LENGTH_SHORT).show()
+                    Toast.makeText(ctx, getString(R.string.error_unauthorized_message), Toast.LENGTH_SHORT).show()
                     return@launch
                 }
                 val notifications = withContext(Dispatchers.IO) { ApiClient.getNotifications(token, limit = 50) }
@@ -1221,7 +1222,7 @@ class GroupDetailFragment : Fragment() {
                 if (match != null) {
                     val cardJson = gson.toJson(match.shareable_card_data)
                     val intent = ShareableMilestoneCardActivity.createIntent(
-                        context = requireContext(),
+                        context = ctx,
                         notificationId = match.id,
                         cardDataJson = cardJson,
                         autoAction = null,
@@ -1239,9 +1240,13 @@ class GroupDetailFragment : Fragment() {
                     startActivity(Intent.createChooser(intent, getString(R.string.challenge_share_result_button)))
                 }
             } catch (e: ApiException) {
-                Toast.makeText(requireContext(), e.message ?: getString(R.string.challenge_share_failed), Toast.LENGTH_SHORT).show()
+                context?.let { ctx ->
+                    Toast.makeText(ctx, e.message ?: getString(R.string.challenge_share_failed), Toast.LENGTH_SHORT).show()
+                }
             } catch (_: Exception) {
-                Toast.makeText(requireContext(), getString(R.string.challenge_share_failed), Toast.LENGTH_SHORT).show()
+                context?.let { ctx ->
+                    Toast.makeText(ctx, getString(R.string.challenge_share_failed), Toast.LENGTH_SHORT).show()
+                }
             }
         }
     }
@@ -1261,18 +1266,24 @@ class GroupDetailFragment : Fragment() {
         val gid = groupId ?: return
         lifecycleScope.launch {
             try {
-                val token = SecureTokenManager.getInstance(requireContext()).getAccessToken()
+                val ctx = context ?: return@launch
+                val token = SecureTokenManager.getInstance(ctx).getAccessToken()
                 if (token == null) {
-                    Toast.makeText(requireContext(), getString(R.string.error_unauthorized_message), Toast.LENGTH_SHORT).show()
+                    Toast.makeText(ctx, getString(R.string.error_unauthorized_message), Toast.LENGTH_SHORT).show()
                     return@launch
                 }
                 withContext(Dispatchers.IO) { ApiClient.cancelChallenge(token, gid) }
-                Toast.makeText(requireContext(), getString(R.string.challenge_cancel_success), Toast.LENGTH_SHORT).show()
+                if (!isAdded) return@launch
+                Toast.makeText(ctx, getString(R.string.challenge_cancel_success), Toast.LENGTH_SHORT).show()
                 loadGroupDetails()
             } catch (e: ApiException) {
-                Toast.makeText(requireContext(), e.message ?: getString(R.string.challenge_cancel_failed), Toast.LENGTH_SHORT).show()
+                context?.let { ctx ->
+                    Toast.makeText(ctx, e.message ?: getString(R.string.challenge_cancel_failed), Toast.LENGTH_SHORT).show()
+                }
             } catch (_: Exception) {
-                Toast.makeText(requireContext(), getString(R.string.challenge_cancel_failed), Toast.LENGTH_SHORT).show()
+                context?.let { ctx ->
+                    Toast.makeText(ctx, getString(R.string.challenge_cancel_failed), Toast.LENGTH_SHORT).show()
+                }
             }
         }
     }

@@ -41,7 +41,7 @@ class GoalLogProgressHandler(
     private val onRefresh: (silent: Boolean) -> Unit = {}
 ) {
     private fun showUpgradeDialog() {
-        val ctx = fragment.requireContext()
+        val ctx = fragment.context ?: return
         val d = MaterialAlertDialogBuilder(ctx)
             .setTitle(R.string.group_limit_reached_dialog_title)
             .setMessage(R.string.group_read_only_upgrade_message)
@@ -77,14 +77,18 @@ class GoalLogProgressHandler(
                 }
             }
             else -> {
-                Toast.makeText(fragment.requireContext(), fragment.getString(R.string.log_progress_failed), Toast.LENGTH_SHORT).show()
+                fragment.context?.let { ctx ->
+                    Toast.makeText(ctx, fragment.getString(R.string.log_progress_failed), Toast.LENGTH_SHORT).show()
+                }
             }
         }
     }
 
     private fun logBinaryProgress(goal: GoalForLogging) {
         val accessToken = tokenSupplier() ?: run {
-            Toast.makeText(fragment.requireContext(), fragment.getString(R.string.error_unauthorized_message), Toast.LENGTH_SHORT).show()
+            fragment.context?.let { ctx ->
+                Toast.makeText(ctx, fragment.getString(R.string.error_unauthorized_message), Toast.LENGTH_SHORT).show()
+            }
             return
         }
         val newValue = 1.0
@@ -98,8 +102,10 @@ class GoalLogProgressHandler(
                 }
                 val entryId = response.id
                 fragment.requireActivity().runOnUiThread {
-                    showPostLogPhotoSheet(entryId) {
-                        performUndo(goal.id, entryId, previousCompleted, previousProgressValue, accessToken)
+                    if (fragment.isAdded) {
+                        showPostLogPhotoSheet(entryId) {
+                            performUndo(goal.id, entryId, previousCompleted, previousProgressValue, accessToken)
+                        }
                     }
                 }
             } catch (e: ApiException) {
@@ -110,7 +116,9 @@ class GoalLogProgressHandler(
             } catch (e: Exception) {
                 fragment.requireActivity().runOnUiThread {
                     onOptimisticUpdate?.invoke(goal.id, previousCompleted, previousProgressValue)
-                    Toast.makeText(fragment.requireContext(), fragment.getString(R.string.log_progress_failed), Toast.LENGTH_SHORT).show()
+                    fragment.context?.let { ctx ->
+                        Toast.makeText(ctx, fragment.getString(R.string.log_progress_failed), Toast.LENGTH_SHORT).show()
+                    }
                 }
             }
         }
@@ -146,11 +154,15 @@ class GoalLogProgressHandler(
                     ApiClient.deleteProgressEntry(accessToken, entryId)
                 }
                 fragment.requireActivity().runOnUiThread {
-                    Snackbar.make(snackbarParentView, fragment.getString(R.string.undone), Snackbar.LENGTH_SHORT).show()
+                    if (fragment.isAdded) {
+                        Snackbar.make(snackbarParentView, fragment.getString(R.string.undone), Snackbar.LENGTH_SHORT).show()
+                    }
                 }
             } catch (_: Exception) {
                 fragment.requireActivity().runOnUiThread {
-                    Toast.makeText(fragment.requireContext(), "Failed to undo", Toast.LENGTH_SHORT).show()
+                    fragment.context?.let { ctx ->
+                        Toast.makeText(ctx, "Failed to undo", Toast.LENGTH_SHORT).show()
+                    }
                 }
             }
         }
@@ -160,10 +172,13 @@ class GoalLogProgressHandler(
         val accessToken = tokenSupplier() ?: return
         fragment.viewLifecycleOwner.lifecycleScope.launch {
             try {
-                val compressed = compressPhotoForUpload(fragment.requireContext(), uri)
+                val ctx = fragment.context ?: return@launch
+                val compressed = compressPhotoForUpload(ctx, uri)
                 if (compressed == null) {
                     fragment.requireActivity().runOnUiThread {
-                        Snackbar.make(snackbarParentView, fragment.getString(R.string.photo_upload_failed), Snackbar.LENGTH_SHORT).show()
+                        if (fragment.isAdded) {
+                            Snackbar.make(snackbarParentView, fragment.getString(R.string.photo_upload_failed), Snackbar.LENGTH_SHORT).show()
+                        }
                     }
                     return@launch
                 }
@@ -171,39 +186,48 @@ class GoalLogProgressHandler(
                     ApiClient.uploadProgressPhoto(accessToken, entryId, compressed.file, compressed.width, compressed.height)
                 }
                 fragment.requireActivity().runOnUiThread {
-                    Toast.makeText(fragment.requireContext(), fragment.getString(R.string.photo_uploaded), Toast.LENGTH_SHORT).show()
+                    fragment.context?.let { c ->
+                        Toast.makeText(c, fragment.getString(R.string.photo_uploaded), Toast.LENGTH_SHORT).show()
+                    }
                 }
             } catch (e: ApiException) {
                 fragment.requireActivity().runOnUiThread {
-                    if (e.code == 422) {
-                        val snackbar = Snackbar.make(
-                            snackbarParentView,
-                            fragment.getString(R.string.photo_quota_exceeded),
-                            Snackbar.LENGTH_LONG
-                        )
-                        snackbar.setAction(fragment.getString(R.string.upgrade_to_premium)) {
-                            showUpgradeDialog()
+                    if (fragment.isAdded) {
+                        if (e.code == 422) {
+                            val snackbar = Snackbar.make(
+                                snackbarParentView,
+                                fragment.getString(R.string.photo_quota_exceeded),
+                                Snackbar.LENGTH_LONG
+                            )
+                            snackbar.setAction(fragment.getString(R.string.upgrade_to_premium)) {
+                                showUpgradeDialog()
+                            }
+                            fragment.context?.let { c ->
+                                snackbar.setActionTextColor(ContextCompat.getColor(c, R.color.primary))
+                            }
+                            snackbar.show()
+                        } else {
+                            Snackbar.make(snackbarParentView, fragment.getString(R.string.photo_upload_failed), Snackbar.LENGTH_SHORT).show()
                         }
-                        snackbar.setActionTextColor(ContextCompat.getColor(fragment.requireContext(), R.color.primary))
-                        snackbar.show()
-                    } else {
-                        Snackbar.make(snackbarParentView, fragment.getString(R.string.photo_upload_failed), Snackbar.LENGTH_SHORT).show()
                     }
                 }
             } catch (e: Exception) {
                 fragment.requireActivity().runOnUiThread {
-                    Snackbar.make(snackbarParentView, fragment.getString(R.string.photo_upload_failed), Snackbar.LENGTH_SHORT).show()
+                    if (fragment.isAdded) {
+                        Snackbar.make(snackbarParentView, fragment.getString(R.string.photo_upload_failed), Snackbar.LENGTH_SHORT).show()
+                    }
                 }
             }
         }
     }
 
     private fun showRemoveProgressConfirmationDialog(goal: GoalForLogging) {
+        val ctx = fragment.context ?: return
         val accessToken = tokenSupplier() ?: run {
-            Toast.makeText(fragment.requireContext(), fragment.getString(R.string.error_unauthorized_message), Toast.LENGTH_SHORT).show()
+            Toast.makeText(ctx, fragment.getString(R.string.error_unauthorized_message), Toast.LENGTH_SHORT).show()
             return
         }
-        MaterialAlertDialogBuilder(fragment.requireContext())
+        MaterialAlertDialogBuilder(ctx)
             .setTitle(fragment.getString(R.string.remove_progress_title))
             .setPositiveButton(fragment.getString(R.string.remove_progress_confirm)) { _, _ ->
                 fragment.viewLifecycleOwner.lifecycleScope.launch {
@@ -216,17 +240,22 @@ class GoalLogProgressHandler(
                                 ApiClient.deleteProgressEntry(accessToken, entryInfo.first)
                             }
                             fragment.requireActivity().runOnUiThread {
-                                onOptimisticUpdate?.invoke(goal.id, false, null)
+                                if (fragment.isAdded) {
+                                    onOptimisticUpdate?.invoke(goal.id, false, null)
+                                }
                             }
                         } else {
                             fragment.requireActivity().runOnUiThread {
-                                Toast.makeText(fragment.requireContext(), "Entry not found", Toast.LENGTH_SHORT).show()
-                                // Don't call onRefresh() - it shows skeleton. Just show the toast.
+                                fragment.context?.let { c ->
+                                    Toast.makeText(c, "Entry not found", Toast.LENGTH_SHORT).show()
+                                }
                             }
                         }
                     } catch (e: Exception) {
                         fragment.requireActivity().runOnUiThread {
-                            Toast.makeText(fragment.requireContext(), fragment.getString(R.string.log_progress_failed), Toast.LENGTH_SHORT).show()
+                            fragment.context?.let { c ->
+                                Toast.makeText(c, fragment.getString(R.string.log_progress_failed), Toast.LENGTH_SHORT).show()
+                            }
                         }
                     }
                 }
@@ -235,7 +264,7 @@ class GoalLogProgressHandler(
             .show()
             ?.apply {
                 getButton(AlertDialog.BUTTON_POSITIVE)?.setTextColor(
-                    ContextCompat.getColor(fragment.requireContext(), R.color.secondary)
+                    ContextCompat.getColor(ctx, R.color.secondary)
                 )
             }
     }
@@ -281,12 +310,16 @@ class GoalLogProgressHandler(
                         dialog.show(fragment.childFragmentManager, "EditProgressDialog")
                     } else {
                         onRefresh(true)
-                        Toast.makeText(fragment.requireContext(), "Entry not found", Toast.LENGTH_SHORT).show()
+                        fragment.context?.let { c ->
+                            Toast.makeText(c, "Entry not found", Toast.LENGTH_SHORT).show()
+                        }
                     }
                 }
             } catch (e: Exception) {
                 fragment.requireActivity().runOnUiThread {
-                    Toast.makeText(fragment.requireContext(), fragment.getString(R.string.log_progress_failed), Toast.LENGTH_SHORT).show()
+                    fragment.context?.let { c ->
+                        Toast.makeText(c, fragment.getString(R.string.log_progress_failed), Toast.LENGTH_SHORT).show()
+                    }
                 }
             }
         }
@@ -307,8 +340,10 @@ class GoalLogProgressHandler(
                 }
                 val entryId = response.id
                 fragment.requireActivity().runOnUiThread {
-                    showPostLogPhotoSheet(entryId) {
-                        performUndo(goal.id, entryId, previousCompleted, previousProgressValue, accessToken)
+                    if (fragment.isAdded) {
+                        showPostLogPhotoSheet(entryId) {
+                            performUndo(goal.id, entryId, previousCompleted, previousProgressValue, accessToken)
+                        }
                     }
                 }
             } catch (e: ApiException) {
@@ -319,7 +354,9 @@ class GoalLogProgressHandler(
             } catch (e: Exception) {
                 fragment.requireActivity().runOnUiThread {
                     onOptimisticUpdate?.invoke(goal.id, previousCompleted, previousProgressValue)
-                    Toast.makeText(fragment.requireContext(), fragment.getString(R.string.log_progress_failed), Toast.LENGTH_SHORT).show()
+                    fragment.context?.let { c ->
+                        Toast.makeText(c, fragment.getString(R.string.log_progress_failed), Toast.LENGTH_SHORT).show()
+                    }
                 }
             }
         }
@@ -341,8 +378,10 @@ class GoalLogProgressHandler(
                 }
                 val newEntryId = response.id
                 fragment.requireActivity().runOnUiThread {
-                    showPostLogPhotoSheet(newEntryId) {
-                        performUndo(goal.id, newEntryId, previousCompleted, previousProgressValue, accessToken)
+                    if (fragment.isAdded) {
+                        showPostLogPhotoSheet(newEntryId) {
+                            performUndo(goal.id, newEntryId, previousCompleted, previousProgressValue, accessToken)
+                        }
                     }
                 }
             } catch (e: ApiException) {
@@ -353,7 +392,9 @@ class GoalLogProgressHandler(
             } catch (e: Exception) {
                 fragment.requireActivity().runOnUiThread {
                     onOptimisticUpdate?.invoke(goal.id, previousCompleted, previousProgressValue)
-                    Toast.makeText(fragment.requireContext(), fragment.getString(R.string.log_progress_failed), Toast.LENGTH_SHORT).show()
+                    fragment.context?.let { c ->
+                        Toast.makeText(c, fragment.getString(R.string.log_progress_failed), Toast.LENGTH_SHORT).show()
+                    }
                 }
             }
         }
@@ -368,12 +409,16 @@ class GoalLogProgressHandler(
                     ApiClient.deleteProgressEntry(accessToken, entryId)
                 }
                 fragment.requireActivity().runOnUiThread {
-                    Toast.makeText(fragment.requireContext(), fragment.getString(R.string.progress_removed_toast), Toast.LENGTH_SHORT).show()
+                    fragment.context?.let { c ->
+                        Toast.makeText(c, fragment.getString(R.string.progress_removed_toast), Toast.LENGTH_SHORT).show()
+                    }
                 }
             } catch (e: Exception) {
                 fragment.requireActivity().runOnUiThread {
                     onOptimisticUpdate?.invoke(goal.id, goal.completed, goal.progressValue)
-                    Toast.makeText(fragment.requireContext(), fragment.getString(R.string.log_progress_failed), Toast.LENGTH_SHORT).show()
+                    fragment.context?.let { c ->
+                        Toast.makeText(c, fragment.getString(R.string.log_progress_failed), Toast.LENGTH_SHORT).show()
+                    }
                 }
             }
         }
@@ -415,11 +460,12 @@ class GoalLogProgressHandler(
     }
 
     private fun handleLogApiException(e: ApiException) {
+        val ctx = fragment.context ?: return
         when (e.errorCode) {
             "GROUP_READ_ONLY" -> showUpgradeDialog()
             "CHALLENGE_NOT_ACTIVE" -> {
                 Toast.makeText(
-                    fragment.requireContext(),
+                    ctx,
                     fragment.getString(R.string.challenge_progress_locked_not_active),
                     Toast.LENGTH_SHORT
                 ).show()
@@ -431,7 +477,7 @@ class GoalLogProgressHandler(
                 } else {
                     fragment.getString(R.string.log_progress_failed)
                 }
-                Toast.makeText(fragment.requireContext(), msg, Toast.LENGTH_SHORT).show()
+                Toast.makeText(ctx, msg, Toast.LENGTH_SHORT).show()
             }
         }
     }
