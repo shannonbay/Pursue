@@ -24,6 +24,7 @@ import app.getpursue.data.network.ApiClient
 import app.getpursue.data.network.ApiException
 import app.getpursue.ui.activities.GroupDetailActivity
 import app.getpursue.ui.activities.OrientationActivity
+import app.getpursue.ui.views.ActiveDaysSelectorView
 import app.getpursue.ui.views.IconPickerBottomSheet
 import app.getpursue.utils.IconUrlUtils
 import com.google.android.material.button.MaterialButton
@@ -52,6 +53,8 @@ class OrientationCreateGroupFragment : Fragment() {
     private lateinit var iconImage: ImageView
     private lateinit var iconContainer: FrameLayout
     private lateinit var chooseIconButton: MaterialButton
+
+    private lateinit var activeDaysSelectorView: ActiveDaysSelectorView
 
     private var selectedEmoji: String? = null
     private var selectedColor: String = IconPickerBottomSheet.Companion.getRandomDefaultColor()
@@ -82,6 +85,7 @@ class OrientationCreateGroupFragment : Fragment() {
         iconImage = view.findViewById(R.id.icon_image)
         iconContainer = view.findViewById(R.id.icon_container)
         chooseIconButton = view.findViewById(R.id.button_choose_icon)
+        activeDaysSelectorView = view.findViewById(R.id.active_days_selector)
 
         // Setup progress dots for step 3
         setupProgressDots(view.findViewById(R.id.progress_dots), 3)
@@ -101,6 +105,15 @@ class OrientationCreateGroupFragment : Fragment() {
         // Default selections
         toggleCadence.check(R.id.btn_daily)
         toggleType.check(R.id.btn_binary)
+
+        // Show active days selector only for daily cadence; default checked is btn_daily so show immediately
+        activeDaysSelectorView.visibility = View.VISIBLE
+        toggleCadence.addOnButtonCheckedListener { _, checkedId, isChecked ->
+            if (isChecked) {
+                activeDaysSelectorView.visibility =
+                    if (checkedId == R.id.btn_daily) View.VISIBLE else View.GONE
+            }
+        }
 
         // Toggle numeric fields visibility
         toggleType.addOnButtonCheckedListener { _, checkedId, isChecked ->
@@ -232,6 +245,7 @@ class OrientationCreateGroupFragment : Fragment() {
                 val groupId = groupResponse.id
                 val groupName = groupResponse.name
 
+                val activeDays = if (cadence == "daily") activeDaysSelectorView.getActiveDays() else null
                 // Create goal in the new group
                 withContext(Dispatchers.IO) {
                     ApiClient.createGoal(
@@ -241,7 +255,8 @@ class OrientationCreateGroupFragment : Fragment() {
                         cadence = cadence,
                         metricType = metricType,
                         targetValue = targetValue,
-                        unit = unit
+                        unit = unit,
+                        activeDays = activeDays
                     )
                 }
                 if (!isAdded) return@launch
@@ -283,6 +298,7 @@ class OrientationCreateGroupFragment : Fragment() {
         editTarget.isEnabled = !show
         editUnit.isEnabled = !show
         chooseIconButton.isEnabled = !show
+        activeDaysSelectorView.isEnabled = !show
     }
 
     companion object {

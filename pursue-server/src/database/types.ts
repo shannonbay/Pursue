@@ -132,6 +132,7 @@ export interface ChallengeTemplateGoalsTable {
   metric_type: string;
   target_value: number | null;
   unit: string | null;
+  active_days: number | null;
   sort_order: ColumnType<number, number | undefined, number>;
 }
 
@@ -176,6 +177,7 @@ export interface GoalsTable {
   metric_type: string;
   target_value: number | null;
   unit: string | null;
+  active_days: number | null;
   created_by_user_id: string | null;
   created_at: ColumnType<Date, string | undefined, never>;
   deleted_at: Date | null;

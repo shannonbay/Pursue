@@ -14,6 +14,7 @@ export interface GoalRow {
   description: string | null;
   cadence: string;
   metric_type: string;
+  active_days: number | null;
   created_at: Date;
 }
 
@@ -26,7 +27,7 @@ export async function ensureGoalExists(goalId: string): Promise<GoalRow> {
   }
   const goal = await db
     .selectFrom('goals')
-    .select(['id', 'group_id', 'title', 'description', 'cadence', 'metric_type', 'created_at'])
+    .select(['id', 'group_id', 'title', 'description', 'cadence', 'metric_type', 'active_days', 'created_at'])
     .where('id', '=', goalId)
     .where('deleted_at', 'is', null)
     .executeTakeFirst();

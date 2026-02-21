@@ -547,6 +547,30 @@ async function createSchema(db: Kysely<Database>) {
     )
   `.execute(db);
 
+  // Add active_days column to goals (migration for existing test databases)
+  await sql`
+    DO $$ BEGIN
+      IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = 'goals' AND column_name = 'active_days'
+      ) THEN
+        ALTER TABLE goals ADD COLUMN active_days INTEGER DEFAULT NULL;
+      END IF;
+    END $$
+  `.execute(db);
+
+  // Add active_days column to challenge_template_goals (migration for existing test databases)
+  await sql`
+    DO $$ BEGIN
+      IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = 'challenge_template_goals' AND column_name = 'active_days'
+      ) THEN
+        ALTER TABLE challenge_template_goals ADD COLUMN active_days INTEGER DEFAULT NULL;
+      END IF;
+    END $$
+  `.execute(db);
+
   // Create progress_entries table
   await sql`
     CREATE TABLE IF NOT EXISTS progress_entries (

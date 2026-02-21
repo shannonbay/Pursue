@@ -114,7 +114,11 @@ class ChallengeSetupFragment : Fragment() {
         template.goals.forEach { goal ->
             val goalView = LayoutInflater.from(currentContext)
                 .inflate(android.R.layout.simple_list_item_1, goalsContainer, false) as TextView
-            goalView.text = "• ${goal.title} (${goal.cadence})"
+            val activeDaysSuffix = if (goal.cadence == "daily" && goal.active_days_label != null
+                && goal.active_days_label != "Every day") {
+                " · ${goal.active_days_label}"
+            } else ""
+            goalView.text = "• ${goal.title} (${goal.cadence}$activeDaysSuffix)"
             goalsContainer.addView(goalView)
         }
     }

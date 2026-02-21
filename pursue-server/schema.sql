@@ -160,7 +160,10 @@ CREATE TABLE challenge_template_goals (
   target_value DECIMAL(10,2),
   unit VARCHAR(50),
   sort_order INTEGER NOT NULL DEFAULT 0,
-  UNIQUE(template_id, sort_order)
+  active_days INTEGER DEFAULT NULL, -- Bitmask for day-of-week scheduling (1=Mon..64=Sun, NULL=every day)
+  UNIQUE(template_id, sort_order),
+  CONSTRAINT chk_template_goal_active_days CHECK (active_days IS NULL OR (active_days >= 1 AND active_days <= 127)),
+  CONSTRAINT chk_template_goal_active_days_cadence CHECK (active_days IS NULL OR cadence = 'daily')
 );
 
 CREATE INDEX idx_template_goals_template ON challenge_template_goals(template_id, sort_order);
@@ -209,10 +212,13 @@ CREATE TABLE goals (
   metric_type VARCHAR(20) NOT NULL, -- 'binary', 'numeric', 'duration'
   target_value DECIMAL(10,2), -- For numeric goals
   unit VARCHAR(50), -- e.g., 'km', 'pages', 'minutes'
+  active_days INTEGER DEFAULT NULL, -- Bitmask for day-of-week scheduling (1=Mon..64=Sun, NULL=every day)
   created_by_user_id UUID REFERENCES users(id) ON DELETE SET NULL,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   deleted_at TIMESTAMP WITH TIME ZONE, -- Soft delete: NULL if active, timestamp if deleted
-  deleted_by_user_id UUID REFERENCES users(id) ON DELETE SET NULL -- Who deleted it (for audit)
+  deleted_by_user_id UUID REFERENCES users(id) ON DELETE SET NULL, -- Who deleted it (for audit)
+  CONSTRAINT chk_active_days CHECK (active_days IS NULL OR (active_days >= 1 AND active_days <= 127)),
+  CONSTRAINT chk_active_days_cadence CHECK (active_days IS NULL OR cadence = 'daily')
 );
 
 CREATE INDEX idx_goals_group ON goals(group_id);

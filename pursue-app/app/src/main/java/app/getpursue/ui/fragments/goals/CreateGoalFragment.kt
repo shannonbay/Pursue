@@ -28,6 +28,7 @@ import app.getpursue.data.network.ApiClient
 import app.getpursue.data.network.ApiException
 import app.getpursue.ui.activities.GroupDetailActivity
 import app.getpursue.ui.activities.MainAppActivity
+import app.getpursue.ui.views.ActiveDaysSelectorView
 import app.getpursue.ui.views.IconPickerBottomSheet
 import app.getpursue.utils.IconUrlUtils
 import app.getpursue.R
@@ -87,6 +88,7 @@ class CreateGoalFragment : Fragment() {
     private lateinit var unitInput: TextInputLayout
     private lateinit var unitDropdown: AutoCompleteTextView
     private lateinit var startDateEdit: TextInputEditText
+    private lateinit var activeDaysSelectorView: ActiveDaysSelectorView
     private lateinit var loadingIndicator: ProgressBar
 
     // Unit options
@@ -115,6 +117,7 @@ class CreateGoalFragment : Fragment() {
         setupHeader()
         setupTitleInput()
         setupCadenceToggle()
+        setupActiveDaysSelector()
         setupMetricTypeToggle()
         setupUnitDropdown()
         setupStartDatePicker()
@@ -141,6 +144,7 @@ class CreateGoalFragment : Fragment() {
         unitInput = view.findViewById(R.id.input_unit)
         unitDropdown = view.findViewById(R.id.dropdown_unit)
         startDateEdit = view.findViewById(R.id.edit_start_date)
+        activeDaysSelectorView = view.findViewById(R.id.active_days_selector)
         loadingIndicator = view.findViewById(R.id.loading_indicator)
     }
 
@@ -189,8 +193,18 @@ class CreateGoalFragment : Fragment() {
                     else -> "weekly"
                 }
                 updateTargetSuffix()
+                updateActiveDaysSelectorVisibility()
             }
         }
+    }
+
+    private fun setupActiveDaysSelector() {
+        // Selector is only visible for daily cadence; visibility is set in updateActiveDaysSelectorVisibility()
+    }
+
+    private fun updateActiveDaysSelectorVisibility() {
+        activeDaysSelectorView.visibility =
+            if (selectedCadence == "daily") View.VISIBLE else View.GONE
     }
 
     private fun setupMetricTypeToggle() {
@@ -436,6 +450,7 @@ class CreateGoalFragment : Fragment() {
                     return@launch
                 }
 
+                val activeDays = if (selectedCadence == "daily") activeDaysSelectorView.getActiveDays() else null
                 withContext(Dispatchers.IO) {
                     ApiClient.createGoal(
                         accessToken = accessToken,
@@ -445,7 +460,8 @@ class CreateGoalFragment : Fragment() {
                         cadence = selectedCadence,
                         metricType = selectedMetricType,
                         targetValue = targetValue,
-                        unit = unit
+                        unit = unit,
+                        activeDays = activeDays
                     )
                 }
 
@@ -512,13 +528,14 @@ class CreateGoalFragment : Fragment() {
             unitDropdown.isEnabled = !show
             startDateEdit.isEnabled = !show
 
-            // Disable toggle groups
+            // Disable toggle groups and active days selector
             for (i in 0 until cadenceToggleGroup.childCount) {
                 cadenceToggleGroup.getChildAt(i).isEnabled = !show
             }
             for (i in 0 until metricTypeToggleGroup.childCount) {
                 metricTypeToggleGroup.getChildAt(i).isEnabled = !show
             }
+            activeDaysSelectorView.isEnabled = !show
         }
     }
 

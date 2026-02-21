@@ -782,4 +782,31 @@
     <!-- Onboarding Tooltips -->
     <string name="onboarding_tap_to_log_tooltip">Tap the goal title to log progress</string>
 
+    <!-- Active Days Selector -->
+    <string name="active_days_label">Active Days</string>
+    <string name="active_days_every_day">Every day</string>
+    <string name="active_days_weekdays">Weekdays</string>
+    <string name="active_days_weekends">Weekends</string>
+    <string name="active_days_at_least_one">At least one day must be active</string>
+    <string name="active_days_summary_every_day">Every day</string>
+    <string name="active_days_weekdays_only">Weekdays only</string>
+    <string name="active_days_weekends_only">Weekends only</string>
+    <string name="active_days_days_per_week">days/week</string>
+    <!-- Day full names for accessibility content descriptions -->
+    <string name="day_sunday">Sunday</string>
+    <string name="day_monday">Monday</string>
+    <string name="day_tuesday">Tuesday</string>
+    <string name="day_wednesday">Wednesday</string>
+    <string name="day_thursday">Thursday</string>
+    <string name="day_friday">Friday</string>
+    <string name="day_saturday">Saturday</string>
+    <!-- Day single-letter abbreviations for toggle buttons (S M T W T F S) -->
+    <string name="day_abbrev_sun">S</string>
+    <string name="day_abbrev_mon">M</string>
+    <string name="day_abbrev_tue">T</string>
+    <string name="day_abbrev_wed">W</string>
+    <string name="day_abbrev_thu">T</string>
+    <string name="day_abbrev_fri">F</string>
+    <string name="day_abbrev_sat">S</string>
+
 </resources>

@@ -11,6 +11,11 @@ const ChallengeGoalSchema = z
     target_value: z.number().positive().max(999_999.99).optional(),
     unit: z.string().max(50).optional(),
     sort_order: z.number().int().min(0).optional(),
+    active_days: z
+      .array(z.number().int().min(0).max(6))
+      .min(1)
+      .max(7)
+      .optional(),
   })
   .strict()
   .superRefine((data, ctx) => {
@@ -20,6 +25,23 @@ const ChallengeGoalSchema = z
         message: 'Numeric goals must include target_value',
         path: ['target_value'],
       });
+    }
+    if (data.active_days && data.cadence !== 'daily') {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Active days can only be set for daily goals',
+        path: ['active_days'],
+      });
+    }
+    if (data.active_days) {
+      const unique = new Set(data.active_days);
+      if (unique.size !== data.active_days.length) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Active days must not contain duplicates',
+          path: ['active_days'],
+        });
+      }
     }
   });
 

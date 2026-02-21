@@ -257,10 +257,11 @@ class E2EApiClient(private val context: Context) {
         cadence: String = "daily",
         metricType: String = "binary",
         targetValue: Double? = null,
-        unit: String? = null
+        unit: String? = null,
+        activeDays: List<Int>? = null
     ): CreateGoalResponse {
         storeTokenIfPresent(accessToken)
-        return ApiClient.createGoal("", groupId, title, description, cadence, metricType, targetValue, unit)
+        return ApiClient.createGoal("", groupId, title, description, cadence, metricType, targetValue, unit, activeDays)
     }
 
     suspend fun getGroupGoals(
@@ -283,10 +284,12 @@ class E2EApiClient(private val context: Context) {
         accessToken: String,
         goalId: String,
         title: String? = null,
-        description: String? = null
+        description: String? = null,
+        activeDays: List<Int>? = null,
+        resetActiveDays: Boolean = false
     ): UpdateGoalResponse {
         storeTokenIfPresent(accessToken)
-        return ApiClient.updateGoal("", goalId, title, description)
+        return ApiClient.updateGoal("", goalId, title, description, activeDays, resetActiveDays)
     }
 
     suspend fun deleteGoal(accessToken: String, goalId: String) {

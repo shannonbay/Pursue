@@ -8,6 +8,7 @@ export const ACTIVITY_TYPES = {
   MEMBER_REMOVED: 'member_removed',
   GOAL_ADDED: 'goal_added',
   GOAL_ARCHIVED: 'goal_archived',
+  GOAL_UPDATED: 'goal_updated',
   GROUP_RENAMED: 'group_renamed',
   PROGRESS_LOGGED: 'progress_logged',
   JOIN_REQUEST: 'join_request',

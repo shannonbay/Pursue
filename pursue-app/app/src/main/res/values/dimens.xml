@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- Today fragment: group header padding to align with card boundary and date header (16dp) -->
+    <dimen name="active_days_chip_stroke">1dp</dimen>
     <dimen name="today_group_header_horizontal_padding">16dp</dimen>
     <dimen name="today_group_header_padding_top">16dp</dimen>
     <dimen name="today_group_header_padding_bottom">8dp</dimen>

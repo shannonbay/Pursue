@@ -187,6 +187,14 @@
 
         </com.google.android.material.button.MaterialButtonToggleGroup>
 
+        <!-- Active Days Selector (only shown for daily cadence) -->
+        <app.getpursue.ui.views.ActiveDaysSelectorView
+            android:id="@+id/active_days_selector"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:visibility="gone" />
+
         <!-- Type toggle -->
         <TextView
             android:layout_width="match_parent"

@@ -31,6 +31,7 @@ import { canUserWriteInGroup } from '../services/subscription.service.js';
 import { createGroupActivity, ACTIVITY_TYPES } from '../services/activity.service.js';
 import { sendToTopic, buildTopicName } from '../services/fcm.service.js';
 import { getSignedUrl } from '../services/gcs.service.js';
+import { daysToBitmask, bitmaskToDays, serializeActiveDays } from '../utils/activeDays.js';
 
 function formatPeriodStart(ps: string | Date): string {
   if (typeof ps === 'string') return ps.slice(0, 10);
@@ -128,6 +129,9 @@ async function attachProgressToGoals(
     metric_type: string;
     target_value: number | null;
     unit: string | null;
+    active_days: number[] | null;
+    active_days_label: string;
+    active_days_count: number;
     created_by_user_id: string | null;
     created_at: Date;
     archived_at: Date | null;
@@ -144,6 +148,9 @@ async function attachProgressToGoals(
   metric_type: string;
   target_value: number | null;
   unit: string | null;
+  active_days: number[] | null;
+  active_days_label: string;
+  active_days_count: number;
   created_by_user_id: string | null;
   created_at: Date;
   archived_at: Date | null;
@@ -345,6 +352,8 @@ export async function createGoal(
 
     const data = CreateGoalSchema.parse(req.body);
 
+    const activeDaysBitmask = data.active_days ? daysToBitmask(data.active_days) : null;
+
     const goal = await db
       .insertInto('goals')
       .values({
@@ -355,6 +364,7 @@ export async function createGoal(
         metric_type: data.metric_type,
         target_value: data.target_value ?? null,
         unit: data.unit ?? null,
+        active_days: activeDaysBitmask,
         created_by_user_id: req.user.id,
       })
       .returning([
@@ -366,6 +376,7 @@ export async function createGoal(
         'metric_type',
         'target_value',
         'unit',
+        'active_days',
         'created_by_user_id',
         'created_at',
       ])
@@ -396,6 +407,7 @@ export async function createGoal(
       metric_type: goal.metric_type,
       target_value: goal.target_value,
       unit: goal.unit,
+      ...serializeActiveDays(goal.active_days),
       created_by_user_id: goal.created_by_user_id,
       created_at: goal.created_at,
       archived_at: null,
@@ -443,6 +455,7 @@ export async function listGoals(
         'metric_type',
         'target_value',
         'unit',
+        'active_days',
         'created_by_user_id',
         'created_at',
         'deleted_at',
@@ -470,6 +483,7 @@ export async function listGoals(
       metric_type: r.metric_type,
       target_value: r.target_value,
       unit: r.unit,
+      ...serializeActiveDays(r.active_days),
       created_by_user_id: r.created_by_user_id,
       created_at: r.created_at,
       archived_at: r.deleted_at ?? null,
@@ -514,6 +528,7 @@ export async function getGoal(
       description: goal.description,
       cadence: goal.cadence,
       metric_type: goal.metric_type,
+      ...serializeActiveDays(goal.active_days),
       created_at: goal.created_at,
     });
   } catch (error) {
@@ -552,15 +567,29 @@ export async function updateGoal(
 
     const data = UpdateGoalSchema.parse(req.body);
 
-    const updates: Record<string, string | null> = {};
+    const updates: Record<string, string | number | null> = {};
     if (data.title !== undefined) updates.title = data.title;
     if (data.description !== undefined) updates.description = data.description ?? null;
+
+    // Handle active_days update
+    if (data.active_days !== undefined) {
+      if (data.active_days !== null && goal.cadence !== 'daily') {
+        throw new ApplicationError(
+          'Active days can only be set for daily goals',
+          400,
+          'VALIDATION_ERROR'
+        );
+      }
+      const newBitmask = data.active_days !== null ? daysToBitmask(data.active_days) : null;
+      updates.active_days = newBitmask;
+    }
 
     if (Object.keys(updates).length === 0) {
       res.status(200).json({
         id: goal.id,
         title: goal.title,
         description: goal.description,
+        ...serializeActiveDays(goal.active_days),
       });
       return;
     }
@@ -569,13 +598,26 @@ export async function updateGoal(
       .updateTable('goals')
       .set(updates)
       .where('id', '=', goal.id)
-      .returning(['id', 'title', 'description'])
+      .returning(['id', 'title', 'description', 'active_days'])
       .executeTakeFirstOrThrow();
+
+    // Log activity if active_days changed
+    if (data.active_days !== undefined) {
+      const oldDays = serializeActiveDays(goal.active_days);
+      const newDays = serializeActiveDays(updated.active_days);
+      await createGroupActivity(goal.group_id, ACTIVITY_TYPES.GOAL_UPDATED, req.user.id, {
+        goal_id: goal.id,
+        field: 'active_days',
+        old_value: oldDays.active_days,
+        new_value: newDays.active_days,
+      });
+    }
 
     res.status(200).json({
       id: updated.id,
       title: updated.title,
       description: updated.description,
+      ...serializeActiveDays(updated.active_days),
     });
   } catch (error) {
     next(error);
@@ -758,7 +800,7 @@ export async function getProgress(
     }
 
     res.status(200).json({
-      goal: { id: goal.id, title: goal.title, cadence: goal.cadence },
+      goal: { id: goal.id, title: goal.title, cadence: goal.cadence, ...serializeActiveDays(goal.active_days) },
       progress: Array.from(byUser.values()),
     });
   } catch (error) {
@@ -806,6 +848,7 @@ export async function getProgressMe(
 
     res.status(200).json({
       goal_id: goal.id,
+      ...serializeActiveDays(goal.active_days),
       entries: rows.map((r) => ({
         id: r.id,
         value: Number(r.value),

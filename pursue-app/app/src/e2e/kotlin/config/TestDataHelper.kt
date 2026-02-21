@@ -181,7 +181,8 @@ class TestDataHelper(private val context: Context) {
         cadence: String = "daily",
         metricType: String = "binary",
         targetValue: Double? = null,
-        unit: String? = null
+        unit: String? = null,
+        activeDays: List<Int>? = null
     ): CreateGoalResponse {
         return try {
             api.createGoal(
@@ -192,7 +193,8 @@ class TestDataHelper(private val context: Context) {
                 cadence = cadence,
                 metricType = metricType,
                 targetValue = targetValue,
-                unit = unit
+                unit = unit,
+                activeDays = activeDays
             )
         } catch (e: ApiException) {
             throw Exception("Failed to create test goal: ${e.message}", e)

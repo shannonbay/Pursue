@@ -14,6 +14,8 @@ import app.getpursue.models.GroupActivityResponse
 import app.getpursue.models.GroupGoalsResponse
 import com.google.gson.Gson
 import android.util.Log
+import com.google.gson.JsonArray
+import com.google.gson.JsonNull
 import com.google.gson.JsonObject
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.MultipartBody
@@ -1445,7 +1447,8 @@ object ApiClient {
         cadence: String,
         metricType: String,
         targetValue: Double? = null,
-        unit: String? = null
+        unit: String? = null,
+        activeDays: List<Int>? = null
     ): CreateGoalResponse {
         val requestBody = gson.toJson(
             CreateGoalRequest(
@@ -1454,7 +1457,8 @@ object ApiClient {
                 cadence = cadence,
                 metric_type = metricType,
                 target_value = targetValue,
-                unit = unit
+                unit = unit,
+                active_days = activeDays
             )
         ).toRequestBody(jsonMediaType)
 
@@ -1496,6 +1500,9 @@ object ApiClient {
      * @param goalId Goal ID
      * @param title New title (optional)
      * @param description New description (optional)
+     * @param activeDays Days of week to schedule (0=Sun..6=Sat). Only for daily goals. Pass null
+     *                   with resetActiveDays=true to clear (every day). Omit entirely to leave unchanged.
+     * @param resetActiveDays Set true to send active_days: null (reset to every day)
      * @return UpdateGoalResponse (200 OK)
      * @throws ApiException on error (401, 403, 404)
      */
@@ -1503,11 +1510,20 @@ object ApiClient {
         accessToken: String,
         goalId: String,
         title: String? = null,
-        description: String? = null
+        description: String? = null,
+        activeDays: List<Int>? = null,
+        resetActiveDays: Boolean = false
     ): UpdateGoalResponse {
         val toSend = JsonObject()
         title?.let { toSend.addProperty("title", it) }
         description?.let { toSend.addProperty("description", it) }
+        if (activeDays != null) {
+            val arr = JsonArray()
+            activeDays.forEach { arr.add(it) }
+            toSend.add("active_days", arr)
+        } else if (resetActiveDays) {
+            toSend.add("active_days", JsonNull.INSTANCE)
+        }
         val requestBody = toSend.toString().toRequestBody(jsonMediaType)
 
         val request = Request.Builder()
@@ -2371,7 +2387,10 @@ data class ChallengeTemplateGoal(
     val cadence: String,
     val metric_type: String,
     val target_value: Double?,
-    val unit: String?
+    val unit: String?,
+    val active_days: List<Int>? = null,
+    val active_days_label: String? = null,
+    val active_days_count: Int? = null
 )
 
 data class ChallengeTemplate(
@@ -2489,7 +2508,8 @@ data class CreateGoalRequest(
     val cadence: String,
     val metric_type: String,
     val target_value: Double? = null,
-    val unit: String? = null
+    val unit: String? = null,
+    val active_days: List<Int>? = null
 )
 
 data class CreateGoalResponse(
@@ -2503,7 +2523,10 @@ data class CreateGoalResponse(
     val unit: String?,
     val created_by_user_id: String,
     val created_at: String,
-    val archived_at: String?
+    val archived_at: String?,
+    val active_days: List<Int>? = null,
+    val active_days_label: String? = null,
+    val active_days_count: Int? = null
 )
 
 data class GetGoalResponse(
@@ -2513,13 +2536,19 @@ data class GetGoalResponse(
     val description: String?,
     val cadence: String,
     val metric_type: String,
-    val created_at: String
+    val created_at: String,
+    val active_days: List<Int>? = null,
+    val active_days_label: String? = null,
+    val active_days_count: Int? = null
 )
 
 data class UpdateGoalResponse(
     val id: String,
     val title: String,
-    val description: String?
+    val description: String?,
+    val active_days: List<Int>? = null,
+    val active_days_label: String? = null,
+    val active_days_count: Int? = null
 )
 
 data class GoalProgressResponse(
@@ -2530,7 +2559,10 @@ data class GoalProgressResponse(
 data class GoalProgressGoal(
     val id: String,
     val title: String,
-    val cadence: String
+    val cadence: String,
+    val active_days: List<Int>? = null,
+    val active_days_label: String? = null,
+    val active_days_count: Int? = null
 )
 
 data class GoalUserProgress(
@@ -2558,7 +2590,10 @@ data class GoalProgressEntryPhoto(
 
 data class GoalProgressMeResponse(
     val goal_id: String,
-    val entries: List<GoalProgressEntry>
+    val entries: List<GoalProgressEntry>,
+    val active_days: List<Int>? = null,
+    val active_days_label: String? = null,
+    val active_days_count: Int? = null
 )
 
 data class LogProgressRequest(

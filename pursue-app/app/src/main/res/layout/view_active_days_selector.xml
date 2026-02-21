@@ -1,0 +1,223 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Active Days Selector widget — shown only for daily cadence goals.
+     Sunday-first ordering: S M T W T F S (indices 0=Sun, 1=Mon, ..., 6=Sat) -->
+<merge xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Label -->
+    <TextView
+        android:id="@+id/active_days_label"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:fontFamily="sans-serif-medium"
+        android:text="@string/active_days_label"
+        android:textColor="@color/on_surface_variant"
+        android:textSize="12sp" />
+
+    <!-- Preset chips row -->
+    <LinearLayout
+        android:id="@+id/active_days_chips_row"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:orientation="horizontal">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/chip_every_day"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            android:layout_width="wrap_content"
+            android:layout_height="36dp"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp"
+            android:text="@string/active_days_every_day"
+            android:textSize="12sp"
+            app:cornerRadius="18dp"
+            xmlns:app="http://schemas.android.com/apk/res-auto" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/chip_weekdays"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            android:layout_width="wrap_content"
+            android:layout_height="36dp"
+            android:layout_marginStart="8dp"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp"
+            android:text="@string/active_days_weekdays"
+            android:textSize="12sp"
+            app:cornerRadius="18dp"
+            xmlns:app="http://schemas.android.com/apk/res-auto" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/chip_weekends"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            android:layout_width="wrap_content"
+            android:layout_height="36dp"
+            android:layout_marginStart="8dp"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp"
+            android:text="@string/active_days_weekends"
+            android:textSize="12sp"
+            app:cornerRadius="18dp"
+            xmlns:app="http://schemas.android.com/apk/res-auto" />
+
+    </LinearLayout>
+
+    <!-- Day toggle buttons row: S M T W T F S (Sunday-first) -->
+    <LinearLayout
+        android:id="@+id/days_row"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:orientation="horizontal">
+
+        <!-- Sunday -->
+        <FrameLayout
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:layout_weight="1">
+            <Button
+                android:id="@+id/day_btn_0"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_gravity="center"
+                android:background="@drawable/circle_background"
+                android:contentDescription="@string/day_sunday"
+                android:text="@string/day_abbrev_sun"
+                android:textColor="@color/on_primary"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:padding="0dp"
+                android:stateListAnimator="@null" />
+        </FrameLayout>
+
+        <!-- Monday -->
+        <FrameLayout
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:layout_weight="1">
+            <Button
+                android:id="@+id/day_btn_1"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_gravity="center"
+                android:background="@drawable/circle_background"
+                android:contentDescription="@string/day_monday"
+                android:text="@string/day_abbrev_mon"
+                android:textColor="@color/on_primary"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:padding="0dp"
+                android:stateListAnimator="@null" />
+        </FrameLayout>
+
+        <!-- Tuesday -->
+        <FrameLayout
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:layout_weight="1">
+            <Button
+                android:id="@+id/day_btn_2"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_gravity="center"
+                android:background="@drawable/circle_background"
+                android:contentDescription="@string/day_tuesday"
+                android:text="@string/day_abbrev_tue"
+                android:textColor="@color/on_primary"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:padding="0dp"
+                android:stateListAnimator="@null" />
+        </FrameLayout>
+
+        <!-- Wednesday -->
+        <FrameLayout
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:layout_weight="1">
+            <Button
+                android:id="@+id/day_btn_3"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_gravity="center"
+                android:background="@drawable/circle_background"
+                android:contentDescription="@string/day_wednesday"
+                android:text="@string/day_abbrev_wed"
+                android:textColor="@color/on_primary"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:padding="0dp"
+                android:stateListAnimator="@null" />
+        </FrameLayout>
+
+        <!-- Thursday -->
+        <FrameLayout
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:layout_weight="1">
+            <Button
+                android:id="@+id/day_btn_4"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_gravity="center"
+                android:background="@drawable/circle_background"
+                android:contentDescription="@string/day_thursday"
+                android:text="@string/day_abbrev_thu"
+                android:textColor="@color/on_primary"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:padding="0dp"
+                android:stateListAnimator="@null" />
+        </FrameLayout>
+
+        <!-- Friday -->
+        <FrameLayout
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:layout_weight="1">
+            <Button
+                android:id="@+id/day_btn_5"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_gravity="center"
+                android:background="@drawable/circle_background"
+                android:contentDescription="@string/day_friday"
+                android:text="@string/day_abbrev_fri"
+                android:textColor="@color/on_primary"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:padding="0dp"
+                android:stateListAnimator="@null" />
+        </FrameLayout>
+
+        <!-- Saturday -->
+        <FrameLayout
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:layout_weight="1">
+            <Button
+                android:id="@+id/day_btn_6"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_gravity="center"
+                android:background="@drawable/circle_background"
+                android:contentDescription="@string/day_saturday"
+                android:text="@string/day_abbrev_sat"
+                android:textColor="@color/on_primary"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:padding="0dp"
+                android:stateListAnimator="@null" />
+        </FrameLayout>
+
+    </LinearLayout>
+
+    <!-- Summary label -->
+    <TextView
+        android:id="@+id/active_days_summary"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:textColor="@color/on_surface_variant"
+        android:textSize="12sp" />
+
+</merge>
