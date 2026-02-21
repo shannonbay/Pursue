@@ -611,7 +611,7 @@ class GoalsTabFragment : Fragment() {
                     "DAILY_SEND_LIMIT" -> getString(R.string.nudge_daily_limit)
                     else -> getString(R.string.nudge_failed)
                 }
-                Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
+                context?.let { ctx -> Toast.makeText(ctx, message, Toast.LENGTH_SHORT).show() }
                 if (e.errorCode == "ALREADY_NUDGED_TODAY") {
                     nudgedUserIds.add(recipientUserId)
                     populateGoalsScrollView(cachedGoals)
@@ -620,7 +620,7 @@ class GoalsTabFragment : Fragment() {
                 if (!isAdded) return@launch
                 loadingNudgeUserIds.remove(recipientUserId)
                 populateGoalsScrollView(cachedGoals)
-                Toast.makeText(requireContext(), R.string.nudge_failed, Toast.LENGTH_SHORT).show()
+                context?.let { ctx -> Toast.makeText(ctx, R.string.nudge_failed, Toast.LENGTH_SHORT).show() }
             }
         }
     }
