@@ -26,12 +26,16 @@ object OnboardingTooltip {
             tooltipView,
             ViewGroup.LayoutParams.WRAP_CONTENT,
             ViewGroup.LayoutParams.WRAP_CONTENT,
-            true
+            false // non-focusable so taps on the anchor pass through
         )
 
-        // Dismiss on click
+        // Allow outside touch to dismiss, but don't steal the touch event
+        popupWindow.isOutsideTouchable = true
+
+        // Dismiss on tooltip click and trigger the anchor's action
         tooltipView.setOnClickListener {
             popupWindow.dismiss()
+            anchor.performClick()
         }
 
         // Show above the anchor view
