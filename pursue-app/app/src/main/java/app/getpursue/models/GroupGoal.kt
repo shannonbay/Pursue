@@ -16,6 +16,7 @@ data class GroupGoal(
     val metric_type: String, // "binary" or "numeric"
     val target_value: Double?, // For numeric goals
     val unit: String? = null, // Unit for numeric goals (e.g., "miles", "pages")
+    val active_days: List<Int>? = null, // Active day numbers (0=Sun..6=Sat), null = every day
     val created_at: String, // ISO 8601 timestamp
     // Progress information (may come from separate endpoint)
     val completed: Boolean = false, // For binary goals

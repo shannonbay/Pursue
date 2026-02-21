@@ -23,6 +23,7 @@ data class GroupGoalResponse(
     val target_value: Double?,
     val unit: String?,
     val created_by_user_id: String,
+    val active_days: List<Int>? = null, // Array of active day numbers (0=Sun..6=Sat), null = every day
     val created_at: String, // ISO 8601 timestamp
     val archived_at: String?, // ISO 8601 timestamp or null
     val current_period_progress: CurrentPeriodProgress? = null // Present when include_progress=true

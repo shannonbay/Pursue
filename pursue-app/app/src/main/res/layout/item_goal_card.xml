@@ -60,6 +60,18 @@
 
             </LinearLayout>
 
+            <TextView
+                android:id="@+id/rest_day_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="36dp"
+                android:layout_marginTop="2dp"
+                android:text="@string/rest_day_today"
+                android:textAppearance="?attr/textAppearanceBodySmall"
+                android:textColor="@color/on_surface_variant"
+                android:visibility="gone"
+                tools:visibility="visible" />
+
             <ProgressBar
                 android:id="@+id/progress_bar"
                 style="?android:attr/progressBarStyleHorizontal"

@@ -441,9 +441,25 @@ class GoalsTabFragment : Fragment() {
     private fun bindGoalCardView(view: View, goal: GroupGoal) {
         val statusIcon = view.findViewById<TextView>(R.id.status_icon)
         val goalTitle = view.findViewById<TextView>(R.id.goal_title)
+        val restDayText = view.findViewById<TextView>(R.id.rest_day_text)
         val progressBar = view.findViewById<ProgressBar>(R.id.progress_bar)
         val progressText = view.findViewById<TextView>(R.id.progress_text)
         val memberStatusContainer = view.findViewById<LinearLayout>(R.id.member_status_container)
+
+        // Rest day indicator for daily goals with active_days set
+        val activeDays = goal.active_days
+        if (goal.cadence == "daily" && activeDays != null) {
+            val todayDow = java.util.Calendar.getInstance().get(java.util.Calendar.DAY_OF_WEEK)
+            // Calendar: Sun=1..Sat=7 → API: Sun=0..Sat=6
+            val todayIndex = todayDow - 1
+            if (todayIndex !in activeDays) {
+                restDayText.visibility = View.VISIBLE
+            } else {
+                restDayText.visibility = View.GONE
+            }
+        } else {
+            restDayText.visibility = View.GONE
+        }
 
         // Status icon (✓ for completed, ○ for incomplete)
         if (goal.completed) {
@@ -771,6 +787,7 @@ class GoalsTabFragment : Fragment() {
                 metric_type = goalResponse.metric_type,
                 target_value = goalResponse.target_value,
                 unit = goalResponse.unit,
+                active_days = goalResponse.active_days,
                 created_at = goalResponse.created_at,
                 completed = completed,
                 progress_value = progressValue,
@@ -787,6 +804,7 @@ class GoalsTabFragment : Fragment() {
                 metric_type = goalResponse.metric_type,
                 target_value = goalResponse.target_value,
                 unit = goalResponse.unit,
+                active_days = goalResponse.active_days,
                 created_at = goalResponse.created_at,
                 completed = false,
                 progress_value = null,

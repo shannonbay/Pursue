@@ -785,6 +785,7 @@
     <!-- Active Days Selector -->
     <string name="active_days_label">Active Days</string>
     <string name="active_days_every_day">Every day</string>
+    <string name="rest_day_today">Rest day today</string>
     <string name="active_days_weekdays">Weekdays</string>
     <string name="active_days_weekends">Weekends</string>
     <string name="active_days_at_least_one">At least one day must be active</string>
