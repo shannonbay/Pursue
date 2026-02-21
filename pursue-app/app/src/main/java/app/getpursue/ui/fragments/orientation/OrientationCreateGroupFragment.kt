@@ -1,12 +1,16 @@
 package app.getpursue.ui.fragments.orientation
 
 import android.content.Intent
+import android.content.res.ColorStateList
+import android.graphics.Color
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.FrameLayout
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
@@ -20,6 +24,8 @@ import app.getpursue.data.network.ApiClient
 import app.getpursue.data.network.ApiException
 import app.getpursue.ui.activities.GroupDetailActivity
 import app.getpursue.ui.activities.OrientationActivity
+import app.getpursue.ui.views.IconPickerBottomSheet
+import app.getpursue.utils.IconUrlUtils
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.button.MaterialButtonToggleGroup
 import com.google.android.material.textfield.TextInputEditText
@@ -41,14 +47,15 @@ class OrientationCreateGroupFragment : Fragment() {
     private lateinit var editUnit: TextInputEditText
     private lateinit var buttonCreate: MaterialButton
     private lateinit var loadingIndicator: ProgressBar
-    private lateinit var emojiRow: LinearLayout
+    
+    private lateinit var iconPreview: TextView
+    private lateinit var iconImage: ImageView
+    private lateinit var iconContainer: FrameLayout
+    private lateinit var chooseIconButton: MaterialButton
 
     private var selectedEmoji: String? = null
-
-    private val emojis = listOf(
-        "\uD83D\uDE00", "\uD83C\uDFC3", "\uD83D\uDCDA", "\uD83E\uDDD8", "\uD83D\uDCAA", "\uD83C\uDFAF",
-        "\uD83C\uDF4E", "\uD83D\uDCA7", "✏\uFE0F", "\uD83C\uDFB5", "\uD83C\uDF05", "⭐"
-    )
+    private var selectedColor: String = IconPickerBottomSheet.Companion.getRandomDefaultColor()
+    private var selectedIconUrl: String? = null
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -70,7 +77,11 @@ class OrientationCreateGroupFragment : Fragment() {
         editUnit = view.findViewById(R.id.edit_unit)
         buttonCreate = view.findViewById(R.id.button_create)
         loadingIndicator = view.findViewById(R.id.loading_indicator)
-        emojiRow = view.findViewById(R.id.emoji_row)
+        
+        iconPreview = view.findViewById(R.id.icon_preview)
+        iconImage = view.findViewById(R.id.icon_image)
+        iconContainer = view.findViewById(R.id.icon_container)
+        chooseIconButton = view.findViewById(R.id.button_choose_icon)
 
         // Setup progress dots for step 3
         setupProgressDots(view.findViewById(R.id.progress_dots), 3)
@@ -83,8 +94,9 @@ class OrientationCreateGroupFragment : Fragment() {
             (requireActivity() as OrientationActivity).completeOrientation()
         }
 
-        // Emoji picker row
-        setupEmojiRow()
+        // Icon picker
+        updateIconPreview()
+        chooseIconButton.setOnClickListener { showIconPicker() }
 
         // Default selections
         toggleCadence.check(R.id.btn_daily)
@@ -101,7 +113,12 @@ class OrientationCreateGroupFragment : Fragment() {
         val textWatcher = object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
-            override fun afterTextChanged(s: Editable?) { updateCreateButtonState() }
+            override fun afterTextChanged(s: Editable?) { 
+                updateCreateButtonState()
+                if (selectedEmoji == null && selectedIconUrl == null) {
+                    updateIconPreview()
+                }
+            }
         }
         editGroupName.addTextChangedListener(textWatcher)
         editGoalTitle.addTextChangedListener(textWatcher)
@@ -109,30 +126,49 @@ class OrientationCreateGroupFragment : Fragment() {
         buttonCreate.setOnClickListener { createGroup() }
     }
 
-    private fun setupEmojiRow() {
-        emojis.forEach { emoji ->
-            val tv = TextView(requireContext()).apply {
-                text = emoji
-                textSize = 24f
-                val size = (48 * resources.displayMetrics.density).toInt()
-                layoutParams = LinearLayout.LayoutParams(size, size).apply {
-                    marginEnd = (4 * resources.displayMetrics.density).toInt()
-                }
-                gravity = android.view.Gravity.CENTER
-                setOnClickListener {
-                    selectedEmoji = if (selectedEmoji == emoji) null else emoji
-                    highlightSelectedEmoji()
-                }
+    private fun updateIconPreview() {
+        if (selectedIconUrl != null) {
+            iconImage.visibility = View.VISIBLE
+            iconPreview.visibility = View.GONE
+            IconUrlUtils.loadInto(requireContext(), selectedIconUrl!!, iconImage)
+        } else {
+            iconImage.visibility = View.GONE
+            iconPreview.visibility = View.VISIBLE
+            if (selectedEmoji != null) {
+                iconPreview.text = selectedEmoji
+            } else {
+                val name = editGroupName.text?.toString()?.take(1)?.uppercase() ?: "?"
+                iconPreview.text = if (name.isEmpty()) "?" else name
             }
-            emojiRow.addView(tv)
+        }
+
+        try {
+            iconContainer.backgroundTintList = ColorStateList.valueOf(
+                Color.parseColor(selectedColor)
+            )
+        } catch (e: IllegalArgumentException) {
+            // Keep default
         }
     }
 
-    private fun highlightSelectedEmoji() {
-        for (i in 0 until emojiRow.childCount) {
-            val child = emojiRow.getChildAt(i) as TextView
-            child.alpha = if (selectedEmoji == null || child.text == selectedEmoji) 1.0f else 0.4f
-        }
+    private fun showIconPicker() {
+        val sheet = IconPickerBottomSheet.Companion.newInstance(R.string.icon_picker_title)
+        sheet.setIconSelectionListener(object : IconPickerBottomSheet.IconSelectionListener {
+            override fun onIconSelected(emoji: String?, color: String?, iconUrl: String?) {
+                if (emoji != null) {
+                    selectedEmoji = emoji
+                    selectedIconUrl = null
+                } else if (iconUrl != null) {
+                    selectedIconUrl = iconUrl
+                    selectedEmoji = null
+                }
+                if (color != null) {
+                    selectedColor = color
+                }
+                updateIconPreview()
+            }
+        })
+        sheet.show(childFragmentManager, "IconPickerBottomSheet")
     }
 
     private fun updateCreateButtonState() {
@@ -186,7 +222,9 @@ class OrientationCreateGroupFragment : Fragment() {
                     ApiClient.createGroup(
                         accessToken = token,
                         name = name,
-                        iconEmoji = selectedEmoji
+                        iconEmoji = selectedEmoji,
+                        iconColor = if (selectedEmoji != null) selectedColor else null,
+                        iconUrl = selectedIconUrl
                     )
                 }
                 if (!isAdded) return@launch
@@ -216,8 +254,8 @@ class OrientationCreateGroupFragment : Fragment() {
                 val intent = Intent(requireContext(), GroupDetailActivity::class.java).apply {
                     putExtra(GroupDetailActivity.EXTRA_GROUP_ID, groupId)
                     putExtra(GroupDetailActivity.EXTRA_GROUP_NAME, groupName)
-                    putExtra(GroupDetailActivity.EXTRA_GROUP_HAS_ICON, selectedEmoji != null)
-                    putExtra(GroupDetailActivity.EXTRA_GROUP_ICON_EMOJI, selectedEmoji)
+                    putExtra(GroupDetailActivity.EXTRA_GROUP_HAS_ICON, groupResponse.has_icon)
+                    putExtra(GroupDetailActivity.EXTRA_GROUP_ICON_EMOJI, groupResponse.icon_emoji)
                     putExtra(GroupDetailActivity.EXTRA_OPEN_INVITE_SHEET, true)
                 }
                 (requireActivity() as OrientationActivity).completeOrientation(intent)
@@ -244,6 +282,7 @@ class OrientationCreateGroupFragment : Fragment() {
         editGoalTitle.isEnabled = !show
         editTarget.isEnabled = !show
         editUnit.isEnabled = !show
+        chooseIconButton.isEnabled = !show
     }
 
     companion object {
