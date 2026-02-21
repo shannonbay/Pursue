@@ -42,9 +42,14 @@ class OrientationJoinFragment : Fragment() {
     private lateinit var buttonNoCode: MaterialButton
 
     private var pendingInviteCode: String? = null
+    private var pendingVibrate = false
 
     override fun onResume() {
         super.onResume()
+        if (pendingVibrate) {
+            pendingVibrate = false
+            view?.let { HapticFeedbackUtils.vibrateSuccess(it) }
+        }
         // If we have a code from a scan that happened while we weren't ready, show it now
         pendingInviteCode?.let { code ->
             if (isAdded && !isStateSaved) {
@@ -101,8 +106,8 @@ class OrientationJoinFragment : Fragment() {
                     if (contents.isNullOrBlank()) return@addOnSuccessListener
                     val code = JoinGroupBottomSheet.parseInviteCodeFromScan(contents)
                     if (code != null) {
-                        HapticFeedbackUtils.vibrateClick(requireContext())
                         if (isAdded && !isStateSaved) {
+                            view?.let { HapticFeedbackUtils.vibrateSuccess(it) }
                             editCode.setText(code)
                             inputLayout.error = null
                             // Fast-track to covenant affirmation
@@ -111,14 +116,17 @@ class OrientationJoinFragment : Fragment() {
                             }
                         } else {
                             // Fragment is not ready, handled in onResume
+                            pendingVibrate = true
                             pendingInviteCode = code
                         }
                     } else {
+                        view?.let { HapticFeedbackUtils.vibrateError(it) }
                         Toast.makeText(requireContext(), getString(R.string.invite_code_invalid), Toast.LENGTH_SHORT).show()
                     }
                 }
                 .addOnFailureListener { e: Exception ->
                     if (!isAdded) return@addOnFailureListener
+                    view?.let { HapticFeedbackUtils.vibrateError(it) }
                     Toast.makeText(requireContext(), "Scan failed: ${e.message}", Toast.LENGTH_SHORT).show()
                 }
         }

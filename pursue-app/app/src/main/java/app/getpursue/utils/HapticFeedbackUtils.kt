@@ -1,35 +1,65 @@
 package app.getpursue.utils
 
-import android.content.Context
 import android.os.Build
-import android.os.VibrationEffect
-import android.os.Vibrator
-import android.os.VibratorManager
+import android.view.HapticFeedbackConstants
+import android.view.View
 
 /**
- * Helper for triggering haptic feedback.
+ * Helper for triggering haptic feedback using the View-based API.
  */
 object HapticFeedbackUtils {
 
     /**
-     * Triggers a short "click" vibration confirmation.
+     * Triggers a short "click" vibration (standard tap).
      */
-    fun vibrateClick(context: Context) {
-        val vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            val vibratorManager = context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
-            vibratorManager.defaultVibrator
-        } else {
-            @Suppress("DEPRECATION")
-            context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
-        }
+    fun vibrateClick(view: View) {
+        view.isHapticFeedbackEnabled = true
+        view.performHapticFeedback(
+            HapticFeedbackConstants.KEYBOARD_TAP,
+            HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING
+        )
+    }
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            vibrator.vibrate(VibrationEffect.createPredefined(VibrationEffect.EFFECT_CLICK))
-        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            vibrator.vibrate(VibrationEffect.createOneShot(50, VibrationEffect.DEFAULT_AMPLITUDE))
+    /**
+     * Triggers a distinct "success" vibration.
+     */
+    fun vibrateSuccess(view: View) {
+        view.isHapticFeedbackEnabled = true
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            view.performHapticFeedback(
+                HapticFeedbackConstants.CONFIRM,
+                HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING
+            )
         } else {
-            @Suppress("DEPRECATION")
-            vibrator.vibrate(50)
+            view.performHapticFeedback(
+                HapticFeedbackConstants.LONG_PRESS,
+                HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING
+            )
+        }
+    }
+
+    /**
+     * Triggers a distinct "error" vibration.
+     */
+    fun vibrateError(view: View) {
+        view.isHapticFeedbackEnabled = true
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            view.performHapticFeedback(
+                HapticFeedbackConstants.REJECT,
+                HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING
+            )
+        } else {
+            // Double long-press feel for older versions
+            view.performHapticFeedback(
+                HapticFeedbackConstants.LONG_PRESS,
+                HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING
+            )
+            view.postDelayed({
+                view.performHapticFeedback(
+                    HapticFeedbackConstants.LONG_PRESS,
+                    HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING
+                )
+            }, 50)
         }
     }
 }

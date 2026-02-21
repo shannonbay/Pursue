@@ -76,9 +76,14 @@ class JoinGroupBottomSheet : BottomSheetDialogFragment() {
     private lateinit var buttonJoin: View
 
     private var pendingInviteCode: String? = null
+    private var pendingVibrate = false
 
     override fun onResume() {
         super.onResume()
+        if (pendingVibrate) {
+            pendingVibrate = false
+            view?.let { HapticFeedbackUtils.vibrateSuccess(it) }
+        }
         // If we have a code from a scan that happened while we weren't ready, show it now
         pendingInviteCode?.let { code ->
             if (isAdded && !isStateSaved) {
@@ -130,8 +135,8 @@ class JoinGroupBottomSheet : BottomSheetDialogFragment() {
                     val code = parseInviteCodeFromScan(contents)
 
                     if (code != null) {
-                        HapticFeedbackUtils.vibrateClick(requireContext())
                         if (isAdded && !isStateSaved) {
+                            view?.let { HapticFeedbackUtils.vibrateSuccess(it) }
                             editCode.setText(code)
                             inputLayout.error = null
                             // Fast-track to covenant affirmation
@@ -140,13 +145,18 @@ class JoinGroupBottomSheet : BottomSheetDialogFragment() {
                             }
                         } else {
                             // Fragment is not ready, handled in onResume
+                            pendingVibrate = true
                             pendingInviteCode = code
                         }
                     } else {
+                        view?.let { HapticFeedbackUtils.vibrateError(it) }
                         context?.let {
                             Toast.makeText(it, R.string.invite_code_invalid, Toast.LENGTH_SHORT).show()
                         }
                     }
+                }
+                .addOnFailureListener {
+                    view?.let { HapticFeedbackUtils.vibrateError(it) }
                 }
         }
 
