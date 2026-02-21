@@ -2,11 +2,9 @@ package app.getpursue.ui.views
 
 import android.animation.ValueAnimator
 import android.annotation.SuppressLint
-import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
-import android.view.HapticFeedbackConstants
 import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.View
@@ -17,6 +15,7 @@ import android.widget.FrameLayout
 import android.widget.ImageButton
 import android.widget.TextView
 import app.getpursue.R
+import app.getpursue.utils.HapticFeedbackUtils
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
@@ -147,8 +146,6 @@ class CovenantBottomSheet : BottomSheetDialogFragment() {
         val parentWidth = (progressFill.parent as View).width
         if (parentWidth == 0) return
 
-        var hapticFired = false
-
         fillAnimator = ValueAnimator.ofInt(0, parentWidth).apply {
             duration = HOLD_DURATION_MS
             interpolator = LinearInterpolator()
@@ -162,19 +159,8 @@ class CovenantBottomSheet : BottomSheetDialogFragment() {
                 params.width = value
                 progressFill.layoutParams = params
 
-                // Haptic tick at 50%
-                val fraction = animation.animatedFraction
-                if (fraction >= 0.5f && !hapticFired) {
-                    hapticFired = true
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
-                        container.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
-                    } else {
-                        container.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
-                    }
-                }
-
                 // Completed
-                if (fraction >= 1.0f) {
+                if (animation.animatedFraction >= 1.0f) {
                     onCommitted(progressFill, holdText, container)
                 }
             }
@@ -222,11 +208,7 @@ class CovenantBottomSheet : BottomSheetDialogFragment() {
         holdText.text = getString(R.string.covenant_committed)
 
         // Success haptic
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-            container.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
-        } else {
-            container.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
-        }
+        HapticFeedbackUtils.vibrateSuccess(container)
 
         // Auto-dismiss after delay and fire callback
         handler.postDelayed({

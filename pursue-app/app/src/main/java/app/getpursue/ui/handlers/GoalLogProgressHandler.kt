@@ -17,6 +17,7 @@ import app.getpursue.ui.activities.GroupDetailActivity
 import app.getpursue.ui.activities.MainAppActivity
 import app.getpursue.ui.dialogs.LogProgressDialog
 import app.getpursue.ui.views.PostLogPhotoBottomSheet
+import app.getpursue.utils.HapticFeedbackUtils
 import app.getpursue.R
 import app.getpursue.utils.compressPhotoForUpload
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -103,6 +104,7 @@ class GoalLogProgressHandler(
                 val entryId = response.id
                 fragment.requireActivity().runOnUiThread {
                     if (fragment.isAdded) {
+                        HapticFeedbackUtils.vibrateToggle(snackbarParentView)
                         showPostLogPhotoSheet(entryId) {
                             performUndo(goal.id, entryId, previousCompleted, previousProgressValue, accessToken)
                         }
@@ -341,6 +343,7 @@ class GoalLogProgressHandler(
                 val entryId = response.id
                 fragment.requireActivity().runOnUiThread {
                     if (fragment.isAdded) {
+                        HapticFeedbackUtils.vibrateToggle(snackbarParentView)
                         showPostLogPhotoSheet(entryId) {
                             performUndo(goal.id, entryId, previousCompleted, previousProgressValue, accessToken)
                         }
@@ -379,6 +382,7 @@ class GoalLogProgressHandler(
                 val newEntryId = response.id
                 fragment.requireActivity().runOnUiThread {
                     if (fragment.isAdded) {
+                        HapticFeedbackUtils.vibrateToggle(snackbarParentView)
                         showPostLogPhotoSheet(newEntryId) {
                             performUndo(goal.id, newEntryId, previousCompleted, previousProgressValue, accessToken)
                         }
