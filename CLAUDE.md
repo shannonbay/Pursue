@@ -42,7 +42,7 @@ npm run test:watch
 ```powershell
 cd pursue-app
 
-# Set JAVA_HOME in PowerShell (required)
+# Set JAVA_HOME in PowerShell
 $env:JAVA_HOME = [System.Environment]::GetEnvironmentVariable("JAVA_HOME", "Machine")
 
 # Build
@@ -197,11 +197,13 @@ ui/fragments/groups/PendingApprovalsFragment.kt - Pending membership approvals
 ui/fragments/goals/CreateGoalFragment.kt - Create new goal
 ui/fragments/goals/GoalDetailFragment.kt - Goal details display
 ui/fragments/goals/ReminderSettingsFragment.kt - Per-goal smart reminder settings
+ui/fragments/discover/DiscoverFragment.kt - Public group browse (search, category filter, sort, paginated list)
 ui/fragments/onboarding/WelcomeFragment.kt - Welcome screen
 ui/fragments/onboarding/SignInEmailFragment.kt - Email sign-in
 ui/fragments/onboarding/SignUpEmailFragment.kt - Email sign-up
 
 # UI Components
+ui/adapters/DiscoverGroupAdapter.kt - Adapter for public group discovery cards
 ui/adapters/GroupAdapter.kt - RecyclerView adapter for groups
 ui/adapters/TodayGoalAdapter.kt - Adapter for today's goals
 ui/adapters/GroupGoalsAdapter.kt - Adapter for group goals
@@ -217,7 +219,8 @@ ui/views/ErrorStateView.kt - Error state custom view
 ui/views/ActiveDaysSelectorView.kt - Reusable active days widget (7 day toggles + presets, daily goals only)
 ui/views/IconPickerBottomSheet.kt - Icon selection bottom sheet
 ui/views/InviteMembersBottomSheet.kt - Member invitation bottom sheet
-ui/views/JoinGroupBottomSheet.kt - Group join bottom sheet
+ui/views/JoinGroupBottomSheet.kt - Group join bottom sheet (by invite code)
+ui/views/PublicGroupDetailBottomSheet.kt - Public group detail + join request flow
 
 # Utils
 utils/ImageUtils.kt - Image loading and processing

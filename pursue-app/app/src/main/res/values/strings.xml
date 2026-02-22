@@ -810,4 +810,24 @@
     <string name="day_abbrev_fri">F</string>
     <string name="day_abbrev_sat">S</string>
 
+    <!-- Generic error -->
+    <string name="error_generic">Something went wrong. Please try again.</string>
+
+    <!-- Discover / Public Group Listings -->
+    <string name="discover_title">Discover</string>
+    <string name="discover_search_hint">Search groups…</string>
+    <string name="discover_empty_title">No groups found</string>
+    <string name="discover_empty_message">Try adjusting your filters or search terms</string>
+    <string name="discover_detail_goals_title">Goals</string>
+    <string name="discover_join_request_button">Request to Join</string>
+    <string name="discover_submit_request_button">Submit Request</string>
+    <string name="discover_request_pending">Request Pending</string>
+    <string name="discover_already_member">Already a Member</string>
+    <string name="discover_group_full">Group is Full</string>
+    <string name="discover_submitting">Submitting…</string>
+    <string name="discover_join_note_hint">Add a note (optional)</string>
+    <string name="discover_join_request_sent">Join request sent!</string>
+    <string name="discover_sign_in_to_join">Sign in to request to join groups</string>
+    <string name="discover_spots_left">%1$d of %2$d spots remaining</string>
+
 </resources>

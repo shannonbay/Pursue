@@ -49,6 +49,7 @@ import app.getpursue.models.Group
 import app.getpursue.ui.fragments.groups.CreateGroupFragment
 import app.getpursue.ui.fragments.challenges.ChallengeTemplatesFragment
 import app.getpursue.ui.fragments.challenges.ChallengeSetupFragment
+import app.getpursue.ui.fragments.discover.DiscoverFragment
 import app.getpursue.ui.fragments.home.HomeFragment
 import app.getpursue.ui.fragments.home.MyProgressFragment
 import app.getpursue.ui.fragments.home.NotificationsFragment
@@ -529,6 +530,10 @@ class MainAppActivity : AppCompatActivity(),
                 supportActionBar?.title = getString(R.string.today_title)
                 supportActionBar?.setDisplayHomeAsUpEnabled(false)
             }
+            is DiscoverFragment -> {
+                supportActionBar?.title = getString(R.string.discover_title)
+                supportActionBar?.setDisplayHomeAsUpEnabled(false)
+            }
             is ProfileFragment -> {
                 supportActionBar?.title = getString(R.string.profile_title)
                 supportActionBar?.setDisplayHomeAsUpEnabled(false)
@@ -595,6 +600,10 @@ class MainAppActivity : AppCompatActivity(),
             R.id.nav_today -> {
                 supportActionBar?.title = getString(R.string.today_title)
                 TodayFragment.Companion.newInstance()
+            }
+            R.id.nav_discover -> {
+                supportActionBar?.title = getString(R.string.discover_title)
+                DiscoverFragment.newInstance()
             }
             R.id.nav_profile -> {
                 supportActionBar?.title = getString(R.string.profile_title)
