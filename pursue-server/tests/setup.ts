@@ -887,6 +887,19 @@ async function createSchema(db: Kysely<Database>) {
   await sql`CREATE INDEX IF NOT EXISTS idx_weekly_recaps_sent_group ON weekly_recaps_sent(group_id)`.execute(db);
   await sql`CREATE INDEX IF NOT EXISTS idx_weekly_recaps_sent_week_end ON weekly_recaps_sent(week_end)`.execute(db);
 
+  // Create challenge_suggestion_log table
+  await sql`
+    CREATE TABLE IF NOT EXISTS challenge_suggestion_log (
+      id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+      user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      sent_at TIMESTAMPTZ DEFAULT NOW(),
+      dismissed_at TIMESTAMPTZ,
+      converted BOOLEAN DEFAULT FALSE,
+      UNIQUE(user_id)
+    )
+  `.execute(db);
+  await sql`CREATE INDEX IF NOT EXISTS idx_challenge_suggestion_user ON challenge_suggestion_log(user_id)`.execute(db);
+
   // Create join_requests table (public group discovery)
   await sql`
     CREATE TABLE IF NOT EXISTS join_requests (
@@ -966,6 +979,7 @@ async function cleanDatabase(db: Kysely<Database>) {
       group_daily_gcr,
       join_requests,
       suggestion_dismissals,
+      challenge_suggestion_log,
       group_memberships,
       invite_codes,
       groups,
