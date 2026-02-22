@@ -22,6 +22,7 @@ import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import com.google.android.material.button.MaterialButton
+import com.google.android.material.button.MaterialButtonToggleGroup
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.switchmaterial.SwitchMaterial
 import com.google.android.material.textfield.TextInputEditText
@@ -29,8 +30,11 @@ import com.google.android.material.textfield.TextInputLayout
 import android.os.Handler
 import android.os.Looper
 import app.getpursue.data.auth.SecureTokenManager
+import app.getpursue.data.fcm.FcmTopicManager
 import app.getpursue.data.network.ApiClient
 import app.getpursue.data.network.ApiException
+import app.getpursue.ui.activities.GroupDetailActivity
+import app.getpursue.ui.views.ActiveDaysSelectorView
 import app.getpursue.ui.views.CovenantBottomSheet
 import app.getpursue.ui.views.IconPickerBottomSheet
 import app.getpursue.utils.IconUrlUtils
@@ -46,7 +50,13 @@ import kotlinx.coroutines.withContext
  */
 class CreateGroupFragment : Fragment() {
 
+    interface Callbacks {
+        fun onGroupCreated(groupId: String, groupName: String, hasIcon: Boolean, iconEmoji: String?)
+    }
+
     companion object {
+        private const val ARG_HIDE_CANCEL_BUTTON = "hide_cancel_button"
+
         /** API value → display label mapping for group categories. */
         val CATEGORIES: List<Pair<String, String>> = listOf(
             "fitness"      to "Fitness & Exercise",
@@ -62,8 +72,16 @@ class CreateGroupFragment : Fragment() {
             "other"        to "Other"
         )
 
-        fun newInstance(): CreateGroupFragment = CreateGroupFragment()
+        fun newInstance(hideCancelButton: Boolean = false): CreateGroupFragment {
+            return CreateGroupFragment().apply {
+                arguments = Bundle().apply {
+                    putBoolean(ARG_HIDE_CANCEL_BUTTON, hideCancelButton)
+                }
+            }
+        }
     }
+
+    private var callbacks: Callbacks? = null
 
     private lateinit var iconPreview: TextView
     private lateinit var iconImage: ImageView
@@ -83,6 +101,16 @@ class CreateGroupFragment : Fragment() {
     private lateinit var editSpotLimit: TextInputEditText
     private lateinit var inputCategory: TextInputLayout
     private lateinit var dropdownCategory: AutoCompleteTextView
+    
+    private lateinit var inputGoalTitle: TextInputLayout
+    private lateinit var editGoalTitle: TextInputEditText
+    private lateinit var toggleCadence: MaterialButtonToggleGroup
+    private lateinit var activeDaysSelectorView: ActiveDaysSelectorView
+    private lateinit var toggleType: MaterialButtonToggleGroup
+    private lateinit var numericFields: LinearLayout
+    private lateinit var editTarget: TextInputEditText
+    private lateinit var editUnit: TextInputEditText
+
     private lateinit var createButton: MaterialButton
     private lateinit var cancelButton: MaterialButton
     private lateinit var loadingIndicator: ProgressBar
@@ -93,6 +121,10 @@ class CreateGroupFragment : Fragment() {
     private var selectedVisibility: String = "private"
     private var selectedCategory: String? = null
     private var selectedSpotLimit: Int? = null
+
+    fun setCallbacks(callbacks: Callbacks) {
+        this.callbacks = callbacks
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -123,16 +155,33 @@ class CreateGroupFragment : Fragment() {
         editSpotLimit = view.findViewById(R.id.edit_spot_limit)
         inputCategory = view.findViewById(R.id.input_category)
         dropdownCategory = view.findViewById(R.id.dropdown_category)
+        
+        inputGoalTitle = view.findViewById(R.id.input_goal_title)
+        editGoalTitle = view.findViewById(R.id.edit_goal_title)
+        toggleCadence = view.findViewById(R.id.toggle_cadence)
+        activeDaysSelectorView = view.findViewById(R.id.active_days_selector)
+        toggleType = view.findViewById(R.id.toggle_type)
+        numericFields = view.findViewById(R.id.numeric_fields)
+        editTarget = view.findViewById(R.id.edit_target)
+        editUnit = view.findViewById(R.id.edit_unit)
+
         createButton = view.findViewById(R.id.button_create)
         cancelButton = view.findViewById(R.id.button_cancel)
         loadingIndicator = view.findViewById(R.id.loading_indicator)
+
+        if (arguments?.getBoolean(ARG_HIDE_CANCEL_BUTTON) == true) {
+            cancelButton.visibility = View.GONE
+        }
 
         setupIconPreview()
         setupCategoryDropdown()
         setupVisibilitySwitch()
         setupSpotLimitSection()
+        setupGoalSection()
         setupButtons()
         setupTextWatchers()
+        
+        updateCreateButtonState()
     }
 
     // ─── Setup helpers ────────────────────────────────────────────────────────
@@ -181,20 +230,46 @@ class CreateGroupFragment : Fragment() {
         }
     }
 
+    private fun setupGoalSection() {
+        // Default selections
+        toggleCadence.check(R.id.btn_daily)
+        toggleType.check(R.id.btn_binary)
+
+        // Show active days selector only for daily cadence
+        activeDaysSelectorView.visibility = View.VISIBLE
+        toggleCadence.addOnButtonCheckedListener { _, checkedId, isChecked ->
+            if (isChecked) {
+                activeDaysSelectorView.visibility =
+                    if (checkedId == R.id.btn_daily) View.VISIBLE else View.GONE
+            }
+        }
+
+        // Toggle numeric fields visibility
+        toggleType.addOnButtonCheckedListener { _, checkedId, isChecked ->
+            if (isChecked) {
+                numericFields.visibility = if (checkedId == R.id.btn_numeric) View.VISIBLE else View.GONE
+            }
+        }
+    }
+
     private fun setupButtons() {
         createButton.setOnClickListener { createGroup() }
         cancelButton.setOnClickListener { requireActivity().supportFragmentManager.popBackStack() }
     }
 
     private fun setupTextWatchers() {
-        groupNameEdit.addTextChangedListener(object : TextWatcher {
+        val watcher = object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
             override fun afterTextChanged(s: Editable?) {
                 validateGroupName()
-                if (selectedEmoji == null) updateIconPreview()
+                validateGoalTitle()
+                updateCreateButtonState()
+                if (selectedEmoji == null && selectedIconUrl == null) updateIconPreview()
             }
-        })
+        }
+        groupNameEdit.addTextChangedListener(watcher)
+        editGoalTitle.addTextChangedListener(watcher)
 
         descriptionEdit.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
@@ -217,7 +292,7 @@ class CreateGroupFragment : Fragment() {
                 iconPreview.text = selectedEmoji
             } else {
                 val name = groupNameEdit.text?.toString()?.take(1)?.uppercase() ?: "?"
-                iconPreview.text = name
+                iconPreview.text = if (name.isEmpty()) "?" else name
             }
         }
         try {
@@ -245,11 +320,17 @@ class CreateGroupFragment : Fragment() {
 
     // ─── Validation ───────────────────────────────────────────────────────────
 
+    private fun updateCreateButtonState() {
+        val nameOk = !groupNameEdit.text.isNullOrBlank()
+        val goalOk = !editGoalTitle.text.isNullOrBlank()
+        createButton.isEnabled = nameOk && goalOk
+    }
+
     private fun validateGroupName(): Boolean {
         val name = groupNameEdit.text?.toString()?.trim() ?: ""
         return when {
             name.isEmpty() -> {
-                groupNameInput.error = getString(R.string.group_name_error)
+                // groupNameInput.error = getString(R.string.group_name_error)
                 false
             }
             name.length > 100 -> {
@@ -258,7 +339,23 @@ class CreateGroupFragment : Fragment() {
             }
             else -> {
                 groupNameInput.error = null
-                updateIconPreview()
+                true
+            }
+        }
+    }
+
+    private fun validateGoalTitle(): Boolean {
+        val title = editGoalTitle.text?.toString()?.trim() ?: ""
+        return when {
+            title.isEmpty() -> {
+                false
+            }
+            title.length > 200 -> {
+                inputGoalTitle.error = getString(R.string.goal_title_error)
+                false
+            }
+            else -> {
+                inputGoalTitle.error = null
                 true
             }
         }
@@ -306,6 +403,7 @@ class CreateGroupFragment : Fragment() {
 
     private fun createGroup() {
         if (!validateGroupName()) return
+        if (!validateGoalTitle()) return
         if (!validateDescription()) return
         if (!validateCategory()) return
         if (!validateSpotLimit()) return
@@ -322,94 +420,132 @@ class CreateGroupFragment : Fragment() {
     private fun performCreateGroup() {
         val name = groupNameEdit.text?.toString()?.trim() ?: ""
         val description = descriptionEdit.text?.toString()?.trim()?.takeIf { it.isNotEmpty() }
-        val iconEmoji = selectedEmoji
-        val iconColor = if (selectedEmoji != null) selectedColor else null
+        val goalTitle = editGoalTitle.text?.toString()?.trim() ?: ""
+        
+        val cadence = when (toggleCadence.checkedButtonId) {
+            R.id.btn_weekly -> "weekly"
+            R.id.btn_monthly -> "monthly"
+            else -> "daily"
+        }
+        val metricType = when (toggleType.checkedButtonId) {
+            R.id.btn_numeric -> "numeric"
+            else -> "binary"
+        }
+        val targetValue = if (metricType == "numeric") {
+            editTarget.text?.toString()?.toDoubleOrNull()
+        } else null
+        val unit = if (metricType == "numeric") {
+            editUnit.text?.toString()?.trim()?.takeIf { it.isNotEmpty() }
+        } else null
 
         showLoading(true)
 
         viewLifecycleOwner.lifecycleScope.launch {
             try {
-                if (!isAdded) return@launch
-
-                val tokenManager = SecureTokenManager.Companion.getInstance(requireContext())
+                val context = context ?: return@launch
+                val tokenManager = SecureTokenManager.Companion.getInstance(context)
                 val accessToken = tokenManager.getAccessToken()
 
                 if (accessToken == null) {
-                    Handler(Looper.getMainLooper()).post {
-                        showLoading(false)
-                        Toast.makeText(requireContext(), "Please sign in", Toast.LENGTH_SHORT).show()
-                    }
+                    showLoading(false)
+                    Toast.makeText(context, "Please sign in", Toast.LENGTH_SHORT).show()
                     return@launch
                 }
 
-                val response = withContext(Dispatchers.IO) {
+                // 1. Create group
+                val groupResponse = withContext(Dispatchers.IO) {
                     ApiClient.createGroup(
                         accessToken = accessToken,
                         name = name,
                         description = description,
-                        iconEmoji = iconEmoji,
-                        iconColor = iconColor,
+                        iconEmoji = selectedEmoji,
+                        iconColor = if (selectedEmoji != null) selectedColor else null,
                         iconUrl = selectedIconUrl,
                         visibility = selectedVisibility,
-                        category = selectedCategory
+                        category = selectedCategory,
+                        spotLimit = selectedSpotLimit
                     )
                 }
 
                 if (!isAdded) return@launch
+                val groupId = groupResponse.id
+                val groupName = groupResponse.name
 
-                Handler(Looper.getMainLooper()).post {
-                    showLoading(false)
-                    Toast.makeText(requireContext(), getString(R.string.group_created), Toast.LENGTH_SHORT).show()
+                // 2. Create goal
+                val activeDays = if (cadence == "daily") activeDaysSelectorView.getActiveDays() else null
+                withContext(Dispatchers.IO) {
+                    ApiClient.createGoal(
+                        accessToken = accessToken,
+                        groupId = groupId,
+                        title = goalTitle,
+                        cadence = cadence,
+                        metricType = metricType,
+                        targetValue = targetValue,
+                        unit = unit,
+                        activeDays = activeDays
+                    )
+                }
+                
+                if (!isAdded) return@launch
 
-                    val intent = Intent(requireContext(), app.getpursue.ui.activities.GroupDetailActivity::class.java).apply {
-                        putExtra(app.getpursue.ui.activities.GroupDetailActivity.EXTRA_GROUP_ID, response.id)
-                        putExtra(app.getpursue.ui.activities.GroupDetailActivity.EXTRA_GROUP_NAME, response.name)
-                        putExtra(app.getpursue.ui.activities.GroupDetailActivity.EXTRA_GROUP_HAS_ICON, response.has_icon)
-                        putExtra(app.getpursue.ui.activities.GroupDetailActivity.EXTRA_GROUP_ICON_EMOJI, response.icon_emoji)
-                        putExtra(app.getpursue.ui.activities.GroupDetailActivity.EXTRA_OPEN_INVITE_SHEET, true)
+                // 3. Subscribe to topics
+                launch { FcmTopicManager.subscribeToGroupTopics(context, groupId) }
+
+                showLoading(false)
+                Toast.makeText(context, getString(R.string.group_created), Toast.LENGTH_SHORT).show()
+
+                if (callbacks != null) {
+                    callbacks?.onGroupCreated(groupId, groupName, groupResponse.has_icon, groupResponse.icon_emoji)
+                } else {
+                    // Default behavior: navigate to detail
+                    val intent = Intent(context, GroupDetailActivity::class.java).apply {
+                        putExtra(GroupDetailActivity.EXTRA_GROUP_ID, groupId)
+                        putExtra(GroupDetailActivity.EXTRA_GROUP_NAME, groupName)
+                        putExtra(GroupDetailActivity.EXTRA_GROUP_HAS_ICON, groupResponse.has_icon)
+                        putExtra(GroupDetailActivity.EXTRA_GROUP_ICON_EMOJI, groupResponse.icon_emoji)
+                        putExtra(GroupDetailActivity.EXTRA_OPEN_INVITE_SHEET, true)
                     }
                     startActivity(intent)
-
                     requireActivity().supportFragmentManager.popBackStack()
                 }
             } catch (e: ApiException) {
                 if (!isAdded) return@launch
 
-                Handler(Looper.getMainLooper()).post {
-                    showLoading(false)
-                    val errorMessage = when (e.code) {
-                        400 -> "Invalid group data. Please check your input."
-                        401 -> "Please sign in again"
-                        500, 503 -> "Server error. Please try again later."
-                        else -> getString(R.string.group_creation_failed)
-                    }
-                    Toast.makeText(requireContext(), errorMessage, Toast.LENGTH_LONG).show()
+                showLoading(false)
+                val errorMessage = when (e.code) {
+                    400 -> "Invalid group data. Please check your input."
+                    401 -> "Please sign in again"
+                    500, 503 -> "Server error. Please try again later."
+                    else -> e.message ?: getString(R.string.group_creation_failed)
                 }
+                context?.let { Toast.makeText(it, errorMessage, Toast.LENGTH_LONG).show() }
             } catch (e: Exception) {
                 if (!isAdded) return@launch
 
-                Handler(Looper.getMainLooper()).post {
-                    showLoading(false)
-                    Toast.makeText(requireContext(), getString(R.string.group_creation_failed), Toast.LENGTH_SHORT).show()
-                }
+                showLoading(false)
+                context?.let { Toast.makeText(it, getString(R.string.group_creation_failed), Toast.LENGTH_SHORT).show() }
             }
         }
     }
 
     private fun showLoading(show: Boolean) {
-        Handler(Looper.getMainLooper()).post {
-            loadingIndicator.visibility = if (show) View.VISIBLE else View.GONE
-            createButton.isEnabled = !show
-            cancelButton.isEnabled = !show
-            groupNameEdit.isEnabled = !show
-            descriptionEdit.isEnabled = !show
-            chooseIconButton.isEnabled = !show
-            switchPublicListing.isEnabled = !show
-            radioGroupSpotLimit.isEnabled = !show
-            radioUnlimited.isEnabled = !show
-            radioCustomLimit.isEnabled = !show
-            editSpotLimit.isEnabled = !show
-            dropdownCategory.isEnabled = !show
-        }
+        loadingIndicator.visibility = if (show) View.VISIBLE else View.GONE
+        createButton.isEnabled = !show
+        cancelButton.isEnabled = !show && arguments?.getBoolean(ARG_HIDE_CANCEL_BUTTON) != true
+        groupNameEdit.isEnabled = !show
+        descriptionEdit.isEnabled = !show
+        chooseIconButton.isEnabled = !show
+        switchPublicListing.isEnabled = !show
+        radioGroupSpotLimit.isEnabled = !show
+        radioUnlimited.isEnabled = !show
+        radioCustomLimit.isEnabled = !show
+        editSpotLimit.isEnabled = !show
+        dropdownCategory.isEnabled = !show
+        editGoalTitle.isEnabled = !show
+        toggleCadence.isEnabled = !show
+        activeDaysSelectorView.isEnabled = !show
+        toggleType.isEnabled = !show
+        editTarget.isEnabled = !show
+        editUnit.isEnabled = !show
     }
 }

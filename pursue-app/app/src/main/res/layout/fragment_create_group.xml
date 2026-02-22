@@ -25,71 +25,78 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
 
-        <FrameLayout
-            android:id="@+id/icon_container"
-            android:layout_width="64dp"
-            android:layout_height="64dp"
+        <LinearLayout
+            android:id="@+id/container_icon"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            android:background="@drawable/circle_background"
-            android:backgroundTint="@color/primary"
-            android:padding="4dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/icon_label">
 
-            <TextView
-                android:id="@+id/icon_preview"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:gravity="center"
-                android:text="🏃"
-                android:textSize="32sp"
-                tools:text="🏃" />
+            <FrameLayout
+                android:id="@+id/icon_container"
+                android:layout_width="64dp"
+                android:layout_height="64dp"
+                android:background="@drawable/circle_background"
+                android:backgroundTint="@color/primary"
+                android:padding="4dp">
 
-            <ImageView
-                android:id="@+id/icon_image"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:scaleType="centerInside"
-                android:visibility="gone"
-                android:contentDescription="@string/icon_content_description" />
-        </FrameLayout>
+                <TextView
+                    android:id="@+id/icon_preview"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center"
+                    android:text="🏃"
+                    android:textSize="32sp"
+                    tools:text="🏃" />
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/button_choose_icon"
-            style="@style/Widget.MaterialComponents.Button.TextButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="16dp"
-            android:text="@string/choose_icon"
-            app:layout_constraintBottom_toBottomOf="@id/icon_container"
-            app:layout_constraintStart_toEndOf="@id/icon_container"
-            app:layout_constraintTop_toTopOf="@id/icon_container" />
+                <ImageView
+                    android:id="@+id/icon_image"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:scaleType="centerInside"
+                    android:visibility="gone"
+                    android:contentDescription="@string/icon_content_description" />
+            </FrameLayout>
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/button_choose_icon"
+                style="@style/Widget.Material3.Button.TextButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:text="@string/choose_icon" />
+        </LinearLayout>
 
         <!-- Group Name -->
         <com.google.android.material.textfield.TextInputLayout
             android:id="@+id/input_group_name"
-            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+            style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginTop="24dp"
             android:hint="@string/group_name_label"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/icon_container">
+            app:layout_constraintTop_toBottomOf="@id/container_icon">
 
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/edit_group_name"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:inputType="text"
+                android:inputType="textCapSentences"
                 android:maxLength="100"
+                android:singleLine="true"
                 android:textAppearance="?attr/textAppearanceBodyLarge" />
         </com.google.android.material.textfield.TextInputLayout>
 
         <!-- Description -->
         <com.google.android.material.textfield.TextInputLayout
             android:id="@+id/input_description"
-            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+            style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
@@ -116,7 +123,7 @@
             android:id="@+id/row_visibility"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginTop="24dp"
+            android:layout_marginTop="16dp"
             android:gravity="center_vertical"
             android:orientation="horizontal"
             app:layout_constraintEnd_toEndOf="parent"
@@ -191,7 +198,7 @@
 
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/input_spot_limit"
-                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
@@ -208,10 +215,10 @@
             </com.google.android.material.textfield.TextInputLayout>
         </LinearLayout>
 
-        <!-- Category Dropdown (always visible) -->
+        <!-- Category Dropdown -->
         <com.google.android.material.textfield.TextInputLayout
             android:id="@+id/input_category"
-            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+            style="@style/Widget.Material3.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
@@ -230,41 +237,204 @@
                 android:textAppearance="?attr/textAppearanceBodyLarge" />
         </com.google.android.material.textfield.TextInputLayout>
 
-        <!-- Initial Goals (Placeholder) -->
-        <TextView
-            android:id="@+id/initial_goals_label"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+        <!-- Goal Header Divider -->
+        <View
+            android:id="@+id/divider_goal"
+            android:layout_width="0dp"
+            android:layout_height="1dp"
             android:layout_marginTop="24dp"
-            android:text="@string/initial_goals_label"
-            android:textAppearance="?attr/textAppearanceBodyMedium"
-            android:textColor="@color/on_surface_variant"
+            android:background="?attr/colorOutlineVariant"
+            app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/input_category" />
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/button_add_goal"
-            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+        <TextView
+            android:id="@+id/label_first_goal"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="@string/orientation_goal_hint"
+            android:textAppearance="?attr/textAppearanceTitleMedium"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/divider_goal" />
+
+        <!-- Goal Title -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/input_goal_title"
+            style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:hint="@string/orientation_goal_hint"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/label_first_goal">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/edit_goal_title"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="textCapSentences"
+                android:maxLength="200"
+                android:singleLine="true"
+                android:textAppearance="?attr/textAppearanceBodyLarge" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- Cadence label -->
+        <TextView
+            android:id="@+id/cadence_label"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="@string/cadence_label"
+            android:textAppearance="?attr/textAppearanceBodyMedium"
+            android:textColor="@color/on_surface_variant"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/input_goal_title" />
+
+        <com.google.android.material.button.MaterialButtonToggleGroup
+            android:id="@+id/toggle_cadence"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            android:text="@string/add_goal"
-            android:enabled="false"
+            app:selectionRequired="true"
+            app:singleSelection="true"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/initial_goals_label" />
+            app:layout_constraintTop_toBottomOf="@id/cadence_label">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_daily"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/orientation_cadence_daily" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_weekly"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/orientation_cadence_weekly" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_monthly"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/orientation_cadence_monthly" />
+        </com.google.android.material.button.MaterialButtonToggleGroup>
+
+        <!-- Active Days Selector -->
+        <app.getpursue.ui.views.ActiveDaysSelectorView
+            android:id="@+id/active_days_selector"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:visibility="gone"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/toggle_cadence" />
+
+        <!-- Metric Type label -->
+        <TextView
+            android:id="@+id/metric_type_label"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="@string/metric_type_label"
+            android:textAppearance="?attr/textAppearanceBodyMedium"
+            android:textColor="@color/on_surface_variant"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/active_days_selector" />
+
+        <com.google.android.material.button.MaterialButtonToggleGroup
+            android:id="@+id/toggle_type"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            app:selectionRequired="true"
+            app:singleSelection="true"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/metric_type_label">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_binary"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/orientation_type_binary" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_numeric"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/orientation_type_numeric" />
+        </com.google.android.material.button.MaterialButtonToggleGroup>
+
+        <!-- Numeric fields -->
+        <LinearLayout
+            android:id="@+id/numeric_fields"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/toggle_type">
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/input_target"
+                style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:hint="@string/orientation_target_hint">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/edit_target"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="numberDecimal"
+                    android:singleLine="true" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/input_unit"
+                style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:hint="@string/orientation_unit_hint">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/edit_unit"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="text"
+                    android:maxLength="50"
+                    android:singleLine="true" />
+            </com.google.android.material.textfield.TextInputLayout>
+        </LinearLayout>
 
         <!-- Buttons -->
         <com.google.android.material.button.MaterialButton
             android:id="@+id/button_cancel"
-            style="@style/Widget.MaterialComponents.Button.TextButton"
+            style="@style/Widget.Material3.Button.TextButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="32dp"
             android:text="@string/cancel"
             app:layout_constraintEnd_toStartOf="@id/button_create"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/button_add_goal" />
+            app:layout_constraintTop_toBottomOf="@id/numeric_fields" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/button_create"
@@ -274,7 +444,7 @@
             android:text="@string/create_group_button"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toEndOf="@id/button_cancel"
-            app:layout_constraintTop_toBottomOf="@id/button_add_goal" />
+            app:layout_constraintTop_toBottomOf="@id/numeric_fields" />
 
         <!-- Keyboard spacer -->
         <View

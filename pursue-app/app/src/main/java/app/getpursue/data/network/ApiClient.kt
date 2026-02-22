@@ -785,7 +785,8 @@ object ApiClient {
         iconColor: String? = null,
         iconUrl: String? = null,
         visibility: String? = null,
-        category: String? = null
+        category: String? = null,
+        spotLimit: Int? = null
     ): CreateGroupResponse {
         val requestBody = gson.toJson(
             CreateGroupRequest(
@@ -795,7 +796,8 @@ object ApiClient {
                 icon_color = iconColor,
                 icon_url = iconUrl,
                 visibility = visibility,
-                category = category
+                category = category,
+                spot_limit = spotLimit
             )
         ).toRequestBody(jsonMediaType)
         
@@ -2449,7 +2451,8 @@ data class CreateGroupRequest(
     val icon_color: String? = null,
     val icon_url: String? = null,
     val visibility: String? = null,
-    val category: String? = null
+    val category: String? = null,
+    val spot_limit: Int? = null
 )
 
 /**
