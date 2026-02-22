@@ -88,6 +88,7 @@ controllers/photos.ts - POST/GET progress entry photo attachments
 controllers/devices.ts - POST/GET/DELETE FCM device registration
 controllers/nudges.ts - POST create nudge, GET sent-today by group
 controllers/subscriptions.ts - POST upgrade, verify, cancel, downgrade
+controllers/discover.ts - Public group listings, suggestions, join requests lifecycle
 
 # Services
 services/authorization.ts - Group/goal access checks, membership role validation
@@ -117,10 +118,12 @@ routes/progress.ts - Progress entry routes, photo upload/retrieval
 routes/devices.ts - Device registration routes
 routes/nudges.ts - Nudge creation routes
 routes/subscriptions.ts - Subscription management routes
+routes/discover.ts - Public group discover routes (unauthenticated listing + suggestions)
 
 # Utils & Types
 utils/jwt.ts - JWT generation, verification, token hashing
 utils/password.ts - bcrypt hashing and verification
+utils/activeDays.ts - Active days bitmask utilities (isDayActive, daysToBitmask, serialize)
 utils/logger.ts - Winston logger configuration
 types/express.ts - AuthRequest, AuthUser type extensions
 
@@ -211,6 +214,7 @@ ui/handlers/GoalLogProgressHandler.kt - Shared progress logging logic
 ui/dialogs/LogProgressDialog.kt - Progress logging dialog (binary/numeric/duration)
 ui/views/EmptyStateView.kt - Empty state custom view
 ui/views/ErrorStateView.kt - Error state custom view
+ui/views/ActiveDaysSelectorView.kt - Reusable active days widget (7 day toggles + presets, daily goals only)
 ui/views/IconPickerBottomSheet.kt - Icon selection bottom sheet
 ui/views/InviteMembersBottomSheet.kt - Member invitation bottom sheet
 ui/views/JoinGroupBottomSheet.kt - Group join bottom sheet

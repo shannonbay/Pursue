@@ -154,6 +154,8 @@ export async function createGroup(
           icon_color: data.icon_color ?? null,
           icon_url: data.icon_url ?? null,
           creator_user_id: userId,
+          visibility: data.visibility ?? 'private',
+          category: data.category ?? null,
         })
         .returning([
           'id',
@@ -374,6 +376,29 @@ export async function updateGroup(
 
     const data = UpdateGroupSchema.parse(req.body);
 
+    // Validate auto_approve: premium only, requires spot_limit
+    if (data.auto_approve === true) {
+      const user = await db
+        .selectFrom('users')
+        .select('current_subscription_tier')
+        .where('id', '=', req.user.id)
+        .executeTakeFirstOrThrow();
+      if (user.current_subscription_tier !== 'premium') {
+        throw new ApplicationError('Auto-approve requires a premium subscription', 403, 'FORBIDDEN');
+      }
+      // Must have a spot_limit currently or being set now
+      if (data.spot_limit === undefined || data.spot_limit === null) {
+        const currentGroup = await db
+          .selectFrom('groups')
+          .select('spot_limit')
+          .where('id', '=', group_id)
+          .executeTakeFirstOrThrow();
+        if (currentGroup.spot_limit === null || currentGroup.spot_limit === undefined) {
+          throw new ApplicationError('Auto-approve requires a spot limit to be set', 400, 'VALIDATION_ERROR');
+        }
+      }
+    }
+
     // Build update object (only include provided fields)
     const updates: Record<string, unknown> = {};
     if (data.name !== undefined) updates.name = data.name;
@@ -381,6 +406,12 @@ export async function updateGroup(
     if (data.icon_emoji !== undefined) updates.icon_emoji = data.icon_emoji ?? null;
     if (data.icon_color !== undefined) updates.icon_color = data.icon_color ?? null;
     if (data.icon_url !== undefined) updates.icon_url = data.icon_url ?? null;
+    if (data.visibility !== undefined) updates.visibility = data.visibility;
+    if (data.category !== undefined) updates.category = data.category ?? null;
+    if (data.spot_limit !== undefined) updates.spot_limit = data.spot_limit ?? null;
+    if (data.auto_approve !== undefined) updates.auto_approve = data.auto_approve;
+    if (data.comm_platform !== undefined) updates.comm_platform = data.comm_platform ?? null;
+    if (data.comm_link !== undefined) updates.comm_link = data.comm_link ?? null;
 
     if (Object.keys(updates).length === 0) {
       // No updates, return current group
@@ -393,6 +424,12 @@ export async function updateGroup(
           'icon_emoji',
           'icon_color',
           'icon_url',
+          'visibility',
+          'category',
+          'spot_limit',
+          'auto_approve',
+          'comm_platform',
+          'comm_link',
           'updated_at',
           sql<boolean>`icon_data IS NOT NULL`.as('has_icon'),
         ])
@@ -406,6 +443,12 @@ export async function updateGroup(
         icon_color: group.icon_color,
         icon_url: group.icon_url ?? null,
         has_icon: Boolean(group.has_icon),
+        visibility: group.visibility,
+        category: group.category,
+        spot_limit: group.spot_limit ?? null,
+        auto_approve: Boolean(group.auto_approve),
+        comm_platform: group.comm_platform ?? null,
+        comm_link: group.comm_link ?? null,
         updated_at: group.updated_at,
       });
       return;
@@ -433,6 +476,12 @@ export async function updateGroup(
         'icon_emoji',
         'icon_color',
         'icon_url',
+        'visibility',
+        'category',
+        'spot_limit',
+        'auto_approve',
+        'comm_platform',
+        'comm_link',
         'updated_at',
       ])
       .executeTakeFirstOrThrow();
@@ -460,6 +509,12 @@ export async function updateGroup(
       icon_color: group.icon_color,
       icon_url: group.icon_url ?? null,
       has_icon: Boolean(hasIconResult.has_icon),
+      visibility: group.visibility,
+      category: group.category ?? null,
+      spot_limit: group.spot_limit ?? null,
+      auto_approve: Boolean(group.auto_approve),
+      comm_platform: group.comm_platform ?? null,
+      comm_link: group.comm_link ?? null,
       updated_at: group.updated_at,
     });
   } catch (error) {

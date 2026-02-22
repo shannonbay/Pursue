@@ -22,6 +22,11 @@ import {
   exportGroupProgress,
   getMemberProgress,
 } from '../controllers/groups.js';
+import {
+  submitJoinRequest,
+  listJoinRequests,
+  reviewJoinRequest,
+} from '../controllers/discover.js';
 import { getSentToday } from '../controllers/nudges.js';
 import { createGoal, listGoals } from '../controllers/goals.js';
 import { authenticate } from '../middleware/authenticate.js';
@@ -68,6 +73,11 @@ router.post('/:group_id/goals', createGoal);
 
 // Activity
 router.get('/:group_id/activity', getActivity);
+
+// Join requests (public group discovery)
+router.post('/:group_id/join-requests', submitJoinRequest);
+router.get('/:group_id/join-requests', listJoinRequests);
+router.patch('/:group_id/join-requests/:request_id', reviewJoinRequest);
 
 // Nudges
 router.get('/:group_id/nudges/sent-today', getSentToday);

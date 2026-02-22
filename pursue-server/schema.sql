@@ -14,6 +14,7 @@ CREATE TABLE users (
   avatar_mime_type VARCHAR(50),
   password_hash VARCHAR(255), -- NULL for Google-only users
   timezone VARCHAR(50) DEFAULT 'UTC', -- Cached timezone for smart reminders
+  interest_categories TEXT[] NOT NULL DEFAULT '{}',
   current_subscription_tier VARCHAR(20) NOT NULL DEFAULT 'free'
     CHECK (current_subscription_tier IN ('free', 'premium')),
   subscription_status VARCHAR(20) NOT NULL DEFAULT 'active'
@@ -116,12 +117,19 @@ CREATE TABLE groups (
   challenge_template_id UUID,
   challenge_status VARCHAR(20) DEFAULT NULL,
   challenge_invite_card_data JSONB,
+  visibility TEXT NOT NULL DEFAULT 'private' CHECK (visibility IN ('public', 'private')),
+  category TEXT CHECK (category IN ('fitness','nutrition','mindfulness','learning','creativity','productivity','finance','social','lifestyle','sports','other')),
+  spot_limit INTEGER CHECK (spot_limit IS NULL OR (spot_limit >= 2 AND spot_limit <= 500)),
+  auto_approve BOOLEAN NOT NULL DEFAULT FALSE,
+  comm_platform TEXT CHECK (comm_platform IS NULL OR comm_platform IN ('discord','whatsapp','telegram')),
+  comm_link TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   deleted_at TIMESTAMP WITH TIME ZONE -- NULL if active, timestamp if soft deleted
 );
 
 CREATE INDEX idx_groups_creator ON groups(creator_user_id);
+CREATE INDEX idx_groups_public ON groups(visibility, deleted_at) WHERE visibility = 'public';
 CREATE INDEX idx_groups_challenge_status ON groups(is_challenge, challenge_status) WHERE is_challenge = TRUE;
 CREATE INDEX idx_groups_challenge_template ON groups(challenge_template_id) WHERE challenge_template_id IS NOT NULL;
 
@@ -734,6 +742,35 @@ CREATE TABLE challenge_suggestion_log (
 CREATE INDEX idx_challenge_suggestion_user ON challenge_suggestion_log(user_id);
 
 COMMENT ON TABLE challenge_suggestion_log IS 'Tracks challenge suggestions sent to users to avoid nagging and enforce rate limits';
+
+-- =========================
+-- Public Group Discovery
+-- =========================
+
+-- Join requests from users wanting to join public groups
+CREATE TABLE join_requests (
+  id           UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  group_id     UUID        NOT NULL REFERENCES groups(id) ON DELETE CASCADE,
+  user_id      UUID        NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  status       TEXT        NOT NULL DEFAULT 'pending'
+    CHECK (status IN ('pending','approved','declined')),
+  note         TEXT        CHECK (char_length(note) <= 300),
+  created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  reviewed_at  TIMESTAMPTZ,
+  reviewed_by  UUID        REFERENCES users(id) ON DELETE SET NULL,
+  UNIQUE (group_id, user_id)
+);
+
+CREATE INDEX join_requests_group_pending ON join_requests(group_id) WHERE status = 'pending';
+CREATE INDEX join_requests_user ON join_requests(user_id, status);
+
+-- Dismissed group suggestions (suppress for 30 days)
+CREATE TABLE suggestion_dismissals (
+  user_id       UUID        NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  group_id      UUID        NOT NULL REFERENCES groups(id) ON DELETE CASCADE,
+  dismissed_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  PRIMARY KEY (user_id, group_id)
+);
 
 -- =========================
 -- Group Membership Views

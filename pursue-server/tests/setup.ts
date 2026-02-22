@@ -289,7 +289,59 @@ async function createSchema(db: Kysely<Database>) {
       ) THEN
         ALTER TABLE groups ADD COLUMN icon_url TEXT;
       END IF;
+      IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = 'groups' AND column_name = 'visibility'
+      ) THEN
+        ALTER TABLE groups ADD COLUMN visibility TEXT NOT NULL DEFAULT 'private'
+          CHECK (visibility IN ('public', 'private'));
+      END IF;
+      IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = 'groups' AND column_name = 'category'
+      ) THEN
+        ALTER TABLE groups ADD COLUMN category TEXT
+          CHECK (category IN ('fitness','nutrition','mindfulness','learning','creativity','productivity','finance','social','lifestyle','sports','other'));
+      END IF;
+      IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = 'groups' AND column_name = 'spot_limit'
+      ) THEN
+        ALTER TABLE groups ADD COLUMN spot_limit INTEGER
+          CHECK (spot_limit IS NULL OR (spot_limit >= 2 AND spot_limit <= 500));
+      END IF;
+      IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = 'groups' AND column_name = 'auto_approve'
+      ) THEN
+        ALTER TABLE groups ADD COLUMN auto_approve BOOLEAN NOT NULL DEFAULT FALSE;
+      END IF;
+      IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = 'groups' AND column_name = 'comm_platform'
+      ) THEN
+        ALTER TABLE groups ADD COLUMN comm_platform TEXT
+          CHECK (comm_platform IS NULL OR comm_platform IN ('discord','whatsapp','telegram'));
+      END IF;
+      IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = 'groups' AND column_name = 'comm_link'
+      ) THEN
+        ALTER TABLE groups ADD COLUMN comm_link TEXT;
+      END IF;
     END $$;
+  `.execute(db);
+
+  // Add interest_categories to users (for onboarding interest quiz)
+  await sql`
+    DO $$ BEGIN
+      IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = 'users' AND column_name = 'interest_categories'
+      ) THEN
+        ALTER TABLE users ADD COLUMN interest_categories TEXT[] NOT NULL DEFAULT '{}';
+      END IF;
+    END $$
   `.execute(db);
 
   await sql`
@@ -835,6 +887,34 @@ async function createSchema(db: Kysely<Database>) {
   await sql`CREATE INDEX IF NOT EXISTS idx_weekly_recaps_sent_group ON weekly_recaps_sent(group_id)`.execute(db);
   await sql`CREATE INDEX IF NOT EXISTS idx_weekly_recaps_sent_week_end ON weekly_recaps_sent(week_end)`.execute(db);
 
+  // Create join_requests table (public group discovery)
+  await sql`
+    CREATE TABLE IF NOT EXISTS join_requests (
+      id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+      group_id UUID NOT NULL REFERENCES groups(id) ON DELETE CASCADE,
+      user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      status TEXT NOT NULL DEFAULT 'pending'
+        CHECK (status IN ('pending','approved','declined')),
+      note TEXT CHECK (char_length(note) <= 300),
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      reviewed_at TIMESTAMPTZ,
+      reviewed_by UUID REFERENCES users(id) ON DELETE SET NULL,
+      UNIQUE (group_id, user_id)
+    )
+  `.execute(db);
+  await sql`CREATE INDEX IF NOT EXISTS join_requests_group_pending ON join_requests(group_id) WHERE status = 'pending'`.execute(db);
+  await sql`CREATE INDEX IF NOT EXISTS join_requests_user ON join_requests(user_id, status)`.execute(db);
+
+  // Create suggestion_dismissals table
+  await sql`
+    CREATE TABLE IF NOT EXISTS suggestion_dismissals (
+      user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      group_id UUID NOT NULL REFERENCES groups(id) ON DELETE CASCADE,
+      dismissed_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      PRIMARY KEY (user_id, group_id)
+    )
+  `.execute(db);
+
   // Fix FK constraints for goals (CREATE TABLE IF NOT EXISTS won't update existing constraints)
   await sql`
     ALTER TABLE goals DROP CONSTRAINT IF EXISTS goals_created_by_user_id_fkey;
@@ -884,6 +964,8 @@ async function cleanDatabase(db: Kysely<Database>) {
       group_activities,
       group_heat,
       group_daily_gcr,
+      join_requests,
+      suggestion_dismissals,
       group_memberships,
       invite_codes,
       groups,

@@ -3,6 +3,18 @@ import { z } from 'zod';
 const hexColor = z.string().regex(/^#[0-9A-Fa-f]{6}$/, 'Invalid hex color');
 const optionalEmoji = z.string().max(10).optional();
 
+const VALID_CATEGORIES = ['fitness','nutrition','mindfulness','learning','creativity','productivity','finance','social','lifestyle','sports','other'] as const;
+export type GroupCategory = typeof VALID_CATEGORIES[number];
+
+/** Validate comm_link matches the declared platform's URL pattern */
+function isValidCommLink(platform: string | null | undefined, link: string | null | undefined): boolean {
+  if (!platform || !link) return true;
+  if (platform === 'discord') return /^https?:\/\/(discord\.gg\/|discord\.com\/invite\/)/.test(link);
+  if (platform === 'whatsapp') return /^https?:\/\/chat\.whatsapp\.com\//.test(link);
+  if (platform === 'telegram') return /^https?:\/\/t\.me\//.test(link);
+  return false;
+}
+
 export const InitialGoalSchema = z
   .object({
     title: z.string().min(1, 'Title is required').max(200),
@@ -28,7 +40,9 @@ export const CreateGroupSchema = z
     icon_emoji: optionalEmoji,
     icon_color: hexColor.optional(),
     icon_url: z.string().max(500).optional(),
-    initial_goals: z.array(InitialGoalSchema).optional()
+    initial_goals: z.array(InitialGoalSchema).optional(),
+    visibility: z.enum(['public', 'private']).optional(),
+    category: z.enum(VALID_CATEGORIES).optional(),
   })
   .strict();
 
@@ -38,9 +52,25 @@ export const UpdateGroupSchema = z
     description: z.string().max(500).optional(),
     icon_emoji: optionalEmoji,
     icon_color: hexColor.optional(),
-    icon_url: z.string().max(500).nullable().optional()
+    icon_url: z.string().max(500).nullable().optional(),
+    visibility: z.enum(['public', 'private']).optional(),
+    category: z.enum(VALID_CATEGORIES).nullable().optional(),
+    spot_limit: z.number().int().min(2).max(500).nullable().optional(),
+    auto_approve: z.boolean().optional(),
+    comm_platform: z.enum(['discord', 'whatsapp', 'telegram']).nullable().optional(),
+    comm_link: z.string().max(500).nullable().optional(),
   })
-  .strict();
+  .strict()
+  .superRefine((data, ctx) => {
+    if (data.comm_platform && data.comm_link) {
+      if (!isValidCommLink(data.comm_platform, data.comm_link)) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'comm_link does not match the format for the selected platform', path: ['comm_link'] });
+      }
+    }
+    if (data.comm_link && !data.comm_platform) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'comm_platform is required when comm_link is set', path: ['comm_platform'] });
+    }
+  });
 
 export const UpdateMemberRoleSchema = z
   .object({
@@ -113,9 +143,34 @@ export const MemberProgressQuerySchema = z
     { message: 'end_date must be >= start_date', path: ['end_date'] }
   );
 
+export const DiscoverGroupsQuerySchema = z
+  .object({
+    categories: z.string().optional(), // comma-separated
+    sort: z.enum(['heat', 'newest', 'members']).optional().default('heat'),
+    q: z.string().max(200).optional(),
+    cursor: z.string().optional(),
+    limit: z.coerce.number().int().min(1).max(50).optional().default(20),
+  })
+  .strict();
+
+export const JoinRequestSchema = z
+  .object({
+    note: z.string().max(300).optional(),
+  })
+  .strict();
+
+export const UpdateJoinRequestSchema = z
+  .object({
+    status: z.enum(['approved', 'declined']),
+  })
+  .strict();
+
 export type CreateGroupInput = z.infer<typeof CreateGroupSchema>;
 export type UpdateGroupInput = z.infer<typeof UpdateGroupSchema>;
 export type UpdateMemberRoleInput = z.infer<typeof UpdateMemberRoleSchema>;
 export type JoinGroupInput = z.infer<typeof JoinGroupSchema>;
 export type ExportProgressQuery = z.infer<typeof ExportProgressQuerySchema>;
 export type MemberProgressQuery = z.infer<typeof MemberProgressQuerySchema>;
+export type DiscoverGroupsQuery = z.infer<typeof DiscoverGroupsQuerySchema>;
+export type JoinRequestInput = z.infer<typeof JoinRequestSchema>;
+export type UpdateJoinRequestInput = z.infer<typeof UpdateJoinRequestSchema>;

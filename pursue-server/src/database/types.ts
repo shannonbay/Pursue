@@ -9,6 +9,7 @@ export interface UsersTable {
   avatar_mime_type: string | null;
   password_hash: string | null;
   timezone: ColumnType<string, string | undefined, string>; // Cached timezone for smart reminders
+  interest_categories: ColumnType<string[], string[] | undefined, string[]>;
   created_at: ColumnType<Date, string | undefined, never>;
   updated_at: ColumnType<Date, string | undefined, string | undefined>;
   deleted_at: ColumnType<Date | null, string | undefined, string | undefined>;
@@ -92,6 +93,12 @@ export interface GroupsTable {
   challenge_template_id: string | null;
   challenge_status: ColumnType<'upcoming' | 'active' | 'completed' | 'cancelled' | null, string | null | undefined, string | null>;
   challenge_invite_card_data: ColumnType<Record<string, unknown> | null, Record<string, unknown> | null | undefined, Record<string, unknown> | null>;
+  visibility: ColumnType<'public' | 'private', 'public' | 'private' | undefined, 'public' | 'private'>;
+  category: string | null;
+  spot_limit: number | null;
+  auto_approve: ColumnType<boolean, boolean | undefined, boolean>;
+  comm_platform: 'discord' | 'whatsapp' | 'telegram' | null;
+  comm_link: string | null;
   created_at: ColumnType<Date, string | undefined, never>;
   updated_at: ColumnType<Date, string | undefined, string | undefined>;
   deleted_at: ColumnType<Date | null, string | undefined, string | undefined>;
@@ -499,6 +506,32 @@ export type ChallengeSuggestionLog = Selectable<ChallengeSuggestionLogTable>;
 export type NewChallengeSuggestionLog = Insertable<ChallengeSuggestionLogTable>;
 export type ChallengeSuggestionLogUpdate = Updateable<ChallengeSuggestionLogTable>;
 
+// Join requests table (public group discovery)
+export interface JoinRequestsTable {
+  id: Generated<string>;
+  group_id: string;
+  user_id: string;
+  status: ColumnType<'pending' | 'approved' | 'declined', string | undefined, string>;
+  note: string | null;
+  created_at: ColumnType<Date, string | undefined, never>;
+  reviewed_at: Date | null;
+  reviewed_by: string | null;
+}
+
+export type JoinRequest = Selectable<JoinRequestsTable>;
+export type NewJoinRequest = Insertable<JoinRequestsTable>;
+export type JoinRequestUpdate = Updateable<JoinRequestsTable>;
+
+// Suggestion dismissals table (suppress pgvector group suggestions)
+export interface SuggestionDismissalsTable {
+  user_id: string;
+  group_id: string;
+  dismissed_at: ColumnType<Date, string | undefined, string | undefined>;
+}
+
+export type SuggestionDismissal = Selectable<SuggestionDismissalsTable>;
+export type NewSuggestionDismissal = Insertable<SuggestionDismissalsTable>;
+
 // Database interface combining all tables
 export interface Database {
   users: UsersTable;
@@ -533,4 +566,6 @@ export interface Database {
   user_reminder_preferences: UserReminderPreferencesTable;
   weekly_recaps_sent: WeeklyRecapsSentTable;
   challenge_suggestion_log: ChallengeSuggestionLogTable;
+  join_requests: JoinRequestsTable;
+  suggestion_dismissals: SuggestionDismissalsTable;
 }
