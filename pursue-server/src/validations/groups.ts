@@ -43,6 +43,7 @@ export const CreateGroupSchema = z
     initial_goals: z.array(InitialGoalSchema).optional(),
     visibility: z.enum(['public', 'private']).optional(),
     category: z.enum(VALID_CATEGORIES).optional(),
+    spot_limit: z.number().int().min(2).max(500).optional(),
   })
   .strict();
 

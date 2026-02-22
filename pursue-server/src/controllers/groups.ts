@@ -156,6 +156,7 @@ export async function createGroup(
           creator_user_id: userId,
           visibility: data.visibility ?? 'private',
           category: data.category ?? null,
+          spot_limit: data.spot_limit ?? null,
         })
         .returning([
           'id',
