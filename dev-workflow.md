@@ -1,10 +1,13 @@
-## First get Opus 4.6 to write the spec
+## First get Opus 4.6 to write the spe
+
 Then copy the spec to specs/
 Update the Claude Pursue project-level Pursue Features list with any major new features
 
+## COMPACT or RESTART Claude before next step
+
 ## Ask an agent in planning mode to implement the backend for the spec with full test coverage - Can use Sonnet or Auto for backend builds
 PLANNING MODE
-`Implement the backend for specs/*.md with full test coverage` don't forget to update schema.sql and pursue-server/migrations
+`Implement the backend for specs/*.md with full test coverage - don't forget to update schema.sql and pursue-server/migrations`
 
 ## Ask an agent in planning mode to implement E2E tests
 prmopt template:
