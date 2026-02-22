@@ -49,6 +49,13 @@ import app.getpursue.data.network.GetAllReminderPreferencesResponse
 import app.getpursue.data.network.GoalReminderPreferencesResponse
 import app.getpursue.data.network.RecalculateGoalPatternResponse
 import app.getpursue.data.network.UpdateGoalReminderPreferencesResponse
+import app.getpursue.data.network.DiscoverGroupsResponse
+import app.getpursue.data.network.DiscoverGroupDetailResponse
+import app.getpursue.data.network.JoinRequestResponse
+import app.getpursue.data.network.JoinRequestsListResponse
+import app.getpursue.data.network.ReviewJoinRequestResponse
+import app.getpursue.data.network.SuggestionsResponse
+import app.getpursue.data.network.PatchGroupResponse
 import app.getpursue.models.GroupsResponse
 import app.getpursue.models.GroupDetailResponse
 import app.getpursue.models.GroupMembersResponse
@@ -113,10 +120,35 @@ class E2EApiClient(private val context: Context) {
         name: String,
         description: String? = null,
         iconEmoji: String? = null,
-        iconColor: String? = null
+        iconColor: String? = null,
+        visibility: String? = null,
+        category: String? = null
     ): CreateGroupResponse {
         storeTokenIfPresent(accessToken)
-        return ApiClient.createGroup("", name, description, iconEmoji, iconColor)
+        return ApiClient.createGroup("", name, description, iconEmoji, iconColor,
+            visibility = visibility, category = category)
+    }
+
+    suspend fun patchGroup(
+        accessToken: String,
+        groupId: String,
+        name: String? = null,
+        description: String? = null,
+        iconEmoji: String? = null,
+        iconColor: String? = null,
+        visibility: String? = null,
+        category: String? = null,
+        spotLimit: Int? = null,
+        autoApprove: Boolean? = null,
+        commPlatform: String? = null,
+        commLink: String? = null
+    ): PatchGroupResponse {
+        storeTokenIfPresent(accessToken)
+        return ApiClient.patchGroup(
+            "", groupId, name, description, iconEmoji, iconColor,
+            visibility = visibility, category = category, spotLimit = spotLimit,
+            autoApprove = autoApprove, commPlatform = commPlatform, commLink = commLink
+        )
     }
 
     suspend fun getGroupDetails(accessToken: String, groupId: String): GroupDetailResponse {
@@ -598,6 +630,57 @@ class E2EApiClient(private val context: Context) {
     ): RecalculateGoalPatternResponse {
         storeTokenIfPresent(accessToken)
         return ApiClient.recalculateGoalPattern("", goalId, userTimezone)
+    }
+
+    // --- Discover / Public Group Endpoints ---
+
+    suspend fun listPublicGroups(
+        sort: String? = null,
+        categories: String? = null,
+        q: String? = null,
+        cursor: String? = null,
+        limit: Int? = null
+    ): DiscoverGroupsResponse =
+        ApiClient.listPublicGroups(sort, categories, q, cursor, limit)
+
+    suspend fun getPublicGroup(groupId: String): DiscoverGroupDetailResponse =
+        ApiClient.getPublicGroup(groupId)
+
+    suspend fun submitJoinRequest(
+        accessToken: String,
+        groupId: String,
+        note: String? = null
+    ): JoinRequestResponse {
+        storeTokenIfPresent(accessToken)
+        return ApiClient.submitJoinRequest("", groupId, note)
+    }
+
+    suspend fun listJoinRequests(
+        accessToken: String,
+        groupId: String
+    ): JoinRequestsListResponse {
+        storeTokenIfPresent(accessToken)
+        return ApiClient.listJoinRequests("", groupId)
+    }
+
+    suspend fun reviewJoinRequest(
+        accessToken: String,
+        groupId: String,
+        requestId: String,
+        status: String
+    ): ReviewJoinRequestResponse {
+        storeTokenIfPresent(accessToken)
+        return ApiClient.reviewJoinRequest("", groupId, requestId, status)
+    }
+
+    suspend fun getSuggestions(accessToken: String): SuggestionsResponse {
+        storeTokenIfPresent(accessToken)
+        return ApiClient.getSuggestions("")
+    }
+
+    suspend fun dismissSuggestion(accessToken: String, groupId: String) {
+        storeTokenIfPresent(accessToken)
+        ApiClient.dismissSuggestion("", groupId)
     }
 
     // --- Internal Jobs ---

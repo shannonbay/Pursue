@@ -783,7 +783,9 @@ object ApiClient {
         description: String? = null,
         iconEmoji: String? = null,
         iconColor: String? = null,
-        iconUrl: String? = null
+        iconUrl: String? = null,
+        visibility: String? = null,
+        category: String? = null
     ): CreateGroupResponse {
         val requestBody = gson.toJson(
             CreateGroupRequest(
@@ -791,7 +793,9 @@ object ApiClient {
                 description = description,
                 icon_emoji = iconEmoji,
                 icon_color = iconColor,
-                icon_url = iconUrl
+                icon_url = iconUrl,
+                visibility = visibility,
+                category = category
             )
         ).toRequestBody(jsonMediaType)
         
@@ -840,7 +844,13 @@ object ApiClient {
         description: String? = null,
         iconEmoji: String? = null,
         iconColor: String? = null,
-        iconUrl: String? = null
+        iconUrl: String? = null,
+        visibility: String? = null,
+        category: String? = null,
+        spotLimit: Int? = null,
+        autoApprove: Boolean? = null,
+        commPlatform: String? = null,
+        commLink: String? = null
     ): PatchGroupResponse {
         val toSend = JsonObject()
         name?.let { toSend.addProperty("name", it) }
@@ -848,6 +858,12 @@ object ApiClient {
         iconEmoji?.let { toSend.addProperty("icon_emoji", it) }
         iconColor?.let { toSend.addProperty("icon_color", it) }
         iconUrl?.let { toSend.addProperty("icon_url", it) }
+        visibility?.let { toSend.addProperty("visibility", it) }
+        category?.let { toSend.addProperty("category", it) }
+        spotLimit?.let { toSend.addProperty("spot_limit", it) }
+        autoApprove?.let { toSend.addProperty("auto_approve", it) }
+        commPlatform?.let { toSend.addProperty("comm_platform", it) }
+        commLink?.let { toSend.addProperty("comm_link", it) }
         val requestBody = toSend.toString().toRequestBody(jsonMediaType)
 
         val request = Request.Builder()
@@ -2047,6 +2063,137 @@ object ApiClient {
         }
     }
 
+    // --- Discover / Public Group Endpoints ---
+
+    /**
+     * List public groups (unauthenticated).
+     * GET /api/discover/groups
+     */
+    suspend fun listPublicGroups(
+        sort: String? = null,
+        categories: String? = null,
+        q: String? = null,
+        cursor: String? = null,
+        limit: Int? = null
+    ): DiscoverGroupsResponse {
+        val params = mutableListOf<String>()
+        sort?.let { params.add("sort=$it") }
+        categories?.let { params.add("categories=${URLEncoder.encode(it, "UTF-8")}") }
+        q?.let { params.add("q=${URLEncoder.encode(it, "UTF-8")}") }
+        cursor?.let { params.add("cursor=${URLEncoder.encode(it, "UTF-8")}") }
+        limit?.let { params.add("limit=$it") }
+        val url = if (params.isEmpty()) "$baseUrl/discover/groups"
+                  else "$baseUrl/discover/groups?${params.joinToString("&")}"
+        val request = Request.Builder()
+            .url(url)
+            .get()
+            .build()
+        return executeRequest(request, getClient()) { responseBody ->
+            gson.fromJson(responseBody, DiscoverGroupsResponse::class.java)
+        }
+    }
+
+    /**
+     * Get expanded public group detail (unauthenticated).
+     * GET /api/discover/groups/:groupId
+     */
+    suspend fun getPublicGroup(groupId: String): DiscoverGroupDetailResponse {
+        val request = Request.Builder()
+            .url("$baseUrl/discover/groups/$groupId")
+            .get()
+            .build()
+        return executeRequest(request, getClient()) { responseBody ->
+            gson.fromJson(responseBody, DiscoverGroupDetailResponse::class.java)
+        }
+    }
+
+    /**
+     * Submit a join request to a public group. POST /api/groups/:groupId/join-requests
+     */
+    suspend fun submitJoinRequest(
+        accessToken: String,
+        groupId: String,
+        note: String? = null
+    ): JoinRequestResponse {
+        val body = JsonObject()
+        note?.let { body.addProperty("note", it) }
+        val request = Request.Builder()
+            .url("$baseUrl/groups/$groupId/join-requests")
+            .post(body.toString().toRequestBody(jsonMediaType))
+            .addHeader("Content-Type", "application/json")
+            .build()
+        return executeRequest(request, getClient()) { responseBody ->
+            gson.fromJson(responseBody, JoinRequestResponse::class.java)
+        }
+    }
+
+    /**
+     * List pending join requests for a group (admin only).
+     * GET /api/groups/:groupId/join-requests
+     */
+    suspend fun listJoinRequests(
+        accessToken: String,
+        groupId: String
+    ): JoinRequestsListResponse {
+        val request = Request.Builder()
+            .url("$baseUrl/groups/$groupId/join-requests")
+            .get()
+            .addHeader("Content-Type", "application/json")
+            .build()
+        return executeRequest(request, getClient()) { responseBody ->
+            gson.fromJson(responseBody, JoinRequestsListResponse::class.java)
+        }
+    }
+
+    /**
+     * Review (approve or decline) a join request (admin only).
+     * PATCH /api/groups/:groupId/join-requests/:requestId
+     */
+    suspend fun reviewJoinRequest(
+        accessToken: String,
+        groupId: String,
+        requestId: String,
+        status: String
+    ): ReviewJoinRequestResponse {
+        val body = JsonObject()
+        body.addProperty("status", status)
+        val request = Request.Builder()
+            .url("$baseUrl/groups/$groupId/join-requests/$requestId")
+            .patch(body.toString().toRequestBody(jsonMediaType))
+            .addHeader("Content-Type", "application/json")
+            .build()
+        return executeRequest(request, getClient()) { responseBody ->
+            gson.fromJson(responseBody, ReviewJoinRequestResponse::class.java)
+        }
+    }
+
+    /**
+     * Get personalised group suggestions (pgvector, auth required).
+     * GET /api/discover/suggestions
+     */
+    suspend fun getSuggestions(accessToken: String): SuggestionsResponse {
+        val request = Request.Builder()
+            .url("$baseUrl/discover/suggestions")
+            .get()
+            .addHeader("Content-Type", "application/json")
+            .build()
+        return executeRequest(request, getClient()) { responseBody ->
+            gson.fromJson(responseBody, SuggestionsResponse::class.java)
+        }
+    }
+
+    /**
+     * Dismiss a group suggestion. DELETE /api/discover/suggestions/:groupId
+     */
+    suspend fun dismissSuggestion(accessToken: String, groupId: String) {
+        val request = Request.Builder()
+            .url("$baseUrl/discover/suggestions/$groupId")
+            .delete()
+            .addHeader("Content-Type", "application/json")
+            .build()
+        executeRequest<Unit>(request, getClient()) { Unit }
+    }
+
     /**
      * Execute an HTTP request and parse the response.
      */
@@ -2298,7 +2445,9 @@ data class CreateGroupRequest(
     val description: String? = null,
     val icon_emoji: String? = null,
     val icon_color: String? = null,
-    val icon_url: String? = null
+    val icon_url: String? = null,
+    val visibility: String? = null,
+    val category: String? = null
 )
 
 /**
@@ -2327,7 +2476,13 @@ data class PatchGroupResponse(
     val icon_color: String?,
     val icon_url: String? = null,
     val has_icon: Boolean,
-    val updated_at: String
+    val updated_at: String,
+    val visibility: String? = null,
+    val category: String? = null,
+    val spot_limit: Int? = null,
+    val auto_approve: Boolean? = null,
+    val comm_platform: String? = null,
+    val comm_link: String? = null
 )
 
 /**
@@ -2972,6 +3127,91 @@ data class ChallengeStatusUpdateJobResponse(
     val activated: Int,
     val completed: Int,
     val completion_notifications: Int
+)
+
+// --- Discover / Public Group Response Models ---
+
+data class DiscoverGroupItem(
+    val id: String,
+    val name: String,
+    val icon_emoji: String?,
+    val icon_color: String?,
+    val has_icon: Boolean,
+    val category: String?,
+    val member_count: Int,
+    val goal_count: Int,
+    val heat_score: Int,
+    val heat_tier: Int,
+    val heat_tier_name: String,
+    val spot_limit: Int?,
+    val spots_left: Int?,
+    val is_full: Boolean,
+    val created_at: String
+)
+
+data class DiscoverGroupsResponse(
+    val groups: List<DiscoverGroupItem>,
+    val next_cursor: String?,
+    val has_more: Boolean
+)
+
+data class DiscoverGroupGoal(
+    val id: String,
+    val title: String,
+    val cadence: String,
+    val metric_type: String,
+    val active_days_label: String?
+)
+
+data class DiscoverGroupDetailResponse(
+    val id: String,
+    val name: String,
+    val description: String?,
+    val icon_emoji: String?,
+    val icon_color: String?,
+    val has_icon: Boolean,
+    val category: String?,
+    val member_count: Int,
+    val heat_score: Int,
+    val heat_tier: Int,
+    val heat_tier_name: String,
+    val spot_limit: Int?,
+    val spots_left: Int?,
+    val is_full: Boolean,
+    val created_at: String,
+    val goals: List<DiscoverGroupGoal>
+)
+
+data class JoinRequestResponse(
+    val id: String,
+    val group_id: String,
+    val status: String,
+    val note: String?,
+    val created_at: String,
+    val auto_approved: Boolean
+)
+
+data class JoinRequestItem(
+    val id: String,
+    val user_id: String,
+    val display_name: String,
+    val user_created_at: String,
+    val note: String?,
+    val created_at: String
+)
+
+data class JoinRequestsListResponse(
+    val requests: List<JoinRequestItem>
+)
+
+data class ReviewJoinRequestResponse(
+    val id: String,
+    val status: String,
+    val reviewed_at: String
+)
+
+data class SuggestionsResponse(
+    val suggestions: List<Any>
 )
 
 /**
