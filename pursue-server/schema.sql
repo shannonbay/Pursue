@@ -14,12 +14,20 @@ CREATE TABLE users (
   avatar_mime_type VARCHAR(50),
   password_hash VARCHAR(255), -- NULL for Google-only users
   timezone VARCHAR(50) DEFAULT 'UTC', -- Cached timezone for smart reminders
+  current_subscription_tier VARCHAR(20) NOT NULL DEFAULT 'free'
+    CHECK (current_subscription_tier IN ('free', 'premium')),
+  subscription_status VARCHAR(20) NOT NULL DEFAULT 'active'
+    CHECK (subscription_status IN ('active', 'cancelled', 'expired', 'grace_period', 'over_limit')),
+  group_limit INTEGER NOT NULL DEFAULT 1,
+  current_group_count INTEGER NOT NULL DEFAULT 0,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   deleted_at TIMESTAMP WITH TIME ZONE -- NULL if active, timestamp if soft deleted
 );
 
 CREATE INDEX idx_users_email ON users(email);
+CREATE INDEX idx_users_subscription_tier ON users(current_subscription_tier);
+CREATE INDEX idx_users_subscription_status ON users(subscription_status);
 
 COMMENT ON COLUMN users.deleted_at IS 'Soft delete timestamp. NULL = active user, non-NULL = soft deleted. Prevents deleted users from logging in or being accessed.';
 COMMENT ON COLUMN users.timezone IS 'Cached timezone from last progress log. Used by smart reminders for background jobs. Updated when user logs progress with a different timezone.';
@@ -138,6 +146,7 @@ CREATE TABLE challenge_templates (
   title VARCHAR(200) NOT NULL,
   description TEXT NOT NULL,
   icon_emoji VARCHAR(10) NOT NULL,
+  icon_url TEXT,
   duration_days INTEGER NOT NULL,
   category VARCHAR(50) NOT NULL,
   difficulty VARCHAR(20) NOT NULL DEFAULT 'moderate',
@@ -185,21 +194,24 @@ CREATE TABLE group_memberships (
 
 CREATE INDEX idx_memberships_group ON group_memberships(group_id);
 CREATE INDEX idx_memberships_user ON group_memberships(user_id);
-CREATE INDEX idx_memberships_pending ON group_memberships(group_id, status) WHERE status = 'pending';
+CREATE INDEX idx_memberships_pending ON group_memberships(group_id, user_id, joined_at) WHERE status = 'pending';
+CREATE INDEX idx_memberships_user_status ON group_memberships(user_id, status, joined_at DESC) WHERE status IN ('pending', 'declined');
 
--- Invite codes
+-- Invite codes (one active code per group, permanent and reusable unless regenerated)
 CREATE TABLE invite_codes (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   group_id UUID NOT NULL REFERENCES groups(id) ON DELETE CASCADE,
   code VARCHAR(50) UNIQUE NOT NULL,
   created_by_user_id UUID REFERENCES users(id) ON DELETE SET NULL,
-  max_uses INTEGER, -- NULL = unlimited
-  current_uses INTEGER DEFAULT 0,
-  expires_at TIMESTAMP WITH TIME ZONE, -- NULL = never expires
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  revoked_at TIMESTAMP WITH TIME ZONE
 );
 
-CREATE INDEX idx_invite_codes_group ON invite_codes(group_id);
+COMMENT ON TABLE invite_codes IS 'Each group has exactly one active invite code. Codes are permanent and reusable unless regenerated.';
+COMMENT ON COLUMN invite_codes.revoked_at IS 'NULL = code is active, timestamp = code was revoked (replaced by new code)';
+
+CREATE UNIQUE INDEX idx_invite_codes_active_per_group ON invite_codes(group_id)
+  WHERE revoked_at IS NULL;
 CREATE INDEX idx_invite_codes_code ON invite_codes(code);
 
 -- Goals
@@ -254,6 +266,33 @@ CREATE INDEX idx_progress_goal_user_period ON progress_entries(goal_id, user_id,
 
 COMMENT ON COLUMN progress_entries.period_start IS 'User local date (DATE not TIMESTAMP). For daily goal, this is the user local day they completed it, e.g., 2026-01-17. Critical for timezone handling - a Friday workout at 11 PM EST should count for Friday, not Saturday UTC.';
 
+-- Progress photos (GCS-backed, 7-day expiry via lifecycle rules)
+CREATE TABLE progress_photos (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  progress_entry_id UUID NOT NULL UNIQUE REFERENCES progress_entries(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  gcs_object_path VARCHAR(512) NOT NULL,
+  width_px INTEGER NOT NULL,
+  height_px INTEGER NOT NULL,
+  uploaded_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  expires_at TIMESTAMPTZ NOT NULL DEFAULT (NOW() + INTERVAL '7 days'),
+  gcs_deleted_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX idx_photos_entry ON progress_photos(progress_entry_id);
+CREATE INDEX idx_photos_user ON progress_photos(user_id);
+CREATE INDEX idx_photos_expiry ON progress_photos(expires_at) WHERE gcs_deleted_at IS NULL;
+
+-- Permanent upload log for quota enforcement (rolling 7-day window)
+CREATE TABLE photo_upload_log (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  uploaded_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX idx_upload_log_user_time ON photo_upload_log(user_id, uploaded_at DESC);
+
 -- Nudges (motivational push notifications from group members)
 CREATE TABLE nudges (
   id               UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -284,6 +323,19 @@ CREATE TABLE group_activities (
 
 CREATE INDEX idx_activities_group ON group_activities(group_id, created_at DESC);
 CREATE INDEX idx_activities_type ON group_activities(activity_type);
+
+-- Activity reactions (one reaction per user per activity; replacing emoji replaces the row)
+CREATE TABLE activity_reactions (
+  id          UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  activity_id UUID NOT NULL REFERENCES group_activities(id) ON DELETE CASCADE,
+  user_id     UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  emoji       VARCHAR(10) NOT NULL,
+  created_at  TIMESTAMPTZ DEFAULT NOW(),
+  CONSTRAINT uq_reaction_user_activity UNIQUE (activity_id, user_id)
+);
+
+CREATE INDEX idx_reactions_activity ON activity_reactions(activity_id);
+CREATE INDEX idx_reactions_user ON activity_reactions(user_id);
 
 -- User notifications: personal inbox of events directed at the user
 CREATE TABLE user_notifications (
@@ -341,6 +393,61 @@ CREATE TABLE referral_tokens (
 );
 
 CREATE INDEX idx_referral_tokens_user ON referral_tokens(user_id);
+
+-- =========================
+-- Subscription Tables
+-- =========================
+
+CREATE TABLE user_subscriptions (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  tier VARCHAR(20) NOT NULL CHECK (tier IN ('free', 'premium')),
+  status VARCHAR(20) NOT NULL CHECK (status IN ('active', 'cancelled', 'expired', 'grace_period')),
+  started_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  expires_at TIMESTAMPTZ,
+  cancelled_at TIMESTAMPTZ,
+  platform VARCHAR(20) CHECK (platform IN ('google_play', 'app_store')),
+  platform_subscription_id VARCHAR(255),
+  platform_purchase_token TEXT,
+  auto_renew BOOLEAN DEFAULT true,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE(user_id, started_at)
+);
+
+CREATE INDEX idx_user_subscriptions_user_id ON user_subscriptions(user_id);
+CREATE INDEX idx_user_subscriptions_status ON user_subscriptions(status);
+CREATE INDEX idx_user_subscriptions_expires_at ON user_subscriptions(expires_at) WHERE status = 'active';
+
+CREATE TABLE subscription_downgrade_history (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  downgrade_date TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  previous_tier VARCHAR(20) NOT NULL,
+  groups_before_downgrade INTEGER NOT NULL,
+  kept_group_id UUID REFERENCES groups(id) ON DELETE SET NULL,
+  removed_group_ids UUID[] NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX idx_subscription_downgrade_history_user_id ON subscription_downgrade_history(user_id);
+
+CREATE TABLE subscription_transactions (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  subscription_id UUID NOT NULL REFERENCES user_subscriptions(id) ON DELETE CASCADE,
+  transaction_type VARCHAR(50) NOT NULL CHECK (transaction_type IN ('purchase', 'renewal', 'cancellation', 'refund')),
+  platform VARCHAR(20) NOT NULL CHECK (platform IN ('google_play', 'app_store')),
+  platform_transaction_id VARCHAR(255) NOT NULL,
+  amount_cents INTEGER,
+  currency VARCHAR(3),
+  transaction_date TIMESTAMPTZ NOT NULL,
+  raw_receipt TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE(platform, platform_transaction_id)
+);
+
+CREATE INDEX idx_subscription_transactions_subscription_id ON subscription_transactions(subscription_id);
+CREATE INDEX idx_subscription_transactions_platform_transaction_id ON subscription_transactions(platform, platform_transaction_id);
 
 -- Group heat: momentum indicator based on rolling completion rates
 CREATE TABLE group_heat (
@@ -627,3 +734,120 @@ CREATE TABLE challenge_suggestion_log (
 CREATE INDEX idx_challenge_suggestion_user ON challenge_suggestion_log(user_id);
 
 COMMENT ON TABLE challenge_suggestion_log IS 'Tracks challenge suggestions sent to users to avoid nagging and enforce rate limits';
+
+-- =========================
+-- Group Membership Views
+-- =========================
+
+CREATE OR REPLACE VIEW active_group_members AS
+SELECT
+    gm.id,
+    gm.group_id,
+    gm.user_id,
+    gm.role,
+    gm.joined_at,
+    u.email,
+    u.display_name,
+    u.avatar_mime_type,
+    CASE WHEN u.avatar_data IS NOT NULL THEN true ELSE false END AS has_avatar
+FROM group_memberships gm
+INNER JOIN users u ON gm.user_id = u.id
+WHERE gm.status = 'active'
+AND u.deleted_at IS NULL;
+
+COMMENT ON VIEW active_group_members IS 'View of active group members with user details. Excludes pending and declined members.';
+
+ALTER VIEW active_group_members SET (security_invoker = true);
+
+CREATE OR REPLACE VIEW pending_group_members AS
+SELECT
+    gm.id,
+    gm.group_id,
+    gm.user_id,
+    gm.joined_at AS requested_at,
+    u.email,
+    u.display_name,
+    u.avatar_mime_type,
+    CASE WHEN u.avatar_data IS NOT NULL THEN true ELSE false END AS has_avatar
+FROM group_memberships gm
+INNER JOIN users u ON gm.user_id = u.id
+WHERE gm.status = 'pending'
+AND u.deleted_at IS NULL;
+
+COMMENT ON VIEW pending_group_members IS 'View of pending join requests with user details';
+
+ALTER VIEW pending_group_members SET (security_invoker = true);
+
+-- =========================
+-- Group Membership Helper Functions and Triggers
+-- =========================
+
+CREATE OR REPLACE FUNCTION get_pending_member_count(p_group_id UUID)
+RETURNS INTEGER
+LANGUAGE plpgsql
+STABLE
+AS $$
+DECLARE
+    pending_count INTEGER;
+BEGIN
+    SELECT COUNT(*) INTO pending_count
+    FROM group_memberships
+    WHERE group_id = p_group_id
+    AND status = 'pending';
+    RETURN pending_count;
+END;
+$$;
+
+COMMENT ON FUNCTION get_pending_member_count IS 'Returns count of pending members for a given group';
+
+CREATE OR REPLACE FUNCTION is_group_admin(p_user_id UUID, p_group_id UUID)
+RETURNS BOOLEAN
+LANGUAGE plpgsql
+STABLE
+AS $$
+DECLARE
+    user_role VARCHAR(20);
+BEGIN
+    SELECT role INTO user_role
+    FROM group_memberships
+    WHERE user_id = p_user_id
+    AND group_id = p_group_id
+    AND status = 'active'
+    LIMIT 1;
+    RETURN user_role IN ('creator', 'admin');
+END;
+$$;
+
+COMMENT ON FUNCTION is_group_admin IS 'Returns true if user is an active admin or creator of the group';
+
+CREATE OR REPLACE FUNCTION prevent_duplicate_pending_requests()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    existing_pending_count INTEGER;
+BEGIN
+    IF NEW.status = 'pending' THEN
+        SELECT COUNT(*) INTO existing_pending_count
+        FROM group_memberships
+        WHERE group_id = NEW.group_id
+        AND user_id = NEW.user_id
+        AND status = 'pending'
+        AND id != NEW.id;
+        IF existing_pending_count > 0 THEN
+            RAISE EXCEPTION 'User already has a pending request for this group'
+                USING ERRCODE = '23505',
+                      DETAIL = 'user_id: ' || NEW.user_id || ', group_id: ' || NEW.group_id;
+        END IF;
+    END IF;
+    RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS check_duplicate_pending_requests ON group_memberships;
+CREATE TRIGGER check_duplicate_pending_requests
+BEFORE INSERT OR UPDATE ON group_memberships
+FOR EACH ROW
+EXECUTE FUNCTION prevent_duplicate_pending_requests();
+
+COMMENT ON TRIGGER check_duplicate_pending_requests ON group_memberships IS 'Prevents duplicate pending requests from same user to same group';
