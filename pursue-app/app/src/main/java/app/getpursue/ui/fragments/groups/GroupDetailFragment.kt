@@ -566,7 +566,10 @@ class GroupDetailFragment : Fragment() {
                                 iconColor = detail.icon_color,
                                 iconUrl = detail.icon_url,
                                 hasIcon = detail.has_icon,
-                                isCreator = detail.user_role == "creator"
+                                isCreator = detail.user_role == "creator",
+                                visibility = detail.visibility,
+                                category = detail.category,
+                                spotLimit = detail.spot_limit
                             )
                             requireActivity().supportFragmentManager.commit {
                                 replace(R.id.fragment_container, edit)

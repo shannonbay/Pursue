@@ -9,14 +9,21 @@ import android.text.TextWatcher
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ArrayAdapter
+import android.widget.AutoCompleteTextView
 import android.widget.FrameLayout
 import android.widget.ImageView
+import android.widget.LinearLayout
 import android.widget.ProgressBar
+import android.widget.RadioButton
+import android.widget.RadioGroup
 import android.widget.TextView
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import com.google.android.material.button.MaterialButton
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.google.android.material.switchmaterial.SwitchMaterial
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
 import android.os.Handler
@@ -24,7 +31,6 @@ import android.os.Looper
 import app.getpursue.data.auth.SecureTokenManager
 import app.getpursue.data.network.ApiClient
 import app.getpursue.data.network.ApiException
-import app.getpursue.ui.fragments.home.HomeFragment
 import app.getpursue.ui.views.CovenantBottomSheet
 import app.getpursue.ui.views.IconPickerBottomSheet
 import app.getpursue.utils.IconUrlUtils
@@ -35,10 +41,29 @@ import kotlinx.coroutines.withContext
 
 /**
  * Fragment for creating a new group (UI spec section 4.8).
- * 
+ *
  * Handles form input, validation, icon selection, and API call to create group.
  */
 class CreateGroupFragment : Fragment() {
+
+    companion object {
+        /** API value → display label mapping for group categories. */
+        val CATEGORIES: List<Pair<String, String>> = listOf(
+            "fitness"      to "Fitness & Exercise",
+            "nutrition"    to "Nutrition & Diet",
+            "mindfulness"  to "Mindfulness & Mental Health",
+            "learning"     to "Learning & Skills",
+            "creativity"   to "Creativity & Arts",
+            "productivity" to "Productivity & Career",
+            "finance"      to "Finance & Savings",
+            "social"       to "Social & Relationships",
+            "lifestyle"    to "Lifestyle & Habits",
+            "sports"       to "Sports & Training",
+            "other"        to "Other"
+        )
+
+        fun newInstance(): CreateGroupFragment = CreateGroupFragment()
+    }
 
     private lateinit var iconPreview: TextView
     private lateinit var iconImage: ImageView
@@ -48,6 +73,16 @@ class CreateGroupFragment : Fragment() {
     private lateinit var groupNameEdit: TextInputEditText
     private lateinit var descriptionInput: TextInputLayout
     private lateinit var descriptionEdit: TextInputEditText
+    private lateinit var switchPublicListing: SwitchMaterial
+    private lateinit var btnVisibilityInfo: ImageView
+    private lateinit var containerSpotLimit: LinearLayout
+    private lateinit var radioGroupSpotLimit: RadioGroup
+    private lateinit var radioUnlimited: RadioButton
+    private lateinit var radioCustomLimit: RadioButton
+    private lateinit var inputSpotLimit: TextInputLayout
+    private lateinit var editSpotLimit: TextInputEditText
+    private lateinit var inputCategory: TextInputLayout
+    private lateinit var dropdownCategory: AutoCompleteTextView
     private lateinit var createButton: MaterialButton
     private lateinit var cancelButton: MaterialButton
     private lateinit var loadingIndicator: ProgressBar
@@ -55,6 +90,9 @@ class CreateGroupFragment : Fragment() {
     private var selectedEmoji: String? = null
     private var selectedColor: String = IconPickerBottomSheet.Companion.getRandomDefaultColor()
     private var selectedIconUrl: String? = null
+    private var selectedVisibility: String = "private"
+    private var selectedCategory: String? = null
+    private var selectedSpotLimit: Int? = null
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -75,48 +113,97 @@ class CreateGroupFragment : Fragment() {
         groupNameEdit = view.findViewById(R.id.edit_group_name)
         descriptionInput = view.findViewById(R.id.input_description)
         descriptionEdit = view.findViewById(R.id.edit_description)
+        switchPublicListing = view.findViewById(R.id.switch_public_listing)
+        btnVisibilityInfo = view.findViewById(R.id.btn_visibility_info)
+        containerSpotLimit = view.findViewById(R.id.container_spot_limit)
+        radioGroupSpotLimit = view.findViewById(R.id.radio_group_spot_limit)
+        radioUnlimited = view.findViewById(R.id.radio_unlimited)
+        radioCustomLimit = view.findViewById(R.id.radio_custom_limit)
+        inputSpotLimit = view.findViewById(R.id.input_spot_limit)
+        editSpotLimit = view.findViewById(R.id.edit_spot_limit)
+        inputCategory = view.findViewById(R.id.input_category)
+        dropdownCategory = view.findViewById(R.id.dropdown_category)
         createButton = view.findViewById(R.id.button_create)
         cancelButton = view.findViewById(R.id.button_cancel)
         loadingIndicator = view.findViewById(R.id.loading_indicator)
 
-        // Setup icon preview
-        updateIconPreview()
+        setupIconPreview()
+        setupCategoryDropdown()
+        setupVisibilitySwitch()
+        setupSpotLimitSection()
+        setupButtons()
+        setupTextWatchers()
+    }
 
-        // Setup icon picker button
-        chooseIconButton.setOnClickListener {
-            showIconPicker()
+    // ─── Setup helpers ────────────────────────────────────────────────────────
+
+    private fun setupIconPreview() {
+        updateIconPreview()
+        chooseIconButton.setOnClickListener { showIconPicker() }
+    }
+
+    private fun setupCategoryDropdown() {
+        val displayNames = CATEGORIES.map { it.second }
+        val adapter = ArrayAdapter(requireContext(), android.R.layout.simple_dropdown_item_1line, displayNames)
+        dropdownCategory.setAdapter(adapter)
+        dropdownCategory.setOnItemClickListener { _, _, position, _ ->
+            selectedCategory = CATEGORIES[position].first
+            inputCategory.error = null
+        }
+    }
+
+    private fun setupVisibilitySwitch() {
+        switchPublicListing.setOnCheckedChangeListener { _, isChecked ->
+            selectedVisibility = if (isChecked) "public" else "private"
+            containerSpotLimit.visibility = if (isChecked) View.VISIBLE else View.GONE
         }
 
-        // Setup form validation
+        btnVisibilityInfo.setOnClickListener {
+            MaterialAlertDialogBuilder(requireContext())
+                .setTitle(getString(R.string.label_public_listing))
+                .setMessage(getString(R.string.public_listing_tooltip))
+                .setPositiveButton(getString(android.R.string.ok), null)
+                .show()
+        }
+    }
+
+    private fun setupSpotLimitSection() {
+        radioGroupSpotLimit.setOnCheckedChangeListener { _, checkedId ->
+            when (checkedId) {
+                R.id.radio_unlimited -> {
+                    inputSpotLimit.visibility = View.GONE
+                    selectedSpotLimit = null
+                }
+                R.id.radio_custom_limit -> {
+                    inputSpotLimit.visibility = View.VISIBLE
+                }
+            }
+        }
+    }
+
+    private fun setupButtons() {
+        createButton.setOnClickListener { createGroup() }
+        cancelButton.setOnClickListener { requireActivity().supportFragmentManager.popBackStack() }
+    }
+
+    private fun setupTextWatchers() {
         groupNameEdit.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
             override fun afterTextChanged(s: Editable?) {
                 validateGroupName()
-                // Update icon preview if no emoji is selected
-                if (selectedEmoji == null) {
-                    updateIconPreview()
-                }
+                if (selectedEmoji == null) updateIconPreview()
             }
         })
 
         descriptionEdit.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
-            override fun afterTextChanged(s: Editable?) {
-                validateDescription()
-            }
+            override fun afterTextChanged(s: Editable?) { validateDescription() }
         })
-
-        // Setup buttons
-        createButton.setOnClickListener {
-            createGroup()
-        }
-
-        cancelButton.setOnClickListener {
-            requireActivity().supportFragmentManager.popBackStack()
-        }
     }
+
+    // ─── Icon preview ─────────────────────────────────────────────────────────
 
     private fun updateIconPreview() {
         if (selectedIconUrl != null) {
@@ -129,20 +216,13 @@ class CreateGroupFragment : Fragment() {
             if (selectedEmoji != null) {
                 iconPreview.text = selectedEmoji
             } else {
-                // Default to first letter of group name with random color background
                 val name = groupNameEdit.text?.toString()?.take(1)?.uppercase() ?: "?"
                 iconPreview.text = name
             }
         }
-
-        // Use backgroundTintList to properly tint the drawable background
         try {
-            iconContainer.backgroundTintList = ColorStateList.valueOf(
-                Color.parseColor(selectedColor)
-            )
-        } catch (e: IllegalArgumentException) {
-            // Keep default color if parsing fails
-        }
+            iconContainer.backgroundTintList = ColorStateList.valueOf(Color.parseColor(selectedColor))
+        } catch (_: IllegalArgumentException) {}
     }
 
     private fun showIconPicker() {
@@ -156,14 +236,14 @@ class CreateGroupFragment : Fragment() {
                     selectedIconUrl = iconUrl
                     selectedEmoji = null
                 }
-                if (color != null) {
-                    selectedColor = color
-                }
+                if (color != null) selectedColor = color
                 updateIconPreview()
             }
         })
         bottomSheet.show(childFragmentManager, "IconPickerBottomSheet")
     }
+
+    // ─── Validation ───────────────────────────────────────────────────────────
 
     private fun validateGroupName(): Boolean {
         val name = groupNameEdit.text?.toString()?.trim() ?: ""
@@ -178,7 +258,7 @@ class CreateGroupFragment : Fragment() {
             }
             else -> {
                 groupNameInput.error = null
-                updateIconPreview() // Update icon preview with first letter
+                updateIconPreview()
                 true
             }
         }
@@ -195,14 +275,40 @@ class CreateGroupFragment : Fragment() {
         }
     }
 
-    private fun createGroup() {
-        if (!validateGroupName()) {
-            return
+    private fun validateCategory(): Boolean {
+        return if (selectedCategory == null) {
+            inputCategory.error = getString(R.string.category_required_error)
+            false
+        } else {
+            inputCategory.error = null
+            true
         }
+    }
 
-        if (!validateDescription()) {
-            return
+    private fun validateSpotLimit(): Boolean {
+        if (radioCustomLimit.isChecked) {
+            val raw = editSpotLimit.text?.toString()?.trim() ?: ""
+            val value = raw.toIntOrNull()
+            return if (value == null || value < 2 || value > 500) {
+                inputSpotLimit.error = getString(R.string.spot_limit_error)
+                false
+            } else {
+                inputSpotLimit.error = null
+                selectedSpotLimit = value
+                true
+            }
         }
+        selectedSpotLimit = null
+        return true
+    }
+
+    // ─── Create flow ──────────────────────────────────────────────────────────
+
+    private fun createGroup() {
+        if (!validateGroupName()) return
+        if (!validateDescription()) return
+        if (!validateCategory()) return
+        if (!validateSpotLimit()) return
 
         val covenant = CovenantBottomSheet.newInstance(isChallenge = false)
         covenant.setCovenantListener(object : CovenantBottomSheet.CovenantListener {
@@ -243,7 +349,9 @@ class CreateGroupFragment : Fragment() {
                         description = description,
                         iconEmoji = iconEmoji,
                         iconColor = iconColor,
-                        iconUrl = selectedIconUrl
+                        iconUrl = selectedIconUrl,
+                        visibility = selectedVisibility,
+                        category = selectedCategory
                     )
                 }
 
@@ -253,7 +361,6 @@ class CreateGroupFragment : Fragment() {
                     showLoading(false)
                     Toast.makeText(requireContext(), getString(R.string.group_created), Toast.LENGTH_SHORT).show()
 
-                    // Navigate to GroupDetailActivity for the new group
                     val intent = Intent(requireContext(), app.getpursue.ui.activities.GroupDetailActivity::class.java).apply {
                         putExtra(app.getpursue.ui.activities.GroupDetailActivity.EXTRA_GROUP_ID, response.id)
                         putExtra(app.getpursue.ui.activities.GroupDetailActivity.EXTRA_GROUP_NAME, response.name)
@@ -263,7 +370,6 @@ class CreateGroupFragment : Fragment() {
                     }
                     startActivity(intent)
 
-                    // Remove CreateGroupFragment from backstack so back from Detail goes to Home
                     requireActivity().supportFragmentManager.popBackStack()
                 }
             } catch (e: ApiException) {
@@ -298,12 +404,12 @@ class CreateGroupFragment : Fragment() {
             groupNameEdit.isEnabled = !show
             descriptionEdit.isEnabled = !show
             chooseIconButton.isEnabled = !show
-        }
-    }
-
-    companion object {
-        fun newInstance(): CreateGroupFragment {
-            return CreateGroupFragment()
+            switchPublicListing.isEnabled = !show
+            radioGroupSpotLimit.isEnabled = !show
+            radioUnlimited.isEnabled = !show
+            radioCustomLimit.isEnabled = !show
+            editSpotLimit.isEnabled = !show
+            dropdownCategory.isEnabled = !show
         }
     }
 }

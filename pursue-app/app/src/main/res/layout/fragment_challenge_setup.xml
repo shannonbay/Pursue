@@ -87,6 +87,38 @@
             android:layout_marginTop="16dp"
             android:visibility="gone" />
 
+        <!-- Public Listing Toggle Row -->
+        <LinearLayout
+            android:id="@+id/row_visibility"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/label_public_listing"
+                android:textAppearance="?attr/textAppearanceBodyLarge" />
+
+            <com.google.android.material.switchmaterial.SwitchMaterial
+                android:id="@+id/switch_public_listing"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:checked="false" />
+
+            <ImageView
+                android:id="@+id/btn_visibility_info"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_marginStart="8dp"
+                android:contentDescription="@string/public_listing_tooltip"
+                android:src="@drawable/ic_info_outline"
+                app:tint="?attr/colorOnSurfaceVariant" />
+        </LinearLayout>
+
         <com.google.android.material.button.MaterialButton
             android:id="@+id/challenge_start_button"
             android:layout_width="match_parent"

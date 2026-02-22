@@ -830,4 +830,31 @@
     <string name="discover_sign_in_to_join">Sign in to request to join groups</string>
     <string name="discover_spots_left">%1$d of %2$d spots remaining</string>
 
+    <!-- Public Listing / Visibility -->
+    <string name="label_public_listing">Public Listing</string>
+    <string name="public_listing_tooltip">Public listing lets others discover your group and request to join. They\'ll see your group name, member count, heat score, and goals — but not your activity log or member details.</string>
+
+    <!-- Spot Limit -->
+    <string name="label_spot_limit">Spot Limit</string>
+    <string name="spot_limit_unlimited">Unlimited</string>
+    <string name="spot_limit_custom">Limit to</string>
+    <string name="spot_limit_members_suffix">members (2–500)</string>
+    <string name="spot_limit_hint">50</string>
+    <string name="spot_limit_error">Enter a number between 2 and 500</string>
+
+    <!-- Category -->
+    <string name="label_category">Category</string>
+    <string name="category_required_error">Please select a category</string>
+    <string name="category_fitness">Fitness &amp; Exercise</string>
+    <string name="category_nutrition">Nutrition &amp; Diet</string>
+    <string name="category_mindfulness">Mindfulness &amp; Mental Health</string>
+    <string name="category_learning">Learning &amp; Skills</string>
+    <string name="category_creativity">Creativity &amp; Arts</string>
+    <string name="category_productivity">Productivity &amp; Career</string>
+    <string name="category_finance">Finance &amp; Savings</string>
+    <string name="category_social">Social &amp; Relationships</string>
+    <string name="category_lifestyle">Lifestyle &amp; Habits</string>
+    <string name="category_sports">Sports &amp; Training</string>
+    <string name="category_other">Other</string>
+
 </resources>

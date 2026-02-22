@@ -6,6 +6,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
@@ -24,6 +25,7 @@ import app.getpursue.ui.activities.MainAppActivity
 import app.getpursue.utils.EmojiUtils
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.google.android.material.switchmaterial.SwitchMaterial
 import com.google.android.material.textfield.TextInputEditText
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -42,9 +44,12 @@ class ChallengeSetupFragment : Fragment() {
     private lateinit var goalsContainer: LinearLayout
     private lateinit var loading: ProgressBar
     private lateinit var startButton: MaterialButton
+    private lateinit var switchPublicListing: SwitchMaterial
+    private lateinit var btnVisibilityInfo: ImageView
 
     private var selectedTemplate: ChallengeTemplate? = null
     private var selectedStartDate: LocalDate = LocalDate.now()
+    private var selectedVisibility: String = "private"
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -62,6 +67,19 @@ class ChallengeSetupFragment : Fragment() {
         goalsContainer = view.findViewById(R.id.challenge_goals_container)
         loading = view.findViewById(R.id.challenge_setup_loading)
         startButton = view.findViewById(R.id.challenge_start_button)
+        switchPublicListing = view.findViewById(R.id.switch_public_listing)
+        btnVisibilityInfo = view.findViewById(R.id.btn_visibility_info)
+
+        switchPublicListing.setOnCheckedChangeListener { _, isChecked ->
+            selectedVisibility = if (isChecked) "public" else "private"
+        }
+        btnVisibilityInfo.setOnClickListener {
+            MaterialAlertDialogBuilder(requireContext())
+                .setTitle(getString(R.string.label_public_listing))
+                .setMessage(getString(R.string.public_listing_tooltip))
+                .setPositiveButton(getString(android.R.string.ok), null)
+                .show()
+        }
 
         startDateButton.setOnClickListener { showDatePicker() }
         startButton.setOnClickListener { createChallenge() }
@@ -197,7 +215,8 @@ class ChallengeSetupFragment : Fragment() {
                         accessToken = token,
                         templateId = template.id,
                         startDate = selectedStartDate.toString(),
-                        groupName = challengeName
+                        groupName = challengeName,
+                        visibility = selectedVisibility
                     )
                 }
                 if (!isAdded) return@launch
@@ -243,6 +262,7 @@ class ChallengeSetupFragment : Fragment() {
         startButton.isEnabled = !show
         startDateButton.isEnabled = !show
         nameEdit.isEnabled = !show
+        switchPublicListing.isEnabled = !show
     }
 
     private fun showError(message: String) {

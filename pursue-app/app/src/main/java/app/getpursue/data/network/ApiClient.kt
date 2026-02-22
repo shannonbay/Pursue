@@ -991,7 +991,8 @@ object ApiClient {
         groupName: String? = null,
         groupDescription: String? = null,
         iconEmoji: String? = null,
-        goals: List<CreateChallengeGoal>? = null
+        goals: List<CreateChallengeGoal>? = null,
+        visibility: String? = null
     ): CreateChallengeResponse {
         val requestBody = gson.toJson(
             CreateChallengeRequest(
@@ -1001,7 +1002,8 @@ object ApiClient {
                 group_name = groupName,
                 group_description = groupDescription,
                 icon_emoji = iconEmoji,
-                goals = goals
+                goals = goals,
+                visibility = visibility
             )
         ).toRequestBody(jsonMediaType)
 
@@ -2584,7 +2586,8 @@ data class CreateChallengeRequest(
     val group_name: String? = null,
     val group_description: String? = null,
     val icon_emoji: String? = null,
-    val goals: List<CreateChallengeGoal>? = null
+    val goals: List<CreateChallengeGoal>? = null,
+    val visibility: String? = null
 )
 
 data class ChallengeGoal(

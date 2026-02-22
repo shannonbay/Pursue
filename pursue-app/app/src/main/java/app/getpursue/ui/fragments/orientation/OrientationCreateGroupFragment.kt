@@ -29,6 +29,8 @@ import app.getpursue.ui.views.IconPickerBottomSheet
 import app.getpursue.utils.IconUrlUtils
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.button.MaterialButtonToggleGroup
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.google.android.material.switchmaterial.SwitchMaterial
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
 import kotlinx.coroutines.Dispatchers
@@ -55,10 +57,13 @@ class OrientationCreateGroupFragment : Fragment() {
     private lateinit var chooseIconButton: MaterialButton
 
     private lateinit var activeDaysSelectorView: ActiveDaysSelectorView
+    private lateinit var switchPublicListing: SwitchMaterial
+    private lateinit var btnVisibilityInfo: ImageView
 
     private var selectedEmoji: String? = null
     private var selectedColor: String = IconPickerBottomSheet.Companion.getRandomDefaultColor()
     private var selectedIconUrl: String? = null
+    private var selectedVisibility: String = "private"
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -86,6 +91,19 @@ class OrientationCreateGroupFragment : Fragment() {
         iconContainer = view.findViewById(R.id.icon_container)
         chooseIconButton = view.findViewById(R.id.button_choose_icon)
         activeDaysSelectorView = view.findViewById(R.id.active_days_selector)
+        switchPublicListing = view.findViewById(R.id.switch_public_listing)
+        btnVisibilityInfo = view.findViewById(R.id.btn_visibility_info)
+
+        switchPublicListing.setOnCheckedChangeListener { _, isChecked ->
+            selectedVisibility = if (isChecked) "public" else "private"
+        }
+        btnVisibilityInfo.setOnClickListener {
+            MaterialAlertDialogBuilder(requireContext())
+                .setTitle(getString(R.string.label_public_listing))
+                .setMessage(getString(R.string.public_listing_tooltip))
+                .setPositiveButton(getString(android.R.string.ok), null)
+                .show()
+        }
 
         // Setup progress dots for step 3
         setupProgressDots(view.findViewById(R.id.progress_dots), 3)
@@ -237,7 +255,8 @@ class OrientationCreateGroupFragment : Fragment() {
                         name = name,
                         iconEmoji = selectedEmoji,
                         iconColor = if (selectedEmoji != null) selectedColor else null,
-                        iconUrl = selectedIconUrl
+                        iconUrl = selectedIconUrl,
+                        visibility = selectedVisibility
                     )
                 }
                 if (!isAdded) return@launch
@@ -299,6 +318,7 @@ class OrientationCreateGroupFragment : Fragment() {
         editUnit.isEnabled = !show
         chooseIconButton.isEnabled = !show
         activeDaysSelectorView.isEnabled = !show
+        switchPublicListing.isEnabled = !show
     }
 
     companion object {
