@@ -110,7 +110,7 @@ class GroupDetailFragmentTest {
     ) {
         activity = Robolectric.setupActivity(FragmentActivity::class.java)
 
-        fragment = GroupDetailFragment.newInstance(groupId, groupName, hasIcon, iconEmoji)
+        fragment = GroupDetailFragment.newInstance(groupId, groupName, "private", hasIcon, iconEmoji)
 
         activity.supportFragmentManager.beginTransaction()
             .add(fragment, "test")
