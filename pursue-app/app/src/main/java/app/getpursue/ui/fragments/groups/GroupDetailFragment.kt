@@ -90,6 +90,7 @@ class GroupDetailFragment : Fragment() {
     companion object {
         private const val ARG_GROUP_ID = "group_id"
         private const val ARG_GROUP_NAME = "group_name"
+        private const val ARG_GROUP_VISIBILITY = "group_visibility"
         private const val ARG_GROUP_HAS_ICON = "group_has_icon"
         private const val ARG_GROUP_ICON_EMOJI = "group_icon_emoji"
         private const val ARG_INITIAL_TAB = "initial_tab"
@@ -98,6 +99,7 @@ class GroupDetailFragment : Fragment() {
         fun newInstance(
             groupId: String,
             groupName: String,
+            visibility: String? = null,
             hasIcon: Boolean = false,
             iconEmoji: String? = null,
             initialTabIndex: Int = -1,
@@ -107,6 +109,7 @@ class GroupDetailFragment : Fragment() {
                 arguments = Bundle().apply {
                     putString(ARG_GROUP_ID, groupId)
                     putString(ARG_GROUP_NAME, groupName)
+                    putString(ARG_GROUP_VISIBILITY, visibility)
                     putBoolean(ARG_GROUP_HAS_ICON, hasIcon)
                     putString(ARG_GROUP_ICON_EMOJI, iconEmoji)
                     putInt(ARG_INITIAL_TAB, initialTabIndex)
@@ -126,6 +129,11 @@ class GroupDetailFragment : Fragment() {
     private lateinit var groupIconEmoji: TextView
     private lateinit var groupIconLetter: TextView
     private lateinit var subtitleMembersGoals: TextView
+    private lateinit var iconVisibility: ImageView
+    private lateinit var textVisibility: TextView
+    private lateinit var visibilityDivider: View
+    private lateinit var goalsDivider: View
+    private lateinit var textGoalsCount: TextView
     private lateinit var createdBy: TextView
     private lateinit var challengeHeaderContainer: View
     private lateinit var challengeHeaderTitle: TextView
@@ -187,6 +195,11 @@ class GroupDetailFragment : Fragment() {
         groupIconEmoji = view.findViewById(R.id.group_icon_emoji)
         groupIconLetter = view.findViewById(R.id.group_icon_letter)
         subtitleMembersGoals = view.findViewById(R.id.subtitle_members_goals)
+        iconVisibility = view.findViewById(R.id.icon_visibility)
+        textVisibility = view.findViewById(R.id.text_visibility)
+        visibilityDivider = view.findViewById(R.id.visibility_divider)
+        goalsDivider = view.findViewById(R.id.goals_divider)
+        textGoalsCount = view.findViewById(R.id.text_goals_count)
         createdBy = view.findViewById(R.id.created_by)
         challengeHeaderContainer = view.findViewById(R.id.challenge_header_container)
         challengeHeaderTitle = view.findViewById(R.id.challenge_header_title)
@@ -216,6 +229,13 @@ class GroupDetailFragment : Fragment() {
             iconEmoji = arguments?.getString(ARG_GROUP_ICON_EMOJI),
             iconColor = null,
             groupNameText = arguments?.getString(ARG_GROUP_NAME) ?: ""
+        )
+
+        // Load initial visibility and basic info from arguments
+        updateGoalsCountSubtitle(
+            memberCount = 0, // Will be updated on load
+            goalCount = 0,   // Will be updated on load
+            visibility = arguments?.getString(ARG_GROUP_VISIBILITY)
         )
 
         // Setup overflow menu in Activity toolbar
@@ -1038,7 +1058,7 @@ class GroupDetailFragment : Fragment() {
         goalsTabFragment?.updateChallengeLoggingStatus(detail.is_challenge, effectiveChallengeStatus(detail))
         val activeGoalsCount = goalsTabFragment?.getActiveGoalsCount() ?: 0
 
-        updateGoalsCountSubtitle(detail.member_count, activeGoalsCount)
+        updateGoalsCountSubtitle(detail.member_count, activeGoalsCount, detail.visibility)
 
         val creatorName = members?.firstOrNull { it.user_id == detail.creator_user_id || it.role == "creator" }?.display_name
         createdBy.text = getString(R.string.created_by, creatorName ?: getString(R.string.unknown))
@@ -1320,16 +1340,27 @@ class GroupDetailFragment : Fragment() {
      */
     fun updateGoalsCount(goalCount: Int) {
         groupDetail?.let { detail ->
-            updateGoalsCountSubtitle(detail.member_count, goalCount)
+            updateGoalsCountSubtitle(detail.member_count, goalCount, detail.visibility)
         }
     }
 
-    private fun updateGoalsCountSubtitle(memberCount: Int, goalCount: Int) {
-        subtitleMembersGoals.text = getString(
-            R.string.members_and_goals_subtitle,
-            memberCount,
-            goalCount
-        )
+    private fun updateGoalsCountSubtitle(memberCount: Int, goalCount: Int, visibility: String?) {
+        subtitleMembersGoals.text = getString(R.string.members_count, memberCount)
+        textGoalsCount.text = getString(R.string.active_goals_count, goalCount)
+        
+        if (visibility != null) {
+            textVisibility.text = visibility
+            val iconRes = if (visibility == "public") R.drawable.ic_visibility else R.drawable.ic_visibility_off
+            iconVisibility.setImageResource(iconRes)
+            
+            visibilityDivider.visibility = View.VISIBLE
+            iconVisibility.visibility = View.VISIBLE
+            textVisibility.visibility = View.VISIBLE
+        } else {
+            visibilityDivider.visibility = View.GONE
+            iconVisibility.visibility = View.GONE
+            textVisibility.visibility = View.GONE
+        }
     }
 
     private fun loadGroupIcon(

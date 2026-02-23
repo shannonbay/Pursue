@@ -71,19 +71,74 @@
                     
                 </FrameLayout>
 
-                <!-- Subtitle: Members and Goals -->
-                <TextView
-                    android:id="@+id/subtitle_members_goals"
+                <!-- Subtitle: Members, Visibility, and Goals -->
+                <LinearLayout
+                    android:id="@+id/subtitle_container"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="16dp"
                     android:layout_marginTop="8dp"
-                    android:textAppearance="?attr/textAppearanceBodyMedium"
-                    android:textColor="@color/on_surface_variant"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
                     app:layout_constraintStart_toEndOf="@id/group_icon_container"
                     app:layout_constraintTop_toTopOf="@id/group_icon_container"
-                    app:layout_constraintEnd_toEndOf="parent"
-                    tools:text="8 members · 5 active goals" />
+                    app:layout_constraintEnd_toEndOf="parent">
+
+                    <TextView
+                        android:id="@+id/subtitle_members_goals"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textAppearance="?attr/textAppearanceBodyMedium"
+                        android:textColor="@color/on_surface_variant"
+                        tools:text="8 members" />
+
+                    <TextView
+                        android:id="@+id/visibility_divider"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text=" · "
+                        android:textAppearance="?attr/textAppearanceBodyMedium"
+                        android:textColor="@color/on_surface_variant"
+                        android:visibility="gone"
+                        tools:visibility="visible" />
+
+                    <ImageView
+                        android:id="@+id/icon_visibility"
+                        android:layout_width="14dp"
+                        android:layout_height="14dp"
+                        android:layout_marginEnd="2dp"
+                        android:visibility="gone"
+                        app:tint="@color/on_surface_variant"
+                        tools:src="@drawable/ic_visibility"
+                        tools:visibility="visible" />
+
+                    <TextView
+                        android:id="@+id/text_visibility"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textAppearance="?attr/textAppearanceBodyMedium"
+                        android:textColor="@color/on_surface_variant"
+                        android:visibility="gone"
+                        tools:text="public"
+                        tools:visibility="visible" />
+
+                    <TextView
+                        android:id="@+id/goals_divider"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text=" · "
+                        android:textAppearance="?attr/textAppearanceBodyMedium"
+                        android:textColor="@color/on_surface_variant" />
+
+                    <TextView
+                        android:id="@+id/text_goals_count"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textAppearance="?attr/textAppearanceBodyMedium"
+                        android:textColor="@color/on_surface_variant"
+                        tools:text="5 active goals" />
+
+                </LinearLayout>
 
                 <!-- Created By -->
                 <TextView
@@ -93,8 +148,8 @@
                     android:layout_marginTop="4dp"
                     android:textAppearance="?attr/textAppearanceBodySmall"
                     android:textColor="@color/on_surface_variant"
-                    app:layout_constraintStart_toStartOf="@id/subtitle_members_goals"
-                    app:layout_constraintTop_toBottomOf="@id/subtitle_members_goals"
+                    app:layout_constraintStart_toStartOf="@id/subtitle_container"
+                    app:layout_constraintTop_toBottomOf="@id/subtitle_container"
                     app:layout_constraintEnd_toEndOf="parent"
                     tools:text="Created by Shannon Thompson" />
 
@@ -107,7 +162,7 @@
                     android:orientation="horizontal"
                     android:gravity="center_vertical"
                     android:visibility="gone"
-                    app:layout_constraintStart_toStartOf="@id/subtitle_members_goals"
+                    app:layout_constraintStart_toStartOf="@id/subtitle_container"
                     app:layout_constraintTop_toBottomOf="@id/created_by"
                     app:layout_constraintEnd_toEndOf="parent"
                     tools:visibility="visible">

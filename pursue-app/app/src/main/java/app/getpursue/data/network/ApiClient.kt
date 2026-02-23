@@ -2467,7 +2467,8 @@ data class CreateGroupResponse(
     val has_icon: Boolean,
     val creator_user_id: String,
     val member_count: Int,
-    val created_at: String
+    val created_at: String,
+    val visibility: String? = null
 )
 
 /**

@@ -629,6 +629,7 @@ class MainAppActivity : AppCompatActivity(),
         val intent = Intent(this, GroupDetailActivity::class.java).apply {
             putExtra(GroupDetailActivity.EXTRA_GROUP_ID, group.id)
             putExtra(GroupDetailActivity.EXTRA_GROUP_NAME, group.name)
+            putExtra(GroupDetailActivity.EXTRA_GROUP_VISIBILITY, group.visibility)
             putExtra(GroupDetailActivity.EXTRA_GROUP_HAS_ICON, group.has_icon)
             group.icon_emoji?.let { putExtra(GroupDetailActivity.EXTRA_GROUP_ICON_EMOJI, it) }
         }

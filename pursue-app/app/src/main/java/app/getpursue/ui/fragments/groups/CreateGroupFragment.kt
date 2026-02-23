@@ -501,6 +501,7 @@ class CreateGroupFragment : Fragment() {
                     val intent = Intent(context, GroupDetailActivity::class.java).apply {
                         putExtra(GroupDetailActivity.EXTRA_GROUP_ID, groupId)
                         putExtra(GroupDetailActivity.EXTRA_GROUP_NAME, groupName)
+                        putExtra(GroupDetailActivity.EXTRA_GROUP_VISIBILITY, groupResponse.visibility)
                         putExtra(GroupDetailActivity.EXTRA_GROUP_HAS_ICON, groupResponse.has_icon)
                         putExtra(GroupDetailActivity.EXTRA_GROUP_ICON_EMOJI, groupResponse.icon_emoji)
                         putExtra(GroupDetailActivity.EXTRA_OPEN_INVITE_SHEET, true)

@@ -25,6 +25,7 @@ class GroupDetailActivity : AppCompatActivity() {
     companion object {
         const val EXTRA_GROUP_ID = "extra_group_id"
         const val EXTRA_GROUP_NAME = "extra_group_name"
+        const val EXTRA_GROUP_VISIBILITY = "extra_group_visibility"
         const val EXTRA_GROUP_HAS_ICON = "extra_group_has_icon"
         const val EXTRA_GROUP_ICON_EMOJI = "extra_group_icon_emoji"
         const val EXTRA_INITIAL_TAB = "extra_initial_tab"
@@ -50,6 +51,7 @@ class GroupDetailActivity : AppCompatActivity() {
         // Get group data from Intent
         val groupId = intent.getStringExtra(EXTRA_GROUP_ID)
         val groupName = intent.getStringExtra(EXTRA_GROUP_NAME) ?: ""
+        val visibility = intent.getStringExtra(EXTRA_GROUP_VISIBILITY)
         val hasIcon = intent.getBooleanExtra(EXTRA_GROUP_HAS_ICON, false)
         val iconEmoji = intent.getStringExtra(EXTRA_GROUP_ICON_EMOJI)
 
@@ -84,6 +86,7 @@ class GroupDetailActivity : AppCompatActivity() {
                     GroupDetailFragment.Companion.newInstance(
                         groupId = groupId,
                         groupName = groupName,
+                        visibility = visibility,
                         hasIcon = hasIcon,
                         iconEmoji = iconEmoji,
                         initialTabIndex = initialTab,
