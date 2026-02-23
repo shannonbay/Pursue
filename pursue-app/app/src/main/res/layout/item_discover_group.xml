@@ -81,19 +81,13 @@
 
             </LinearLayout>
 
-            <!-- Heat tier badge (shown for warm+ groups) -->
-            <TextView
-                android:id="@+id/heat_tier_badge"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:paddingHorizontal="8dp"
-                android:paddingVertical="4dp"
-                android:textAppearance="?attr/textAppearanceLabelSmall"
-                android:textStyle="bold"
-                android:textColor="@color/on_surface_variant"
-                android:background="@drawable/badge_read_only_background"
+            <!-- Heat flame icon (shown for groups with tier >= 1) -->
+            <ImageView
+                android:id="@+id/group_heat_icon"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
                 android:visibility="gone"
-                tools:text="🔥 Hot"
+                tools:src="@drawable/flame5"
                 tools:visibility="visible" />
 
         </LinearLayout>

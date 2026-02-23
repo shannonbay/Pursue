@@ -47,7 +47,7 @@ class DiscoverFragment : Fragment() {
         "Creativity", "Productivity", "Finance", "Social", "Lifestyle", "Sports", "Other"
     )
     private val sortValues = listOf("heat", "newest", "members")
-    private val sortLabels = listOf("Trending", "Newest", "Members")
+    private val sortLabels = listOf("Heat", "Newest", "Members")
 
     private var selectedCategoryIndex = 0
     private var selectedSortIndex = 0
