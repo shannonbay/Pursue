@@ -136,7 +136,6 @@ class GroupDetailFragment : Fragment() {
     private lateinit var textGoalsCount: TextView
     private lateinit var createdBy: TextView
     private lateinit var challengeHeaderContainer: View
-    private lateinit var challengeHeaderTitle: TextView
     private lateinit var challengeHeaderDayProgress: TextView
     private lateinit var challengeHeaderProgressBar: android.widget.ProgressBar
     private lateinit var challengeShareButton: MaterialButton
@@ -203,7 +202,6 @@ class GroupDetailFragment : Fragment() {
         textGoalsCount = view.findViewById(R.id.text_goals_count)
         createdBy = view.findViewById(R.id.created_by)
         challengeHeaderContainer = view.findViewById(R.id.challenge_header_container)
-        challengeHeaderTitle = view.findViewById(R.id.challenge_header_title)
         challengeHeaderDayProgress = view.findViewById(R.id.challenge_header_day_progress)
         challengeHeaderProgressBar = view.findViewById(R.id.challenge_header_progress_bar)
         challengeShareButton = view.findViewById(R.id.challenge_share_button)
@@ -1174,7 +1172,6 @@ class GroupDetailFragment : Fragment() {
         )
 
         challengeHeaderContainer.visibility = View.VISIBLE
-        challengeHeaderTitle.text = detail.name
         challengeHeaderDayProgress.text = "${progress.dayLabel} · ${progress.daysRemainingLabel}"
         challengeHeaderProgressBar.progress = progress.progressPercent
 

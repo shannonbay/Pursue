@@ -241,14 +241,6 @@
                 tools:visibility="visible">
 
                 <TextView
-                    android:id="@+id/challenge_header_title"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:textAppearance="?attr/textAppearanceTitleMedium"
-                    android:textStyle="bold"
-                    tools:text="30-Day No Sugar Challenge" />
-
-                <TextView
                     android:id="@+id/challenge_header_day_progress"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
