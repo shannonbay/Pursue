@@ -249,6 +249,37 @@ describe('GET /api/discover/groups', () => {
     const res = await request(app).get('/api/discover/groups?limit=100');
     expect(res.status).toBe(400);
   });
+
+  it('should find groups by fuzzy/typo-tolerant name match', async () => {
+    const { accessToken: token1 } = await createAuthenticatedUser(randomEmail());
+    const { accessToken: token2 } = await createAuthenticatedUser(randomEmail());
+    const { groupId: matchId } = await createPublicGroup(token1, { name: 'Weekly Running Crew' });
+    const { groupId: otherId } = await createPublicGroup(token2, { name: 'Baking and Cooking' });
+
+    // 'runing' is a typo for 'running' — ILIKE won't match, trigram will
+    const res = await request(app).get('/api/discover/groups?q=runing');
+    expect(res.status).toBe(200);
+    const ids = res.body.groups.map((g: any) => g.id);
+    expect(ids).toContain(matchId);
+    expect(ids).not.toContain(otherId);
+  });
+
+  it('should rank closer matches higher when searching', async () => {
+    const { accessToken: token1 } = await createAuthenticatedUser(randomEmail());
+    const { accessToken: token2 } = await createAuthenticatedUser(randomEmail());
+    const { groupId: exactId } = await createPublicGroup(token1, { name: 'Running Club' });
+    // 'Rnning Grp' matches 'running' via trigrams but with a lower score than exact match
+    const { groupId: fuzzyId } = await createPublicGroup(token2, { name: 'Rnning Grp' });
+
+    const res = await request(app).get('/api/discover/groups?q=running');
+    expect(res.status).toBe(200);
+    const ids: string[] = res.body.groups.map((g: any) => g.id);
+    expect(ids).toContain(exactId);
+    // If the weaker match appears in results, exact match must rank higher
+    if (ids.indexOf(fuzzyId) !== -1) {
+      expect(ids.indexOf(exactId)).toBeLessThan(ids.indexOf(fuzzyId));
+    }
+  });
 });
 
 // ============================================================

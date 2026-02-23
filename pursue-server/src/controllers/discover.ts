@@ -43,6 +43,18 @@ export async function listPublicGroups(
 
     const { categories, sort, q, cursor, limit } = query;
 
+    // Reusable word_similarity relevance expression (null when no query)
+    const relevanceSql = q
+      ? sql<number>`GREATEST(
+          word_similarity(${q}, groups.name),
+          COALESCE((
+            SELECT MAX(word_similarity(${q}, goals.title))
+            FROM goals
+            WHERE goals.group_id = groups.id AND goals.deleted_at IS NULL
+          ), 0)
+        )`
+      : null;
+
     // Parse comma-separated categories
     const categoryList = categories
       ? categories.split(',').map((c) => c.trim()).filter(Boolean)
@@ -87,21 +99,35 @@ export async function listPublicGroups(
       .where('groups.visibility', '=', 'public')
       .where('groups.deleted_at', 'is', null);
 
+    if (relevanceSql) {
+      // Type assertion needed: Kysely changes the return type on each .select() call
+      (dbQuery as any) = (dbQuery as any).select(relevanceSql.as('relevance_score'));
+    }
+
     // Category filter
     if (categoryList.length > 0) {
       dbQuery = dbQuery.where('groups.category', 'in', categoryList);
     }
 
-    // Text search (name or goal title)
+    // Text search (name or goal title) — includes fuzzy word_similarity matching
     if (q) {
       dbQuery = dbQuery.where((eb) =>
         eb.or([
+          // Exact substring — keeps full recall for short/precise queries
           eb('groups.name', 'ilike', `%${q}%`),
+          // Fuzzy word match — handles typos and partial word matches
+          sql<SqlBool>`word_similarity(${q}, groups.name) > 0.3`,
+          // Same two checks on goal titles within the group
           eb.exists(
             db.selectFrom('goals')
               .select(sql<number>`1`.as('one'))
               .where(sql<SqlBool>`goals.group_id = groups.id`)
-              .where('goals.title', 'ilike', `%${q}%`)
+              .where((eb2) =>
+                eb2.or([
+                  eb2('goals.title', 'ilike', `%${q}%`),
+                  sql<SqlBool>`word_similarity(${q}, goals.title) > 0.3`,
+                ])
+              )
               .where('goals.deleted_at', 'is', null)
           ),
         ])
@@ -109,7 +135,20 @@ export async function listPublicGroups(
     }
 
     // Cursor-based pagination: cursor encodes the sort key + id
-    if (cursor) {
+
+    // --- Relevance cursor (q is present) ---
+    if (q && relevanceSql && cursor) {
+      try {
+        const decoded = JSON.parse(Buffer.from(cursor, 'base64url').toString('utf8'));
+        dbQuery = dbQuery.where(
+          sql<SqlBool>`(${relevanceSql}) < ${decoded.relevance_score}
+            OR ((${relevanceSql}) = ${decoded.relevance_score} AND groups.id < ${decoded.id})`
+        );
+      } catch { /* invalid cursor — ignore */ }
+    }
+
+    // --- Engagement cursor (no q) — existing logic ---
+    if (!q && cursor) {
       try {
         const decoded = JSON.parse(Buffer.from(cursor, 'base64url').toString('utf8'));
         if (sort === 'heat') {
@@ -148,8 +187,12 @@ export async function listPublicGroups(
       }
     }
 
-    // Sort
-    if (sort === 'heat') {
+    // Sort — relevance overrides sort param when a search query is present
+    if (q && relevanceSql) {
+      dbQuery = dbQuery
+        .orderBy(relevanceSql, 'desc')
+        .orderBy('groups.id', 'desc');
+    } else if (sort === 'heat') {
       dbQuery = dbQuery
         .orderBy(sql`COALESCE(group_heat.heat_score, 0)`, 'desc')
         .orderBy('groups.id', 'desc');
@@ -199,12 +242,19 @@ export async function listPublicGroups(
     let nextCursor: string | null = null;
     if (hasMore) {
       const last = items[items.length - 1];
-      const cursorData =
-        sort === 'heat'
-          ? { heat_score: Number(last.heat_score), id: last.id }
-          : sort === 'newest'
-          ? { created_at: last.created_at, id: last.id }
-          : { member_count: Number(last.member_count), id: last.id };
+      let cursorData: Record<string, unknown>;
+      if (q) {
+        cursorData = {
+          relevance_score: (last as any).relevance_score ?? 0,
+          id: last.id,
+        };
+      } else if (sort === 'heat') {
+        cursorData = { heat_score: Number(last.heat_score), id: last.id };
+      } else if (sort === 'newest') {
+        cursorData = { created_at: last.created_at, id: last.id };
+      } else {
+        cursorData = { member_count: Number(last.member_count), id: last.id };
+      }
       nextCursor = Buffer.from(JSON.stringify(cursorData)).toString('base64url');
     }
 

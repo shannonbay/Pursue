@@ -70,6 +70,9 @@ async function createSchema(db: Kysely<Database>) {
     }
   }
 
+  // Enable pg_trgm for fuzzy search tests
+  await sql`CREATE EXTENSION IF NOT EXISTS pg_trgm`.execute(db);
+
   // Create users table
   await sql`
     CREATE TABLE IF NOT EXISTS users (
@@ -432,6 +435,7 @@ async function createSchema(db: Kysely<Database>) {
 
   await sql`CREATE INDEX IF NOT EXISTS idx_groups_challenge_status ON groups(is_challenge, challenge_status) WHERE is_challenge = TRUE`.execute(db);
   await sql`CREATE INDEX IF NOT EXISTS idx_groups_challenge_template ON groups(challenge_template_id) WHERE challenge_template_id IS NOT NULL`.execute(db);
+  await sql`CREATE INDEX IF NOT EXISTS idx_groups_name_trgm ON groups USING gin (name gin_trgm_ops)`.execute(db);
 
   // Create group_memberships table
   await sql`
@@ -622,6 +626,8 @@ async function createSchema(db: Kysely<Database>) {
       END IF;
     END $$
   `.execute(db);
+
+  await sql`CREATE INDEX IF NOT EXISTS idx_goals_title_trgm ON goals USING gin (title gin_trgm_ops)`.execute(db);
 
   // Create progress_entries table
   await sql`

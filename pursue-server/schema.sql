@@ -3,6 +3,7 @@
 
 -- Enable UUID extension
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+CREATE EXTENSION IF NOT EXISTS pg_trgm;         -- fuzzy text search
 
 -- Users table
 CREATE TABLE users (
@@ -132,6 +133,7 @@ CREATE INDEX idx_groups_creator ON groups(creator_user_id);
 CREATE INDEX idx_groups_public ON groups(visibility, deleted_at) WHERE visibility = 'public';
 CREATE INDEX idx_groups_challenge_status ON groups(is_challenge, challenge_status) WHERE is_challenge = TRUE;
 CREATE INDEX idx_groups_challenge_template ON groups(challenge_template_id) WHERE challenge_template_id IS NOT NULL;
+CREATE INDEX idx_groups_name_trgm ON groups USING gin (name gin_trgm_ops);
 
 ALTER TABLE groups ADD CONSTRAINT chk_groups_challenge_fields CHECK (
   (is_challenge = FALSE AND challenge_start_date IS NULL AND challenge_end_date IS NULL AND challenge_status IS NULL)
@@ -245,6 +247,7 @@ CREATE INDEX idx_goals_group ON goals(group_id);
 CREATE INDEX idx_goals_active ON goals(group_id) WHERE deleted_at IS NULL;
 -- Optimized index for goals query with ordering (spec recommendation)
 CREATE INDEX idx_goals_group_id_archived ON goals(group_id, deleted_at, created_at DESC);
+CREATE INDEX idx_goals_title_trgm ON goals USING gin (title gin_trgm_ops);
 
 COMMENT ON COLUMN goals.deleted_at IS 'Soft delete timestamp. NULL = active, non-NULL = deleted. Preserves historical progress data and enables restoration.';
 
