@@ -635,6 +635,7 @@ export async function getUserGroups(
         'groups.challenge_end_date',
         'groups.challenge_status',
         'groups.challenge_template_id',
+        'groups.visibility',
         'group_memberships.role',
         'group_memberships.joined_at',
         sql<boolean>`groups.icon_data IS NOT NULL`.as('has_icon'),
