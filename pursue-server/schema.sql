@@ -116,7 +116,7 @@ CREATE TABLE groups (
   is_challenge BOOLEAN NOT NULL DEFAULT FALSE,
   challenge_start_date DATE,
   challenge_end_date DATE,
-  challenge_template_id UUID,
+  template_id UUID,
   challenge_status VARCHAR(20) DEFAULT NULL,
   challenge_invite_card_data JSONB,
   visibility TEXT NOT NULL DEFAULT 'private' CHECK (visibility IN ('public', 'private')),
@@ -134,7 +134,7 @@ CREATE TABLE groups (
 CREATE INDEX idx_groups_creator ON groups(creator_user_id);
 CREATE INDEX idx_groups_public ON groups(visibility, deleted_at) WHERE visibility = 'public';
 CREATE INDEX idx_groups_challenge_status ON groups(is_challenge, challenge_status) WHERE is_challenge = TRUE;
-CREATE INDEX idx_groups_challenge_template ON groups(challenge_template_id) WHERE challenge_template_id IS NOT NULL;
+CREATE INDEX idx_groups_template ON groups(template_id) WHERE template_id IS NOT NULL;
 CREATE INDEX idx_groups_name_trgm ON groups USING gin (name gin_trgm_ops);
 CREATE INDEX idx_groups_search_embedding ON groups USING hnsw (search_embedding vector_cosine_ops);
 
@@ -152,8 +152,8 @@ ALTER TABLE groups ADD CONSTRAINT chk_groups_challenge_status CHECK (
   challenge_status IS NULL OR challenge_status IN ('upcoming', 'active', 'completed', 'cancelled')
 );
 
--- Challenge templates
-CREATE TABLE challenge_templates (
+-- Group templates (shared library for challenge templates and ongoing group templates)
+CREATE TABLE group_templates (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   slug VARCHAR(100) UNIQUE NOT NULL,
   title VARCHAR(200) NOT NULL,
@@ -164,17 +164,18 @@ CREATE TABLE challenge_templates (
   category VARCHAR(50) NOT NULL,
   difficulty VARCHAR(20) NOT NULL DEFAULT 'moderate',
   is_featured BOOLEAN NOT NULL DEFAULT FALSE,
+  is_challenge BOOLEAN NOT NULL DEFAULT TRUE, -- TRUE = time-boxed challenge, FALSE = ongoing group
   sort_order INTEGER NOT NULL DEFAULT 0,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
-CREATE INDEX idx_challenge_templates_category ON challenge_templates(category, sort_order);
-CREATE INDEX idx_challenge_templates_featured ON challenge_templates(is_featured, sort_order) WHERE is_featured = TRUE;
+CREATE INDEX idx_group_templates_category ON group_templates(category, sort_order);
+CREATE INDEX idx_group_templates_featured ON group_templates(is_featured, sort_order) WHERE is_featured = TRUE;
 
-CREATE TABLE challenge_template_goals (
+CREATE TABLE group_template_goals (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  template_id UUID NOT NULL REFERENCES challenge_templates(id) ON DELETE CASCADE,
+  template_id UUID NOT NULL REFERENCES group_templates(id) ON DELETE CASCADE,
   title VARCHAR(200) NOT NULL,
   description TEXT,
   cadence VARCHAR(20) NOT NULL,
@@ -188,10 +189,10 @@ CREATE TABLE challenge_template_goals (
   CONSTRAINT chk_template_goal_active_days_cadence CHECK (active_days IS NULL OR cadence = 'daily')
 );
 
-CREATE INDEX idx_template_goals_template ON challenge_template_goals(template_id, sort_order);
+CREATE INDEX idx_group_template_goals ON group_template_goals(template_id, sort_order);
 
-ALTER TABLE groups ADD CONSTRAINT fk_groups_challenge_template
-  FOREIGN KEY (challenge_template_id) REFERENCES challenge_templates(id) ON DELETE SET NULL;
+ALTER TABLE groups ADD CONSTRAINT fk_groups_template
+  FOREIGN KEY (template_id) REFERENCES group_templates(id) ON DELETE SET NULL;
 
 -- Group memberships
 CREATE TABLE group_memberships (
@@ -507,7 +508,7 @@ CREATE TRIGGER update_users_updated_at BEFORE UPDATE ON users
 CREATE TRIGGER update_groups_updated_at BEFORE UPDATE ON groups
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
-CREATE TRIGGER update_challenge_templates_updated_at BEFORE UPDATE ON challenge_templates
+CREATE TRIGGER update_group_templates_updated_at BEFORE UPDATE ON group_templates
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 CREATE TRIGGER update_group_heat_updated_at BEFORE UPDATE ON group_heat
@@ -735,8 +736,8 @@ COMMENT ON TABLE weekly_recaps_sent IS 'Tracks which weekly recaps have been sen
 COMMENT ON COLUMN weekly_recaps_sent.week_end IS 'Sunday date marking the end of the recap week (YYYY-MM-DD)';
 COMMENT ON COLUMN group_memberships.weekly_recap_enabled IS 'Whether the member wants to receive weekly recap notifications for this group';
 
--- Challenge Suggestion Log
-CREATE TABLE challenge_suggestion_log (
+-- Group Suggestion Log (formerly challenge_suggestion_log)
+CREATE TABLE group_suggestion_log (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   sent_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
@@ -745,9 +746,9 @@ CREATE TABLE challenge_suggestion_log (
   UNIQUE(user_id)
 );
 
-CREATE INDEX idx_challenge_suggestion_user ON challenge_suggestion_log(user_id);
+CREATE INDEX idx_group_suggestion_user ON group_suggestion_log(user_id);
 
-COMMENT ON TABLE challenge_suggestion_log IS 'Tracks challenge suggestions sent to users to avoid nagging and enforce rate limits';
+COMMENT ON TABLE group_suggestion_log IS 'Tracks challenge suggestions sent to users to avoid nagging and enforce rate limits';
 
 -- =========================
 -- Public Group Discovery
