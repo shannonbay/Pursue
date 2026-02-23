@@ -1,5 +1,5 @@
 import type { Response, NextFunction, Request } from 'express';
-import { sql } from 'kysely';
+import { sql, type SqlBool } from 'kysely';
 import { db } from '../database/index.js';
 import { ApplicationError } from '../middleware/errorHandler.js';
 import type { AuthRequest } from '../types/express.js';
@@ -92,11 +92,18 @@ export async function listPublicGroups(
       dbQuery = dbQuery.where('groups.category', 'in', categoryList);
     }
 
-    // Text search (name)
+    // Text search (name or goal title)
     if (q) {
       dbQuery = dbQuery.where((eb) =>
         eb.or([
           eb('groups.name', 'ilike', `%${q}%`),
+          eb.exists(
+            db.selectFrom('goals')
+              .select(sql<number>`1`.as('one'))
+              .where(sql<SqlBool>`goals.group_id = groups.id`)
+              .where('goals.title', 'ilike', `%${q}%`)
+              .where('goals.deleted_at', 'is', null)
+          ),
         ])
       );
     }
