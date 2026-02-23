@@ -28,6 +28,7 @@
     "cors": "^2.8.5",
     "date-fns": "^4.1.0",
     "dotenv": "^17.2.3",
+    "exceljs": "^4.4.0",
     "express": "^5.2.1",
     "express-rate-limit": "^8.2.1",
     "firebase-admin": "^13.6.0",
@@ -36,10 +37,10 @@
     "jsonwebtoken": "^9.0.3",
     "kysely": "^0.28.10",
     "multer": "^1.4.5-lts.1",
+    "openai": "^6.22.0",
     "pg": "^8.17.1",
     "sharp": "^0.33.5",
     "winston": "^3.19.0",
-    "exceljs": "^4.4.0",
     "zod": "^4.3.5"
   },
   "devDependencies": {

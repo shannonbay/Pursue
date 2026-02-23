@@ -99,6 +99,8 @@ export interface GroupsTable {
   auto_approve: ColumnType<boolean, boolean | undefined, boolean>;
   comm_platform: 'discord' | 'whatsapp' | 'telegram' | null;
   comm_link: string | null;
+  // Never written via Kysely typed setters — uses sql template for vector insert
+  search_embedding: ColumnType<string | null, never, never>;
   created_at: ColumnType<Date, string | undefined, never>;
   updated_at: ColumnType<Date, string | undefined, string | undefined>;
   deleted_at: ColumnType<Date | null, string | undefined, string | undefined>;
@@ -522,6 +524,16 @@ export type JoinRequest = Selectable<JoinRequestsTable>;
 export type NewJoinRequest = Insertable<JoinRequestsTable>;
 export type JoinRequestUpdate = Updateable<JoinRequestsTable>;
 
+// Query embedding cache table (7-day TTL, JSONB for round-trip without vector parsing)
+export interface SearchQueryEmbeddingsTable {
+  query_text: string;
+  embedding: ColumnType<number[], number[], number[]>; // JSONB round-trips as number[]
+  created_at: ColumnType<Date, never, never>;
+  expires_at: ColumnType<Date, Date, Date>;
+}
+
+export type SearchQueryEmbedding = Selectable<SearchQueryEmbeddingsTable>;
+
 // Suggestion dismissals table (suppress pgvector group suggestions)
 export interface SuggestionDismissalsTable {
   user_id: string;
@@ -568,4 +580,5 @@ export interface Database {
   challenge_suggestion_log: ChallengeSuggestionLogTable;
   join_requests: JoinRequestsTable;
   suggestion_dismissals: SuggestionDismissalsTable;
+  search_query_embeddings: SearchQueryEmbeddingsTable;
 }

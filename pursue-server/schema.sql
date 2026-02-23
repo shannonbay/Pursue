@@ -4,6 +4,7 @@
 -- Enable UUID extension
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE EXTENSION IF NOT EXISTS pg_trgm;         -- fuzzy text search
+CREATE EXTENSION IF NOT EXISTS vector;          -- pgvector for semantic search
 
 -- Users table
 CREATE TABLE users (
@@ -124,6 +125,7 @@ CREATE TABLE groups (
   auto_approve BOOLEAN NOT NULL DEFAULT FALSE,
   comm_platform TEXT CHECK (comm_platform IS NULL OR comm_platform IN ('discord','whatsapp','telegram')),
   comm_link TEXT,
+  search_embedding vector(1536),
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   deleted_at TIMESTAMP WITH TIME ZONE -- NULL if active, timestamp if soft deleted
@@ -134,6 +136,7 @@ CREATE INDEX idx_groups_public ON groups(visibility, deleted_at) WHERE visibilit
 CREATE INDEX idx_groups_challenge_status ON groups(is_challenge, challenge_status) WHERE is_challenge = TRUE;
 CREATE INDEX idx_groups_challenge_template ON groups(challenge_template_id) WHERE challenge_template_id IS NOT NULL;
 CREATE INDEX idx_groups_name_trgm ON groups USING gin (name gin_trgm_ops);
+CREATE INDEX idx_groups_search_embedding ON groups USING hnsw (search_embedding vector_cosine_ops);
 
 ALTER TABLE groups ADD CONSTRAINT chk_groups_challenge_fields CHECK (
   (is_challenge = FALSE AND challenge_start_date IS NULL AND challenge_end_date IS NULL AND challenge_status IS NULL)
@@ -766,6 +769,15 @@ CREATE TABLE join_requests (
 
 CREATE INDEX join_requests_group_pending ON join_requests(group_id) WHERE status = 'pending';
 CREATE INDEX join_requests_user ON join_requests(user_id, status);
+
+-- Query embedding cache (JSONB for easy round-trip without vector parsing)
+CREATE TABLE search_query_embeddings (
+  query_text  TEXT        PRIMARY KEY,
+  embedding   JSONB       NOT NULL,
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  expires_at  TIMESTAMPTZ NOT NULL DEFAULT (NOW() + INTERVAL '7 days')
+);
+CREATE INDEX idx_search_query_embeddings_expires ON search_query_embeddings(expires_at);
 
 -- Dismissed group suggestions (suppress for 30 days)
 CREATE TABLE suggestion_dismissals (

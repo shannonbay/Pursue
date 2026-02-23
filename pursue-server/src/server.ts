@@ -57,6 +57,15 @@ if (gacPath) {
   logger.warn('GOOGLE_APPLICATION_CREDENTIALS not set. GCS photo uploads will fail unless running on GCP with attached service account.');
 }
 
+// Check OPENAI_API_KEY (optional — enables semantic hybrid search)
+if (!process.env.OPENAI_API_KEY) {
+  logger.warn('OPENAI_API_KEY not set. Semantic (pgvector) search is disabled; discover search falls back to trigram-only mode.', {
+    hint: 'Set OPENAI_API_KEY in your .env file to enable hybrid semantic search',
+  });
+} else {
+  logger.info('OPENAI_API_KEY configured — semantic hybrid search enabled');
+}
+
 // Use the port provided by the environment (Cloud Run sets PORT), default 8080
 const PORT = process.env.PORT || 8080;
 
@@ -73,6 +82,7 @@ const server = app.listen(Number(PORT), '0.0.0.0', () => {
     environment: nodeEnv,
     debugAvatar,
     googleOAuth: hasWebClient || hasAndroidClient,
+    semanticSearch: !!process.env.OPENAI_API_KEY,
     webClientId: hasWebClient && webClientId ? `${webClientId.substring(0, 30)}...` : undefined,
     androidClientId: hasAndroidClient && androidClientId ? `${androidClientId.substring(0, 30)}...` : undefined,
   });

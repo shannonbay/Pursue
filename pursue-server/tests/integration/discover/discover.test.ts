@@ -280,6 +280,17 @@ describe('GET /api/discover/groups', () => {
       expect(ids.indexOf(exactId)).toBeLessThan(ids.indexOf(fuzzyId));
     }
   });
+
+  it('should return results for semantic-style query via trigram fallback when OpenAI unavailable', async () => {
+    const { accessToken } = await createAuthenticatedUser(randomEmail());
+    const { groupId } = await createPublicGroup(accessToken, { name: 'Running Club' });
+
+    // No OPENAI_API_KEY in test env → pure trigram path
+    const res = await request(app).get('/api/discover/groups?q=running');
+    expect(res.status).toBe(200);
+    const ids = res.body.groups.map((g: any) => g.id);
+    expect(ids).toContain(groupId);
+  });
 });
 
 // ============================================================

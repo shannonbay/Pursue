@@ -73,6 +73,16 @@ async function createSchema(db: Kysely<Database>) {
   // Enable pg_trgm for fuzzy search tests
   await sql`CREATE EXTENSION IF NOT EXISTS pg_trgm`.execute(db);
 
+  // Enable pgvector for semantic search (gracefully skip if extension not installed)
+  try {
+    await sql`CREATE EXTENSION IF NOT EXISTS vector`.execute(db);
+  } catch (error: unknown) {
+    // pgvector not installed — semantic search will be disabled, trigram fallback applies
+    if (error instanceof Error && !error.message.includes('duplicate key')) {
+      // Non-fatal: tests proceed with trigram-only mode
+    }
+  }
+
   // Create users table
   await sql`
     CREATE TABLE IF NOT EXISTS users (
@@ -436,6 +446,34 @@ async function createSchema(db: Kysely<Database>) {
   await sql`CREATE INDEX IF NOT EXISTS idx_groups_challenge_status ON groups(is_challenge, challenge_status) WHERE is_challenge = TRUE`.execute(db);
   await sql`CREATE INDEX IF NOT EXISTS idx_groups_challenge_template ON groups(challenge_template_id) WHERE challenge_template_id IS NOT NULL`.execute(db);
   await sql`CREATE INDEX IF NOT EXISTS idx_groups_name_trgm ON groups USING gin (name gin_trgm_ops)`.execute(db);
+
+  // Add search_embedding column to groups (for pgvector hybrid search)
+  await sql`
+    DO $$ BEGIN
+      IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = 'groups' AND column_name = 'search_embedding'
+      ) THEN
+        BEGIN
+          ALTER TABLE groups ADD COLUMN search_embedding vector(1536);
+        EXCEPTION WHEN undefined_object THEN
+          -- pgvector extension not available — skip silently
+          NULL;
+        END;
+      END IF;
+    END $$
+  `.execute(db);
+
+  // Create query embedding cache table
+  await sql`
+    CREATE TABLE IF NOT EXISTS search_query_embeddings (
+      query_text  TEXT        PRIMARY KEY,
+      embedding   JSONB       NOT NULL,
+      created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      expires_at  TIMESTAMPTZ NOT NULL DEFAULT (NOW() + INTERVAL '7 days')
+    )
+  `.execute(db);
+  await sql`CREATE INDEX IF NOT EXISTS idx_search_query_embeddings_expires ON search_query_embeddings(expires_at)`.execute(db);
 
   // Create group_memberships table
   await sql`
@@ -964,6 +1002,7 @@ async function cleanDatabase(db: Kysely<Database>) {
   // All tables listed explicitly to avoid issues with CASCADE not reaching all tables
   await sql`
     TRUNCATE TABLE
+      search_query_embeddings,
       challenge_completion_push_queue,
       user_notifications,
       user_milestone_grants,

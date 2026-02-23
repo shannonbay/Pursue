@@ -13,6 +13,7 @@ import { createGroupActivity, ACTIVITY_TYPES } from '../services/activity.servic
 import { sendNotificationToUser } from '../services/fcm.service.js';
 import { logger } from '../utils/logger.js';
 import { activeDaysToLabels } from '../utils/activeDays.js';
+import { getQueryEmbedding } from '../services/embedding.service.js';
 
 // Tier names for heat score mapping
 const TIER_NAMES: Record<number, string> = {
@@ -43,8 +44,12 @@ export async function listPublicGroups(
 
     const { categories, sort, q, cursor, limit } = query;
 
-    // Reusable word_similarity relevance expression (null when no query)
-    const relevanceSql = q
+    // Try to get a semantic embedding for the query (null if OpenAI unavailable/fails)
+    const queryEmbedding = q ? await getQueryEmbedding(q) : null;
+    const embJson = queryEmbedding ? JSON.stringify(queryEmbedding) : null;
+
+    // Reusable trigram relevance expression (null when no query)
+    const trigramSql = q
       ? sql<number>`GREATEST(
           word_similarity(${q}, groups.name),
           COALESCE((
@@ -53,6 +58,34 @@ export async function listPublicGroups(
             WHERE goals.group_id = groups.id AND goals.deleted_at IS NULL
           ), 0)
         )`
+      : null;
+
+    // Combined score: 0.5 * trigram + 0.5 * COALESCE(semantic, trigram)
+    // When embedding is null: collapses to pure trigram (same scale)
+    const combinedScoreSql = q && trigramSql
+      ? sql<number>`
+          0.5 * GREATEST(
+            word_similarity(${q}, groups.name),
+            COALESCE((
+              SELECT MAX(word_similarity(${q}, goals.title))
+              FROM goals WHERE goals.group_id = groups.id AND goals.deleted_at IS NULL
+            ), 0)
+          )
+          + 0.5 * COALESCE(
+            ${embJson !== null
+              ? sql`CASE WHEN groups.search_embedding IS NOT NULL
+                    THEN 1 - (groups.search_embedding <=> ${embJson}::vector)
+                    ELSE NULL END`
+              : sql`NULL`
+            },
+            GREATEST(
+              word_similarity(${q}, groups.name),
+              COALESCE((
+                SELECT MAX(word_similarity(${q}, goals.title))
+                FROM goals WHERE goals.group_id = groups.id AND goals.deleted_at IS NULL
+              ), 0)
+            )
+          )`
       : null;
 
     // Parse comma-separated categories
@@ -99,9 +132,9 @@ export async function listPublicGroups(
       .where('groups.visibility', '=', 'public')
       .where('groups.deleted_at', 'is', null);
 
-    if (relevanceSql) {
+    if (combinedScoreSql) {
       // Type assertion needed: Kysely changes the return type on each .select() call
-      (dbQuery as any) = (dbQuery as any).select(relevanceSql.as('relevance_score'));
+      (dbQuery as any) = (dbQuery as any).select(combinedScoreSql.as('combined_score'));
     }
 
     // Category filter
@@ -109,7 +142,7 @@ export async function listPublicGroups(
       dbQuery = dbQuery.where('groups.category', 'in', categoryList);
     }
 
-    // Text search (name or goal title) — includes fuzzy word_similarity matching
+    // Text search (name or goal title) — includes fuzzy word_similarity matching + semantic
     if (q) {
       dbQuery = dbQuery.where((eb) =>
         eb.or([
@@ -130,19 +163,24 @@ export async function listPublicGroups(
               )
               .where('goals.deleted_at', 'is', null)
           ),
+          // Semantic match via pgvector (only when embedding is available)
+          ...(embJson !== null ? [
+            sql<SqlBool>`groups.search_embedding IS NOT NULL
+              AND 1 - (groups.search_embedding <=> ${embJson}::vector) > 0.3`,
+          ] : []),
         ])
       );
     }
 
     // Cursor-based pagination: cursor encodes the sort key + id
 
-    // --- Relevance cursor (q is present) ---
-    if (q && relevanceSql && cursor) {
+    // --- Combined score cursor (q is present) ---
+    if (q && combinedScoreSql && cursor) {
       try {
         const decoded = JSON.parse(Buffer.from(cursor, 'base64url').toString('utf8'));
         dbQuery = dbQuery.where(
-          sql<SqlBool>`(${relevanceSql}) < ${decoded.relevance_score}
-            OR ((${relevanceSql}) = ${decoded.relevance_score} AND groups.id < ${decoded.id})`
+          sql<SqlBool>`(${combinedScoreSql}) < ${decoded.combined_score}
+            OR ((${combinedScoreSql}) = ${decoded.combined_score} AND groups.id < ${decoded.id})`
         );
       } catch { /* invalid cursor — ignore */ }
     }
@@ -187,10 +225,10 @@ export async function listPublicGroups(
       }
     }
 
-    // Sort — relevance overrides sort param when a search query is present
-    if (q && relevanceSql) {
+    // Sort — combined score overrides sort param when a search query is present
+    if (q && combinedScoreSql) {
       dbQuery = dbQuery
-        .orderBy(relevanceSql, 'desc')
+        .orderBy(combinedScoreSql, 'desc')
         .orderBy('groups.id', 'desc');
     } else if (sort === 'heat') {
       dbQuery = dbQuery
@@ -245,7 +283,7 @@ export async function listPublicGroups(
       let cursorData: Record<string, unknown>;
       if (q) {
         cursorData = {
-          relevance_score: (last as any).relevance_score ?? 0,
+          combined_score: (last as any).combined_score ?? 0,
           id: last.id,
         };
       } else if (sort === 'heat') {

@@ -26,6 +26,7 @@ import {
   attachInviteCardAttribution,
   buildChallengeInviteCardBase,
 } from '../services/challengeInviteCard.service.js';
+import { embedAndStoreGroup } from '../services/embedding.service.js';
 
 function generateInviteCode(): string {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -386,6 +387,10 @@ export async function createChallenge(
 
       return { group, goals, inviteCode, inviteCardBase };
     });
+
+    // Fire-and-forget — embed challenge name + description for semantic search
+    embedAndStoreGroup(created.group.id, created.group.name, created.group.description ?? null)
+      .catch(() => {}); // already logged inside embedAndStoreGroup
 
     const assetBaseUrl = `${req.protocol}://${req.get('host')}`;
     const inviteCardData = await attachInviteCardAttribution(

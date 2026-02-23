@@ -43,6 +43,7 @@ import {
 } from '../services/exportProgress.service.js';
 import { logger } from '../utils/logger.js';
 import { getGroupHeat, initializeGroupHeat } from '../services/heat.service.js';
+import { embedAndStoreGroup } from '../services/embedding.service.js';
 import { getDateInTimezone } from '../utils/timezone.js';
 import ExcelJS from 'exceljs';
 import path from 'node:path';
@@ -248,6 +249,10 @@ export async function createGroup(
 
     // Initialize heat record for the new group
     await initializeGroupHeat(result.group.id);
+
+    // Fire-and-forget — do not await, do not block response
+    embedAndStoreGroup(result.group.id, result.group.name, result.group.description ?? null)
+      .catch(() => {}); // already logged inside embedAndStoreGroup
 
     const memberCount = await db
       .selectFrom('group_memberships')
@@ -508,6 +513,12 @@ export async function updateGroup(
         old_name: oldName,
         new_name: data.name,
       });
+    }
+
+    // Re-embed if name or description changed
+    if (data.name !== undefined || data.description !== undefined) {
+      embedAndStoreGroup(group_id, group.name, group.description ?? null)
+        .catch(() => {}); // already logged inside embedAndStoreGroup
     }
 
     res.status(200).json({
