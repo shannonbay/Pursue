@@ -3143,6 +3143,7 @@ data class DiscoverGroupItem(
     val name: String,
     val icon_emoji: String?,
     val icon_color: String?,
+    val icon_url: String? = null,
     val has_icon: Boolean,
     val category: String?,
     val member_count: Int,

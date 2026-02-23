@@ -3,10 +3,12 @@ package app.getpursue.ui.adapters
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import app.getpursue.R
 import app.getpursue.data.network.DiscoverGroupItem
+import app.getpursue.utils.IconUrlUtils
 
 class DiscoverGroupAdapter(
     private val groups: List<DiscoverGroupItem>,
@@ -14,6 +16,7 @@ class DiscoverGroupAdapter(
 ) : RecyclerView.Adapter<DiscoverGroupAdapter.ViewHolder>() {
 
     class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+        val groupIconImage: ImageView = itemView.findViewById(R.id.group_icon_image)
         val groupIconEmoji: TextView = itemView.findViewById(R.id.group_icon_emoji)
         val groupName: TextView = itemView.findViewById(R.id.group_name)
         val groupCategory: TextView = itemView.findViewById(R.id.group_category)
@@ -31,8 +34,16 @@ class DiscoverGroupAdapter(
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val group = groups[position]
 
-        // Icon: show emoji (icon images require auth, not available for unauthenticated browse)
-        holder.groupIconEmoji.text = group.icon_emoji?.takeIf { it.isNotBlank() } ?: "👥"
+        // Icon: use icon_url if available, fall back to emoji
+        val iconLoaded = IconUrlUtils.loadInto(holder.itemView.context, group.icon_url, holder.groupIconImage)
+        if (iconLoaded) {
+            holder.groupIconImage.visibility = View.VISIBLE
+            holder.groupIconEmoji.visibility = View.GONE
+        } else {
+            holder.groupIconImage.visibility = View.GONE
+            holder.groupIconEmoji.visibility = View.VISIBLE
+            holder.groupIconEmoji.text = group.icon_emoji?.takeIf { it.isNotBlank() } ?: "👥"
+        }
 
         holder.groupName.text = group.name
 

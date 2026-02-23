@@ -26,15 +26,28 @@
             android:orientation="horizontal"
             android:gravity="center_vertical">
 
-            <!-- Group icon (emoji only for unauthenticated browse) -->
-            <TextView
-                android:id="@+id/group_icon_emoji"
+            <!-- Group icon: image (icon_url) or emoji fallback -->
+            <FrameLayout
                 android:layout_width="48dp"
-                android:layout_height="48dp"
-                android:textSize="28sp"
-                android:gravity="center"
-                android:background="@drawable/circle_background"
-                tools:text="🏃" />
+                android:layout_height="48dp">
+
+                <ImageView
+                    android:id="@+id/group_icon_image"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:scaleType="centerCrop"
+                    android:visibility="gone" />
+
+                <TextView
+                    android:id="@+id/group_icon_emoji"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:textSize="28sp"
+                    android:gravity="center"
+                    android:background="@drawable/circle_background"
+                    tools:text="🏃" />
+
+            </FrameLayout>
 
             <!-- Name + category column -->
             <LinearLayout
