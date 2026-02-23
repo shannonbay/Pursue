@@ -112,7 +112,7 @@ npm run dev
 Test mode for E2E tests (ratelimiter disabled):
 
 ```
-$env:NODE_ENV='test'; npm run dev
+$env:NODE_ENV='test'; $env:INTERNAL_JOB_KEY='test-internal-job-key'; $env:LOG_LEVEL='debug'; npm run dev
 ```
 
 Production mode:
