@@ -90,7 +90,7 @@ export interface GroupsTable {
   is_challenge: ColumnType<boolean, boolean | undefined, boolean>;
   challenge_start_date: string | null; // DATE as YYYY-MM-DD
   challenge_end_date: string | null; // DATE as YYYY-MM-DD
-  challenge_template_id: string | null;
+  template_id: string | null;
   challenge_status: ColumnType<'upcoming' | 'active' | 'completed' | 'cancelled' | null, string | null | undefined, string | null>;
   challenge_invite_card_data: ColumnType<Record<string, unknown> | null, Record<string, unknown> | null | undefined, Record<string, unknown> | null>;
   visibility: ColumnType<'public' | 'private', 'public' | 'private' | undefined, 'public' | 'private'>;
@@ -110,8 +110,8 @@ export type Group = Selectable<GroupsTable>;
 export type NewGroup = Insertable<GroupsTable>;
 export type GroupUpdate = Updateable<GroupsTable>;
 
-// Challenge templates table
-export interface ChallengeTemplatesTable {
+// Group templates table (formerly challenge_templates)
+export interface GroupTemplatesTable {
   id: Generated<string>;
   slug: string;
   title: string;
@@ -122,17 +122,18 @@ export interface ChallengeTemplatesTable {
   category: string;
   difficulty: ColumnType<'easy' | 'moderate' | 'hard', string | undefined, string>;
   is_featured: ColumnType<boolean, boolean | undefined, boolean>;
+  is_challenge: ColumnType<boolean, boolean | undefined, boolean>;
   sort_order: ColumnType<number, number | undefined, number>;
   created_at: ColumnType<Date, string | undefined, never>;
   updated_at: ColumnType<Date, string | undefined, string | undefined>;
 }
 
-export type ChallengeTemplate = Selectable<ChallengeTemplatesTable>;
-export type NewChallengeTemplate = Insertable<ChallengeTemplatesTable>;
-export type ChallengeTemplateUpdate = Updateable<ChallengeTemplatesTable>;
+export type GroupTemplate = Selectable<GroupTemplatesTable>;
+export type NewGroupTemplate = Insertable<GroupTemplatesTable>;
+export type GroupTemplateUpdate = Updateable<GroupTemplatesTable>;
 
-// Challenge template goals table
-export interface ChallengeTemplateGoalsTable {
+// Group template goals table (formerly challenge_template_goals)
+export interface GroupTemplateGoalsTable {
   id: Generated<string>;
   template_id: string;
   title: string;
@@ -145,8 +146,8 @@ export interface ChallengeTemplateGoalsTable {
   sort_order: ColumnType<number, number | undefined, number>;
 }
 
-export type ChallengeTemplateGoal = Selectable<ChallengeTemplateGoalsTable>;
-export type NewChallengeTemplateGoal = Insertable<ChallengeTemplateGoalsTable>;
+export type GroupTemplateGoal = Selectable<GroupTemplateGoalsTable>;
+export type NewGroupTemplateGoal = Insertable<GroupTemplateGoalsTable>;
 
 // Group memberships table
 export interface GroupMembershipsTable {
@@ -495,8 +496,8 @@ export interface WeeklyRecapsSentTable {
 export type WeeklyRecapSent = Selectable<WeeklyRecapsSentTable>;
 export type NewWeeklyRecapSent = Insertable<WeeklyRecapsSentTable>;
 
-// Challenge suggestion log table (track suggestions to avoid nagging)
-export interface ChallengeSuggestionLogTable {
+// Group suggestion log table (formerly challenge_suggestion_log)
+export interface GroupSuggestionLogTable {
   id: Generated<string>;
   user_id: string;
   sent_at: ColumnType<Date, string | undefined, string | undefined>;
@@ -504,9 +505,9 @@ export interface ChallengeSuggestionLogTable {
   converted: ColumnType<boolean, boolean | undefined, boolean>;
 }
 
-export type ChallengeSuggestionLog = Selectable<ChallengeSuggestionLogTable>;
-export type NewChallengeSuggestionLog = Insertable<ChallengeSuggestionLogTable>;
-export type ChallengeSuggestionLogUpdate = Updateable<ChallengeSuggestionLogTable>;
+export type GroupSuggestionLog = Selectable<GroupSuggestionLogTable>;
+export type NewGroupSuggestionLog = Insertable<GroupSuggestionLogTable>;
+export type GroupSuggestionLogUpdate = Updateable<GroupSuggestionLogTable>;
 
 // Join requests table (public group discovery)
 export interface JoinRequestsTable {
@@ -552,8 +553,8 @@ export interface Database {
   password_reset_tokens: PasswordResetTokensTable;
   devices: DevicesTable;
   groups: GroupsTable;
-  challenge_templates: ChallengeTemplatesTable;
-  challenge_template_goals: ChallengeTemplateGoalsTable;
+  group_templates: GroupTemplatesTable;
+  group_template_goals: GroupTemplateGoalsTable;
   group_memberships: GroupMembershipsTable;
   invite_codes: InviteCodesTable;
   goals: GoalsTable;
@@ -577,7 +578,7 @@ export interface Database {
   reminder_history: ReminderHistoryTable;
   user_reminder_preferences: UserReminderPreferencesTable;
   weekly_recaps_sent: WeeklyRecapsSentTable;
-  challenge_suggestion_log: ChallengeSuggestionLogTable;
+  group_suggestion_log: GroupSuggestionLogTable;
   join_requests: JoinRequestsTable;
   suggestion_dismissals: SuggestionDismissalsTable;
   search_query_embeddings: SearchQueryEmbeddingsTable;

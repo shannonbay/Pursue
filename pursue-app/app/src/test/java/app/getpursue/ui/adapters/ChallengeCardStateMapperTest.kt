@@ -40,7 +40,7 @@ class ChallengeCardStateMapperTest {
             challenge_start_date = "2026-02-01",
             challenge_end_date = "2026-02-10",
             challenge_status = "active",
-            challenge_template_id = "t1"
+            template_id = "t1"
         )
         val state = ChallengeCardStateMapper.map(group, LocalDate.of(2026, 2, 3))
         assertThat(state).isNotNull()

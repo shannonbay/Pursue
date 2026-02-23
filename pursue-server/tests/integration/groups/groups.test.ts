@@ -406,7 +406,7 @@ describe('POST /api/groups/:group_id/invite/regenerate', () => {
 describe('Challenge invite card data', () => {
   async function seedTemplate(slug: string): Promise<string> {
     const template = await testDb
-      .insertInto('challenge_templates')
+      .insertInto('group_templates')
       .values({
         slug,
         title: `Template ${slug}`,
@@ -422,7 +422,7 @@ describe('Challenge invite card data', () => {
       .executeTakeFirstOrThrow();
 
     await testDb
-      .insertInto('challenge_template_goals')
+      .insertInto('group_template_goals')
       .values({
         template_id: template.id,
         title: 'Template goal',

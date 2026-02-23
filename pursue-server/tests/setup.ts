@@ -224,7 +224,7 @@ async function createSchema(db: Kysely<Database>) {
       is_challenge BOOLEAN NOT NULL DEFAULT FALSE,
       challenge_start_date DATE,
       challenge_end_date DATE,
-      challenge_template_id UUID,
+      template_id UUID,
       challenge_status VARCHAR(20),
       created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
       updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
@@ -280,9 +280,17 @@ async function createSchema(db: Kysely<Database>) {
       END IF;
       IF NOT EXISTS (
         SELECT 1 FROM information_schema.columns
-        WHERE table_name = 'groups' AND column_name = 'challenge_template_id'
+        WHERE table_name = 'groups' AND column_name = 'template_id'
       ) THEN
-        ALTER TABLE groups ADD COLUMN challenge_template_id UUID;
+        -- Rename old column if it exists, otherwise add new column
+        IF EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_name = 'groups' AND column_name = 'challenge_template_id'
+        ) THEN
+          ALTER TABLE groups RENAME COLUMN challenge_template_id TO template_id;
+        ELSE
+          ALTER TABLE groups ADD COLUMN template_id UUID;
+        END IF;
       END IF;
       IF NOT EXISTS (
         SELECT 1 FROM information_schema.columns
@@ -357,8 +365,18 @@ async function createSchema(db: Kysely<Database>) {
     END $$
   `.execute(db);
 
+  // Rename old challenge_templates table to group_templates if needed
   await sql`
-    CREATE TABLE IF NOT EXISTS challenge_templates (
+    DO $$ BEGIN
+      IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'challenge_templates')
+         AND NOT EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'group_templates') THEN
+        ALTER TABLE challenge_templates RENAME TO group_templates;
+      END IF;
+    END $$;
+  `.execute(db);
+
+  await sql`
+    CREATE TABLE IF NOT EXISTS group_templates (
       id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
       slug VARCHAR(100) UNIQUE NOT NULL,
       title VARCHAR(200) NOT NULL,
@@ -369,29 +387,47 @@ async function createSchema(db: Kysely<Database>) {
       category VARCHAR(50) NOT NULL,
       difficulty VARCHAR(20) NOT NULL DEFAULT 'moderate',
       is_featured BOOLEAN NOT NULL DEFAULT FALSE,
+      is_challenge BOOLEAN NOT NULL DEFAULT TRUE,
       sort_order INTEGER NOT NULL DEFAULT 0,
       created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
       updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
     )
   `.execute(db);
-  await sql`CREATE INDEX IF NOT EXISTS idx_challenge_templates_category ON challenge_templates(category, sort_order)`.execute(db);
-  await sql`CREATE INDEX IF NOT EXISTS idx_challenge_templates_featured ON challenge_templates(is_featured, sort_order) WHERE is_featured = TRUE`.execute(db);
+  await sql`CREATE INDEX IF NOT EXISTS idx_group_templates_category ON group_templates(category, sort_order)`.execute(db);
+  await sql`CREATE INDEX IF NOT EXISTS idx_group_templates_featured ON group_templates(is_featured, sort_order) WHERE is_featured = TRUE`.execute(db);
   await sql`
     DO $$
     BEGIN
       IF NOT EXISTS (
         SELECT 1 FROM information_schema.columns
-        WHERE table_name = 'challenge_templates' AND column_name = 'icon_url'
+        WHERE table_name = 'group_templates' AND column_name = 'icon_url'
       ) THEN
-        ALTER TABLE challenge_templates ADD COLUMN icon_url TEXT;
+        ALTER TABLE group_templates ADD COLUMN icon_url TEXT;
+      END IF;
+      IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = 'group_templates' AND column_name = 'is_challenge'
+      ) THEN
+        ALTER TABLE group_templates ADD COLUMN is_challenge BOOLEAN NOT NULL DEFAULT TRUE;
+        UPDATE group_templates SET is_challenge = TRUE;
+      END IF;
+    END $$;
+  `.execute(db);
+
+  // Rename old challenge_template_goals table to group_template_goals if needed
+  await sql`
+    DO $$ BEGIN
+      IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'challenge_template_goals')
+         AND NOT EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'group_template_goals') THEN
+        ALTER TABLE challenge_template_goals RENAME TO group_template_goals;
       END IF;
     END $$;
   `.execute(db);
 
   await sql`
-    CREATE TABLE IF NOT EXISTS challenge_template_goals (
+    CREATE TABLE IF NOT EXISTS group_template_goals (
       id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-      template_id UUID NOT NULL REFERENCES challenge_templates(id) ON DELETE CASCADE,
+      template_id UUID NOT NULL REFERENCES group_templates(id) ON DELETE CASCADE,
       title VARCHAR(200) NOT NULL,
       description TEXT,
       cadence VARCHAR(20) NOT NULL,
@@ -402,7 +438,7 @@ async function createSchema(db: Kysely<Database>) {
       UNIQUE(template_id, sort_order)
     )
   `.execute(db);
-  await sql`CREATE INDEX IF NOT EXISTS idx_template_goals_template ON challenge_template_goals(template_id, sort_order)`.execute(db);
+  await sql`CREATE INDEX IF NOT EXISTS idx_group_template_goals ON group_template_goals(template_id, sort_order)`.execute(db);
 
   await sql`
     DO $$ BEGIN
@@ -434,17 +470,24 @@ async function createSchema(db: Kysely<Database>) {
       END IF;
       IF NOT EXISTS (
         SELECT 1 FROM pg_constraint
-        WHERE conname = 'fk_groups_challenge_template'
+        WHERE conname = 'fk_groups_template'
       ) THEN
-        ALTER TABLE groups
-        ADD CONSTRAINT fk_groups_challenge_template
-        FOREIGN KEY (challenge_template_id) REFERENCES challenge_templates(id) ON DELETE SET NULL;
+        -- Rename old constraint if it exists, otherwise add new one
+        IF EXISTS (
+          SELECT 1 FROM pg_constraint WHERE conname = 'fk_groups_challenge_template'
+        ) THEN
+          ALTER TABLE groups RENAME CONSTRAINT fk_groups_challenge_template TO fk_groups_template;
+        ELSE
+          ALTER TABLE groups
+          ADD CONSTRAINT fk_groups_template
+          FOREIGN KEY (template_id) REFERENCES group_templates(id) ON DELETE SET NULL;
+        END IF;
       END IF;
     END $$;
   `.execute(db);
 
   await sql`CREATE INDEX IF NOT EXISTS idx_groups_challenge_status ON groups(is_challenge, challenge_status) WHERE is_challenge = TRUE`.execute(db);
-  await sql`CREATE INDEX IF NOT EXISTS idx_groups_challenge_template ON groups(challenge_template_id) WHERE challenge_template_id IS NOT NULL`.execute(db);
+  await sql`CREATE INDEX IF NOT EXISTS idx_groups_template ON groups(template_id) WHERE template_id IS NOT NULL`.execute(db);
   await sql`CREATE INDEX IF NOT EXISTS idx_groups_name_trgm ON groups USING gin (name gin_trgm_ops)`.execute(db);
 
   // Add search_embedding column to groups (for pgvector hybrid search)
@@ -653,14 +696,14 @@ async function createSchema(db: Kysely<Database>) {
     END $$
   `.execute(db);
 
-  // Add active_days column to challenge_template_goals (migration for existing test databases)
+  // Add active_days column to group_template_goals (migration for existing test databases)
   await sql`
     DO $$ BEGIN
       IF NOT EXISTS (
         SELECT 1 FROM information_schema.columns
-        WHERE table_name = 'challenge_template_goals' AND column_name = 'active_days'
+        WHERE table_name = 'group_template_goals' AND column_name = 'active_days'
       ) THEN
-        ALTER TABLE challenge_template_goals ADD COLUMN active_days INTEGER DEFAULT NULL;
+        ALTER TABLE group_template_goals ADD COLUMN active_days INTEGER DEFAULT NULL;
       END IF;
     END $$
   `.execute(db);
@@ -931,9 +974,17 @@ async function createSchema(db: Kysely<Database>) {
   await sql`CREATE INDEX IF NOT EXISTS idx_weekly_recaps_sent_group ON weekly_recaps_sent(group_id)`.execute(db);
   await sql`CREATE INDEX IF NOT EXISTS idx_weekly_recaps_sent_week_end ON weekly_recaps_sent(week_end)`.execute(db);
 
-  // Create challenge_suggestion_log table
+  // Create group_suggestion_log table (formerly challenge_suggestion_log)
   await sql`
-    CREATE TABLE IF NOT EXISTS challenge_suggestion_log (
+    DO $$ BEGIN
+      IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'challenge_suggestion_log')
+         AND NOT EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'group_suggestion_log') THEN
+        ALTER TABLE challenge_suggestion_log RENAME TO group_suggestion_log;
+      END IF;
+    END $$;
+  `.execute(db);
+  await sql`
+    CREATE TABLE IF NOT EXISTS group_suggestion_log (
       id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
       user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
       sent_at TIMESTAMPTZ DEFAULT NOW(),
@@ -942,7 +993,7 @@ async function createSchema(db: Kysely<Database>) {
       UNIQUE(user_id)
     )
   `.execute(db);
-  await sql`CREATE INDEX IF NOT EXISTS idx_challenge_suggestion_user ON challenge_suggestion_log(user_id)`.execute(db);
+  await sql`CREATE INDEX IF NOT EXISTS idx_group_suggestion_user ON group_suggestion_log(user_id)`.execute(db);
 
   // Create join_requests table (public group discovery)
   await sql`
@@ -1015,8 +1066,8 @@ async function cleanDatabase(db: Kysely<Database>) {
       reminder_history,
       user_reminder_preferences,
       weekly_recaps_sent,
-      challenge_template_goals,
-      challenge_templates,
+      group_template_goals,
+      group_templates,
       progress_entries,
       goals,
       group_activities,
@@ -1024,7 +1075,7 @@ async function cleanDatabase(db: Kysely<Database>) {
       group_daily_gcr,
       join_requests,
       suggestion_dismissals,
-      challenge_suggestion_log,
+      group_suggestion_log,
       group_memberships,
       invite_codes,
       groups,

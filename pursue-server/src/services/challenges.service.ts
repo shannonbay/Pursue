@@ -213,7 +213,7 @@ export async function processChallengeSuggestions(now: Date = new Date()): Promi
     .where(({ not, exists, selectFrom }) =>
       not(
         exists(
-          selectFrom('challenge_suggestion_log as csl')
+          selectFrom('group_suggestion_log as csl')
             .whereRef('csl.user_id', '=', 'u.id')
             .where((eb) =>
               eb.or([
@@ -276,7 +276,7 @@ export async function processChallengeSuggestions(now: Date = new Date()): Promi
 
       if (notificationId) {
         await db
-          .insertInto('challenge_suggestion_log')
+          .insertInto('group_suggestion_log')
           .values({
             user_id: user.id,
             sent_at: new Date().toISOString(),

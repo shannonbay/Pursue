@@ -170,7 +170,7 @@ export async function createGroup(
           'challenge_start_date',
           'challenge_end_date',
           'challenge_status',
-          'challenge_template_id',
+          'template_id',
           'visibility',
           'creator_user_id',
           'created_at',
@@ -271,7 +271,7 @@ export async function createGroup(
       challenge_start_date: result.group.challenge_start_date,
       challenge_end_date: result.group.challenge_end_date,
       challenge_status: result.group.challenge_status,
-      challenge_template_id: result.group.challenge_template_id,
+      template_id: result.group.template_id,
       visibility: result.group.visibility,
       has_icon: false,
       creator_user_id: result.group.creator_user_id,
@@ -320,7 +320,7 @@ export async function getGroup(
         'groups.challenge_start_date',
         'groups.challenge_end_date',
         'groups.challenge_status',
-        'groups.challenge_template_id',
+        'groups.template_id',
         'groups.visibility',
         'groups.creator_user_id',
         'groups.created_at',
@@ -347,7 +347,7 @@ export async function getGroup(
       challenge_start_date: result.challenge_start_date,
       challenge_end_date: result.challenge_end_date,
       challenge_status: result.challenge_status,
-      challenge_template_id: result.challenge_template_id,
+      template_id: result.template_id,
       visibility: result.visibility,
       has_icon: Boolean(result.has_icon),
       creator_user_id: result.creator_user_id,
@@ -1655,7 +1655,7 @@ export async function joinGroup(
 
     if (invite.is_challenge) {
       await db
-        .updateTable('challenge_suggestion_log')
+        .updateTable('group_suggestion_log')
         .set({ converted: true })
         .where('user_id', '=', req.user!.id)
         .where('converted', '=', false)

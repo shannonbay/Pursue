@@ -11,7 +11,7 @@ function datePlus(days: number): string {
 
 async function seedTemplate(slug: string): Promise<string> {
   const template = await testDb
-    .insertInto('challenge_templates')
+    .insertInto('group_templates')
     .values({
       slug,
       title: `Template ${slug}`,
@@ -27,7 +27,7 @@ async function seedTemplate(slug: string): Promise<string> {
     .executeTakeFirstOrThrow();
 
   await testDb
-    .insertInto('challenge_template_goals')
+    .insertInto('group_template_goals')
     .values({
       template_id: template.id,
       title: 'Goal',

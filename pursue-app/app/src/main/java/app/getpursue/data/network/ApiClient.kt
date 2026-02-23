@@ -956,21 +956,17 @@ object ApiClient {
 
     /**
      * Get challenge templates.
-     * GET /api/challenge-templates?category=&featured=
+     * GET /api/group-templates?is_challenge=true&category=&featured=
      */
     suspend fun getChallengeTemplates(
         accessToken: String,
         category: String? = null,
         featured: Boolean? = null
     ): ChallengeTemplatesResponse {
-        val params = mutableListOf<String>()
+        val params = mutableListOf<String>("is_challenge=true")
         category?.let { params.add("category=${URLEncoder.encode(it, "UTF-8")}") }
         featured?.let { params.add("featured=$it") }
-        val url = if (params.isEmpty()) {
-            "$baseUrl/challenge-templates"
-        } else {
-            "$baseUrl/challenge-templates?${params.joinToString("&")}"
-        }
+        val url = "$baseUrl/group-templates?${params.joinToString("&")}"
         val request = Request.Builder()
             .url(url)
             .get()
@@ -2537,7 +2533,7 @@ data class JoinGroupResponseGroup(
     val challenge_start_date: String? = null,
     val challenge_end_date: String? = null,
     val challenge_status: String? = null,
-    val challenge_template_id: String? = null
+    val template_id: String? = null
 )
 
 // --- Challenge DTOs ---
@@ -2626,7 +2622,7 @@ data class ChallengeSummary(
     val challenge_start_date: String,
     val challenge_end_date: String,
     val challenge_status: String,
-    val challenge_template_id: String?,
+    val template_id: String?,
     val member_count: Int,
     val goals: List<ChallengeGoal>,
     val invite_code: String,

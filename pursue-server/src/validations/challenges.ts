@@ -52,6 +52,10 @@ export const GetChallengeTemplatesSchema = z
       .union([z.literal('true'), z.literal('false')])
       .optional()
       .transform((v) => (v === undefined ? undefined : v === 'true')),
+    is_challenge: z
+      .union([z.literal('true'), z.literal('false')])
+      .optional()
+      .transform((v) => (v === undefined ? undefined : v === 'true')),
   })
   .strict();
 

@@ -11,7 +11,7 @@ function datePlus(days: number): string {
 
 async function seedTemplate(slug: string, opts?: { category?: string; featured?: boolean; duration?: number }) {
   const template = await testDb
-    .insertInto('challenge_templates')
+    .insertInto('group_templates')
     .values({
       slug,
       title: `Template ${slug}`,
@@ -27,7 +27,7 @@ async function seedTemplate(slug: string, opts?: { category?: string; featured?:
     .executeTakeFirstOrThrow();
 
   await testDb
-    .insertInto('challenge_template_goals')
+    .insertInto('group_template_goals')
     .values([
       {
         template_id: template.id,
@@ -56,8 +56,8 @@ async function seedTemplate(slug: string, opts?: { category?: string; featured?:
 }
 
 describe('Challenges API', () => {
-  it('requires auth for GET /api/challenge-templates', async () => {
-    const response = await request(app).get('/api/challenge-templates');
+  it('requires auth for GET /api/group-templates', async () => {
+    const response = await request(app).get('/api/group-templates');
     expect(response.status).toBe(401);
   });
 
@@ -67,7 +67,7 @@ describe('Challenges API', () => {
     await seedTemplate('reading-one', { category: 'reading', featured: false });
 
     const allRes = await request(app)
-      .get('/api/challenge-templates')
+      .get('/api/group-templates')
       .set('Authorization', `Bearer ${user.accessToken}`);
     expect(allRes.status).toBe(200);
     expect(allRes.body.templates.length).toBeGreaterThanOrEqual(2);
@@ -75,7 +75,7 @@ describe('Challenges API', () => {
     expect(allRes.body.templates[0].goals.length).toBeGreaterThan(0);
 
     const featuredRes = await request(app)
-      .get('/api/challenge-templates?featured=true')
+      .get('/api/group-templates?featured=true')
       .set('Authorization', `Bearer ${user.accessToken}`);
     expect(featuredRes.status).toBe(200);
     expect(featuredRes.body.templates.every((t: any) => t.is_featured === true)).toBe(true);
@@ -98,7 +98,7 @@ describe('Challenges API', () => {
     expect(response.status).toBe(201);
     expect(response.body.challenge.is_challenge).toBe(true);
     expect(response.body.challenge.challenge_status).toBe('upcoming');
-    expect(response.body.challenge.challenge_template_id).toBe(template.id);
+    expect(response.body.challenge.template_id).toBe(template.id);
     expect(response.body.challenge.goals.length).toBe(2);
     expect(response.body.challenge.invite_card_data).toMatchObject({
       card_type: 'challenge_invite',

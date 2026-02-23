@@ -20,7 +20,7 @@ data class GroupDetailResponse(
     val challenge_start_date: String? = null,
     val challenge_end_date: String? = null,
     val challenge_status: String? = null,
-    val challenge_template_id: String? = null,
+    val template_id: String? = null,
     val visibility: String? = null,   // "public" | "private"
     val category: String? = null,
     val spot_limit: Int? = null,

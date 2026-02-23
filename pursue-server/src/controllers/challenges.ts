@@ -61,7 +61,7 @@ function daysInclusive(start: string, end: string): number {
   return Math.floor((e - s) / (24 * 60 * 60 * 1000)) + 1;
 }
 
-// GET /api/challenge-templates
+// GET /api/group-templates
 export async function getChallengeTemplates(
   req: AuthRequest,
   res: Response,
@@ -75,7 +75,7 @@ export async function getChallengeTemplates(
     const query = GetChallengeTemplatesSchema.parse(req.query);
 
     let templatesQuery = db
-      .selectFrom('challenge_templates')
+      .selectFrom('group_templates')
       .selectAll()
       .orderBy('category', 'asc')
       .orderBy('sort_order', 'asc')
@@ -87,13 +87,16 @@ export async function getChallengeTemplates(
     if (query.featured !== undefined) {
       templatesQuery = templatesQuery.where('is_featured', '=', query.featured);
     }
+    if (query.is_challenge !== undefined) {
+      templatesQuery = templatesQuery.where('is_challenge', '=', query.is_challenge);
+    }
 
     const templates = await templatesQuery.execute();
     const templateIds = templates.map((t) => t.id);
     const goals = templateIds.length === 0
       ? []
       : await db
-          .selectFrom('challenge_template_goals')
+          .selectFrom('group_template_goals')
           .select([
             'id',
             'template_id',
@@ -212,7 +215,7 @@ export async function createChallenge(
 
     if (fromTemplate) {
       template = await db
-        .selectFrom('challenge_templates')
+        .selectFrom('group_templates')
         .select(['id', 'slug', 'title', 'icon_emoji', 'icon_url', 'duration_days'])
         .where('id', '=', data.template_id!)
         .executeTakeFirst() ?? null;
@@ -222,7 +225,7 @@ export async function createChallenge(
 
       endDate = addDays(data.start_date, template.duration_days - 1);
       const templateGoals = await db
-        .selectFrom('challenge_template_goals')
+        .selectFrom('group_template_goals')
         .select(['title', 'description', 'cadence', 'metric_type', 'target_value', 'unit', 'active_days', 'sort_order'])
         .where('template_id', '=', template.id)
         .orderBy('sort_order', 'asc')
@@ -300,7 +303,7 @@ export async function createChallenge(
           is_challenge: true,
           challenge_start_date: data.start_date,
           challenge_end_date: endDate,
-          challenge_template_id: template?.id ?? null,
+          template_id: template?.id ?? null,
           challenge_status: status,
           challenge_invite_card_data: inviteCardBase,
         })
@@ -313,7 +316,7 @@ export async function createChallenge(
           'challenge_start_date',
           'challenge_end_date',
           'challenge_status',
-          'challenge_template_id',
+          'template_id',
           'challenge_invite_card_data',
           'created_at',
         ])
@@ -379,7 +382,7 @@ export async function createChallenge(
         .execute();
 
       await trx
-        .updateTable('challenge_suggestion_log')
+        .updateTable('group_suggestion_log')
         .set({ converted: true })
         .where('user_id', '=', req.user!.id)
         .where('converted', '=', false)
@@ -409,7 +412,7 @@ export async function createChallenge(
         challenge_start_date: created.group.challenge_start_date,
         challenge_end_date: created.group.challenge_end_date,
         challenge_status: created.group.challenge_status,
-        challenge_template_id: created.group.challenge_template_id,
+        template_id: created.group.template_id,
         member_count: 1,
         goals: created.goals.map((g) => ({
           id: g.id,
@@ -453,7 +456,7 @@ export async function listChallenges(
     let q = db
       .selectFrom('group_memberships')
       .innerJoin('groups', 'groups.id', 'group_memberships.group_id')
-      .leftJoin('challenge_templates', 'challenge_templates.id', 'groups.challenge_template_id')
+      .leftJoin('group_templates', 'group_templates.id', 'groups.template_id')
       .select([
         'groups.id',
         'groups.name',
@@ -462,8 +465,8 @@ export async function listChallenges(
         'groups.challenge_start_date',
         'groups.challenge_end_date',
         'groups.challenge_status',
-        'groups.challenge_template_id',
-        'challenge_templates.title as template_title',
+        'groups.template_id',
+        'group_templates.title as template_title',
       ])
       .where('group_memberships.user_id', '=', req.user.id)
       .where('group_memberships.status', '=', 'active')
@@ -656,7 +659,7 @@ export async function dismissChallengeSuggestion(
 
     const now = new Date();
     await db
-      .updateTable('challenge_suggestion_log')
+      .updateTable('group_suggestion_log')
       .set({ dismissed_at: now.toISOString() })
       .where('user_id', '=', req.user.id)
       .execute();
