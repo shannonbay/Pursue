@@ -46,17 +46,27 @@ import kotlinx.coroutines.withContext
 class EditGroupFragment : Fragment() {
 
     companion object {
-        private const val ARG_GROUP_ID    = "group_id"
-        private const val ARG_NAME        = "name"
-        private const val ARG_DESCRIPTION = "description"
-        private const val ARG_ICON_EMOJI  = "icon_emoji"
-        private const val ARG_ICON_COLOR  = "icon_color"
-        private const val ARG_ICON_URL    = "icon_url"
-        private const val ARG_HAS_ICON    = "has_icon"
-        private const val ARG_IS_CREATOR  = "is_creator"
-        private const val ARG_VISIBILITY  = "visibility"
-        private const val ARG_CATEGORY    = "category"
-        private const val ARG_SPOT_LIMIT  = "spot_limit"
+        private const val ARG_GROUP_ID      = "group_id"
+        private const val ARG_NAME          = "name"
+        private const val ARG_DESCRIPTION   = "description"
+        private const val ARG_ICON_EMOJI    = "icon_emoji"
+        private const val ARG_ICON_COLOR    = "icon_color"
+        private const val ARG_ICON_URL      = "icon_url"
+        private const val ARG_HAS_ICON      = "has_icon"
+        private const val ARG_IS_CREATOR    = "is_creator"
+        private const val ARG_VISIBILITY    = "visibility"
+        private const val ARG_CATEGORY      = "category"
+        private const val ARG_SPOT_LIMIT    = "spot_limit"
+        private const val ARG_COMM_PLATFORM = "comm_platform"
+        private const val ARG_COMM_LINK     = "comm_link"
+
+        /** API value → display label for comm platforms (null = None). */
+        val COMM_PLATFORMS: List<Pair<String?, String>> = listOf(
+            null        to "None",
+            "discord"   to "Discord",
+            "whatsapp"  to "WhatsApp",
+            "telegram"  to "Telegram"
+        )
 
         /** API value → display label mapping for group categories. */
         val CATEGORIES: List<Pair<String, String>> = listOf(
@@ -84,7 +94,9 @@ class EditGroupFragment : Fragment() {
             isCreator: Boolean,
             visibility: String? = null,
             category: String? = null,
-            spotLimit: Int? = null
+            spotLimit: Int? = null,
+            commPlatform: String? = null,
+            commLink: String? = null
         ): EditGroupFragment {
             return EditGroupFragment().apply {
                 arguments = Bundle().apply {
@@ -99,6 +111,8 @@ class EditGroupFragment : Fragment() {
                     putString(ARG_VISIBILITY, visibility ?: "private")
                     putString(ARG_CATEGORY, category ?: "")
                     if (spotLimit != null) putInt(ARG_SPOT_LIMIT, spotLimit)
+                    putString(ARG_COMM_PLATFORM, commPlatform ?: "")
+                    putString(ARG_COMM_LINK, commLink ?: "")
                 }
             }
         }
@@ -122,6 +136,10 @@ class EditGroupFragment : Fragment() {
     private lateinit var editSpotLimit: TextInputEditText
     private lateinit var inputCategory: TextInputLayout
     private lateinit var dropdownCategory: AutoCompleteTextView
+    private lateinit var inputCommPlatform: TextInputLayout
+    private lateinit var dropdownCommPlatform: AutoCompleteTextView
+    private lateinit var inputCommLink: TextInputLayout
+    private lateinit var editCommLink: TextInputEditText
     private lateinit var deleteGroupButton: MaterialButton
     private lateinit var cancelButton: MaterialButton
     private lateinit var saveButton: MaterialButton
@@ -133,6 +151,7 @@ class EditGroupFragment : Fragment() {
     private var selectedVisibility: String = "private"
     private var selectedCategory: String? = null
     private var selectedSpotLimit: Int? = null
+    private var selectedCommPlatform: String? = null
 
     // ─── Arg accessors ────────────────────────────────────────────────────────
 
@@ -152,6 +171,10 @@ class EditGroupFragment : Fragment() {
         requireArguments().getString(ARG_CATEGORY)?.takeIf { it.isNotEmpty() }
     private fun initialSpotLimit(): Int? =
         if (requireArguments().containsKey(ARG_SPOT_LIMIT)) requireArguments().getInt(ARG_SPOT_LIMIT) else null
+    private fun initialCommPlatform(): String? =
+        requireArguments().getString(ARG_COMM_PLATFORM)?.takeIf { it.isNotEmpty() }
+    private fun initialCommLink(): String? =
+        requireArguments().getString(ARG_COMM_LINK)?.takeIf { it.isNotEmpty() }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -182,6 +205,10 @@ class EditGroupFragment : Fragment() {
         editSpotLimit = view.findViewById(R.id.edit_spot_limit)
         inputCategory = view.findViewById(R.id.input_category)
         dropdownCategory = view.findViewById(R.id.dropdown_category)
+        inputCommPlatform = view.findViewById(R.id.input_comm_platform)
+        dropdownCommPlatform = view.findViewById(R.id.dropdown_comm_platform)
+        inputCommLink = view.findViewById(R.id.input_comm_link)
+        editCommLink = view.findViewById(R.id.edit_comm_link)
         deleteGroupButton = view.findViewById(R.id.button_delete_group)
         cancelButton = view.findViewById(R.id.button_cancel)
         saveButton = view.findViewById(R.id.button_save)
@@ -194,6 +221,7 @@ class EditGroupFragment : Fragment() {
         selectedVisibility = initialVisibility()
         selectedCategory = initialCategory()
         selectedSpotLimit = initialSpotLimit()
+        selectedCommPlatform = initialCommPlatform()
 
         groupNameEdit.setText(initialName())
         descriptionEdit.setText(initialDescription())
@@ -203,6 +231,7 @@ class EditGroupFragment : Fragment() {
         setupVisibilitySwitch()
         setupSpotLimitSection()
         setupCategoryDropdown()
+        setupCommPlatformDropdown()
         setupTextWatchers()
 
         chooseIconButton.setOnClickListener { showIconPicker() }
@@ -284,6 +313,49 @@ class EditGroupFragment : Fragment() {
         dropdownCategory.setOnItemClickListener { _, _, position, _ ->
             selectedCategory = CATEGORIES[position].first
             inputCategory.error = null
+        }
+    }
+
+    private fun setupCommPlatformDropdown() {
+        val displayNames = COMM_PLATFORMS.map { it.second }
+        val adapter = ArrayAdapter(requireContext(), android.R.layout.simple_dropdown_item_1line, displayNames)
+        dropdownCommPlatform.setAdapter(adapter)
+
+        // Pre-select current platform
+        val currentPlatform = selectedCommPlatform
+        val currentDisplay = COMM_PLATFORMS.find { it.first == currentPlatform }?.second ?: "None"
+        dropdownCommPlatform.setText(currentDisplay, false)
+
+        // Show link input if platform already set
+        if (currentPlatform != null) {
+            inputCommLink.visibility = View.VISIBLE
+            editCommLink.setText(initialCommLink() ?: "")
+            updateCommLinkHint(currentPlatform)
+        } else {
+            inputCommLink.visibility = View.GONE
+        }
+
+        dropdownCommPlatform.setOnItemClickListener { _, _, position, _ ->
+            val chosenPlatform = COMM_PLATFORMS[position].first
+            selectedCommPlatform = chosenPlatform
+            inputCommPlatform.error = null
+            if (chosenPlatform != null) {
+                inputCommLink.visibility = View.VISIBLE
+                updateCommLinkHint(chosenPlatform)
+            } else {
+                inputCommLink.visibility = View.GONE
+                editCommLink.setText("")
+                inputCommLink.error = null
+            }
+        }
+    }
+
+    private fun updateCommLinkHint(platform: String) {
+        inputCommLink.hint = when (platform) {
+            "discord"  -> "https://discord.gg/…"
+            "whatsapp" -> "https://chat.whatsapp.com/…"
+            "telegram" -> "https://t.me/…"
+            else       -> getString(R.string.label_comm_link)
         }
     }
 
@@ -406,6 +478,34 @@ class EditGroupFragment : Fragment() {
         return true
     }
 
+    private fun validateCommLink(): Boolean {
+        val platform = selectedCommPlatform ?: return true // None selected — always valid
+        val link = editCommLink.text?.toString()?.trim() ?: ""
+        if (link.isEmpty()) {
+            // Allow clearing the link by leaving it blank
+            return true
+        }
+        val valid = when (platform) {
+            "discord"  -> link.startsWith("https://discord.gg/") || link.startsWith("https://discord.com/invite/")
+            "whatsapp" -> link.startsWith("https://chat.whatsapp.com/")
+            "telegram" -> link.startsWith("https://t.me/")
+            else       -> false
+        }
+        return if (!valid) {
+            val errorRes = when (platform) {
+                "discord"  -> R.string.comm_link_error_discord
+                "whatsapp" -> R.string.comm_link_error_whatsapp
+                "telegram" -> R.string.comm_link_error_telegram
+                else       -> R.string.comm_link_error_discord
+            }
+            inputCommLink.error = getString(errorRes)
+            false
+        } else {
+            inputCommLink.error = null
+            true
+        }
+    }
+
     // ─── Save flow ────────────────────────────────────────────────────────────
 
     private fun showLoading(show: Boolean) {
@@ -420,12 +520,15 @@ class EditGroupFragment : Fragment() {
         radioCustomLimit.isEnabled = !show
         editSpotLimit.isEnabled = !show
         dropdownCategory.isEnabled = !show
+        dropdownCommPlatform.isEnabled = !show
+        editCommLink.isEnabled = !show
     }
 
     private fun saveGroup() {
         if (!validateGroupName() || !validateDescription()) return
         if (!validateCategory()) return
         if (!validateSpotLimit()) return
+        if (!validateCommLink()) return
 
         val name = groupNameEdit.text?.toString()?.trim() ?: ""
         val description = descriptionEdit.text?.toString()?.trim()?.takeIf { it.isNotEmpty() }
@@ -433,6 +536,10 @@ class EditGroupFragment : Fragment() {
         val iconColor = if (selectedEmoji != null) selectedColor else null
         val iconUrl = selectedIconUrl
         val spotLimitToSend = if (radioCustomLimit.isChecked) selectedSpotLimit else null
+        val commPlatformToSend = selectedCommPlatform
+        val commLinkToSend = editCommLink.text?.toString()?.trim()?.takeIf {
+            it.isNotEmpty() && commPlatformToSend != null
+        }
 
         showLoading(true)
         viewLifecycleOwner.lifecycleScope.launch {
@@ -456,7 +563,9 @@ class EditGroupFragment : Fragment() {
                         iconUrl = iconUrl,
                         visibility = selectedVisibility,
                         category = selectedCategory,
-                        spotLimit = spotLimitToSend
+                        spotLimit = spotLimitToSend,
+                        commPlatform = commPlatformToSend,
+                        commLink = commLinkToSend
                     )
                 }
                 if (!isAdded) return@launch

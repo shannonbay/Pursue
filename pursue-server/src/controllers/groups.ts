@@ -319,6 +319,8 @@ export async function getGroup(
         'groups.visibility',
         'groups.creator_user_id',
         'groups.created_at',
+        'groups.comm_platform',
+        'groups.comm_link',
         db.fn.count('group_memberships.id').as('member_count'),
         sql<boolean>`groups.icon_data IS NOT NULL`.as('has_icon'),
       ])
@@ -347,6 +349,8 @@ export async function getGroup(
       member_count: Number(result.member_count),
       created_at: result.created_at,
       user_role: membership.role,
+      comm_platform: result.comm_platform ?? null,
+      comm_link: result.comm_link ?? null,
       heat: heatData ?? {
         score: 0,
         tier: 0,

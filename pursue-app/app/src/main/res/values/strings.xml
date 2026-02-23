@@ -857,4 +857,21 @@
     <string name="category_sports">Sports &amp; Training</string>
     <string name="category_other">Other</string>
 
+    <!-- External Communication Link -->
+    <string name="section_external_communication">External Communication</string>
+    <string name="label_comm_platform">Platform</string>
+    <string name="label_comm_link">Invite link</string>
+    <string name="comm_link_helper">This link is only visible to approved members.</string>
+    <string name="comm_platform_none">None</string>
+    <string name="comm_platform_discord">Discord</string>
+    <string name="comm_platform_whatsapp">WhatsApp</string>
+    <string name="comm_platform_telegram">Telegram</string>
+    <string name="comm_link_error_discord">Enter a valid Discord invite link (e.g. https://discord.gg/…)</string>
+    <string name="comm_link_error_whatsapp">Enter a valid WhatsApp invite link (e.g. https://chat.whatsapp.com/…)</string>
+    <string name="comm_link_error_telegram">Enter a valid Telegram link (e.g. https://t.me/…)</string>
+    <string name="comm_link_join_discord">Join the Discord group</string>
+    <string name="comm_link_join_whatsapp">Join the WhatsApp group</string>
+    <string name="comm_link_join_telegram">Join the Telegram group</string>
+    <string name="comm_link_open_failed">Could not open link</string>
+
 </resources>

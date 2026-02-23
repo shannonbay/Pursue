@@ -146,6 +146,7 @@ class GroupDetailFragment : Fragment() {
     private lateinit var heatTierLabel: TextView
     private lateinit var heatScoreLabel: TextView
     private lateinit var heatDetails: TextView
+    private lateinit var commLinkRow: TextView
     private lateinit var tabLayout: TabLayout
     private lateinit var viewPager: ViewPager2
     private lateinit var fabAction: FloatingActionButton
@@ -212,6 +213,7 @@ class GroupDetailFragment : Fragment() {
         heatTierLabel = view.findViewById(R.id.heat_tier_label)
         heatScoreLabel = view.findViewById(R.id.heat_score_label)
         heatDetails = view.findViewById(R.id.heat_details)
+        commLinkRow = view.findViewById(R.id.comm_link_row)
         tabLayout = view.findViewById(R.id.tab_layout)
         viewPager = view.findViewById(R.id.view_pager)
         fabAction = view.findViewById(R.id.fab_action)
@@ -507,6 +509,7 @@ class GroupDetailFragment : Fragment() {
                 groupDetail = response
 
                 updateHeader(response, members)
+                updateCommLinkRow(response.comm_platform, response.comm_link)
                 loadGroupIcon(
                     hasIcon = response.has_icon,
                     iconEmoji = response.icon_emoji,
@@ -531,6 +534,7 @@ class GroupDetailFragment : Fragment() {
                         it is MembersTabFragment
                     } as? MembersTabFragment
                     membersTabFragment?.updateAdminStatus(isAdmin)
+                    membersTabFragment?.updateCommLink(response.comm_platform, response.comm_link)
 
                     val currentItem = viewPager.currentItem
                     updateFABForTab(currentItem, -1)
@@ -550,6 +554,29 @@ class GroupDetailFragment : Fragment() {
                     Toast.makeText(ctx, "Failed to load group details. Please try again.", Toast.LENGTH_SHORT).show()
                 }
             }
+        }
+    }
+
+    private fun updateCommLinkRow(commPlatform: String?, commLink: String?) {
+        if (!commPlatform.isNullOrEmpty() && !commLink.isNullOrEmpty()) {
+            val label = when (commPlatform) {
+                "discord"  -> getString(R.string.comm_link_join_discord)
+                "whatsapp" -> getString(R.string.comm_link_join_whatsapp)
+                "telegram" -> getString(R.string.comm_link_join_telegram)
+                else       -> return
+            }
+            commLinkRow.text = "$label →"
+            commLinkRow.visibility = View.VISIBLE
+            commLinkRow.setOnClickListener {
+                try {
+                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(commLink))
+                    startActivity(intent)
+                } catch (_: Exception) {
+                    Toast.makeText(requireContext(), getString(R.string.comm_link_open_failed), Toast.LENGTH_SHORT).show()
+                }
+            }
+        } else {
+            commLinkRow.visibility = View.GONE
         }
     }
 
@@ -589,7 +616,9 @@ class GroupDetailFragment : Fragment() {
                                 isCreator = detail.user_role == "creator",
                                 visibility = detail.visibility,
                                 category = detail.category,
-                                spotLimit = detail.spot_limit
+                                spotLimit = detail.spot_limit,
+                                commPlatform = detail.comm_platform,
+                                commLink = detail.comm_link
                             )
                             requireActivity().supportFragmentManager.commit {
                                 replace(R.id.fragment_container, edit)

@@ -65,6 +65,7 @@ export const CreateChallengeSchema = z
     icon_emoji: z.string().max(10).optional(),
     icon_url: z.string().max(500).optional(),
     goals: z.array(ChallengeGoalSchema).max(10).optional(),
+    visibility: z.enum(['public', 'private']).optional(),
   })
   .strict();
 

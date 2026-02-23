@@ -23,5 +23,7 @@ data class GroupDetailResponse(
     val challenge_template_id: String? = null,
     val visibility: String? = null,   // "public" | "private"
     val category: String? = null,
-    val spot_limit: Int? = null
+    val spot_limit: Int? = null,
+    val comm_platform: String? = null, // "discord" | "whatsapp" | "telegram" | null
+    val comm_link: String? = null
 )

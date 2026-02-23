@@ -1,5 +1,7 @@
 package app.getpursue.ui.fragments.groups
 
+import android.content.Intent
+import android.net.Uri
 import android.text.Editable
 import android.text.TextWatcher
 import android.os.Bundle
@@ -78,6 +80,8 @@ class MembersTabFragment : Fragment() {
     private lateinit var skeletonContainer: LinearLayout
     private lateinit var emptyStateContainer: FrameLayout
     private lateinit var errorStateContainer: FrameLayout
+    private lateinit var commLinkCard: MaterialCardView
+    private lateinit var commLinkLabel: TextView
     private var adapter: GroupMembersAdapter? = null
     private var errorStateView: ErrorStateView? = null
 
@@ -106,6 +110,30 @@ class MembersTabFragment : Fragment() {
         }
     }
 
+    fun updateCommLink(commPlatform: String?, commLink: String?) {
+        if (!isAdded) return
+        if (commPlatform != null && !commLink.isNullOrBlank()) {
+            val labelRes = when (commPlatform) {
+                "discord" -> R.string.comm_link_join_discord
+                "whatsapp" -> R.string.comm_link_join_whatsapp
+                "telegram" -> R.string.comm_link_join_telegram
+                else -> return
+            }
+            commLinkLabel.text = getString(labelRes)
+            commLinkCard.visibility = View.VISIBLE
+            commLinkCard.setOnClickListener {
+                try {
+                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(commLink))
+                    startActivity(intent)
+                } catch (_: Exception) {
+                    Toast.makeText(requireContext(), getString(R.string.comm_link_open_failed), Toast.LENGTH_SHORT).show()
+                }
+            }
+        } else {
+            commLinkCard.visibility = View.GONE
+        }
+    }
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -126,6 +154,8 @@ class MembersTabFragment : Fragment() {
         errorStateContainer = view.findViewById(R.id.error_state_container)
         pendingRequestsCard = view.findViewById(R.id.pending_requests_card)
         pendingRequestsLabel = view.findViewById(R.id.pending_requests_label)
+        commLinkCard = view.findViewById(R.id.comm_link_card)
+        commLinkLabel = view.findViewById(R.id.comm_link_label)
 
         pendingRequestsCard.setOnClickListener {
             val gid = groupId ?: return@setOnClickListener

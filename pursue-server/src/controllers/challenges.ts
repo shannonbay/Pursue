@@ -295,6 +295,7 @@ export async function createChallenge(
           icon_color: null,
           icon_url: iconUrl,
           creator_user_id: req.user!.id,
+          visibility: data.visibility ?? 'private',
           is_challenge: true,
           challenge_start_date: data.start_date,
           challenge_end_date: endDate,
