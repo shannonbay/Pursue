@@ -138,8 +138,9 @@
                 android:contentDescription="@string/join_group"
                 app:fabSize="mini"
                 app:srcCompat="@drawable/ic_person_add"
+                app:backgroundTint="@color/primary"
                 app:tint="@color/on_primary"
-                app:maxImageSize="24dp" />
+                app:maxImageSize="36dp" />
         </LinearLayout>
 
         <!-- Browse Group Ideas row (label + mini FAB) -->
@@ -173,8 +174,9 @@
                 android:contentDescription="@string/browse_group_ideas"
                 app:fabSize="mini"
                 app:srcCompat="@drawable/ic_sparkle"
+                app:backgroundTint="@color/primary"
                 app:tint="@color/on_primary"
-                app:maxImageSize="24dp" />
+                app:maxImageSize="36dp" />
         </LinearLayout>
 
         <!-- Start Challenge row (label + mini FAB) -->
@@ -207,9 +209,10 @@
                 android:layout_height="wrap_content"
                 android:contentDescription="@string/start_challenge"
                 app:fabSize="mini"
-                app:srcCompat="@android:drawable/ic_menu_compass"
+                app:srcCompat="@drawable/ic_challenge"
+                app:backgroundTint="@color/primary"
                 app:tint="@color/on_primary"
-                app:maxImageSize="24dp" />
+                app:maxImageSize="36dp" />
         </LinearLayout>
 
         <!-- Create Group row (label + mini FAB) -->
@@ -242,9 +245,10 @@
                 android:layout_height="wrap_content"
                 android:contentDescription="@string/create_group"
                 app:fabSize="mini"
-                app:srcCompat="@android:drawable/ic_input_add"
+                app:srcCompat="@drawable/ic_group"
+                app:backgroundTint="@color/primary"
                 app:tint="@color/on_primary"
-                app:maxImageSize="24dp" />
+                app:maxImageSize="36dp" />
         </LinearLayout>
 
         <!-- Main FAB (56dp; rotates 45° when expanded) -->
@@ -254,8 +258,9 @@
             android:layout_height="wrap_content"
             android:contentDescription="@string/fab_open_menu"
             app:srcCompat="@android:drawable/ic_input_add"
+            app:backgroundTint="@color/primary"
             app:tint="@color/on_primary"
-            app:maxImageSize="34dp" />
+            app:maxImageSize="44dp" />
     </LinearLayout>
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
