@@ -331,6 +331,7 @@
         android:layout_gravity="bottom|end"
         android:layout_margin="16dp"
         android:contentDescription="@string/fab_log_progress"
+        app:backgroundTint="@color/primary"
         app:srcCompat="@android:drawable/ic_input_add"
         app:tint="@color/on_primary"
         app:maxImageSize="34dp" />
