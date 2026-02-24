@@ -190,6 +190,7 @@ export async function createProgress(
         goal_title: goal.title,
         value: data.value,
         progress_entry_id: entry.id,
+        log_title: data.log_title ?? null,
       }
     );
 

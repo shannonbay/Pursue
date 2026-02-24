@@ -16,6 +16,7 @@ import android.widget.AutoCompleteTextView
 import android.widget.FrameLayout
 import android.widget.ImageButton
 import android.widget.ImageView
+import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
@@ -87,6 +88,9 @@ class CreateGoalFragment : Fragment() {
     private lateinit var targetSuffix: TextView
     private lateinit var unitInput: TextInputLayout
     private lateinit var unitDropdown: AutoCompleteTextView
+    private lateinit var journalPromptSection: LinearLayout
+    private lateinit var inputLogTitlePrompt: TextInputLayout
+    private lateinit var editLogTitlePrompt: TextInputEditText
     private lateinit var startDateEdit: TextInputEditText
     private lateinit var activeDaysSelectorView: ActiveDaysSelectorView
     private lateinit var loadingIndicator: ProgressBar
@@ -143,6 +147,9 @@ class CreateGoalFragment : Fragment() {
         targetSuffix = view.findViewById(R.id.target_suffix)
         unitInput = view.findViewById(R.id.input_unit)
         unitDropdown = view.findViewById(R.id.dropdown_unit)
+        journalPromptSection = view.findViewById(R.id.journal_prompt_section)
+        inputLogTitlePrompt = view.findViewById(R.id.input_log_title_prompt)
+        editLogTitlePrompt = view.findViewById(R.id.edit_log_title_prompt)
         startDateEdit = view.findViewById(R.id.edit_start_date)
         activeDaysSelectorView = view.findViewById(R.id.active_days_selector)
         loadingIndicator = view.findViewById(R.id.loading_indicator)
@@ -223,6 +230,7 @@ class CreateGoalFragment : Fragment() {
                     R.id.button_metric_binary -> "binary"
                     R.id.button_metric_numeric -> "numeric"
                     R.id.button_metric_duration -> "duration"
+                    R.id.button_metric_journal -> "journal"
                     else -> "binary"
                 }
                 updateTargetSectionVisibility()
@@ -235,16 +243,24 @@ class CreateGoalFragment : Fragment() {
             "binary" -> {
                 targetSection.visibility = View.GONE
                 unitInput.visibility = View.GONE
+                journalPromptSection.visibility = View.GONE
             }
             "numeric" -> {
                 targetSection.visibility = View.VISIBLE
                 unitInput.visibility = View.VISIBLE
+                journalPromptSection.visibility = View.GONE
                 updateUnitDropdown(numericUnits)
             }
             "duration" -> {
                 targetSection.visibility = View.VISIBLE
                 unitInput.visibility = View.VISIBLE
+                journalPromptSection.visibility = View.GONE
                 updateUnitDropdown(durationUnits)
+            }
+            "journal" -> {
+                targetSection.visibility = View.GONE
+                unitInput.visibility = View.GONE
+                journalPromptSection.visibility = View.VISIBLE
             }
         }
         updateTargetSuffix()
@@ -394,7 +410,7 @@ class CreateGoalFragment : Fragment() {
 
     private fun validateTarget(): Boolean {
         // Target only required for numeric and duration types
-        if (selectedMetricType == "binary") {
+        if (selectedMetricType == "binary" || selectedMetricType == "journal") {
             return true
         }
 
@@ -426,12 +442,16 @@ class CreateGoalFragment : Fragment() {
         }
 
         val title = goalTitleEdit.text?.toString()?.trim() ?: ""
-        val targetValue = if (selectedMetricType != "binary") {
+        val isNumericOrDuration = selectedMetricType == "numeric" || selectedMetricType == "duration"
+        val targetValue = if (isNumericOrDuration) {
             targetValueEdit.text?.toString()?.trim()?.toDoubleOrNull()
         } else {
             null
         }
-        val unit = if (selectedMetricType != "binary") selectedUnit else null
+        val unit = if (isNumericOrDuration) selectedUnit else null
+        val logTitlePrompt = if (selectedMetricType == "journal") {
+            editLogTitlePrompt.text?.toString()?.trim()?.takeIf { it.isNotBlank() }
+        } else null
 
         showLoading(true)
 
@@ -461,7 +481,8 @@ class CreateGoalFragment : Fragment() {
                         metricType = selectedMetricType,
                         targetValue = targetValue,
                         unit = unit,
-                        activeDays = activeDays
+                        activeDays = activeDays,
+                        logTitlePrompt = logTitlePrompt
                     )
                 }
 
@@ -526,6 +547,7 @@ class CreateGoalFragment : Fragment() {
             goalTitleEdit.isEnabled = !show
             targetValueEdit.isEnabled = !show
             unitDropdown.isEnabled = !show
+            editLogTitlePrompt.isEnabled = !show
             startDateEdit.isEnabled = !show
 
             // Disable toggle groups and active days selector

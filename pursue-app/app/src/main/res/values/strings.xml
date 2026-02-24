@@ -587,6 +587,7 @@
     
     <!-- Activity Types -->
     <string name="activity_progress_logged">%1$s completed \"%2$s\"</string>
+    <string name="activity_progress_logged_journal">%1$s logged:</string>
     <string name="activity_member_joined">%1$s joined the group</string>
     <string name="activity_group_created">%1$s created the group</string>
     <string name="activity_member_left">%1$s left the group</string>
@@ -641,6 +642,15 @@
     <string name="metric_type_binary">Yes/No</string>
     <string name="metric_type_numeric">Number</string>
     <string name="metric_type_duration">Duration</string>
+    <string name="metric_type_journal">Journal</string>
+
+    <!-- Journal metric type -->
+    <string name="log_title_prompt_label">Entry prompt (optional)</string>
+    <string name="log_title_prompt_hint">e.g. What did you learn today?</string>
+    <string name="log_title_label">Title *</string>
+    <string name="log_title_hint">What did you do?</string>
+    <string name="log_title_required">Title is required</string>
+    <string name="log_title_char_limit">Title must be 120 characters or less</string>
 
     <!-- Target -->
     <string name="target_label">Target</string>

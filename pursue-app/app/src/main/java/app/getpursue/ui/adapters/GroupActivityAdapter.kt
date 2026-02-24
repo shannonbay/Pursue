@@ -157,6 +157,7 @@ class GroupActivityAdapter(
         private val activityAvatarFallback: TextView = itemView.findViewById(R.id.activity_avatar_fallback)
         private val activityText: TextView = itemView.findViewById(R.id.activity_text)
         private val activityTimestamp: TextView = itemView.findViewById(R.id.activity_timestamp)
+        private val activityLogTitle: TextView = itemView.findViewById(R.id.activity_log_title)
         private val activityReactButton: View = itemView.findViewById(R.id.activity_react_button)
         private val reactionsContainer: View = itemView.findViewById(R.id.reactions_container)
         private val reactionsEmojis: TextView = itemView.findViewById(R.id.reactions_emojis)
@@ -228,6 +229,17 @@ class GroupActivityAdapter(
             // Format activity text based on type
             val activityMessage = formatActivityMessage(activity, currentUserId)
             activityText.text = activityMessage
+
+            // Show journal log title when present (progress_logged journal entries)
+            val logTitle = if (activity.activity_type == "progress_logged") {
+                activity.metadata?.get("log_title") as? String
+            } else null
+            if (!logTitle.isNullOrBlank()) {
+                activityLogTitle.text = "\u201C${logTitle}\u201D"
+                activityLogTitle.visibility = View.VISIBLE
+            } else {
+                activityLogTitle.visibility = View.GONE
+            }
 
             // Format timestamp
             activityTimestamp.text = formatRelativeTime(activity.created_at)
@@ -324,7 +336,12 @@ class GroupActivityAdapter(
                 }
                 "progress_logged" -> {
                     val goalTitle = activity.metadata?.get("goal_title") as? String ?: "goal"
-                    itemView.context.getString(R.string.activity_progress_logged, userName, goalTitle)
+                    val logTitle = activity.metadata?.get("log_title") as? String
+                    if (!logTitle.isNullOrBlank()) {
+                        itemView.context.getString(R.string.activity_progress_logged_journal, userName)
+                    } else {
+                        itemView.context.getString(R.string.activity_progress_logged, userName, goalTitle)
+                    }
                 }
                 "member_joined" -> {
                     itemView.context.getString(R.string.activity_member_joined, userName)

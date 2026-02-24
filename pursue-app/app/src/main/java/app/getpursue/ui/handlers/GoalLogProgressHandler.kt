@@ -77,6 +77,13 @@ class GoalLogProgressHandler(
                     showLogProgressDialog(goal)
                 }
             }
+            "journal" -> {
+                if (goal.progressValue != null && goal.progressValue > 0) {
+                    showEditJournalDialog(goal)
+                } else {
+                    showJournalLogDialog(goal)
+                }
+            }
             else -> {
                 fragment.context?.let { ctx ->
                     Toast.makeText(ctx, fragment.getString(R.string.log_progress_failed), Toast.LENGTH_SHORT).show()
@@ -281,6 +288,137 @@ class GoalLogProgressHandler(
         dialog.show(fragment.childFragmentManager, "LogProgressDialog")
     }
 
+    private fun showJournalLogDialog(goal: GoalForLogging) {
+        val dialog = LogProgressDialog.Companion.newJournalInstance(
+            goalTitle = goal.title,
+            logTitlePrompt = goal.logTitlePrompt
+        )
+        dialog.setJournalLogProgressListener(object : LogProgressDialog.JournalLogProgressListener {
+            override fun onLogJournalProgress(logTitle: String, note: String?) {
+                logJournalProgress(goal, logTitle, note)
+            }
+        })
+        dialog.show(fragment.childFragmentManager, "JournalLogDialog")
+    }
+
+    private fun showEditJournalDialog(goal: GoalForLogging) {
+        val accessToken = tokenSupplier() ?: return
+        fragment.viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                val entryInfo = withContext(Dispatchers.IO) {
+                    fetchCurrentPeriodEntry(accessToken, goal.id, goal.cadence)
+                }
+                fragment.requireActivity().runOnUiThread {
+                    if (entryInfo != null) {
+                        val (entryId, existingNote, existingLogTitle) = entryInfo
+                        val dialog = LogProgressDialog.Companion.newJournalInstance(
+                            goalTitle = goal.title,
+                            logTitlePrompt = goal.logTitlePrompt,
+                            isEditMode = true,
+                            currentLogTitle = existingLogTitle,
+                            currentNote = existingNote
+                        )
+                        dialog.setJournalLogProgressListener(object : LogProgressDialog.JournalLogProgressListener {
+                            override fun onLogJournalProgress(logTitle: String, note: String?) {
+                                updateJournalProgress(goal, entryId, logTitle, note)
+                            }
+                        })
+                        dialog.setDeleteProgressListener(object : LogProgressDialog.DeleteProgressListener {
+                            override fun onDeleteProgress() {
+                                deleteProgressEntry(goal, entryId)
+                            }
+                        })
+                        dialog.show(fragment.childFragmentManager, "EditJournalDialog")
+                    } else {
+                        onRefresh(true)
+                        fragment.context?.let { c ->
+                            Toast.makeText(c, "Entry not found", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                fragment.requireActivity().runOnUiThread {
+                    fragment.context?.let { c ->
+                        Toast.makeText(c, fragment.getString(R.string.log_progress_failed), Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+        }
+    }
+
+    private fun logJournalProgress(goal: GoalForLogging, logTitle: String, note: String?) {
+        val accessToken = tokenSupplier() ?: return
+        val previousProgressValue = goal.progressValue
+        val previousCompleted = goal.completed
+        onOptimisticUpdate?.invoke(goal.id, true, 1.0)
+        fragment.viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                val response = withContext(Dispatchers.IO) {
+                    ApiClient.logProgress(accessToken, goal.id, 1.0, note, logTitle, userDate, userTimezone)
+                }
+                val entryId = response.id
+                fragment.requireActivity().runOnUiThread {
+                    if (fragment.isAdded) {
+                        HapticFeedbackUtils.vibrateToggle(snackbarParentView)
+                        showPostLogPhotoSheet(entryId) {
+                            performUndo(goal.id, entryId, previousCompleted, previousProgressValue, accessToken)
+                        }
+                    }
+                }
+            } catch (e: ApiException) {
+                fragment.requireActivity().runOnUiThread {
+                    onOptimisticUpdate?.invoke(goal.id, previousCompleted, previousProgressValue)
+                    handleLogApiException(e)
+                }
+            } catch (e: Exception) {
+                fragment.requireActivity().runOnUiThread {
+                    onOptimisticUpdate?.invoke(goal.id, previousCompleted, previousProgressValue)
+                    fragment.context?.let { c ->
+                        Toast.makeText(c, fragment.getString(R.string.log_progress_failed), Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+        }
+    }
+
+    private fun updateJournalProgress(goal: GoalForLogging, entryId: String, newLogTitle: String, newNote: String?) {
+        val accessToken = tokenSupplier() ?: return
+        val previousProgressValue = goal.progressValue
+        val previousCompleted = goal.completed
+        onOptimisticUpdate?.invoke(goal.id, true, 1.0)
+        fragment.viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                withContext(Dispatchers.IO) {
+                    ApiClient.deleteProgressEntry(accessToken, entryId)
+                }
+                val response = withContext(Dispatchers.IO) {
+                    ApiClient.logProgress(accessToken, goal.id, 1.0, newNote, newLogTitle, userDate, userTimezone)
+                }
+                val newEntryId = response.id
+                fragment.requireActivity().runOnUiThread {
+                    if (fragment.isAdded) {
+                        HapticFeedbackUtils.vibrateToggle(snackbarParentView)
+                        showPostLogPhotoSheet(newEntryId) {
+                            performUndo(goal.id, newEntryId, previousCompleted, previousProgressValue, accessToken)
+                        }
+                    }
+                }
+            } catch (e: ApiException) {
+                fragment.requireActivity().runOnUiThread {
+                    onOptimisticUpdate?.invoke(goal.id, previousCompleted, previousProgressValue)
+                    handleLogApiException(e)
+                }
+            } catch (e: Exception) {
+                fragment.requireActivity().runOnUiThread {
+                    onOptimisticUpdate?.invoke(goal.id, previousCompleted, previousProgressValue)
+                    fragment.context?.let { c ->
+                        Toast.makeText(c, fragment.getString(R.string.log_progress_failed), Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+        }
+    }
+
     private fun showEditProgressDialog(goal: GoalForLogging) {
         val accessToken = tokenSupplier() ?: return
         fragment.viewLifecycleOwner.lifecycleScope.launch {
@@ -290,7 +428,7 @@ class GoalLogProgressHandler(
                 }
                 fragment.requireActivity().runOnUiThread {
                     if (entryInfo != null) {
-                        val (entryId, existingNote) = entryInfo
+                        val (entryId, existingNote, _) = entryInfo
                         val existingValue = goal.progressValue ?: 0.0
                         val dialog = LogProgressDialog.Companion.newInstance(
                             goalTitle = goal.title,
@@ -432,7 +570,7 @@ class GoalLogProgressHandler(
         accessToken: String,
         goalId: String,
         cadence: String
-    ): Pair<String, String?>? {
+    ): Triple<String, String?, String?>? {
         return try {
             val periodStart = calculatePeriodStart(cadence, userDate, userTimezone)
             val entriesResponse = ApiClient.getGoalProgressMe(
@@ -442,7 +580,7 @@ class GoalLogProgressHandler(
                 endDate = periodStart
             )
             val existingEntry = entriesResponse.entries.firstOrNull { it.period_start == periodStart }
-            existingEntry?.let { Pair(it.id, it.note) }
+            existingEntry?.let { Triple(it.id, it.note, it.log_title) }
         } catch (e: Exception) {
             null
         }
@@ -497,7 +635,8 @@ class GoalLogProgressHandler(
                 unit = unit,
                 completed = completed,
                 progressValue = progress_value,
-                cadence = cadence
+                cadence = cadence,
+                logTitlePrompt = log_title_prompt
             )
         }
 
@@ -514,7 +653,8 @@ class GoalLogProgressHandler(
                 unit = goal.unit,
                 completed = goal.completed,
                 progressValue = progressValue,
-                cadence = "daily"
+                cadence = "daily",
+                logTitlePrompt = goal.log_title_prompt
             )
         }
     }

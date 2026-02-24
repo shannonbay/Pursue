@@ -71,6 +71,16 @@
                     android:textAppearance="?attr/textAppearanceBodySmall"
                     android:textColor="@color/on_surface_variant"
                     tools:text="2 hours ago" />
+
+                <TextView
+                    android:id="@+id/activity_log_title"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:textAppearance="?attr/textAppearanceBodyMedium"
+                    android:textStyle="italic"
+                    android:textColor="@color/on_surface"
+                    android:visibility="gone" />
             </LinearLayout>
         </LinearLayout>
 

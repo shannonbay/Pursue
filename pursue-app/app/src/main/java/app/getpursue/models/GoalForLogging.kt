@@ -9,10 +9,11 @@ data class GoalForLogging(
     val id: String,
     val groupId: String,
     val title: String,
-    val metricType: String, // "binary" or "numeric"
+    val metricType: String, // "binary", "numeric", "duration", or "journal"
     val targetValue: Double?,
     val unit: String?,
     val completed: Boolean,
     val progressValue: Double?,
-    val cadence: String = "daily" // For period calculation; Today screen is always daily
+    val cadence: String = "daily", // For period calculation; Today screen is always daily
+    val logTitlePrompt: String? = null // For journal goals: optional prompt shown in the log dialog
 )

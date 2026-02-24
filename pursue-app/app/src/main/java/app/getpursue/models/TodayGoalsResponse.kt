@@ -25,7 +25,8 @@ data class TodayGoal(
     val completed: Boolean,
     val progress_value: Int?, // For numeric goals
     val target_value: Int?, // For numeric goals
-    val metric_type: String? = null, // "binary" or "numeric"; if null, derive from target_value
+    val metric_type: String? = null, // "binary", "numeric", "duration", or "journal"; if null, derive from target_value
     val unit: String? = null, // Unit for numeric goals (e.g. "miles", "pages")
-    val icon_emoji: String? = null // Goal definition emoji for Today screen (spec 4.4)
+    val icon_emoji: String? = null, // Goal definition emoji for Today screen (spec 4.4)
+    val log_title_prompt: String? = null // For journal goals: optional prompt shown in the log dialog
 )

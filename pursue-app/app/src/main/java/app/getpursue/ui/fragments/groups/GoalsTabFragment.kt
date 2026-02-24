@@ -749,16 +749,21 @@ class GoalsTabFragment : Fragment() {
                     completed = progress.user_progress.completed >= (goalResponse.target_value ?: 0.0)
                     progressValue = progress.user_progress.completed
                 }
+                "journal" -> {
+                    // For journal goals: completed if user has any entries; progressValue indicates presence
+                    completed = progress.user_progress.completed > 0
+                    progressValue = if (completed) progress.user_progress.completed else null
+                }
                 else -> {
                     completed = false
                     progressValue = null
                 }
             }
-            
+
             // Map member progress
             val memberProgress = progress.member_progress.map { memberProgressResponse ->
                 val memberCompleted = when (goalResponse.metric_type) {
-                    "binary" -> memberProgressResponse.completed > 0
+                    "binary", "journal" -> memberProgressResponse.completed > 0
                     "numeric", "duration" -> memberProgressResponse.completed >= (goalResponse.target_value ?: 0.0)
                     else -> false
                 }
@@ -775,7 +780,7 @@ class GoalsTabFragment : Fragment() {
                     progress_value = memberProgressValue
                 )
             }
-            
+
             return GroupGoal(
                 id = goalResponse.id,
                 group_id = goalResponse.group_id,
@@ -787,6 +792,7 @@ class GoalsTabFragment : Fragment() {
                 unit = goalResponse.unit,
                 active_days = goalResponse.active_days,
                 created_at = goalResponse.created_at,
+                log_title_prompt = goalResponse.log_title_prompt,
                 completed = completed,
                 progress_value = progressValue,
                 member_progress = memberProgress
@@ -804,6 +810,7 @@ class GoalsTabFragment : Fragment() {
                 unit = goalResponse.unit,
                 active_days = goalResponse.active_days,
                 created_at = goalResponse.created_at,
+                log_title_prompt = goalResponse.log_title_prompt,
                 completed = false,
                 progress_value = null,
                 member_progress = emptyList()

@@ -214,6 +214,17 @@
                     android:text="@string/metric_type_duration"
                     android:textSize="12sp"
                     app:cornerRadius="20dp" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/button_metric_journal"
+                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                    android:layout_width="0dp"
+                    android:layout_height="40dp"
+                    android:layout_weight="1"
+                    android:contentDescription="@string/metric_type_journal"
+                    android:text="@string/metric_type_journal"
+                    android:textSize="12sp"
+                    app:cornerRadius="20dp" />
             </com.google.android.material.button.MaterialButtonToggleGroup>
 
             <!-- Target Section -->
@@ -273,6 +284,46 @@
                         android:textSize="14sp"
                         tools:text="times per week" />
                 </LinearLayout>
+            </LinearLayout>
+
+            <!-- Journal Prompt Section (shown when Journal metric type is selected) -->
+            <LinearLayout
+                android:id="@+id/journal_prompt_section"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="24dp"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="sans-serif-medium"
+                    android:text="@string/log_title_prompt_label"
+                    android:textColor="@color/on_surface_variant"
+                    android:textSize="12sp" />
+
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/input_log_title_prompt"
+                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:hint="@string/log_title_prompt_hint"
+                    app:counterEnabled="true"
+                    app:counterMaxLength="80"
+                    app:errorEnabled="false">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/edit_log_title_prompt"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:inputType="textCapSentences"
+                        android:maxLength="80"
+                        android:textAppearance="?attr/textAppearanceBodyLarge"
+                        android:textColor="@color/on_surface"
+                        android:textSize="16sp" />
+                </com.google.android.material.textfield.TextInputLayout>
             </LinearLayout>
 
             <!-- Unit Section -->

@@ -110,6 +110,8 @@ class CreateGroupFragment : Fragment() {
     private lateinit var numericFields: LinearLayout
     private lateinit var editTarget: TextInputEditText
     private lateinit var editUnit: TextInputEditText
+    private lateinit var journalFields: LinearLayout
+    private lateinit var editLogTitlePrompt: TextInputEditText
 
     private lateinit var createButton: MaterialButton
     private lateinit var cancelButton: MaterialButton
@@ -164,6 +166,8 @@ class CreateGroupFragment : Fragment() {
         numericFields = view.findViewById(R.id.numeric_fields)
         editTarget = view.findViewById(R.id.edit_target)
         editUnit = view.findViewById(R.id.edit_unit)
+        journalFields = view.findViewById(R.id.journal_fields)
+        editLogTitlePrompt = view.findViewById(R.id.edit_log_title_prompt)
 
         createButton = view.findViewById(R.id.button_create)
         cancelButton = view.findViewById(R.id.button_cancel)
@@ -244,10 +248,11 @@ class CreateGroupFragment : Fragment() {
             }
         }
 
-        // Toggle numeric fields visibility
+        // Toggle numeric/journal fields visibility
         toggleType.addOnButtonCheckedListener { _, checkedId, isChecked ->
             if (isChecked) {
                 numericFields.visibility = if (checkedId == R.id.btn_numeric) View.VISIBLE else View.GONE
+                journalFields.visibility = if (checkedId == R.id.btn_journal) View.VISIBLE else View.GONE
             }
         }
     }
@@ -429,6 +434,7 @@ class CreateGroupFragment : Fragment() {
         }
         val metricType = when (toggleType.checkedButtonId) {
             R.id.btn_numeric -> "numeric"
+            R.id.btn_journal -> "journal"
             else -> "binary"
         }
         val targetValue = if (metricType == "numeric") {
@@ -436,6 +442,9 @@ class CreateGroupFragment : Fragment() {
         } else null
         val unit = if (metricType == "numeric") {
             editUnit.text?.toString()?.trim()?.takeIf { it.isNotEmpty() }
+        } else null
+        val logTitlePrompt = if (metricType == "journal") {
+            editLogTitlePrompt.text?.toString()?.trim()?.takeIf { it.isNotBlank() }
         } else null
 
         showLoading(true)
@@ -482,7 +491,8 @@ class CreateGroupFragment : Fragment() {
                         metricType = metricType,
                         targetValue = targetValue,
                         unit = unit,
-                        activeDays = activeDays
+                        activeDays = activeDays,
+                        logTitlePrompt = logTitlePrompt
                     )
                 }
                 
@@ -548,5 +558,6 @@ class CreateGroupFragment : Fragment() {
         toggleType.isEnabled = !show
         editTarget.isEnabled = !show
         editUnit.isEnabled = !show
+        editLogTitlePrompt.isEnabled = !show
     }
 }
