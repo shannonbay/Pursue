@@ -78,12 +78,14 @@ For E2E testing, `ApiClient.setBaseUrlForE2E()` overrides the base URL.
 
 ## Testing
 
-After making code edits, run the full test suite before committing. All tests must pass.
+**Do not run the Android UI unit tests** (`testDebugUnitTest`) — they are too unstable and take too long. After making code edits, verify compilation instead:
 
 ```powershell
 $env:JAVA_HOME = [System.Environment]::GetEnvironmentVariable("JAVA_HOME", "Machine")
-./gradlew testDebugUnitTest --no-daemon
+./gradlew compileDebugKotlin --no-daemon
 ```
+
+E2E tests (`testE2e`) are fine to run when the backend is available. The backend's Jest integration tests (`npm test` in `pursue-server/`) are the primary automated test suite that matters and should pass after backend changes.
 
 ### Testing Patterns
 

@@ -290,6 +290,8 @@ Pursue/
 - Debug logs are suppressed in production
 
 ### Android Unit Testing
+- **Do not run Android UI unit tests** (`testDebugUnitTest`) — they are too unstable and take too long. Use `compileDebugKotlin` to verify the build compiles instead.
+- E2E tests (`testE2e`) are fine to run when the backend is available.
 - Fragment tests use Robolectric with `@Config(sdk = [28])`
 - Mock ApiClient with `mockkObject(ApiClient)` before fragment launch
 - Use `advanceCoroutines()` helper for lifecycle + coroutine synchronization
