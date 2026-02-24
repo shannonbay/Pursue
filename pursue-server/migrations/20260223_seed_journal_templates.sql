@@ -2,12 +2,12 @@ BEGIN;
 
 -- Insert Daily Discovery template (idempotent via ON CONFLICT DO NOTHING)
 WITH t AS (
-  INSERT INTO group_templates (slug, title, description, icon_emoji, category, difficulty, is_featured, is_challenge, duration_days, default_mode, sort_order)
+  INSERT INTO group_templates (slug, title, description, icon_emoji, icon_url, category, difficulty, is_featured, is_challenge, duration_days, default_mode, sort_order)
   VALUES (
     'daily-discovery',
     'Daily Discovery',
     'Learn something new every day — a fact, a skill, a concept, or a craft. Share it with the group so you can learn from each other too.',
-    '🧠', 'learning', 'easy', TRUE, FALSE, NULL, 'group', 10
+    '🧠', 'res://drawable/ic_icon_dailydiscovery', 'learning', 'easy', TRUE, FALSE, NULL, 'group', 10
   )
   ON CONFLICT (slug) DO NOTHING
   RETURNING id
@@ -19,12 +19,12 @@ ON CONFLICT (template_id, sort_order) DO NOTHING;
 
 -- Insert Weekend Workshop template
 WITH t AS (
-  INSERT INTO group_templates (slug, title, description, icon_emoji, category, difficulty, is_featured, is_challenge, duration_days, default_mode, sort_order)
+  INSERT INTO group_templates (slug, title, description, icon_emoji, icon_url, category, difficulty, is_featured, is_challenge, duration_days, default_mode, sort_order)
   VALUES (
     'weekend-workshop',
     'Weekend Workshop',
     'Make something, fix something, or build something every weekend. Even small wins count — a patch, a coat of paint, a tightened hinge.',
-    '🔧', 'making', 'easy', FALSE, FALSE, NULL, 'group', 11
+    '🔧', 'res://drawable/ic_icon_workshop', 'making', 'easy', FALSE, FALSE, NULL, 'group', 11
   )
   ON CONFLICT (slug) DO NOTHING
   RETURNING id
