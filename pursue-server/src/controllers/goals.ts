@@ -83,8 +83,8 @@ function getPeriodBounds(cadence: string, date: Date): { start: Date; end: Date 
 
 // Helper: Calculate completed count/value
 function calculateCompleted(goal: Goal, entries: ProgressEntry[]): number {
-  if (goal.metric_type === 'binary') {
-    // For binary: count number of entries (days completed)
+  if (goal.metric_type === 'binary' || goal.metric_type === 'journal') {
+    // For binary/journal: count number of entries (days completed)
     return entries.length;
   }
 
@@ -101,8 +101,8 @@ function calculateCompleted(goal: Goal, entries: ProgressEntry[]): number {
 
 // Helper: Calculate total target for period
 function calculateTotal(goal: Goal, _period?: { start: string; end: string }): number {
-  if (goal.metric_type === 'binary') {
-    // For binary: target is the goal's target_value (e.g., 3x per week)
+  if (goal.metric_type === 'binary' || goal.metric_type === 'journal') {
+    // For binary/journal: target is the goal's target_value (e.g., 3x per week), default 1
     // Convert to number since DECIMAL returns as string
     const target = goal.target_value;
     return target != null ? (typeof target === 'string' ? parseFloat(target) : Number(target)) : 1;
@@ -129,6 +129,7 @@ async function attachProgressToGoals(
     metric_type: string;
     target_value: number | null;
     unit: string | null;
+    log_title_prompt: string | null;
     active_days: number[] | null;
     active_days_label: string;
     active_days_count: number;
@@ -148,6 +149,7 @@ async function attachProgressToGoals(
   metric_type: string;
   target_value: number | null;
   unit: string | null;
+  log_title_prompt: string | null;
   active_days: number[] | null;
   active_days_label: string;
   active_days_count: number;
@@ -365,6 +367,7 @@ export async function createGoal(
         target_value: data.target_value ?? null,
         unit: data.unit ?? null,
         active_days: activeDaysBitmask,
+        log_title_prompt: data.log_title_prompt ?? null,
         created_by_user_id: req.user.id,
       })
       .returning([
@@ -377,6 +380,7 @@ export async function createGoal(
         'target_value',
         'unit',
         'active_days',
+        'log_title_prompt',
         'created_by_user_id',
         'created_at',
       ])
@@ -407,6 +411,7 @@ export async function createGoal(
       metric_type: goal.metric_type,
       target_value: goal.target_value,
       unit: goal.unit,
+      log_title_prompt: goal.log_title_prompt,
       ...serializeActiveDays(goal.active_days),
       created_by_user_id: goal.created_by_user_id,
       created_at: goal.created_at,
@@ -456,6 +461,7 @@ export async function listGoals(
         'target_value',
         'unit',
         'active_days',
+        'log_title_prompt',
         'created_by_user_id',
         'created_at',
         'deleted_at',
@@ -483,6 +489,7 @@ export async function listGoals(
       metric_type: r.metric_type,
       target_value: r.target_value,
       unit: r.unit,
+      log_title_prompt: r.log_title_prompt,
       ...serializeActiveDays(r.active_days),
       created_by_user_id: r.created_by_user_id,
       created_at: r.created_at,
@@ -714,6 +721,7 @@ export async function getProgress(
         'progress_entries.id',
         'progress_entries.value',
         'progress_entries.note',
+        'progress_entries.log_title',
         'progress_entries.period_start',
         'progress_entries.logged_at',
         'progress_entries.user_id',
@@ -787,6 +795,7 @@ export async function getProgress(
         id: r.id,
         value: Number(r.value),
         note: r.note,
+        log_title: r.log_title,
         period_start: formatPeriodStart(r.period_start),
         logged_at: r.logged_at,
         photo,
@@ -833,7 +842,7 @@ export async function getProgressMe(
 
     let query = db
       .selectFrom('progress_entries')
-      .select(['id', 'value', 'note', 'period_start', 'logged_at'])
+      .select(['id', 'value', 'note', 'log_title', 'period_start', 'logged_at'])
       .where('goal_id', '=', goal.id)
       .where('user_id', '=', req.user.id);
 
@@ -853,6 +862,7 @@ export async function getProgressMe(
         id: r.id,
         value: Number(r.value),
         note: r.note,
+        log_title: r.log_title,
         period_start: formatPeriodStart(r.period_start),
         logged_at: r.logged_at,
       })),

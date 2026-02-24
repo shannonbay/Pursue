@@ -149,6 +149,7 @@ export async function createProgress(
         user_id: req.user.id,
         value: data.value,
         note: data.note ?? null,
+        log_title: data.log_title ?? null,
         period_start: periodStart,
         user_timezone: data.user_timezone,
       })
@@ -158,6 +159,7 @@ export async function createProgress(
         'user_id',
         'value',
         'note',
+        'log_title',
         'period_start',
         'logged_at',
       ])
@@ -227,6 +229,7 @@ export async function createProgress(
       user_id: entry.user_id,
       value: Number(entry.value),
       note: entry.note,
+      log_title: entry.log_title,
       period_start: formatPeriodStart(entry.period_start),
       logged_at: entry.logged_at,
     });
@@ -258,6 +261,7 @@ export async function getProgress(
         'progress_entries.user_id',
         'progress_entries.value',
         'progress_entries.note',
+        'progress_entries.log_title',
         'progress_entries.period_start',
         'progress_entries.logged_at',
         'goals.group_id',
@@ -283,6 +287,7 @@ export async function getProgress(
       user_id: entry.user_id,
       value: Number(entry.value),
       note: entry.note,
+      log_title: entry.log_title,
       period_start: formatPeriodStart(entry.period_start),
       logged_at: entry.logged_at,
     });

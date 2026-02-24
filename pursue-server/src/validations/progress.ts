@@ -27,6 +27,7 @@ export const CreateProgressSchema = z
     goal_id: z.string().uuid('Invalid goal ID format'),
     value: z.number(),
     note: z.string().max(500, 'Note must be 500 characters or less').optional(),
+    log_title: z.string().min(1).max(120).optional(),
     user_date: isoDate,
     user_timezone: z.string().min(1, 'Timezone is required'),
   })
@@ -102,6 +103,23 @@ export const CreateProgressSchema = z
           ctx.addIssue({
             code: z.ZodIssueCode.custom,
             message: 'Duration must be an integer (seconds)',
+            path: ['value'],
+          });
+        }
+        break;
+
+      case 'journal':
+        if (!data.log_title || data.log_title.trim().length === 0) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: 'Journal goals require a log title',
+            path: ['log_title'],
+          });
+        }
+        if (data.value !== 0 && data.value !== 1) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: 'Journal goal value must be 0 or 1',
             path: ['value'],
           });
         }

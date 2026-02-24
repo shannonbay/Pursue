@@ -19,9 +19,10 @@ data class GroupGoalResponse(
     val title: String,
     val description: String?,
     val cadence: String, // "daily", "weekly", "monthly", "yearly"
-    val metric_type: String, // "binary" or "numeric"
+    val metric_type: String, // "binary", "numeric", "duration", or "journal"
     val target_value: Double?,
     val unit: String?,
+    val log_title_prompt: String? = null, // For journal goals
     val created_by_user_id: String,
     val active_days: List<Int>? = null, // Array of active day numbers (0=Sun..6=Sat), null = every day
     val created_at: String, // ISO 8601 timestamp

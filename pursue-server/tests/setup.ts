@@ -411,6 +411,15 @@ async function createSchema(db: Kysely<Database>) {
         ALTER TABLE group_templates ADD COLUMN is_challenge BOOLEAN NOT NULL DEFAULT TRUE;
         UPDATE group_templates SET is_challenge = TRUE;
       END IF;
+      -- Make duration_days nullable (for ongoing group templates)
+      ALTER TABLE group_templates ALTER COLUMN duration_days DROP NOT NULL;
+      IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = 'group_templates' AND column_name = 'default_mode'
+      ) THEN
+        ALTER TABLE group_templates ADD COLUMN default_mode VARCHAR(20) NOT NULL DEFAULT 'challenge'
+          CHECK (default_mode IN ('group', 'challenge', 'either'));
+      END IF;
     END $$;
   `.execute(db);
 
@@ -696,6 +705,27 @@ async function createSchema(db: Kysely<Database>) {
     END $$
   `.execute(db);
 
+  // Add log_title_prompt to goals
+  await sql`
+    DO $$ BEGIN
+      IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = 'goals' AND column_name = 'log_title_prompt'
+      ) THEN
+        ALTER TABLE goals ADD COLUMN log_title_prompt VARCHAR(80);
+      END IF;
+    END $$
+  `.execute(db);
+
+  // Update metric_type CHECK constraint on goals to include 'journal'
+  await sql`
+    DO $$ BEGIN
+      ALTER TABLE goals DROP CONSTRAINT IF EXISTS goals_metric_type_check;
+      ALTER TABLE goals ADD CONSTRAINT goals_metric_type_check
+        CHECK (metric_type IN ('binary', 'numeric', 'duration', 'journal'));
+    END $$
+  `.execute(db);
+
   // Add active_days column to group_template_goals (migration for existing test databases)
   await sql`
     DO $$ BEGIN
@@ -704,6 +734,18 @@ async function createSchema(db: Kysely<Database>) {
         WHERE table_name = 'group_template_goals' AND column_name = 'active_days'
       ) THEN
         ALTER TABLE group_template_goals ADD COLUMN active_days INTEGER DEFAULT NULL;
+      END IF;
+    END $$
+  `.execute(db);
+
+  // Add log_title_prompt to group_template_goals
+  await sql`
+    DO $$ BEGIN
+      IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = 'group_template_goals' AND column_name = 'log_title_prompt'
+      ) THEN
+        ALTER TABLE group_template_goals ADD COLUMN log_title_prompt VARCHAR(80);
       END IF;
     END $$
   `.execute(db);
@@ -723,6 +765,18 @@ async function createSchema(db: Kysely<Database>) {
       user_timezone VARCHAR(50),
       created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
     )
+  `.execute(db);
+
+  // Add log_title to progress_entries
+  await sql`
+    DO $$ BEGIN
+      IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = 'progress_entries' AND column_name = 'log_title'
+      ) THEN
+        ALTER TABLE progress_entries ADD COLUMN log_title VARCHAR(120);
+      END IF;
+    END $$
   `.execute(db);
 
   // Create group_activities table

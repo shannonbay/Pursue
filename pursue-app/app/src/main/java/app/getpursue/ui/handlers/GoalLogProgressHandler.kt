@@ -99,7 +99,7 @@ class GoalLogProgressHandler(
         fragment.viewLifecycleOwner.lifecycleScope.launch {
             try {
                 val response = withContext(Dispatchers.IO) {
-                    ApiClient.logProgress(accessToken, goal.id, newValue, null, userDate, userTimezone)
+                    ApiClient.logProgress(accessToken, goal.id, newValue, null, null, userDate, userTimezone)
                 }
                 val entryId = response.id
                 fragment.requireActivity().runOnUiThread {
@@ -338,7 +338,7 @@ class GoalLogProgressHandler(
         fragment.viewLifecycleOwner.lifecycleScope.launch {
             try {
                 val response = withContext(Dispatchers.IO) {
-                    ApiClient.logProgress(accessToken, goal.id, newProgressValue, note, userDate, userTimezone)
+                    ApiClient.logProgress(accessToken, goal.id, newProgressValue, note, null, userDate, userTimezone)
                 }
                 val entryId = response.id
                 fragment.requireActivity().runOnUiThread {
@@ -377,7 +377,7 @@ class GoalLogProgressHandler(
                     ApiClient.deleteProgressEntry(accessToken, entryId)
                 }
                 val response = withContext(Dispatchers.IO) {
-                    ApiClient.logProgress(accessToken, goal.id, newValue, newNote, userDate, userTimezone)
+                    ApiClient.logProgress(accessToken, goal.id, newValue, newNote, null, userDate, userTimezone)
                 }
                 val newEntryId = response.id
                 fragment.requireActivity().runOnUiThread {

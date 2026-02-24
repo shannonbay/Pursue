@@ -290,10 +290,11 @@ class E2EApiClient(private val context: Context) {
         metricType: String = "binary",
         targetValue: Double? = null,
         unit: String? = null,
-        activeDays: List<Int>? = null
+        activeDays: List<Int>? = null,
+        logTitlePrompt: String? = null
     ): CreateGoalResponse {
         storeTokenIfPresent(accessToken)
-        return ApiClient.createGoal("", groupId, title, description, cadence, metricType, targetValue, unit, activeDays)
+        return ApiClient.createGoal("", groupId, title, description, cadence, metricType, targetValue, unit, activeDays, logTitlePrompt)
     }
 
     suspend fun getGroupGoals(
@@ -354,11 +355,12 @@ class E2EApiClient(private val context: Context) {
         goalId: String,
         value: Double,
         note: String? = null,
+        logTitle: String? = null,
         userDate: String,
         userTimezone: String
     ): LogProgressResponse {
         storeTokenIfPresent(accessToken)
-        return ApiClient.logProgress("", goalId, value, note, userDate, userTimezone)
+        return ApiClient.logProgress("", goalId, value, note, logTitle, userDate, userTimezone)
     }
 
     suspend fun deleteProgressEntry(accessToken: String, entryId: String) {

@@ -118,11 +118,12 @@ export interface GroupTemplatesTable {
   description: string;
   icon_emoji: string;
   icon_url: string | null;
-  duration_days: number;
+  duration_days: number | null;
   category: string;
   difficulty: ColumnType<'easy' | 'moderate' | 'hard', string | undefined, string>;
   is_featured: ColumnType<boolean, boolean | undefined, boolean>;
   is_challenge: ColumnType<boolean, boolean | undefined, boolean>;
+  default_mode: ColumnType<string, string | undefined, string>;
   sort_order: ColumnType<number, number | undefined, number>;
   created_at: ColumnType<Date, string | undefined, never>;
   updated_at: ColumnType<Date, string | undefined, string | undefined>;
@@ -143,6 +144,7 @@ export interface GroupTemplateGoalsTable {
   target_value: number | null;
   unit: string | null;
   active_days: number | null;
+  log_title_prompt: string | null;
   sort_order: ColumnType<number, number | undefined, number>;
 }
 
@@ -188,6 +190,7 @@ export interface GoalsTable {
   target_value: number | null;
   unit: string | null;
   active_days: number | null;
+  log_title_prompt: string | null;
   created_by_user_id: string | null;
   created_at: ColumnType<Date, string | undefined, never>;
   deleted_at: Date | null;
@@ -205,6 +208,7 @@ export interface ProgressEntriesTable {
   user_id: string;
   value: number;
   note: string | null;
+  log_title: string | null;
   logged_at: ColumnType<Date, string | undefined, never>;
   period_start: string; // DATE stored as string YYYY-MM-DD
   user_timezone: string | null;

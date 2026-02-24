@@ -160,11 +160,13 @@ CREATE TABLE group_templates (
   description TEXT NOT NULL,
   icon_emoji VARCHAR(10) NOT NULL,
   icon_url TEXT,
-  duration_days INTEGER NOT NULL,
+  duration_days INTEGER,                       -- NULL for ongoing (non-challenge) templates
   category VARCHAR(50) NOT NULL,
   difficulty VARCHAR(20) NOT NULL DEFAULT 'moderate',
   is_featured BOOLEAN NOT NULL DEFAULT FALSE,
-  is_challenge BOOLEAN NOT NULL DEFAULT TRUE, -- TRUE = time-boxed challenge, FALSE = ongoing group
+  is_challenge BOOLEAN NOT NULL DEFAULT TRUE,  -- TRUE = time-boxed challenge, FALSE = ongoing group
+  default_mode VARCHAR(20) NOT NULL DEFAULT 'challenge'
+    CHECK (default_mode IN ('group', 'challenge', 'either')),
   sort_order INTEGER NOT NULL DEFAULT 0,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
@@ -182,6 +184,7 @@ CREATE TABLE group_template_goals (
   metric_type VARCHAR(20) NOT NULL,
   target_value DECIMAL(10,2),
   unit VARCHAR(50),
+  log_title_prompt VARCHAR(80),                -- Prompt shown to users for journal goals
   sort_order INTEGER NOT NULL DEFAULT 0,
   active_days INTEGER DEFAULT NULL, -- Bitmask for day-of-week scheduling (1=Mon..64=Sun, NULL=every day)
   UNIQUE(template_id, sort_order),
@@ -235,9 +238,11 @@ CREATE TABLE goals (
   title VARCHAR(200) NOT NULL,
   description TEXT,
   cadence VARCHAR(20) NOT NULL, -- 'daily', 'weekly', 'monthly', 'yearly'
-  metric_type VARCHAR(20) NOT NULL, -- 'binary', 'numeric', 'duration'
-  target_value DECIMAL(10,2), -- For numeric goals
+  metric_type VARCHAR(20) NOT NULL -- 'binary', 'numeric', 'duration', 'journal'
+    CONSTRAINT goals_metric_type_check CHECK (metric_type IN ('binary', 'numeric', 'duration', 'journal')),
+  target_value DECIMAL(10,2), -- For numeric and duration goals (NULL for journal)
   unit VARCHAR(50), -- e.g., 'km', 'pages', 'minutes'
+  log_title_prompt VARCHAR(80), -- Prompt shown to users when logging journal entries
   active_days INTEGER DEFAULT NULL, -- Bitmask for day-of-week scheduling (1=Mon..64=Sun, NULL=every day)
   created_by_user_id UUID REFERENCES users(id) ON DELETE SET NULL,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
@@ -260,8 +265,9 @@ CREATE TABLE progress_entries (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   goal_id UUID NOT NULL REFERENCES goals(id) ON DELETE CASCADE,
   user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  value DECIMAL(10,2) NOT NULL, -- 1 for binary true, 0 for false, numeric for others
+  value DECIMAL(10,2) NOT NULL, -- 1 for binary/journal true, 0 for false, numeric for others
   note TEXT,
+  log_title VARCHAR(120),       -- Required for journal goals; the headline of what was done
   logged_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(), -- When user logged it (for feed sorting)
   period_start DATE NOT NULL, -- User's local date: '2026-01-17' (not UTC timestamp!)
   user_timezone VARCHAR(50), -- e.g., 'America/New_York' (for reference)
@@ -278,6 +284,8 @@ CREATE INDEX idx_progress_goal_user_date ON progress_entries(goal_id, user_id, p
 CREATE INDEX idx_progress_user_logged_at_id ON progress_entries(user_id, logged_at DESC, id DESC);
 -- Member progress endpoint: goal summaries aggregation
 CREATE INDEX idx_progress_goal_user_period ON progress_entries(goal_id, user_id, period_start);
+-- Journal entries: filter by log_title presence
+CREATE INDEX idx_progress_journal_entries ON progress_entries(goal_id, period_start DESC) WHERE log_title IS NOT NULL;
 
 COMMENT ON COLUMN progress_entries.period_start IS 'User local date (DATE not TIMESTAMP). For daily goal, this is the user local day they completed it, e.g., 2026-01-17. Critical for timezone handling - a Friday workout at 11 PM EST should count for Friday, not Saturday UTC.';
 

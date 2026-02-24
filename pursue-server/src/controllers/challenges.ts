@@ -107,6 +107,7 @@ export async function getChallengeTemplates(
             'target_value',
             'unit',
             'active_days',
+            'log_title_prompt',
             'sort_order',
           ])
           .where('template_id', 'in', templateIds)
@@ -142,6 +143,7 @@ export async function getChallengeTemplates(
           metric_type: g.metric_type,
           target_value: g.target_value,
           unit: g.unit,
+          log_title_prompt: g.log_title_prompt,
           ...serializeActiveDays(g.active_days),
         })),
       })),
@@ -199,7 +201,7 @@ export async function createChallenge(
       title: string;
       icon_emoji: string;
       icon_url: string | null;
-      duration_days: number;
+      duration_days: number | null;
     } | null = null;
     let goalsToCreate: Array<{
       title: string;
@@ -209,6 +211,7 @@ export async function createChallenge(
       target_value: number | null;
       unit: string | null;
       active_days: number | null;
+      log_title_prompt: string | null;
       sort_order: number;
     }> = [];
     let endDate: string;
@@ -223,10 +226,13 @@ export async function createChallenge(
         throw new ApplicationError('Challenge template not found', 404, 'NOT_FOUND');
       }
 
+      if (template.duration_days == null) {
+        throw new ApplicationError('This template does not have a fixed duration and cannot be used to create a challenge', 400, 'VALIDATION_ERROR');
+      }
       endDate = addDays(data.start_date, template.duration_days - 1);
       const templateGoals = await db
         .selectFrom('group_template_goals')
-        .select(['title', 'description', 'cadence', 'metric_type', 'target_value', 'unit', 'active_days', 'sort_order'])
+        .select(['title', 'description', 'cadence', 'metric_type', 'target_value', 'unit', 'active_days', 'log_title_prompt', 'sort_order'])
         .where('template_id', '=', template.id)
         .orderBy('sort_order', 'asc')
         .execute();
@@ -238,6 +244,7 @@ export async function createChallenge(
         target_value: g.target_value == null ? null : Number(g.target_value),
         unit: g.unit,
         active_days: g.active_days,
+        log_title_prompt: g.log_title_prompt,
         sort_order: g.sort_order,
       }));
     } else {
@@ -259,6 +266,7 @@ export async function createChallenge(
         target_value: g.target_value ?? null,
         unit: g.unit ?? null,
         active_days: g.active_days ? daysToBitmask(g.active_days) : null,
+        log_title_prompt: null,
         sort_order: g.sort_order ?? i,
       }));
     }
@@ -344,6 +352,7 @@ export async function createChallenge(
             target_value: goal.target_value,
             unit: goal.unit,
             active_days: goal.active_days,
+            log_title_prompt: goal.log_title_prompt,
             created_by_user_id: req.user!.id,
           }))
         )
@@ -375,7 +384,7 @@ export async function createChallenge(
 
       const goals = await trx
         .selectFrom('goals')
-        .select(['id', 'title', 'description', 'cadence', 'metric_type', 'target_value', 'unit', 'active_days', 'created_at'])
+        .select(['id', 'title', 'description', 'cadence', 'metric_type', 'target_value', 'unit', 'active_days', 'log_title_prompt', 'created_at'])
         .where('group_id', '=', group.id)
         .where('deleted_at', 'is', null)
         .orderBy('created_at', 'asc')
@@ -422,6 +431,7 @@ export async function createChallenge(
           metric_type: g.metric_type,
           target_value: g.target_value,
           unit: g.unit,
+          log_title_prompt: g.log_title_prompt,
           ...serializeActiveDays(g.active_days),
         })),
         invite_code: created.inviteCode,

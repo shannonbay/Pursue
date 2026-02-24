@@ -12,10 +12,11 @@ export const CreateGoalSchema = z
     title: z.string().min(1, 'Title is required').max(200),
     description: z.string().max(1000).optional(),
     cadence: z.enum(['daily', 'weekly', 'monthly', 'yearly']),
-    metric_type: z.enum(['binary', 'numeric', 'duration']),
+    metric_type: z.enum(['binary', 'numeric', 'duration', 'journal']),
     target_value: z.number().positive().max(999_999.99).optional(),
     unit: z.string().max(50).optional(),
     active_days: activeDaysArray.optional(),
+    log_title_prompt: z.string().max(80).optional(),
   })
   .strict()
   .refine(
@@ -24,6 +25,13 @@ export const CreateGoalSchema = z
       return true;
     },
     { message: 'Numeric goals must have target_value', path: ['target_value'] }
+  )
+  .refine(
+    (data) => {
+      if (data.metric_type === 'journal' && data.target_value != null) return false;
+      return true;
+    },
+    { message: 'Journal goals must not have target_value', path: ['target_value'] }
   )
   .refine(
     (data) => {

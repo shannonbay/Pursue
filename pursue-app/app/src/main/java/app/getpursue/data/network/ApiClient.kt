@@ -1464,7 +1464,8 @@ object ApiClient {
         metricType: String,
         targetValue: Double? = null,
         unit: String? = null,
-        activeDays: List<Int>? = null
+        activeDays: List<Int>? = null,
+        logTitlePrompt: String? = null
     ): CreateGoalResponse {
         val requestBody = gson.toJson(
             CreateGoalRequest(
@@ -1474,7 +1475,8 @@ object ApiClient {
                 metric_type = metricType,
                 target_value = targetValue,
                 unit = unit,
-                active_days = activeDays
+                active_days = activeDays,
+                log_title_prompt = logTitlePrompt
             )
         ).toRequestBody(jsonMediaType)
 
@@ -1649,6 +1651,7 @@ object ApiClient {
         goalId: String,
         value: Double,
         note: String? = null,
+        logTitle: String? = null,
         userDate: String,
         userTimezone: String
     ): LogProgressResponse {
@@ -1657,6 +1660,7 @@ object ApiClient {
                 goal_id = goalId,
                 value = value,
                 note = note,
+                log_title = logTitle,
                 user_date = userDate,
                 user_timezone = userTimezone
             )
@@ -2667,7 +2671,8 @@ data class CreateGoalRequest(
     val metric_type: String,
     val target_value: Double? = null,
     val unit: String? = null,
-    val active_days: List<Int>? = null
+    val active_days: List<Int>? = null,
+    val log_title_prompt: String? = null
 )
 
 data class CreateGoalResponse(
@@ -2679,6 +2684,7 @@ data class CreateGoalResponse(
     val metric_type: String,
     val target_value: Double?,
     val unit: String?,
+    val log_title_prompt: String? = null,
     val created_by_user_id: String,
     val created_at: String,
     val archived_at: String?,
@@ -2733,6 +2739,7 @@ data class GoalProgressEntry(
     val id: String,
     val value: Double,
     val note: String?,
+    val log_title: String? = null,
     val period_start: String,
     val logged_at: String,
     val photo: GoalProgressEntryPhoto? = null
@@ -2758,6 +2765,7 @@ data class LogProgressRequest(
     val goal_id: String,
     val value: Double,
     val note: String? = null,
+    val log_title: String? = null,
     val user_date: String, // ISO date YYYY-MM-DD
     val user_timezone: String // IANA timezone
 )
@@ -2768,6 +2776,7 @@ data class LogProgressResponse(
     val user_id: String,
     val value: Double,
     val note: String?,
+    val log_title: String? = null,
     val period_start: String, // ISO date YYYY-MM-DD
     val logged_at: String // ISO 8601 timestamp
 )
