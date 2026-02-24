@@ -170,7 +170,7 @@
                 android:layout_height="wrap_content"
                 android:contentDescription="@string/browse_group_ideas"
                 app:fabSize="mini"
-                app:srcCompat="@drawable/ic_lightbulb"
+                app:srcCompat="@drawable/ic_sparkle"
                 app:tint="@color/on_primary"
                 app:maxImageSize="24dp" />
         </LinearLayout>
