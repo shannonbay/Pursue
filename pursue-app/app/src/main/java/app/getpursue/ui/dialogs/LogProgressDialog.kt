@@ -142,8 +142,6 @@ class LogProgressDialog : DialogFragment() {
         val logTitleInput = view.findViewById<TextInputEditText>(R.id.input_log_title)
         val valueInputLayout = view.findViewById<TextInputLayout>(R.id.value_input_layout)
         val valueInput = view.findViewById<TextInputEditText>(R.id.value_input)
-        val noteInputLayout = view.findViewById<TextInputLayout>(R.id.note_input_layout)
-        val noteInput = view.findViewById<TextInputEditText>(R.id.note_input)
         val cancelButton = view.findViewById<MaterialButton>(R.id.button_cancel)
         val logButton = view.findViewById<MaterialButton>(R.id.button_log)
         val deleteButton = view.findViewById<MaterialButton>(R.id.button_delete)
@@ -165,9 +163,6 @@ class LogProgressDialog : DialogFragment() {
         // Show/hide delete button based on edit mode
         deleteButton.visibility = if (isEditMode) View.VISIBLE else View.GONE
 
-        // Note field (optional) - shared across both modes
-        noteInputLayout.hint = getString(R.string.log_progress_note_label)
-
         if (isJournal) {
             // Journal mode: show journal section, hide value input
             valueInputLayout.visibility = View.GONE
@@ -185,11 +180,6 @@ class LogProgressDialog : DialogFragment() {
                 logButton.isEnabled = true
             } else {
                 logButton.isEnabled = false
-            }
-
-            // Pre-fill note if in edit mode
-            if (isEditMode && currentNote != null) {
-                noteInput.setText(currentNote)
             }
 
             // Enable log button only when title has content
@@ -210,8 +200,7 @@ class LogProgressDialog : DialogFragment() {
                     return@setOnClickListener
                 }
                 logTitleInputLayout.error = null
-                val note = noteInput.text?.toString()?.trim()?.takeIf { it.isNotEmpty() }
-                journalListener?.onLogJournalProgress(titleText2, note)
+                journalListener?.onLogJournalProgress(titleText2, null)
                 dialog?.dismiss()
             }
         } else {
@@ -224,10 +213,6 @@ class LogProgressDialog : DialogFragment() {
                 valueInput.setText(currentValue.toString())
                 logButton.isEnabled = true
             }
-            if (isEditMode && currentNote != null) {
-                noteInput.setText(currentNote)
-            }
-
             // Set up unit label if provided
             val unitLabel = if (unit != null) {
                 getString(R.string.log_progress_unit_label, unit)
@@ -285,8 +270,7 @@ class LogProgressDialog : DialogFragment() {
                     return@setOnClickListener
                 }
 
-                val note = noteInput.text?.toString()?.trim()?.takeIf { it.isNotEmpty() }
-                listener?.onLogProgress(value, note)
+                listener?.onLogProgress(value, null)
                 dialog?.dismiss()
             }
         }
