@@ -47,6 +47,8 @@ import app.getpursue.data.network.ApiException
 import app.getpursue.utils.PolicyDateUtils
 import app.getpursue.models.Group
 import app.getpursue.ui.fragments.groups.CreateGroupFragment
+import app.getpursue.ui.fragments.groups.GroupIdeasFragment
+import app.getpursue.ui.fragments.groups.GroupSetupFragment
 import app.getpursue.ui.fragments.challenges.ChallengeTemplatesFragment
 import app.getpursue.ui.fragments.challenges.ChallengeSetupFragment
 import app.getpursue.ui.fragments.discover.DiscoverFragment
@@ -550,6 +552,14 @@ class MainAppActivity : AppCompatActivity(),
                 supportActionBar?.title = getString(R.string.challenge_setup_title)
                 supportActionBar?.setDisplayHomeAsUpEnabled(true)
             }
+            is GroupIdeasFragment -> {
+                supportActionBar?.title = getString(R.string.browse_group_ideas)
+                supportActionBar?.setDisplayHomeAsUpEnabled(true)
+            }
+            is GroupSetupFragment -> {
+                supportActionBar?.title = getString(R.string.group_setup_title)
+                supportActionBar?.setDisplayHomeAsUpEnabled(true)
+            }
             is PremiumFragment -> {
                 supportActionBar?.title = getString(R.string.pursue_premium_title)
                 supportActionBar?.setDisplayHomeAsUpEnabled(true)
@@ -665,6 +675,15 @@ class MainAppActivity : AppCompatActivity(),
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         supportFragmentManager.commit {
             replace(R.id.fragment_container, ChallengeTemplatesFragment.newInstance())
+            addToBackStack(null)
+        }
+    }
+
+    override fun onBrowseGroupIdeas() {
+        supportActionBar?.title = getString(R.string.browse_group_ideas)
+        supportActionBar?.setDisplayHomeAsUpEnabled(true)
+        supportFragmentManager.commit {
+            replace(R.id.fragment_container, GroupIdeasFragment.newInstance())
             addToBackStack(null)
         }
     }

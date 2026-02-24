@@ -48,6 +48,7 @@ class HomeFragment : Fragment() {
         fun onCreateGroup()
         fun onStartChallenge()
         fun onJoinGroup()
+        fun onBrowseGroupIdeas()
         fun onGroupsLoaded(groups: List<Group>)
     }
 
@@ -68,7 +69,9 @@ class HomeFragment : Fragment() {
     private lateinit var fabJoinGroup: FloatingActionButton
     private lateinit var fabStartChallenge: FloatingActionButton
     private lateinit var fabCreateGroup: FloatingActionButton
+    private lateinit var fabBrowseGroupIdeas: FloatingActionButton
     private lateinit var speedDialRowJoin: View
+    private lateinit var speedDialRowBrowse: View
     private lateinit var speedDialRowChallenge: View
     private lateinit var speedDialRowCreate: View
     private lateinit var emptyStateView: View
@@ -111,7 +114,9 @@ class HomeFragment : Fragment() {
         fabJoinGroup = view.findViewById(R.id.fab_join_group)
         fabStartChallenge = view.findViewById(R.id.fab_start_challenge)
         fabCreateGroup = view.findViewById(R.id.fab_create_group)
+        fabBrowseGroupIdeas = view.findViewById(R.id.fab_browse_group_ideas)
         speedDialRowJoin = view.findViewById(R.id.speed_dial_row_join)
+        speedDialRowBrowse = view.findViewById(R.id.speed_dial_row_browse)
         speedDialRowChallenge = view.findViewById(R.id.speed_dial_row_challenge)
         speedDialRowCreate = view.findViewById(R.id.speed_dial_row_create)
         emptyStateView = view.findViewById<View>(R.id.empty_state)
@@ -189,6 +194,11 @@ class HomeFragment : Fragment() {
             callbacks?.onStartChallenge()
             collapseSpeedDial()
         }
+        fabBrowseGroupIdeas.setOnClickListener {
+            it.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+            callbacks?.onBrowseGroupIdeas()
+            collapseSpeedDial()
+        }
         // Label clicks also trigger action (same as mini FAB)
         speedDialRowJoin.findViewById<View>(R.id.speed_dial_label_join).setOnClickListener {
             it.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
@@ -205,6 +215,11 @@ class HomeFragment : Fragment() {
             callbacks?.onStartChallenge()
             collapseSpeedDial()
         }
+        speedDialRowBrowse.findViewById<View>(R.id.speed_dial_label_browse).setOnClickListener {
+            it.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+            callbacks?.onBrowseGroupIdeas()
+            collapseSpeedDial()
+        }
     }
 
     private fun expandSpeedDial() {
@@ -216,15 +231,20 @@ class HomeFragment : Fragment() {
         speedDialScrim.animate().alpha(1f).setDuration(speedDialAnimDurationMs).start()
         fabSpeedDialMain.animate().rotation(45f).setDuration(speedDialAnimDurationMs).start()
         speedDialRowJoin.visibility = View.VISIBLE
+        speedDialRowBrowse.visibility = View.VISIBLE
         speedDialRowChallenge.visibility = View.VISIBLE
         speedDialRowCreate.visibility = View.VISIBLE
         speedDialRowJoin.alpha = 0f
         speedDialRowJoin.translationY = 24f
+        speedDialRowBrowse.alpha = 0f
+        speedDialRowBrowse.translationY = 24f
         speedDialRowChallenge.alpha = 0f
         speedDialRowChallenge.translationY = 24f
         speedDialRowCreate.alpha = 0f
         speedDialRowCreate.translationY = 24f
         speedDialRowJoin.animate()
+            .alpha(1f).translationY(0f).setDuration(speedDialAnimDurationMs).start()
+        speedDialRowBrowse.animate()
             .alpha(1f).translationY(0f).setDuration(speedDialAnimDurationMs).start()
         speedDialRowChallenge.animate()
             .alpha(1f).translationY(0f).setDuration(speedDialAnimDurationMs).start()
@@ -243,6 +263,10 @@ class HomeFragment : Fragment() {
         speedDialRowJoin.animate()
             .alpha(0f).translationY(24f).setDuration(speedDialAnimDurationMs).withEndAction {
                 speedDialRowJoin.visibility = View.GONE
+            }.start()
+        speedDialRowBrowse.animate()
+            .alpha(0f).translationY(24f).setDuration(speedDialAnimDurationMs).withEndAction {
+                speedDialRowBrowse.visibility = View.GONE
             }.start()
         speedDialRowChallenge.animate()
             .alpha(0f).translationY(24f).setDuration(speedDialAnimDurationMs).withEndAction {
