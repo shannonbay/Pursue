@@ -377,9 +377,7 @@
     <!-- Group Ideas / Ongoing Group Templates -->
     <string name="browse_group_ideas">Browse Group Ideas</string>
     <string name="group_ideas_popular">Popular</string>
-    <string name="group_ideas_intro_title">Find your people</string>
-    <string name="group_ideas_intro_body">Pick a group type and we\'ll set up goals for you.\nYou can customise everything once your group is created.</string>
-    <string name="group_setup_title">Set Up Your Group</string>
+<string name="group_setup_title">Set Up Your Group</string>
     <string name="group_create_button">Create Group</string>
     <string name="group_create_failed">Failed to create group. Please try again.</string>
 

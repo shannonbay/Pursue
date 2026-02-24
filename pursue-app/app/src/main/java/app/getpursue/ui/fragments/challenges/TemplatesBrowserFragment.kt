@@ -25,8 +25,7 @@ import kotlinx.coroutines.withContext
 
 data class TemplatesBrowserData(
     val templates: List<TemplateCardData>,
-    val categories: List<String>,
-    val introText: String? = null
+    val categories: List<String>
 )
 
 abstract class TemplatesBrowserFragment : Fragment() {
@@ -45,7 +44,6 @@ abstract class TemplatesBrowserFragment : Fragment() {
     private lateinit var categoryScroll: View
     private lateinit var templatesRecycler: RecyclerView
     private lateinit var errorText: TextView
-    private lateinit var introTextView: TextView
 
     private lateinit var featuredAdapter: TemplateCardAdapter
     private lateinit var listAdapter: TemplateCardAdapter
@@ -74,7 +72,6 @@ abstract class TemplatesBrowserFragment : Fragment() {
         categoryScroll = view.findViewById(R.id.category_scroll)
         templatesRecycler = view.findViewById(R.id.templates_recycler)
         errorText = view.findViewById(R.id.challenge_error_text)
-        introTextView = view.findViewById(R.id.group_ideas_intro)
 
         val resolvedButtonLabel = buttonLabelRes?.let { getString(it) }
         featuredAdapter = TemplateCardAdapter(
@@ -115,7 +112,6 @@ abstract class TemplatesBrowserFragment : Fragment() {
                 val data = withContext(Dispatchers.IO) { fetchTemplates(token) }
                 if (!isAdded) return@launch
                 allTemplates = data.templates
-                renderIntro(data.introText)
                 renderCategories(data.categories)
                 renderTemplateLists()
                 showLoading(false)
@@ -125,16 +121,6 @@ abstract class TemplatesBrowserFragment : Fragment() {
                 if (e is kotlinx.coroutines.CancellationException) throw e
                 if (isAdded) showError(getString(R.string.error_loading_challenge_templates))
             }
-        }
-    }
-
-    private fun renderIntro(text: String?) {
-        if (!isAdded) return
-        if (text != null) {
-            introTextView.text = text
-            introTextView.visibility = View.VISIBLE
-        } else {
-            introTextView.visibility = View.GONE
         }
     }
 
