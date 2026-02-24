@@ -146,25 +146,35 @@ class IconPickerBottomSheet : BottomSheetDialogFragment() {
             IconItem("ic_icon_brain", "Mindset", "Health"),
             
             // Diet & Cooking
-            IconItem("ic_icon_frypan", "Cooking", "Diet"),
-            
+            IconItem("ic_icon_cooking", "Cooking", "Diet"),
+            IconItem("ic_icon_frypan", "Fry Pan", "Diet"),
+
             // Learning & Productivity
             IconItem("ic_icon_book", "Reading", "Learning"),
             IconItem("ic_icon_books", "Studying", "Learning"),
             IconItem("ic_icon_journal", "Journal", "Learning"),
             IconItem("ic_icon_laptop", "Coding", "Learning"),
             IconItem("ic_icon_speaking", "Public Speaking", "Learning"),
+            IconItem("ic_icon_skill_building", "Skill Building", "Learning"),
+            IconItem("ic_icon_workshop", "Workshop", "Learning"),
+            IconItem("ic_icon_creative_spark", "Creative Spark", "Learning"),
+            IconItem("ic_icon_dailydiscovery", "Daily Discovery", "Learning"),
             IconItem("ic_icon_inbox", "Inbox Zero", "Productivity"),
             IconItem("ic_icon_alarmclock", "Waking Up", "Productivity"),
             IconItem("ic_icon_lightning", "Focus", "Productivity"),
             IconItem("ic_icon_socialmediaban", "Social Media Ban", "Productivity"),
-            
+
+            // Nature & Outdoors
+            IconItem("ic_icon_nature", "Nature", "Nature"),
+            IconItem("ic_icon_gardening", "Gardening", "Nature"),
+            IconItem("ic_icon_bird_watching", "Bird Watching", "Nature"),
+
             // Finance & Faith
             IconItem("ic_icon_cash", "Saving", "Finance"),
             IconItem("ic_icon_budgeting", "Budgeting", "Finance"),
             IconItem("ic_icon_prayer", "Prayer", "Faith"),
             IconItem("ic_icon_prayerhands", "Prayer Hands", "Faith"),
-            
+
             // General
             IconItem("ic_icon_sunrise", "Early Morning", "General"),
             IconItem("ic_icon_phone", "Screen Time", "General"),
