@@ -35,6 +35,7 @@ abstract class TemplatesBrowserFragment : Fragment() {
     protected abstract fun openSetup(templateId: String)
     protected open val showCustomOption: Boolean = false
     protected open val featuredLabelRes: Int get() = R.string.challenge_featured
+    protected open val buttonLabelRes: Int? get() = null
     protected open fun onCustomOptionSelected() {}
 
     private lateinit var loading: ProgressBar
@@ -75,17 +76,20 @@ abstract class TemplatesBrowserFragment : Fragment() {
         errorText = view.findViewById(R.id.challenge_error_text)
         introTextView = view.findViewById(R.id.group_ideas_intro)
 
+        val resolvedButtonLabel = buttonLabelRes?.let { getString(it) }
         featuredAdapter = TemplateCardAdapter(
             items = emptyList(),
             featured = true,
             onStartClick = { data -> openSetup(data.id) },
-            onCustomClick = { onCustomOptionSelected() }
+            onCustomClick = { onCustomOptionSelected() },
+            buttonLabel = resolvedButtonLabel
         )
         listAdapter = TemplateCardAdapter(
             items = emptyList(),
             featured = false,
             onStartClick = { data -> openSetup(data.id) },
-            onCustomClick = { onCustomOptionSelected() }
+            onCustomClick = { onCustomOptionSelected() },
+            buttonLabel = resolvedButtonLabel
         )
 
         featuredRecycler.layoutManager = LinearLayoutManager(requireContext(), RecyclerView.HORIZONTAL, false)

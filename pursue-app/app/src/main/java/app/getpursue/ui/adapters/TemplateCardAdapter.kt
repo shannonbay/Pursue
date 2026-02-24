@@ -20,7 +20,8 @@ class TemplateCardAdapter(
     private var items: List<TemplateCardListItem>,
     private val featured: Boolean,
     private val onStartClick: (TemplateCardData) -> Unit,
-    private val onCustomClick: () -> Unit = {}
+    private val onCustomClick: () -> Unit = {},
+    private val buttonLabel: String? = null
 ) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     companion object {
@@ -60,7 +61,7 @@ class TemplateCardAdapter(
 
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
         when (val item = items[position]) {
-            is TemplateCardListItem.Template -> (holder as TemplateViewHolder).bind(item.data, onStartClick)
+            is TemplateCardListItem.Template -> (holder as TemplateViewHolder).bind(item.data, onStartClick, buttonLabel)
             is TemplateCardListItem.CustomCard -> (holder as CustomViewHolder).bind(onCustomClick)
         }
     }
@@ -75,7 +76,8 @@ class TemplateCardAdapter(
         private val durationDifficulty: TextView = itemView.findViewById(R.id.template_duration_difficulty)
         private val startButton: MaterialButton = itemView.findViewById(R.id.template_start_button)
 
-        fun bind(data: TemplateCardData, onStartClick: (TemplateCardData) -> Unit) {
+        fun bind(data: TemplateCardData, onStartClick: (TemplateCardData) -> Unit, buttonLabel: String? = null) {
+            if (buttonLabel != null) startButton.text = buttonLabel
             if (data.iconUrl != null) {
                 val loaded = IconUrlUtils.loadInto(itemView.context, data.iconUrl, iconImage)
                 if (loaded) {

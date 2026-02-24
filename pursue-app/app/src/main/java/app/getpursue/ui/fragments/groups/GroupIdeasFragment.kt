@@ -12,6 +12,7 @@ class GroupIdeasFragment : TemplatesBrowserFragment() {
 
     override val showCustomOption = false
     override val featuredLabelRes = R.string.group_ideas_popular
+    override val buttonLabelRes = R.string.group_create_button
 
     override suspend fun fetchTemplates(token: String): TemplatesBrowserData {
         val intro = "${getString(R.string.group_ideas_intro_title)}\n${getString(R.string.group_ideas_intro_body)}"
