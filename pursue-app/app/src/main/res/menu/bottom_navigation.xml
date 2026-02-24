@@ -2,11 +2,11 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
     <item
         android:id="@+id/nav_home"
-        android:icon="@android:drawable/ic_menu_view"
+        android:icon="@drawable/ic_group"
         android:title="@string/groups_title" />
     <item
         android:id="@+id/nav_today"
-        android:icon="@android:drawable/ic_menu_today"
+        android:icon="@drawable/ic_today"
         android:title="@string/today_title" />
     <item
         android:id="@+id/nav_discover"
@@ -14,6 +14,6 @@
         android:title="@string/discover_title" />
     <item
         android:id="@+id/nav_profile"
-        android:icon="@android:drawable/ic_menu_myplaces"
+        android:icon="@drawable/ic_account_circle"
         android:title="@string/profile_title" />
 </menu>
