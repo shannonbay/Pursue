@@ -136,6 +136,7 @@ export async function getChallengeTemplates(
         category: template.category,
         difficulty: template.difficulty,
         is_featured: template.is_featured,
+        is_challenge: template.is_challenge,
         goals: (goalsByTemplate.get(template.id) ?? []).map((g) => ({
           title: g.title,
           description: g.description,

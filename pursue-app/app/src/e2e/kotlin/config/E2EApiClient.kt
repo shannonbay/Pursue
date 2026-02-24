@@ -9,6 +9,7 @@ import app.getpursue.data.network.DeleteAvatarResponse
 import app.getpursue.data.network.GetInviteCodeResponse
 import app.getpursue.data.network.JoinGroupResponse
 import app.getpursue.data.network.ChallengeTemplatesResponse
+import app.getpursue.data.network.GroupTemplatesResponse
 import app.getpursue.data.network.CreateChallengeGoal
 import app.getpursue.data.network.CreateChallengeResponse
 import app.getpursue.data.network.ChallengesListResponse
@@ -122,11 +123,12 @@ class E2EApiClient(private val context: Context) {
         iconEmoji: String? = null,
         iconColor: String? = null,
         visibility: String? = null,
-        category: String? = null
+        category: String? = null,
+        templateId: String? = null
     ): CreateGroupResponse {
         storeTokenIfPresent(accessToken)
         return ApiClient.createGroup("", name, description, iconEmoji, iconColor,
-            visibility = visibility, category = category)
+            visibility = visibility, category = category, templateId = templateId)
     }
 
     suspend fun patchGroup(
@@ -213,6 +215,17 @@ class E2EApiClient(private val context: Context) {
     ): ChallengeTemplatesResponse {
         storeTokenIfPresent(accessToken)
         return ApiClient.getChallengeTemplates("", category, featured)
+    }
+
+    // --- Ongoing Group Template Endpoints ---
+
+    suspend fun getGroupTemplates(
+        accessToken: String,
+        category: String? = null,
+        featured: Boolean? = null
+    ): GroupTemplatesResponse {
+        storeTokenIfPresent(accessToken)
+        return ApiClient.getGroupTemplates("", category, featured)
     }
 
     suspend fun createChallenge(

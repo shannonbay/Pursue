@@ -44,6 +44,7 @@ export const CreateGroupSchema = z
     visibility: z.enum(['public', 'private']).optional(),
     category: z.enum(VALID_CATEGORIES).optional(),
     spot_limit: z.number().int().min(2).max(500).optional(),
+    template_id: z.string().uuid().optional(),
   })
   .strict();
 

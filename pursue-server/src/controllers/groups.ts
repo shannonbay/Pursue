@@ -42,6 +42,7 @@ import {
   type ExportProgressEntry,
 } from '../services/exportProgress.service.js';
 import { logger } from '../utils/logger.js';
+import { serializeActiveDays } from '../utils/activeDays.js';
 import { getGroupHeat, initializeGroupHeat } from '../services/heat.service.js';
 import { embedAndStoreGroup } from '../services/embedding.service.js';
 import { getDateInTimezone } from '../utils/timezone.js';
@@ -136,6 +137,17 @@ export async function createGroup(
     const data = CreateGroupSchema.parse(req.body);
     const userId = req.user!.id;
 
+    let template: { id: string; icon_emoji: string; icon_url: string | null; is_challenge: boolean } | null = null;
+    if (data.template_id) {
+      template = await db
+        .selectFrom('group_templates')
+        .select(['id', 'icon_emoji', 'icon_url', 'is_challenge'])
+        .where('id', '=', data.template_id)
+        .executeTakeFirst() ?? null;
+      if (!template) throw new ApplicationError('Group template not found', 404, 'NOT_FOUND');
+      if (template.is_challenge) throw new ApplicationError('Challenge templates must be used with POST /api/challenges', 400, 'VALIDATION_ERROR');
+    }
+
     const { allowed, reason } = await canUserJoinOrCreateGroup(userId);
     if (!allowed) {
       const message = reason === 'free_tier_limit_reached'
@@ -151,13 +163,14 @@ export async function createGroup(
         .values({
           name: data.name,
           description: data.description ?? null,
-          icon_emoji: data.icon_emoji ?? null,
+          icon_emoji: data.icon_emoji ?? template?.icon_emoji ?? null,
           icon_color: data.icon_color ?? null,
-          icon_url: data.icon_url ?? null,
+          icon_url: data.icon_url ?? template?.icon_url ?? null,
           creator_user_id: userId,
           visibility: data.visibility ?? 'private',
           category: data.category ?? null,
           spot_limit: data.spot_limit ?? null,
+          template_id: template?.id ?? null,
         })
         .returning([
           'id',
@@ -214,8 +227,46 @@ export async function createGroup(
         })
         .execute();
 
-      // 4. Create initial goals if provided
-      if (data.initial_goals && data.initial_goals.length > 0) {
+      // 4. Create goals — from template or from initial_goals
+      let createdGoals: Array<{
+        id: string;
+        title: string;
+        description: string | null;
+        cadence: string;
+        metric_type: string;
+        target_value: number | null;
+        unit: string | null;
+        active_days: number | null;
+        log_title_prompt: string | null;
+      }> = [];
+
+      if (template) {
+        const templateGoals = await trx
+          .selectFrom('group_template_goals')
+          .select(['title', 'description', 'cadence', 'metric_type', 'target_value', 'unit', 'active_days', 'log_title_prompt', 'sort_order'])
+          .where('template_id', '=', template.id)
+          .orderBy('sort_order', 'asc')
+          .execute();
+
+        if (templateGoals.length > 0) {
+          createdGoals = await trx
+            .insertInto('goals')
+            .values(templateGoals.map(g => ({
+              group_id: group.id,
+              title: g.title,
+              description: g.description ?? null,
+              cadence: g.cadence,
+              metric_type: g.metric_type,
+              target_value: g.target_value != null ? Number(g.target_value) : null,
+              unit: g.unit ?? null,
+              active_days: g.active_days ?? null,
+              log_title_prompt: g.log_title_prompt ?? null,
+              created_by_user_id: userId,
+            })))
+            .returning(['id', 'title', 'description', 'cadence', 'metric_type', 'target_value', 'unit', 'active_days', 'log_title_prompt'])
+            .execute();
+        }
+      } else if (data.initial_goals && data.initial_goals.length > 0) {
         await trx
           .insertInto('goals')
           .values(
@@ -244,7 +295,7 @@ export async function createGroup(
         })
         .execute();
 
-      return { group, inviteCode };
+      return { group, inviteCode, goals: createdGoals };
     });
 
     // Initialize heat record for the new group
@@ -278,6 +329,19 @@ export async function createGroup(
       member_count: Number(memberCount.count),
       created_at: result.group.created_at,
       invite_code: result.inviteCode,
+      ...(template ? {
+        goals: result.goals.map(g => ({
+          id: g.id,
+          title: g.title,
+          description: g.description,
+          cadence: g.cadence,
+          metric_type: g.metric_type,
+          target_value: g.target_value,
+          unit: g.unit,
+          log_title_prompt: g.log_title_prompt,
+          ...serializeActiveDays(g.active_days),
+        })),
+      } : {}),
     });
   } catch (error) {
     next(error);

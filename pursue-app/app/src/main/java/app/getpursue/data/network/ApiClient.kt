@@ -786,7 +786,8 @@ object ApiClient {
         iconUrl: String? = null,
         visibility: String? = null,
         category: String? = null,
-        spotLimit: Int? = null
+        spotLimit: Int? = null,
+        templateId: String? = null
     ): CreateGroupResponse {
         val requestBody = gson.toJson(
             CreateGroupRequest(
@@ -797,7 +798,8 @@ object ApiClient {
                 icon_url = iconUrl,
                 visibility = visibility,
                 category = category,
-                spot_limit = spotLimit
+                spot_limit = spotLimit,
+                template_id = templateId
             )
         ).toRequestBody(jsonMediaType)
         
@@ -974,6 +976,29 @@ object ApiClient {
             .build()
         return executeRequest(request, getClient()) { responseBody ->
             gson.fromJson(responseBody, ChallengeTemplatesResponse::class.java)
+        }
+    }
+
+    /**
+     * Get ongoing group templates (is_challenge = false).
+     * GET /api/group-templates?is_challenge=false&category=...&featured=...
+     */
+    suspend fun getGroupTemplates(
+        accessToken: String,
+        category: String? = null,
+        featured: Boolean? = null
+    ): GroupTemplatesResponse {
+        val params = mutableListOf<String>("is_challenge=false")
+        category?.let { params.add("category=${URLEncoder.encode(it, "UTF-8")}") }
+        featured?.let { params.add("featured=$it") }
+        val url = "$baseUrl/group-templates?${params.joinToString("&")}"
+        val request = Request.Builder()
+            .url(url)
+            .get()
+            .addHeader("Content-Type", "application/json")
+            .build()
+        return executeRequest(request, getClient()) { responseBody ->
+            gson.fromJson(responseBody, GroupTemplatesResponse::class.java)
         }
     }
 
@@ -2452,7 +2477,8 @@ data class CreateGroupRequest(
     val icon_url: String? = null,
     val visibility: String? = null,
     val category: String? = null,
-    val spot_limit: Int? = null
+    val spot_limit: Int? = null,
+    val template_id: String? = null
 )
 
 /**
@@ -2468,7 +2494,9 @@ data class CreateGroupResponse(
     val creator_user_id: String,
     val member_count: Int,
     val created_at: String,
-    val visibility: String? = null
+    val visibility: String? = null,
+    val template_id: String? = null,
+    val goals: List<GroupGoalSummary>? = null
 )
 
 /**
@@ -2538,6 +2566,55 @@ data class JoinGroupResponseGroup(
     val challenge_end_date: String? = null,
     val challenge_status: String? = null,
     val template_id: String? = null
+)
+
+// --- Ongoing Group Template DTOs ---
+
+data class GroupTemplateGoal(
+    val title: String,
+    val description: String?,
+    val cadence: String,
+    val metric_type: String,
+    val target_value: Double?,
+    val unit: String?,
+    val log_title_prompt: String? = null,
+    val active_days: List<Int>? = null,
+    val active_days_label: String? = null,
+    val active_days_count: Int? = null
+)
+
+data class GroupTemplate(
+    val id: String,
+    val slug: String,
+    val title: String,
+    val description: String,
+    val icon_emoji: String,
+    val icon_url: String? = null,
+    val duration_days: Int? = null,
+    val category: String,
+    val difficulty: String,
+    val is_featured: Boolean,
+    val is_challenge: Boolean,
+    val goals: List<GroupTemplateGoal>
+)
+
+data class GroupTemplatesResponse(
+    val templates: List<GroupTemplate>,
+    val categories: List<String>
+)
+
+data class GroupGoalSummary(
+    val id: String,
+    val title: String,
+    val description: String?,
+    val cadence: String,
+    val metric_type: String,
+    val target_value: Double?,
+    val unit: String?,
+    val log_title_prompt: String? = null,
+    val active_days: List<Int>? = null,
+    val active_days_label: String? = null,
+    val active_days_count: Int? = null
 )
 
 // --- Challenge DTOs ---
