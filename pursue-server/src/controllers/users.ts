@@ -22,6 +22,7 @@ import {
 } from '../services/subscription.service.js';
 import { deleteUserPhotos } from '../services/gcs.service.js';
 import { tierName } from '../services/heat.service.js';
+import { validateDisplayName, assertValidName } from '../moderation/validate-name.js';
 
 // Temporary debug logging for avatar endpoints
 const DEBUG_AVATAR = process.env.DEBUG_AVATAR === 'true';
@@ -350,6 +351,11 @@ export async function updateCurrentUser(
     }
 
     const data = UpdateUserSchema.parse(req.body);
+
+    // Validate display name against reserved names and profanity
+    if (data.display_name !== undefined) {
+      assertValidName(validateDisplayName(data.display_name));
+    }
 
     // Build update object (only include provided fields)
     const updates: Record<string, unknown> = {};

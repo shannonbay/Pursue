@@ -42,6 +42,8 @@ import {
   type ExportProgressEntry,
 } from '../services/exportProgress.service.js';
 import { logger } from '../utils/logger.js';
+import { validateGroupName, assertValidName } from '../moderation/validate-name.js';
+import { checkTextContent } from '../services/openai-moderation.service.js';
 import { serializeActiveDays } from '../utils/activeDays.js';
 import { getGroupHeat, initializeGroupHeat } from '../services/heat.service.js';
 import { embedAndStoreGroup } from '../services/embedding.service.js';
@@ -136,6 +138,10 @@ export async function createGroup(
 
     const data = CreateGroupSchema.parse(req.body);
     const userId = req.user!.id;
+
+    // Validate group name against reserved brand terms, profanity, and OpenAI moderation
+    assertValidName(validateGroupName(data.name));
+    await checkTextContent(data.name);
 
     let template: { id: string; icon_emoji: string; icon_url: string | null; is_challenge: boolean } | null = null;
     if (data.template_id) {
@@ -453,6 +459,12 @@ export async function updateGroup(
     await requireGroupAdmin(req.user.id, group_id);
 
     const data = UpdateGroupSchema.parse(req.body);
+
+    // Validate group name against reserved brand terms, profanity, and OpenAI moderation
+    if (data.name !== undefined) {
+      assertValidName(validateGroupName(data.name));
+      await checkTextContent(data.name);
+    }
 
     // Validate auto_approve: premium only, requires spot_limit
     if (data.auto_approve === true) {

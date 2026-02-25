@@ -32,6 +32,8 @@ import { createGroupActivity, ACTIVITY_TYPES } from '../services/activity.servic
 import { sendToTopic, buildTopicName } from '../services/fcm.service.js';
 import { getSignedUrl } from '../services/gcs.service.js';
 import { daysToBitmask, bitmaskToDays, serializeActiveDays } from '../utils/activeDays.js';
+import { validateGoalName, assertValidName } from '../moderation/validate-name.js';
+import { checkTextContent } from '../services/openai-moderation.service.js';
 
 function formatPeriodStart(ps: string | Date): string {
   if (typeof ps === 'string') return ps.slice(0, 10);
@@ -354,6 +356,10 @@ export async function createGoal(
 
     const data = CreateGoalSchema.parse(req.body);
 
+    // Validate goal title against profanity and OpenAI moderation
+    assertValidName(validateGoalName(data.title));
+    await checkTextContent(data.title);
+
     const activeDaysBitmask = data.active_days ? daysToBitmask(data.active_days) : null;
 
     const goal = await db
@@ -573,6 +579,12 @@ export async function updateGoal(
     }
 
     const data = UpdateGoalSchema.parse(req.body);
+
+    // Validate goal title against profanity and OpenAI moderation
+    if (data.title !== undefined) {
+      assertValidName(validateGoalName(data.title));
+      await checkTextContent(data.title);
+    }
 
     const updates: Record<string, string | number | null> = {};
     if (data.title !== undefined) updates.title = data.title;

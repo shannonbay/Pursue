@@ -7,6 +7,7 @@ import type { AuthRequest } from '../types/express.js';
 import { PhotoUploadSchema } from '../validations/photos.js';
 import { buildObjectPath, uploadPhoto, getSignedUrl } from '../services/gcs.service.js';
 import { logger } from '../utils/logger.js';
+import { checkPhotoWithContext } from '../services/openai-moderation.service.js';
 
 // Constants
 const MAX_FILE_SIZE = 500 * 1024; // 500 KB
@@ -116,6 +117,7 @@ export const uploadProgressPhoto = [
           'progress_entries.id',
           'progress_entries.user_id',
           'progress_entries.logged_at',
+          'progress_entries.log_title',
           'goals.group_id',
         ])
         .where('progress_entries.id', '=', progressEntryId)
@@ -181,6 +183,9 @@ export const uploadProgressPhoto = [
         logger.error('Failed to process photo', { error: err });
         throw new ApplicationError('Failed to process image', 400, 'INVALID_IMAGE');
       }
+
+      // Run OpenAI moderation on photo + log_title context before upload
+      await checkPhotoWithContext(processedBuffer, entry.log_title ?? undefined);
 
       // Build GCS path and upload
       const objectPath = buildObjectPath(req.user.id, progressEntryId);

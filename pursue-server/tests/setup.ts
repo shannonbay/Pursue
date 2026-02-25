@@ -779,6 +779,52 @@ async function createSchema(db: Kysely<Database>) {
     END $$
   `.execute(db);
 
+  // Add moderation columns to progress_entries
+  await sql`
+    DO $$ BEGIN
+      IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = 'progress_entries' AND column_name = 'moderation_status'
+      ) THEN
+        ALTER TABLE progress_entries
+          ADD COLUMN moderation_status TEXT NOT NULL DEFAULT 'ok',
+          ADD COLUMN moderation_note TEXT,
+          ADD COLUMN moderation_updated_at TIMESTAMPTZ;
+      END IF;
+    END $$
+  `.execute(db);
+
+  // Create content_reports table
+  await sql`
+    CREATE TABLE IF NOT EXISTS content_reports (
+      id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+      reporter_user_id UUID NOT NULL REFERENCES users(id),
+      content_type TEXT NOT NULL,
+      content_id UUID NOT NULL,
+      reason TEXT NOT NULL,
+      created_at TIMESTAMPTZ DEFAULT now(),
+      reviewed BOOLEAN DEFAULT false,
+      reviewed_at TIMESTAMPTZ,
+      outcome TEXT,
+      CONSTRAINT uq_content_report UNIQUE (reporter_user_id, content_type, content_id)
+    )
+  `.execute(db);
+
+  // Create content_disputes table
+  await sql`
+    CREATE TABLE IF NOT EXISTS content_disputes (
+      id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+      user_id UUID NOT NULL REFERENCES users(id),
+      content_type TEXT NOT NULL,
+      content_id UUID NOT NULL,
+      user_explanation TEXT,
+      created_at TIMESTAMPTZ DEFAULT now(),
+      resolved BOOLEAN DEFAULT false,
+      resolved_at TIMESTAMPTZ,
+      outcome TEXT
+    )
+  `.execute(db);
+
   // Create group_activities table
   await sql`
     CREATE TABLE IF NOT EXISTS group_activities (
@@ -1107,6 +1153,8 @@ async function cleanDatabase(db: Kysely<Database>) {
   // All tables listed explicitly to avoid issues with CASCADE not reaching all tables
   await sql`
     TRUNCATE TABLE
+      content_disputes,
+      content_reports,
       search_query_embeddings,
       challenge_completion_push_queue,
       user_notifications,

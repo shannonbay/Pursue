@@ -21,6 +21,7 @@ import reminderRoutes from './routes/reminders.js';
 import weeklyRecapRoutes from './routes/weeklyRecap.js';
 import challengeRoutes from './routes/challenges.js';
 import discoverRoutes from './routes/discover.js';
+import moderationRoutes from './routes/moderation.js';
 
 const app = express();
 
@@ -134,6 +135,7 @@ app.use('/api', reminderRoutes);
 app.use('/api', weeklyRecapRoutes);
 app.use('/api', challengeRoutes);
 app.use('/api', discoverRoutes);
+app.use('/api', moderationRoutes);
 
 // Error handling
 app.use(errorHandler);

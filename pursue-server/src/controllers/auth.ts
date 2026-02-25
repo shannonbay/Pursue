@@ -15,6 +15,7 @@ import {
 } from '../utils/jwt.js';
 import { verifyGoogleIdToken } from '../services/googleAuth.js';
 import { ApplicationError } from '../middleware/errorHandler.js';
+import { validateDisplayName, assertValidName } from '../moderation/validate-name.js';
 import type { AuthRequest } from '../types/express.js';
 import { getPolicyVersions } from '../utils/policyConfig.js';
 import {
@@ -64,6 +65,9 @@ export async function register(
 ): Promise<void> {
   try {
     const data = RegisterSchema.parse(req.body);
+
+    // Validate display name against reserved names and profanity
+    assertValidName(validateDisplayName(data.display_name));
 
     // Check if email already registered
     const existingUser = await db

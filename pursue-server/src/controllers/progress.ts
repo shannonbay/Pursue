@@ -19,6 +19,7 @@ import { createGroupActivity, ACTIVITY_TYPES } from '../services/activity.servic
 import { checkMilestones } from '../services/notification.service.js';
 import { sendToTopic, buildTopicName } from '../services/fcm.service.js';
 import { computeChallengeWindowStatus } from '../utils/timezone.js';
+import { checkTextContent } from '../services/openai-moderation.service.js';
 
 // Helper: Format date to YYYY-MM-DD string
 function formatPeriodStart(date: Date | string): string {
@@ -120,6 +121,10 @@ export async function createProgress(
         : 'This group is read-only.';
       throw new ApplicationError(msg, 403, 'GROUP_READ_ONLY');
     }
+
+    // Check text content against OpenAI moderation
+    if (data.log_title) await checkTextContent(data.log_title);
+    if (data.note) await checkTextContent(data.note);
 
     // Calculate period_start based on cadence
     const periodStart = calculatePeriodStart(goal.cadence, data.user_date);
@@ -265,6 +270,7 @@ export async function getProgress(
         'progress_entries.log_title',
         'progress_entries.period_start',
         'progress_entries.logged_at',
+        'progress_entries.moderation_status',
         'goals.group_id',
       ])
       .where('progress_entries.id', '=', entryId)
@@ -275,11 +281,21 @@ export async function getProgress(
       throw new ApplicationError('Progress entry not found', 404, 'NOT_FOUND');
     }
 
+    // Apply moderation visibility rules
+    if (entry.moderation_status === 'removed') {
+      throw new ApplicationError('Progress entry not found', 404, 'NOT_FOUND');
+    }
+
     // Verify user owns entry OR is member of goal's group
     const isOwner = entry.user_id === req.user.id;
     if (!isOwner) {
       // Check if user is member of the group
       await requireGroupMember(req.user.id, entry.group_id);
+
+      // Non-authors cannot see hidden entries
+      if (entry.moderation_status === 'hidden') {
+        throw new ApplicationError('Progress entry not found', 404, 'NOT_FOUND');
+      }
     }
 
     res.status(200).json({

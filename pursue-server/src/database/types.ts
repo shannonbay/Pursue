@@ -213,6 +213,9 @@ export interface ProgressEntriesTable {
   period_start: string; // DATE stored as string YYYY-MM-DD
   user_timezone: string | null;
   created_at: ColumnType<Date, string | undefined, never>;
+  moderation_status: ColumnType<string, string | undefined, string | undefined>; // DEFAULT 'ok'
+  moderation_note: string | null;
+  moderation_updated_at: ColumnType<Date | null, string | undefined, string | undefined>;
 }
 
 export type ProgressEntry = Selectable<ProgressEntriesTable>;
@@ -539,6 +542,38 @@ export interface SearchQueryEmbeddingsTable {
 
 export type SearchQueryEmbedding = Selectable<SearchQueryEmbeddingsTable>;
 
+// Content reports table (community reporting)
+export interface ContentReportsTable {
+  id: Generated<string>;
+  reporter_user_id: string;
+  content_type: string;
+  content_id: string;
+  reason: string;
+  created_at: ColumnType<Date, string | undefined, never>;
+  reviewed: ColumnType<boolean, boolean | undefined, boolean>;
+  reviewed_at: Date | null;
+  outcome: string | null;
+}
+
+export type ContentReport = Selectable<ContentReportsTable>;
+export type NewContentReport = Insertable<ContentReportsTable>;
+
+// Content disputes table (user-initiated appeals)
+export interface ContentDisputesTable {
+  id: Generated<string>;
+  user_id: string;
+  content_type: string;
+  content_id: string;
+  user_explanation: string | null;
+  created_at: ColumnType<Date, string | undefined, never>;
+  resolved: ColumnType<boolean, boolean | undefined, boolean>;
+  resolved_at: Date | null;
+  outcome: string | null;
+}
+
+export type ContentDispute = Selectable<ContentDisputesTable>;
+export type NewContentDispute = Insertable<ContentDisputesTable>;
+
 // Suggestion dismissals table (suppress pgvector group suggestions)
 export interface SuggestionDismissalsTable {
   user_id: string;
@@ -586,4 +621,6 @@ export interface Database {
   join_requests: JoinRequestsTable;
   suggestion_dismissals: SuggestionDismissalsTable;
   search_query_embeddings: SearchQueryEmbeddingsTable;
+  content_reports: ContentReportsTable;
+  content_disputes: ContentDisputesTable;
 }
