@@ -94,6 +94,7 @@ class CreateGroupFragment : Fragment() {
     private lateinit var switchPublicListing: SwitchMaterial
     private lateinit var btnVisibilityInfo: ImageView
     private lateinit var containerSpotLimit: LinearLayout
+    private lateinit var containerCategory: LinearLayout
     private lateinit var radioGroupSpotLimit: RadioGroup
     private lateinit var radioUnlimited: RadioButton
     private lateinit var radioCustomLimit: RadioButton
@@ -150,6 +151,7 @@ class CreateGroupFragment : Fragment() {
         switchPublicListing = view.findViewById(R.id.switch_public_listing)
         btnVisibilityInfo = view.findViewById(R.id.btn_visibility_info)
         containerSpotLimit = view.findViewById(R.id.container_spot_limit)
+        containerCategory = view.findViewById(R.id.container_category)
         radioGroupSpotLimit = view.findViewById(R.id.radio_group_spot_limit)
         radioUnlimited = view.findViewById(R.id.radio_unlimited)
         radioCustomLimit = view.findViewById(R.id.radio_custom_limit)
@@ -209,6 +211,12 @@ class CreateGroupFragment : Fragment() {
         switchPublicListing.setOnCheckedChangeListener { _, isChecked ->
             selectedVisibility = if (isChecked) "public" else "private"
             containerSpotLimit.visibility = if (isChecked) View.VISIBLE else View.GONE
+            containerCategory.visibility = if (isChecked) View.VISIBLE else View.GONE
+            if (!isChecked) {
+                selectedCategory = null
+                dropdownCategory.setText("", false)
+                inputCategory.error = null
+            }
         }
 
         btnVisibilityInfo.setOnClickListener {
@@ -410,7 +418,7 @@ class CreateGroupFragment : Fragment() {
         if (!validateGroupName()) return
         if (!validateGoalTitle()) return
         if (!validateDescription()) return
-        if (!validateCategory()) return
+        if (selectedVisibility == "public" && !validateCategory()) return
         if (!validateSpotLimit()) return
 
         val covenant = CovenantBottomSheet.newInstance(isChallenge = false)

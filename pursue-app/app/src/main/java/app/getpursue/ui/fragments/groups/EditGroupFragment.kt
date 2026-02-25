@@ -129,6 +129,7 @@ class EditGroupFragment : Fragment() {
     private lateinit var switchPublicListing: SwitchMaterial
     private lateinit var btnVisibilityInfo: ImageView
     private lateinit var containerSpotLimit: LinearLayout
+    private lateinit var containerCategory: LinearLayout
     private lateinit var radioGroupSpotLimit: RadioGroup
     private lateinit var radioUnlimited: RadioButton
     private lateinit var radioCustomLimit: RadioButton
@@ -198,6 +199,7 @@ class EditGroupFragment : Fragment() {
         switchPublicListing = view.findViewById(R.id.switch_public_listing)
         btnVisibilityInfo = view.findViewById(R.id.btn_visibility_info)
         containerSpotLimit = view.findViewById(R.id.container_spot_limit)
+        containerCategory = view.findViewById(R.id.container_category)
         radioGroupSpotLimit = view.findViewById(R.id.radio_group_spot_limit)
         radioUnlimited = view.findViewById(R.id.radio_unlimited)
         radioCustomLimit = view.findViewById(R.id.radio_custom_limit)
@@ -255,12 +257,20 @@ class EditGroupFragment : Fragment() {
 
     private fun setupVisibilitySwitch() {
         // Set initial state without triggering listener side effects
-        switchPublicListing.isChecked = selectedVisibility == "public"
-        containerSpotLimit.visibility = if (selectedVisibility == "public") View.VISIBLE else View.GONE
+        val isPublic = selectedVisibility == "public"
+        switchPublicListing.isChecked = isPublic
+        containerSpotLimit.visibility = if (isPublic) View.VISIBLE else View.GONE
+        containerCategory.visibility = if (isPublic) View.VISIBLE else View.GONE
 
         switchPublicListing.setOnCheckedChangeListener { _, isChecked ->
             selectedVisibility = if (isChecked) "public" else "private"
             containerSpotLimit.visibility = if (isChecked) View.VISIBLE else View.GONE
+            containerCategory.visibility = if (isChecked) View.VISIBLE else View.GONE
+            if (!isChecked) {
+                selectedCategory = null
+                dropdownCategory.setText("", false)
+                inputCategory.error = null
+            }
         }
 
         btnVisibilityInfo.setOnClickListener {
@@ -526,7 +536,7 @@ class EditGroupFragment : Fragment() {
 
     private fun saveGroup() {
         if (!validateGroupName() || !validateDescription()) return
-        if (!validateCategory()) return
+        if (selectedVisibility == "public" && !validateCategory()) return
         if (!validateSpotLimit()) return
         if (!validateCommLink()) return
 

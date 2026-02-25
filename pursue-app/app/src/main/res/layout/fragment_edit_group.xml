@@ -208,27 +208,35 @@
             </com.google.android.material.textfield.TextInputLayout>
         </LinearLayout>
 
-        <!-- Category Dropdown (always visible) -->
-        <com.google.android.material.textfield.TextInputLayout
-            android:id="@+id/input_category"
-            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+        <!-- Category Dropdown (visible only when Public) -->
+        <LinearLayout
+            android:id="@+id/container_category"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
-            android:hint="@string/label_category"
+            android:orientation="vertical"
+            android:visibility="gone"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/container_spot_limit">
 
-            <AutoCompleteTextView
-                android:id="@+id/dropdown_category"
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/input_category"
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:clickable="true"
-                android:focusable="false"
-                android:inputType="none"
-                android:textAppearance="?attr/textAppearanceBodyLarge" />
-        </com.google.android.material.textfield.TextInputLayout>
+                android:hint="@string/label_category">
+
+                <AutoCompleteTextView
+                    android:id="@+id/dropdown_category"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:clickable="true"
+                    android:focusable="false"
+                    android:inputType="none"
+                    android:textAppearance="?attr/textAppearanceBodyLarge" />
+            </com.google.android.material.textfield.TextInputLayout>
+        </LinearLayout>
 
         <!-- External Communication Section -->
         <LinearLayout
@@ -239,7 +247,7 @@
             android:orientation="vertical"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/input_category">
+            app:layout_constraintTop_toBottomOf="@id/container_category">
 
             <TextView
                 android:layout_width="wrap_content"
