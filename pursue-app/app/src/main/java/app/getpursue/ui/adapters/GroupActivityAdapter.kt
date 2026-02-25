@@ -5,6 +5,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
+import android.widget.PopupMenu
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import app.getpursue.data.network.ApiClient
@@ -38,7 +39,8 @@ class GroupActivityAdapter(
     private val activities: List<GroupActivity>,
     private val currentUserId: String? = null,
     private val onPhotoClick: ((photoUrl: String) -> Unit)? = null,
-    private val reactionListener: ReactionListener? = null
+    private val reactionListener: ReactionListener? = null,
+    private val onReportClick: ((entryId: String) -> Unit)? = null
 ) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     companion object {
@@ -60,7 +62,7 @@ class GroupActivityAdapter(
         val activity: GroupActivity? = null
     )
 
-    private val items: List<Item> = run {
+    private val items: MutableList<Item> = run {
         val activitiesByDate = activities.groupBy { activity ->
             formatDateLabel(activity.created_at)
         }
@@ -68,8 +70,37 @@ class GroupActivityAdapter(
             listOf(Item(TYPE_DATE_HEADER, dateLabel = dateLabel)) +
             dateActivities.map { activity -> Item(TYPE_ACTIVITY, activity = activity) }
         }
-        contentItems + Item(TYPE_FOOTER_SPACER)
+        (contentItems + Item(TYPE_FOOTER_SPACER)).toMutableList()
     }
+
+    /**
+     * Remove an activity by its progress_entry_id and notify RecyclerView of the removal.
+     * Also removes the orphaned date header if this was the last activity in its group.
+     * Returns true if an item was found and removed.
+     */
+    fun removeActivityByEntryId(entryId: String): Boolean {
+        val index = items.indexOfFirst { item ->
+            item.type == TYPE_ACTIVITY &&
+            item.activity?.metadata?.get("progress_entry_id") as? String == entryId
+        }
+        if (index < 0) return false
+
+        items.removeAt(index)
+        notifyItemRemoved(index)
+
+        // If the previous item is a date header and the next is not an activity
+        // (i.e. another header, footer spacer, or end of list), this header is now orphaned.
+        if (index > 0 && items[index - 1].type == TYPE_DATE_HEADER) {
+            val nextType = items.getOrNull(index)?.type
+            if (nextType != TYPE_ACTIVITY) {
+                items.removeAt(index - 1)
+                notifyItemRemoved(index - 1)
+            }
+        }
+        return true
+    }
+
+    fun hasActivities(): Boolean = items.any { it.type == TYPE_ACTIVITY }
 
     override fun getItemViewType(position: Int): Int {
         return items[position].type
@@ -104,7 +135,8 @@ class GroupActivityAdapter(
                         item.activity!!,
                         currentUserId,
                         onPhotoClick,
-                        reactionListener
+                        reactionListener,
+                        onReportClick
                     )
                     else -> { /* Footer spacer: nothing to bind */ }
                 }
@@ -168,7 +200,8 @@ class GroupActivityAdapter(
             activity: GroupActivity,
             currentUserId: String?,
             onPhotoClick: ((photoUrl: String) -> Unit)?,
-            reactionListener: ReactionListener?
+            reactionListener: ReactionListener?,
+            onReportClick: ((entryId: String) -> Unit)?
         ) {
             // Avatar: same URL pattern as MembersTabFragment / MemberDetailFragment; heat activities use Pursue logo
             val user = activity.user
@@ -292,6 +325,32 @@ class GroupActivityAdapter(
                 activityPhoto.visibility = View.GONE
                 activityPhoto.setOnClickListener(null)
                 Glide.with(itemView.context).clear(activityPhoto)
+            }
+
+            // Overflow menu button: show for others' progress_logged entries only
+            val overflowButton = itemView.findViewById<View>(R.id.activity_overflow_button)
+            val progressEntryId = activity.metadata?.get("progress_entry_id") as? String
+            val showOverflow = activity.activity_type == "progress_logged"
+                && activity.user?.id != currentUserId
+                && progressEntryId != null
+                && onReportClick != null
+
+            if (showOverflow) {
+                overflowButton.visibility = View.VISIBLE
+                overflowButton.setOnClickListener { anchor ->
+                    val popup = PopupMenu(anchor.context, anchor)
+                    popup.menuInflater.inflate(R.menu.activity_item_overflow, popup.menu)
+                    popup.setOnMenuItemClickListener { item ->
+                        if (item.itemId == R.id.menu_report_entry) {
+                            onReportClick!!.invoke(progressEntryId!!)
+                            true
+                        } else false
+                    }
+                    popup.show()
+                }
+            } else {
+                overflowButton.visibility = View.GONE
+                overflowButton.setOnClickListener(null)
             }
         }
 

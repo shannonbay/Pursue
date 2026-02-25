@@ -23,10 +23,11 @@ class RecyclerViewLongPressHelper(
     init {
         gestureDetector = GestureDetectorCompat(recyclerView.context, object : GestureDetector.SimpleOnGestureListener() {
             override fun onLongPress(e: MotionEvent) {
-                // Skip long-press if touch is on the react button
+                // Skip long-press if touch is on the react button or overflow menu button
                 if (isTouchOnReactButton(e.x, e.y)) return
                 val childView = recyclerView.findChildViewUnder(e.x, e.y)
                 if (childView != null) {
+                    if (isTouchOnView(e.x, e.y, childView, R.id.activity_overflow_button)) return
                     val activity = childView.getTag(R.id.activity_data_tag) as? GroupActivity
                     val listener = childView.getTag(R.id.reaction_listener_tag) as? ReactionListener
                     if (activity?.id != null && listener != null) {
@@ -35,7 +36,7 @@ class RecyclerViewLongPressHelper(
                     }
                 }
             }
-            
+
             override fun onSingleTapUp(e: MotionEvent): Boolean {
                 val childView = recyclerView.findChildViewUnder(e.x, e.y) ?: return false
 
@@ -55,6 +56,12 @@ class RecyclerViewLongPressHelper(
                         return true
                     }
                 }
+
+                if (isTouchOnView(e.x, e.y, childView, R.id.activity_overflow_button)) {
+                    childView.findViewById<View>(R.id.activity_overflow_button)?.performClick()
+                    return true
+                }
+
                 return false
             }
             

@@ -26,6 +26,8 @@ class ReportEntryBottomSheet : BottomSheetDialogFragment() {
 
     companion object {
         private const val ARG_ENTRY_ID = "entry_id"
+        const val RESULT_REPORTED = "report_entry_result"
+        const val KEY_ENTRY_ID = "reported_entry_id"
 
         fun show(fm: FragmentManager, entryId: String) {
             ReportEntryBottomSheet().apply {
@@ -93,6 +95,10 @@ class ReportEntryBottomSheet : BottomSheetDialogFragment() {
                 }
 
                 if (isAdded) {
+                    parentFragmentManager.setFragmentResult(
+                        RESULT_REPORTED,
+                        Bundle().apply { putString(KEY_ENTRY_ID, id) }
+                    )
                     dismiss()
                     Toast.makeText(requireContext(), getString(R.string.report_submitted), Toast.LENGTH_SHORT).show()
                 }

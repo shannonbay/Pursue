@@ -901,6 +901,8 @@
     <string name="report_submitted">Report submitted</string>
     <string name="report_already_submitted">You\'ve already reported this entry</string>
     <string name="report_failed">Failed to submit report. Please try again.</string>
+    <string name="report_activity_menu_item">Report</string>
+    <string name="overflow_menu_description">More options</string>
 
     <!-- Dispute -->
     <string name="dispute_title">Dispute this removal</string>

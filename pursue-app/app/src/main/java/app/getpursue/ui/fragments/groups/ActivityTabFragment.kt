@@ -1,5 +1,6 @@
 package app.getpursue.ui.fragments.groups
 
+import android.content.Context
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -28,6 +29,7 @@ import app.getpursue.ui.helpers.RecyclerViewLongPressHelper
 import app.getpursue.ui.views.ErrorStateView
 import app.getpursue.ui.views.ReactionPickerPopup
 import app.getpursue.ui.views.ReactorsBottomSheet
+import app.getpursue.ui.views.ReportEntryBottomSheet
 import app.getpursue.R
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.snackbar.Snackbar
@@ -105,7 +107,8 @@ class ActivityTabFragment : Fragment(), ReactionListener {
             emptyList(),
             currentUserId,
             onPhotoClick = ::showFullscreenPhoto,
-            reactionListener = this@ActivityTabFragment
+            reactionListener = this@ActivityTabFragment,
+            onReportClick = { entryId -> ReportEntryBottomSheet.show(childFragmentManager, entryId) }
         )
         activityRecyclerView.adapter = adapter
         
@@ -115,6 +118,27 @@ class ActivityTabFragment : Fragment(), ReactionListener {
         // Setup pull-to-refresh
         swipeRefreshLayout.setOnRefreshListener {
             loadActivity()
+        }
+
+        // Hide an entry immediately when a report is successfully submitted
+        childFragmentManager.setFragmentResultListener(
+            ReportEntryBottomSheet.RESULT_REPORTED,
+            viewLifecycleOwner
+        ) { _, result ->
+            val entryId = result.getString(ReportEntryBottomSheet.KEY_ENTRY_ID) ?: return@setFragmentResultListener
+            saveHiddenEntryId(entryId)
+            cachedActivities = cachedActivities.filter { activity ->
+                activity.metadata?.get("progress_entry_id") as? String != entryId
+            }
+            // Remove directly from the live adapter (no adapter swap = no scroll disruption).
+            // Fall back to full refresh only if the item wasn't found.
+            if (adapter?.removeActivityByEntryId(entryId) == true) {
+                if (adapter?.hasActivities() == false) {
+                    updateUiState(ActivityUiState.SUCCESS_EMPTY)
+                }
+            } else {
+                refreshAdapterWithCachedActivities()
+            }
         }
 
         // Load activity on first view
@@ -154,27 +178,36 @@ class ActivityTabFragment : Fragment(), ReactionListener {
                     ApiClient.getGroupActivity(accessToken, groupId)
                 }
 
-                cachedActivities = response.activities
+                val hiddenIds = loadHiddenEntryIds()
+                cachedActivities = if (hiddenIds.isEmpty()) {
+                    response.activities
+                } else {
+                    response.activities.filter { activity ->
+                        activity.metadata?.get("progress_entry_id") as? String !in hiddenIds
+                    }
+                }
 
                 Handler(Looper.getMainLooper()).post {
-                    if (response.activities.isEmpty()) {
+                    if (cachedActivities.isEmpty()) {
                         updateUiState(ActivityUiState.SUCCESS_EMPTY)
                     } else {
                         adapter?.let { currentAdapter ->
                             val newAdapter = GroupActivityAdapter(
-                                response.activities,
+                                cachedActivities,
                                 currentUserId,
                                 onPhotoClick = ::showFullscreenPhoto,
-                                reactionListener = this@ActivityTabFragment
+                                reactionListener = this@ActivityTabFragment,
+                                onReportClick = { entryId -> ReportEntryBottomSheet.show(childFragmentManager, entryId) }
                             )
                             activityRecyclerView.adapter = newAdapter
                             adapter = newAdapter
                         } ?: run {
                             adapter = GroupActivityAdapter(
-                                response.activities,
+                                cachedActivities,
                                 currentUserId,
                                 onPhotoClick = ::showFullscreenPhoto,
-                                reactionListener = this@ActivityTabFragment
+                                reactionListener = this@ActivityTabFragment,
+                                onReportClick = { entryId -> ReportEntryBottomSheet.show(childFragmentManager, entryId) }
                             )
                             activityRecyclerView.adapter = adapter
                         }
@@ -410,25 +443,46 @@ class ActivityTabFragment : Fragment(), ReactionListener {
         )
     }
 
+    private fun loadHiddenEntryIds(): Set<String> {
+        val prefs = requireContext().getSharedPreferences("pursue_prefs", Context.MODE_PRIVATE)
+        return prefs.getStringSet("reported_progress_entry_ids", emptySet()) ?: emptySet()
+    }
+
+    private fun saveHiddenEntryId(entryId: String) {
+        val prefs = requireContext().getSharedPreferences("pursue_prefs", Context.MODE_PRIVATE)
+        val current = prefs.getStringSet("reported_progress_entry_ids", emptySet()) ?: emptySet()
+        prefs.edit().putStringSet("reported_progress_entry_ids", current + entryId).apply()
+    }
+
     private fun refreshAdapterWithCachedActivities() {
         if (cachedActivities.isEmpty()) {
             updateUiState(ActivityUiState.SUCCESS_EMPTY)
         } else {
-            // Save scroll position before updating adapter
             val layoutManager = activityRecyclerView.layoutManager as? LinearLayoutManager
-            val scrollState = layoutManager?.onSaveInstanceState()
-            
+            // Read position before swapping the adapter. Using scrollToPositionWithOffset()
+            // rather than onSaveInstanceState()/onRestoreInstanceState() — the latter stores a
+            // mPendingSavedState that can fire on any subsequent onLayoutChildren() (including
+            // user-scroll-triggered ones), causing a snap-back mid-scroll.
+            // scrollToPositionWithOffset() sets mPendingScrollPosition which is consumed and
+            // cleared in the very first layout pass after the adapter swap.
+            val firstVisible = layoutManager?.findFirstVisibleItemPosition() ?: RecyclerView.NO_POSITION
+            val offset = if (firstVisible != RecyclerView.NO_POSITION) {
+                layoutManager?.findViewByPosition(firstVisible)?.top ?: 0
+            } else 0
+
             adapter = GroupActivityAdapter(
                 cachedActivities,
                 currentUserId,
                 onPhotoClick = ::showFullscreenPhoto,
-                reactionListener = this@ActivityTabFragment
+                reactionListener = this@ActivityTabFragment,
+                onReportClick = { entryId -> ReportEntryBottomSheet.show(childFragmentManager, entryId) }
             )
             activityRecyclerView.adapter = adapter
-            
-            // Restore scroll position after adapter is set
-            scrollState?.let { layoutManager?.onRestoreInstanceState(it) }
-            
+
+            if (firstVisible != RecyclerView.NO_POSITION) {
+                layoutManager?.scrollToPositionWithOffset(firstVisible, offset)
+            }
+
             updateUiState(ActivityUiState.SUCCESS_WITH_DATA)
         }
     }

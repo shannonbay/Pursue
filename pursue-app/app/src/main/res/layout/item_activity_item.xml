@@ -82,6 +82,17 @@
                     android:textColor="@color/on_surface"
                     android:visibility="gone" />
             </LinearLayout>
+
+            <!-- Overflow menu button (report; shown only for others' progress_logged entries) -->
+            <ImageButton
+                android:id="@+id/activity_overflow_button"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:layout_gravity="top"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/overflow_menu_description"
+                android:src="@drawable/ic_more_vert_24"
+                android:visibility="gone" />
         </LinearLayout>
 
         <!-- Progress photo: full card width (below avatar row) -->
