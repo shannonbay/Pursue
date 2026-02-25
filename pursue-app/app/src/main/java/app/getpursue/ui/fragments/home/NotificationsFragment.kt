@@ -25,6 +25,7 @@ import app.getpursue.data.notifications.UnreadBadgeManager
 import app.getpursue.ui.activities.GroupDetailActivity
 import app.getpursue.ui.activities.ShareableMilestoneCardActivity
 import app.getpursue.ui.adapters.NotificationAdapter
+import app.getpursue.ui.views.DisputeBottomSheet
 import app.getpursue.ui.views.ErrorStateView
 import app.getpursue.R
 import com.google.gson.Gson
@@ -236,6 +237,14 @@ class NotificationsFragment : Fragment() {
         }
 
         when (item.type) {
+            "content_removed" -> {
+                val contentId = item.progress_entry_id
+                    ?: (item.metadata?.get("content_id") as? String)
+                if (contentId != null) {
+                    DisputeBottomSheet.show(childFragmentManager, "progress_entry", contentId)
+                }
+            }
+            "content_warned" -> { /* informational only — no action */ }
             "membership_rejected" -> { /* no navigation */ }
             "removed_from_group" -> {
                 Snackbar.make(requireView(), getString(R.string.no_longer_member_toast), Snackbar.LENGTH_SHORT).show()

@@ -1,5 +1,6 @@
 package app.getpursue.ui.views
 
+import android.content.Context
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -208,6 +209,7 @@ class PublicGroupDetailBottomSheet : BottomSheetDialogFragment() {
                 }
                 if (!isAdded) return@launch
                 transitionToJoinState(JoinState.SUCCESS)
+                maybeShowCommunityStandards()
                 Toast.makeText(requireContext(), getString(R.string.discover_join_request_sent), Toast.LENGTH_SHORT).show()
             } catch (e: ApiException) {
                 if (!isAdded) return@launch
@@ -229,6 +231,18 @@ class PublicGroupDetailBottomSheet : BottomSheetDialogFragment() {
                 transitionToJoinState(JoinState.INITIAL)
                 Toast.makeText(requireContext(), getString(R.string.error_generic), Toast.LENGTH_SHORT).show()
             }
+        }
+    }
+
+    private fun maybeShowCommunityStandards() {
+        val prefs = requireContext().getSharedPreferences("pursue_prefs", Context.MODE_PRIVATE)
+        if (!prefs.getBoolean("community_standards_shown", false)) {
+            prefs.edit().putBoolean("community_standards_shown", true).apply()
+            view?.postDelayed({
+                if (isAdded && !isStateSaved) {
+                    CommunityStandardsBottomSheet().show(parentFragmentManager, "CommunityStandards")
+                }
+            }, 600L)
         }
     }
 

@@ -891,4 +891,32 @@
     <string name="comm_link_join_telegram">Join the Telegram group</string>
     <string name="comm_link_open_failed">Could not open link</string>
 
+    <!-- Report Entry -->
+    <string name="report_entry_title">Report this entry</string>
+    <string name="report_reason_inappropriate">Inappropriate or offensive content</string>
+    <string name="report_reason_harassment">Harassment or bullying</string>
+    <string name="report_reason_spam">Spam or fake activity</string>
+    <string name="report_reason_other">Something else</string>
+    <string name="report_submit_button">Report</string>
+    <string name="report_submitted">Report submitted</string>
+    <string name="report_already_submitted">You\'ve already reported this entry</string>
+    <string name="report_failed">Failed to submit report. Please try again.</string>
+
+    <!-- Dispute -->
+    <string name="dispute_title">Dispute this removal</string>
+    <string name="dispute_hint">Why should this be allowed? (optional)</string>
+    <string name="dispute_submit_button">Submit</string>
+    <string name="dispute_submitted">Dispute submitted. We\'ll review it within 5 business days.</string>
+    <string name="dispute_failed">Failed to submit dispute. Please try again.</string>
+
+    <!-- Moderation notifications -->
+    <string name="notification_content_removed">A post of yours in %1$s was removed for violating Community Standards. Tap to dispute.</string>
+    <string name="notification_content_warned">A post of yours in %1$s was flagged as potentially inappropriate. It hasn\'t been removed.</string>
+    <string name="your_group">your group</string>
+
+    <!-- Community standards -->
+    <string name="community_standards_title">Pursue is a place to grow together</string>
+    <string name="community_standards_body">Keep it real, keep it kind. We automatically filter content to keep groups safe, and members can report anything that doesn\'t belong. Severe violations result in account suspension.</string>
+    <string name="community_standards_got_it">Got it</string>
+
 </resources>

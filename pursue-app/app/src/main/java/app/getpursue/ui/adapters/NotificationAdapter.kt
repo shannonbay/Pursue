@@ -134,6 +134,14 @@ class NotificationAdapter(
                         else -> context.getString(R.string.notification_milestone_first)
                     }
                 }
+                "content_removed" -> {
+                    val gName = item.group?.name ?: context.getString(R.string.your_group)
+                    context.getString(R.string.notification_content_removed, gName)
+                }
+                "content_warned" -> {
+                    val gName = item.group?.name ?: context.getString(R.string.your_group)
+                    context.getString(R.string.notification_content_warned, gName)
+                }
                 "challenge_suggestion" -> context.getString(R.string.notification_challenge_suggestion)
                 "challenge_starts_tomorrow" -> context.getString(R.string.notification_challenge_starts_tomorrow, groupName)
                 "challenge_started" -> context.getString(R.string.notification_challenge_started, groupName)
@@ -232,6 +240,14 @@ class NotificationAdapter(
                     avatarOverlay.text = "🚀"
                     avatarOverlay.visibility = View.VISIBLE
                 }
+                "content_removed" -> {
+                    avatarOverlay.text = "🚫"
+                    avatarOverlay.visibility = View.VISIBLE
+                }
+                "content_warned" -> {
+                    avatarOverlay.text = "⚠️"
+                    avatarOverlay.visibility = View.VISIBLE
+                }
                 "challenge_countdown" -> {
                     val countdownType = item.metadata?.get("countdown_type") as? String
                     avatarOverlay.text = when (countdownType) {
@@ -251,6 +267,8 @@ class NotificationAdapter(
                 "milestone_achieved" -> R.color.milestone_gold_border to true
                 "membership_approved" -> R.color.approved_green_border to true
                 "membership_rejected", "removed_from_group" -> R.color.on_surface_variant to true
+                "content_removed" -> R.color.error to true
+                "content_warned" -> R.color.warning_background to true
                 "challenge_starts_tomorrow" -> R.color.primary to true
                 "challenge_countdown" -> {
                     val countdownType = item.metadata?.get("countdown_type") as? String

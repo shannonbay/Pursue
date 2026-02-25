@@ -221,6 +221,9 @@ ui/views/IconPickerBottomSheet.kt - Icon selection bottom sheet
 ui/views/InviteMembersBottomSheet.kt - Member invitation bottom sheet
 ui/views/JoinGroupBottomSheet.kt - Group join bottom sheet (by invite code)
 ui/views/PublicGroupDetailBottomSheet.kt - Public group detail + join request flow
+ui/views/ReportEntryBottomSheet.kt - Report a progress entry (4 reasons → POST /api/reports)
+ui/views/DisputeBottomSheet.kt - Dispute a content removal (explanation → POST /api/disputes)
+ui/views/CommunityStandardsBottomSheet.kt - One-time community standards acknowledgement
 
 # Utils
 utils/ImageUtils.kt - Image loading and processing

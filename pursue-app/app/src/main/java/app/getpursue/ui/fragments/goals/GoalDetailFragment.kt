@@ -36,6 +36,7 @@ import app.getpursue.ui.adapters.GoalEntryAdapter
 import app.getpursue.ui.dialogs.FullscreenPhotoDialog
 import app.getpursue.R
 import app.getpursue.ui.views.ErrorStateView
+import app.getpursue.ui.views.ReportEntryBottomSheet
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -633,8 +634,9 @@ class GoalDetailFragment : Fragment() {
         adapter = GoalEntryAdapter(
             entries = entries,
             currentUserId = currentUserId ?: "",
-            onLongPress = { entry -> handleEntryLongPress(entry) },
-            onPhotoClick = ::showFullscreenPhoto
+            onLongPress  = { entry -> handleEntryLongPress(entry) },
+            onPhotoClick = ::showFullscreenPhoto,
+            onReport     = { entry -> showReportSheet(entry) }
         )
         entriesRecyclerView.adapter = adapter
         
@@ -645,6 +647,10 @@ class GoalDetailFragment : Fragment() {
     private fun showFullscreenPhoto(photoUrl: String) {
         FullscreenPhotoDialog.newInstance(photoUrl)
             .show(childFragmentManager, "FullscreenPhotoDialog")
+    }
+
+    private fun showReportSheet(entry: GoalEntryUiModel) {
+        ReportEntryBottomSheet.show(childFragmentManager, entry.id)
     }
 
     private fun handleEntryLongPress(entry: GoalEntryUiModel) {

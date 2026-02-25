@@ -21,7 +21,8 @@ class GoalEntryAdapter(
     private val entries: List<GoalEntryUiModel>,
     private val currentUserId: String,
     private val onLongPress: (GoalEntryUiModel) -> Unit = {},
-    private val onPhotoClick: ((photoUrl: String) -> Unit)? = null
+    private val onPhotoClick: ((photoUrl: String) -> Unit)? = null,
+    private val onReport: ((GoalEntryUiModel) -> Unit)? = null
 ) : RecyclerView.Adapter<GoalEntryAdapter.EntryViewHolder>() {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): EntryViewHolder {
@@ -32,7 +33,7 @@ class GoalEntryAdapter(
 
     override fun onBindViewHolder(holder: EntryViewHolder, position: Int) {
         val entry = entries[position]
-        holder.bind(entry, currentUserId, onLongPress, onPhotoClick)
+        holder.bind(entry, currentUserId, onLongPress, onPhotoClick, onReport)
     }
 
     override fun getItemCount(): Int = entries.size
@@ -49,7 +50,8 @@ class GoalEntryAdapter(
             entry: GoalEntryUiModel,
             currentUserId: String,
             onLongPress: (GoalEntryUiModel) -> Unit,
-            onPhotoClick: ((photoUrl: String) -> Unit)?
+            onPhotoClick: ((photoUrl: String) -> Unit)?,
+            onReport: ((GoalEntryUiModel) -> Unit)?
         ) {
             // Show date header if present
             if (entry.date_header != null) {
@@ -94,15 +96,22 @@ class GoalEntryAdapter(
                 Glide.with(itemView.context).clear(entryPhoto)
             }
 
-            // Long press listener for own entries
+            // Long press listener: own entries get edit/delete; others can be reported
             if (entry.is_current_user) {
                 itemView.setOnLongClickListener {
                     onLongPress(entry)
                     true
                 }
             } else {
-                itemView.setOnLongClickListener(null)
-                itemView.isLongClickable = false
+                if (onReport != null) {
+                    itemView.setOnLongClickListener {
+                        onReport.invoke(entry)
+                        true
+                    }
+                } else {
+                    itemView.setOnLongClickListener(null)
+                    itemView.isLongClickable = false
+                }
             }
         }
     }
