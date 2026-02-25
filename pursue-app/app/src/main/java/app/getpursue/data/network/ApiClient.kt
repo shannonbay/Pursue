@@ -1719,6 +1719,87 @@ object ApiClient {
         executeRequest<Unit>(request, getClient()) { Unit }
     }
 
+    /**
+     * Get a single progress entry by ID.
+     *
+     * @param accessToken JWT access token for authentication
+     * @param entryId Progress entry ID
+     * @return GoalProgressEntry (200 OK)
+     * @throws ApiException on error (401, 403, 404)
+     */
+    suspend fun getProgressEntry(accessToken: String, entryId: String): GoalProgressEntry {
+        val request = Request.Builder()
+            .url("$baseUrl/progress/$entryId")
+            .get()
+            .build()
+
+        return executeRequest(request, getClient()) { responseBody ->
+            gson.fromJson(responseBody, GoalProgressEntry::class.java)
+        }
+    }
+
+    /**
+     * Report content (progress entry) to moderators.
+     *
+     * @param accessToken JWT access token for authentication
+     * @param contentType Content type (e.g. "progress_entry")
+     * @param contentId ID of the content to report
+     * @param reason Human-readable reason for the report
+     * @return ReportContentResponse with report ID (201 Created)
+     * @throws ApiException on error (400, 401, 403, 404, 409)
+     */
+    suspend fun reportContent(
+        accessToken: String,
+        contentType: String,
+        contentId: String,
+        reason: String
+    ): ReportContentResponse {
+        val requestBody = gson.toJson(
+            ReportContentRequest(content_type = contentType, content_id = contentId, reason = reason)
+        ).toRequestBody(jsonMediaType)
+
+        val request = Request.Builder()
+            .url("$baseUrl/reports")
+            .post(requestBody)
+            .addHeader("Content-Type", "application/json")
+            .build()
+
+        return executeRequest(request, getClient()) { responseBody ->
+            gson.fromJson(responseBody, ReportContentResponse::class.java)
+        }
+    }
+
+    /**
+     * Dispute a moderation action on own content.
+     *
+     * @param accessToken JWT access token for authentication
+     * @param contentType Content type (e.g. "progress_entry")
+     * @param contentId ID of the content to dispute
+     * @param userExplanation Optional explanation from the user
+     * @return CreateDisputeResponse with dispute ID (201 Created)
+     * @throws ApiException on error (401, 403, 404, 409)
+     */
+    suspend fun createDispute(
+        accessToken: String,
+        contentType: String,
+        contentId: String,
+        userExplanation: String? = null
+    ): CreateDisputeResponse {
+        val requestBody = gson.toJson(
+            CreateDisputeRequest(content_type = contentType, content_id = contentId, user_explanation = userExplanation)
+        ).toRequestBody(jsonMediaType)
+
+        val request = Request.Builder()
+            .url("$baseUrl/disputes")
+            .post(requestBody)
+            .addHeader("Content-Type", "application/json")
+            .build()
+
+        return executeRequest(request, getClient()) { responseBody ->
+            gson.fromJson(responseBody, CreateDisputeResponse::class.java)
+        }
+    }
+
     // --- Smart Reminders ---
 
     /**
@@ -3309,3 +3390,21 @@ data class SuggestionsResponse(
  * @param errorCode Backend error code when present (e.g. "PENDING_APPROVAL", "FORBIDDEN").
  */
 class ApiException(val code: Int, message: String, val errorCode: String? = null) : Exception(message)
+
+// --- Moderation DTOs ---
+
+data class ReportContentRequest(
+    val content_type: String,
+    val content_id: String,
+    val reason: String
+)
+
+data class ReportContentResponse(val id: String)
+
+data class CreateDisputeRequest(
+    val content_type: String,
+    val content_id: String,
+    val user_explanation: String? = null
+)
+
+data class CreateDisputeResponse(val id: String)

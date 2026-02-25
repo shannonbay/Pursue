@@ -57,6 +57,9 @@ import app.getpursue.data.network.JoinRequestsListResponse
 import app.getpursue.data.network.ReviewJoinRequestResponse
 import app.getpursue.data.network.SuggestionsResponse
 import app.getpursue.data.network.PatchGroupResponse
+import app.getpursue.data.network.ReportContentResponse
+import app.getpursue.data.network.CreateDisputeResponse
+import app.getpursue.data.network.GoalProgressEntry
 import app.getpursue.models.GroupsResponse
 import app.getpursue.models.GroupDetailResponse
 import app.getpursue.models.GroupMembersResponse
@@ -696,6 +699,33 @@ class E2EApiClient(private val context: Context) {
     suspend fun dismissSuggestion(accessToken: String, groupId: String) {
         storeTokenIfPresent(accessToken)
         ApiClient.dismissSuggestion("", groupId)
+    }
+
+    // --- Moderation Endpoints ---
+
+    suspend fun getProgressEntry(accessToken: String, entryId: String): GoalProgressEntry {
+        storeTokenIfPresent(accessToken)
+        return ApiClient.getProgressEntry("", entryId)
+    }
+
+    suspend fun reportContent(
+        accessToken: String,
+        contentType: String,
+        contentId: String,
+        reason: String
+    ): ReportContentResponse {
+        storeTokenIfPresent(accessToken)
+        return ApiClient.reportContent("", contentType, contentId, reason)
+    }
+
+    suspend fun createDispute(
+        accessToken: String,
+        contentType: String,
+        contentId: String,
+        userExplanation: String? = null
+    ): CreateDisputeResponse {
+        storeTokenIfPresent(accessToken)
+        return ApiClient.createDispute("", contentType, contentId, userExplanation)
     }
 
     // --- Internal Jobs ---
