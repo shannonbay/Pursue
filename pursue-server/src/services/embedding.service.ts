@@ -40,12 +40,12 @@ export async function getQueryEmbedding(text: string): Promise<number[] | null> 
     logger.warn('[embedding] cache lookup failed — calling OpenAI anyway', { query: normalized, error: e });
   }
 
-  // 2. Call OpenAI
+  // 2. Call OpenAI (1.5s timeout — fall back to trigram quickly on the search path)
   try {
-    const response = await client.embeddings.create({
-      model: 'text-embedding-3-small',
-      input: normalized,
-    });
+    const response = await client.embeddings.create(
+      { model: 'text-embedding-3-small', input: normalized },
+      { timeout: 1500 }
+    );
     const embedding = response.data[0].embedding;
 
     // 3. Write to cache (fire-and-forget — failure is non-fatal)
