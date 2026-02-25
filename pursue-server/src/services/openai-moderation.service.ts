@@ -14,6 +14,9 @@ export async function checkTextContent(text: string): Promise<void> {
     return;
   }
 
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 10_000);
+
   try {
     const response = await fetch(OPENAI_MODERATION_URL, {
       method: 'POST',
@@ -25,6 +28,7 @@ export async function checkTextContent(text: string): Promise<void> {
         model: MODEL,
         input: text,
       }),
+      signal: controller.signal,
     });
 
     if (!response.ok) {
@@ -53,6 +57,8 @@ export async function checkTextContent(text: string): Promise<void> {
     logger.warn('OpenAI Moderation API request failed (text), failing open', {
       error: error instanceof Error ? error.message : String(error),
     });
+  } finally {
+    clearTimeout(timeout);
   }
 }
 
@@ -69,6 +75,9 @@ export async function checkPhotoWithContext(
   if (!process.env.OPENAI_API_KEY || process.env.NODE_ENV === 'test') {
     return;
   }
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 10_000);
 
   try {
     const base64 = imageBuffer.toString('base64');
@@ -94,6 +103,7 @@ export async function checkPhotoWithContext(
         model: MODEL,
         input,
       }),
+      signal: controller.signal,
     });
 
     if (!response.ok) {
@@ -122,5 +132,7 @@ export async function checkPhotoWithContext(
     logger.warn('OpenAI Moderation API request failed (photo), failing open', {
       error: error instanceof Error ? error.message : String(error),
     });
+  } finally {
+    clearTimeout(timeout);
   }
 }
