@@ -155,6 +155,9 @@ data/fcm/FcmTokenManager.kt - Local FCM token storage
 data/fcm/FcmTopicManager.kt - Group notification topic subscriptions
 data/fcm/PursueFirebaseMessagingService.kt - Incoming push notification handler
 data/notifications/NotificationPreferences.kt - User notification settings
+data/analytics/AnalyticsPreference.kt - reads CrashlyticsPreference.isEnabled(), syncs FirebaseAnalytics SDK
+data/analytics/AnalyticsLogger.kt - logEvent() + setScreen() with consent guard, initialized in PursueApplication
+data/analytics/AnalyticsEvents.kt - custom event and param name constants
 
 # Models
 models/Group.kt - Group data model
