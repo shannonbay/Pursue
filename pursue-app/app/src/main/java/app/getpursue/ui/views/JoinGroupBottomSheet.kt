@@ -9,6 +9,8 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.fragment.app.FragmentManager
+import app.getpursue.data.analytics.AnalyticsEvents
+import app.getpursue.data.analytics.AnalyticsLogger
 import app.getpursue.data.auth.SecureTokenManager
 import app.getpursue.data.fcm.FcmTopicManager
 import app.getpursue.data.network.ApiClient
@@ -210,6 +212,10 @@ class JoinGroupBottomSheet : BottomSheetDialogFragment() {
                 if (!isAdded) return@launch
                 when (response.status) {
                     "pending" -> {
+                        AnalyticsLogger.logEvent(AnalyticsEvents.GROUP_JOINED, android.os.Bundle().apply {
+                            putString(AnalyticsEvents.Param.GROUP_ID, response.group.id)
+                            putString(AnalyticsEvents.Param.STATUS, response.status)
+                        })
                         Toast.makeText(requireContext(), response.message, Toast.LENGTH_LONG).show()
                         parentFragmentManager.setFragmentResult("join_group_result", Bundle().apply {
                             putBoolean("refresh_needed", true)
@@ -217,6 +223,10 @@ class JoinGroupBottomSheet : BottomSheetDialogFragment() {
                         dismiss()
                     }
                     else -> {
+                        AnalyticsLogger.logEvent(AnalyticsEvents.GROUP_JOINED, android.os.Bundle().apply {
+                            putString(AnalyticsEvents.Param.GROUP_ID, response.group.id)
+                            putString(AnalyticsEvents.Param.STATUS, response.status)
+                        })
                         Toast.makeText(requireContext(), getString(R.string.join_group_success), Toast.LENGTH_SHORT).show()
                         // Subscribe to FCM topics for the new group
                         val groupId = response.group.id

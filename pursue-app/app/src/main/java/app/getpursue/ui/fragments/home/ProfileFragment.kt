@@ -30,6 +30,7 @@ import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import app.getpursue.data.auth.SecureTokenManager
+import app.getpursue.data.analytics.AnalyticsPreference
 import app.getpursue.data.crashlytics.CrashlyticsPreference
 import app.getpursue.data.network.ApiClient
 import app.getpursue.data.network.ApiException
@@ -150,6 +151,7 @@ class ProfileFragment : Fragment() {
         switchCrashReporting.isChecked = CrashlyticsPreference.isEnabled(requireContext())
         switchCrashReporting.setOnCheckedChangeListener { _, isChecked ->
             CrashlyticsPreference.setEnabled(requireContext(), isChecked)
+            AnalyticsPreference.setCollectionEnabled(requireContext(), isChecked)
             Snackbar.make(requireView(), R.string.crash_reporting_restart_hint, Snackbar.LENGTH_LONG).show()
             lifecycleScope.launch(Dispatchers.IO) {
                 try {

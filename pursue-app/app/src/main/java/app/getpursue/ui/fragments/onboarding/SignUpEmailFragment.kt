@@ -19,10 +19,12 @@ import androidx.fragment.app.Fragment
 import com.google.android.material.checkbox.MaterialCheckBox
 import com.google.android.material.textfield.TextInputEditText
 import androidx.lifecycle.lifecycleScope
+import app.getpursue.data.analytics.AnalyticsLogger
 import app.getpursue.data.auth.AuthRepository
 import app.getpursue.data.auth.SecureTokenManager
 import app.getpursue.data.config.PolicyConfigManager
 import app.getpursue.data.crashlytics.CrashlyticsPreference
+import com.google.firebase.analytics.FirebaseAnalytics
 import app.getpursue.data.fcm.FcmRegistrationHelper
 import app.getpursue.data.network.ApiClient
 import app.getpursue.data.network.ApiException
@@ -285,6 +287,9 @@ class SignUpEmailFragment : Fragment() {
                 }
                 
                 Toast.makeText(requireContext(), getString(R.string.account_created), Toast.LENGTH_SHORT).show()
+                AnalyticsLogger.logEvent(FirebaseAnalytics.Event.SIGN_UP, android.os.Bundle().apply {
+                    putString(FirebaseAnalytics.Param.METHOD, "email")
+                })
                 callbacks?.onSignUp(displayName, email, password)
             } catch (e: ApiException) {
                 val errorMessage = when (e.code) {

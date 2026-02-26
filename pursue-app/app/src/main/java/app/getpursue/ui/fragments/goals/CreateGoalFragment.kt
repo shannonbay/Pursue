@@ -24,6 +24,8 @@ import androidx.core.content.ContextCompat
 import androidx.activity.OnBackPressedCallback
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
+import app.getpursue.data.analytics.AnalyticsEvents
+import app.getpursue.data.analytics.AnalyticsLogger
 import app.getpursue.data.auth.SecureTokenManager
 import app.getpursue.data.network.ApiClient
 import app.getpursue.data.network.ApiException
@@ -490,6 +492,11 @@ class CreateGoalFragment : Fragment() {
 
                 Handler(Looper.getMainLooper()).post {
                     showLoading(false)
+                    AnalyticsLogger.logEvent(AnalyticsEvents.GOAL_CREATED, Bundle().apply {
+                        putString(AnalyticsEvents.Param.GROUP_ID, groupId)
+                        putString(AnalyticsEvents.Param.CADENCE, selectedCadence)
+                        putString(AnalyticsEvents.Param.METRIC_TYPE, selectedMetricType)
+                    })
                     Toast.makeText(requireContext(), getString(R.string.goal_created), Toast.LENGTH_SHORT).show()
                     hasUnsavedChanges = false
                     navigateBack()

@@ -42,6 +42,8 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import androidx.viewpager2.widget.ViewPager2
+import app.getpursue.data.analytics.AnalyticsEvents
+import app.getpursue.data.analytics.AnalyticsLogger
 import app.getpursue.data.auth.SecureTokenManager
 import app.getpursue.data.fcm.FcmTopicManager
 import app.getpursue.data.network.ApiClient
@@ -277,6 +279,13 @@ class GroupDetailFragment : Fragment() {
             override fun onPageSelected(position: Int) {
                 updateFABForTab(position, previousTabPosition)
                 previousTabPosition = position
+                val screen = when (position) {
+                    0 -> AnalyticsEvents.SCREEN_GROUP_GOALS
+                    1 -> AnalyticsEvents.SCREEN_GROUP_MEMBERS
+                    2 -> AnalyticsEvents.SCREEN_GROUP_ACTIVITY
+                    else -> return
+                }
+                AnalyticsLogger.setScreen(screen)
             }
         })
     }

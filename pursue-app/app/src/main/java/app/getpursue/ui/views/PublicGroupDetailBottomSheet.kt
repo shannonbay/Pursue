@@ -11,6 +11,8 @@ import android.widget.Toast
 import androidx.fragment.app.FragmentManager
 import androidx.lifecycle.lifecycleScope
 import app.getpursue.R
+import app.getpursue.data.analytics.AnalyticsEvents
+import app.getpursue.data.analytics.AnalyticsLogger
 import app.getpursue.data.auth.SecureTokenManager
 import app.getpursue.data.network.ApiClient
 import app.getpursue.data.network.ApiException
@@ -208,6 +210,9 @@ class PublicGroupDetailBottomSheet : BottomSheetDialogFragment() {
                     ApiClient.submitJoinRequest(token, id, note)
                 }
                 if (!isAdded) return@launch
+                AnalyticsLogger.logEvent(AnalyticsEvents.GROUP_JOIN_REQUESTED, android.os.Bundle().apply {
+                    putString(AnalyticsEvents.Param.GROUP_ID, id)
+                })
                 transitionToJoinState(JoinState.SUCCESS)
                 maybeShowCommunityStandards()
                 Toast.makeText(requireContext(), getString(R.string.discover_join_request_sent), Toast.LENGTH_SHORT).show()

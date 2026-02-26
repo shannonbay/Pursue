@@ -8,6 +8,8 @@ import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
+import app.getpursue.data.analytics.AnalyticsEvents
+import app.getpursue.data.analytics.AnalyticsLogger
 import app.getpursue.data.network.ApiClient
 import app.getpursue.data.network.ApiException
 import app.getpursue.models.GoalForLogging
@@ -111,6 +113,10 @@ class GoalLogProgressHandler(
                 val entryId = response.id
                 fragment.requireActivity().runOnUiThread {
                     if (fragment.isAdded) {
+                        AnalyticsLogger.logEvent(AnalyticsEvents.PROGRESS_LOGGED, android.os.Bundle().apply {
+                            putString(AnalyticsEvents.Param.METRIC_TYPE, goal.metricType)
+                            putString(AnalyticsEvents.Param.CADENCE, goal.cadence)
+                        })
                         HapticFeedbackUtils.vibrateToggle(snackbarParentView)
                         showPostLogPhotoSheet(entryId) {
                             performUndo(goal.id, entryId, previousCompleted, previousProgressValue, accessToken)
@@ -195,6 +201,7 @@ class GoalLogProgressHandler(
                     ApiClient.uploadProgressPhoto(accessToken, entryId, compressed.file, compressed.width, compressed.height)
                 }
                 fragment.requireActivity().runOnUiThread {
+                    AnalyticsLogger.logEvent(AnalyticsEvents.PROGRESS_PHOTO_UPLOADED)
                     fragment.context?.let { c ->
                         Toast.makeText(c, fragment.getString(R.string.photo_uploaded), Toast.LENGTH_SHORT).show()
                     }
@@ -202,6 +209,7 @@ class GoalLogProgressHandler(
             } catch (e: ApiException) {
                 fragment.requireActivity().runOnUiThread {
                     if (fragment.isAdded) {
+                        AnalyticsLogger.logEvent(AnalyticsEvents.PROGRESS_PHOTO_FAILED)
                         if (e.code == 422) {
                             val snackbar = Snackbar.make(
                                 snackbarParentView,
@@ -223,6 +231,7 @@ class GoalLogProgressHandler(
             } catch (e: Exception) {
                 fragment.requireActivity().runOnUiThread {
                     if (fragment.isAdded) {
+                        AnalyticsLogger.logEvent(AnalyticsEvents.PROGRESS_PHOTO_FAILED)
                         Snackbar.make(snackbarParentView, fragment.getString(R.string.photo_upload_failed), Snackbar.LENGTH_SHORT).show()
                     }
                 }
@@ -360,6 +369,10 @@ class GoalLogProgressHandler(
                 val entryId = response.id
                 fragment.requireActivity().runOnUiThread {
                     if (fragment.isAdded) {
+                        AnalyticsLogger.logEvent(AnalyticsEvents.PROGRESS_LOGGED, android.os.Bundle().apply {
+                            putString(AnalyticsEvents.Param.METRIC_TYPE, goal.metricType)
+                            putString(AnalyticsEvents.Param.CADENCE, goal.cadence)
+                        })
                         HapticFeedbackUtils.vibrateToggle(snackbarParentView)
                         showPostLogPhotoSheet(entryId) {
                             performUndo(goal.id, entryId, previousCompleted, previousProgressValue, accessToken)
@@ -482,6 +495,10 @@ class GoalLogProgressHandler(
                 val entryId = response.id
                 fragment.requireActivity().runOnUiThread {
                     if (fragment.isAdded) {
+                        AnalyticsLogger.logEvent(AnalyticsEvents.PROGRESS_LOGGED, android.os.Bundle().apply {
+                            putString(AnalyticsEvents.Param.METRIC_TYPE, goal.metricType)
+                            putString(AnalyticsEvents.Param.CADENCE, goal.cadence)
+                        })
                         HapticFeedbackUtils.vibrateToggle(snackbarParentView)
                         showPostLogPhotoSheet(entryId) {
                             performUndo(goal.id, entryId, previousCompleted, previousProgressValue, accessToken)
@@ -552,6 +569,9 @@ class GoalLogProgressHandler(
                     ApiClient.deleteProgressEntry(accessToken, entryId)
                 }
                 fragment.requireActivity().runOnUiThread {
+                    AnalyticsLogger.logEvent(AnalyticsEvents.PROGRESS_DELETED, android.os.Bundle().apply {
+                        putString(AnalyticsEvents.Param.CADENCE, goal.cadence)
+                    })
                     fragment.context?.let { c ->
                         Toast.makeText(c, fragment.getString(R.string.progress_removed_toast), Toast.LENGTH_SHORT).show()
                     }

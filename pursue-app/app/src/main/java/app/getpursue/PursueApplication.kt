@@ -1,6 +1,8 @@
 package app.getpursue
 
 import android.app.Application
+import app.getpursue.data.analytics.AnalyticsLogger
+import app.getpursue.data.analytics.AnalyticsPreference
 import app.getpursue.data.crashlytics.CrashlyticsPreference
 import app.getpursue.data.network.ApiClient
 import com.google.firebase.crashlytics.FirebaseCrashlytics
@@ -17,7 +19,9 @@ class PursueApplication : Application() {
 
         // Initialize API client (buildClient uses applicationContext to avoid leaking)
         ApiClient.initialize(ApiClient.buildClient(this))
+        AnalyticsLogger.initialize(this)
         setupCrashlytics()
+        setupAnalytics()
     }
 
     private fun setupCrashlytics() {
@@ -33,5 +37,9 @@ class PursueApplication : Application() {
         } catch (e: IllegalStateException) {
             // Firebase not initialized — expected in Robolectric test environment
         }
+    }
+
+    private fun setupAnalytics() {
+        AnalyticsPreference.setCollectionEnabled(this, AnalyticsPreference.isEnabled(this))
     }
 }

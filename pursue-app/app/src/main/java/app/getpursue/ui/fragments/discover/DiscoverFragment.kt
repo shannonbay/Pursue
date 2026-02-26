@@ -20,6 +20,8 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import app.getpursue.R
+import app.getpursue.data.analytics.AnalyticsEvents
+import app.getpursue.data.analytics.AnalyticsLogger
 import app.getpursue.data.network.ApiClient
 import app.getpursue.data.network.ApiException
 import app.getpursue.data.network.DiscoverGroupItem
@@ -114,6 +116,9 @@ class DiscoverFragment : Fragment() {
                 setOnCheckedChangeListener { _, isChecked ->
                     if (isChecked && selectedCategoryIndex != index) {
                         selectedCategoryIndex = index
+                        AnalyticsLogger.logEvent(AnalyticsEvents.DISCOVER_FILTER_CATEGORY, android.os.Bundle().apply {
+                            putString(AnalyticsEvents.Param.CATEGORY, categoryValues[index] ?: "all")
+                        })
                         loadGroups(reset = true)
                     }
                 }
@@ -138,6 +143,9 @@ class DiscoverFragment : Fragment() {
                 }
                 if (selectedSortIndex != position) {
                     selectedSortIndex = position
+                    AnalyticsLogger.logEvent(AnalyticsEvents.DISCOVER_SORT_CHANGED, android.os.Bundle().apply {
+                        putString(AnalyticsEvents.Param.SORT, sortValues[position])
+                    })
                     loadGroups(reset = true)
                 }
             }
@@ -156,6 +164,11 @@ class DiscoverFragment : Fragment() {
                 searchRunnable = Runnable {
                     if (searchQuery != query) {
                         searchQuery = query
+                        if (query.isNotBlank()) {
+                            AnalyticsLogger.logEvent(AnalyticsEvents.DISCOVER_SEARCH, android.os.Bundle().apply {
+                                putString(AnalyticsEvents.Param.QUERY, query)
+                            })
+                        }
                         loadGroups(reset = true)
                     }
                 }
@@ -169,6 +182,9 @@ class DiscoverFragment : Fragment() {
         recyclerView.layoutManager = layoutManager
 
         val newAdapter = DiscoverGroupAdapter(groups) { group ->
+            AnalyticsLogger.logEvent(AnalyticsEvents.DISCOVER_GROUP_TAPPED, android.os.Bundle().apply {
+                putString(AnalyticsEvents.Param.GROUP_ID, group.id)
+            })
             PublicGroupDetailBottomSheet.show(childFragmentManager, group.id)
         }
         adapter = newAdapter

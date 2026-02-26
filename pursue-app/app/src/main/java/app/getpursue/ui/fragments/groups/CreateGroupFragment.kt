@@ -29,6 +29,8 @@ import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
 import android.os.Handler
 import android.os.Looper
+import app.getpursue.data.analytics.AnalyticsEvents
+import app.getpursue.data.analytics.AnalyticsLogger
 import app.getpursue.data.auth.SecureTokenManager
 import app.getpursue.data.fcm.FcmTopicManager
 import app.getpursue.data.network.ApiClient
@@ -510,6 +512,12 @@ class CreateGroupFragment : Fragment() {
                 launch { FcmTopicManager.subscribeToGroupTopics(context, groupId) }
 
                 showLoading(false)
+                AnalyticsLogger.logEvent(AnalyticsEvents.GROUP_CREATED, Bundle().apply {
+                    putString(AnalyticsEvents.Param.VISIBILITY, selectedVisibility)
+                    putString(AnalyticsEvents.Param.CATEGORY, selectedCategory ?: "none")
+                    putString(AnalyticsEvents.Param.CADENCE, cadence)
+                    putString(AnalyticsEvents.Param.METRIC_TYPE, metricType)
+                })
                 Toast.makeText(context, getString(R.string.group_created), Toast.LENGTH_SHORT).show()
 
                 if (callbacks != null) {

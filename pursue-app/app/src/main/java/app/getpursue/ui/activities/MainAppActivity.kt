@@ -33,6 +33,8 @@ import androidx.core.view.MenuProvider
 import androidx.fragment.app.FragmentManager
 import androidx.fragment.app.commit
 import androidx.lifecycle.lifecycleScope
+import app.getpursue.data.analytics.AnalyticsEvents
+import app.getpursue.data.analytics.AnalyticsLogger
 import app.getpursue.data.auth.AuthRepository
 import app.getpursue.data.auth.AuthState
 import app.getpursue.data.auth.GoogleSignInHelper
@@ -605,18 +607,22 @@ class MainAppActivity : AppCompatActivity(),
         val fragment = when (item.itemId) {
             R.id.nav_home -> {
                 supportActionBar?.title = getString(R.string.groups_title)
+                AnalyticsLogger.setScreen(AnalyticsEvents.SCREEN_HOME)
                 HomeFragment.Companion.newInstance()
             }
             R.id.nav_today -> {
                 supportActionBar?.title = getString(R.string.today_title)
+                AnalyticsLogger.setScreen(AnalyticsEvents.SCREEN_TODAY)
                 TodayFragment.Companion.newInstance()
             }
             R.id.nav_discover -> {
                 supportActionBar?.title = getString(R.string.discover_title)
+                AnalyticsLogger.setScreen(AnalyticsEvents.SCREEN_DISCOVER)
                 DiscoverFragment.newInstance()
             }
             R.id.nav_profile -> {
                 supportActionBar?.title = getString(R.string.profile_title)
+                AnalyticsLogger.setScreen(AnalyticsEvents.SCREEN_PROFILE)
                 ProfileFragment.Companion.newInstance()
             }
             else -> return false

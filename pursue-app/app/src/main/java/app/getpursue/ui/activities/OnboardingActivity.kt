@@ -15,6 +15,7 @@ import app.getpursue.data.auth.AuthRepository
 import app.getpursue.data.auth.GoogleSignInHelper
 import app.getpursue.data.auth.GoogleSignInResult
 import app.getpursue.data.auth.SecureTokenManager
+import app.getpursue.data.analytics.AnalyticsLogger
 import app.getpursue.data.config.PolicyConfigManager
 import app.getpursue.data.crashlytics.CrashlyticsEvents
 import app.getpursue.data.crashlytics.CrashlyticsLogger
@@ -22,6 +23,7 @@ import app.getpursue.data.crashlytics.CrashlyticsPreference
 import app.getpursue.data.fcm.FcmRegistrationHelper
 import app.getpursue.data.network.ApiClient
 import app.getpursue.data.network.ApiException
+import com.google.firebase.analytics.FirebaseAnalytics
 import com.google.firebase.crashlytics.FirebaseCrashlytics
 import app.getpursue.ui.fragments.onboarding.SignInEmailFragment
 import app.getpursue.ui.fragments.onboarding.SignUpEmailFragment
@@ -117,6 +119,9 @@ class OnboardingActivity : AppCompatActivity(),
                     CrashlyticsPreference.setCurrentUser(this@OnboardingActivity, it)
                 }
                 CrashlyticsLogger.log(CrashlyticsEvents.USER_LOGGED_IN)
+                AnalyticsLogger.logEvent(FirebaseAnalytics.Event.LOGIN, android.os.Bundle().apply {
+                    putString(FirebaseAnalytics.Param.METHOD, "email")
+                })
 
                 // Navigate to main app (ensure UI operations run on main thread)
                 runOnUiThread {
@@ -312,6 +317,10 @@ class OnboardingActivity : AppCompatActivity(),
                     CrashlyticsPreference.setCurrentUser(this@OnboardingActivity, it)
                 }
                 CrashlyticsLogger.log(CrashlyticsEvents.USER_LOGGED_IN)
+                val googleEvent = if (response.is_new_user) FirebaseAnalytics.Event.SIGN_UP else FirebaseAnalytics.Event.LOGIN
+                AnalyticsLogger.logEvent(googleEvent, android.os.Bundle().apply {
+                    putString(FirebaseAnalytics.Param.METHOD, "google")
+                })
 
                 // Navigate to main app or orientation (ensure UI operations run on main thread)
                 runOnUiThread {

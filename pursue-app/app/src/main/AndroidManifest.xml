@@ -81,6 +81,10 @@
             android:name="firebase_crashlytics_collection_enabled"
             android:value="${firebase_crashlytics_collection_enabled}" />
 
+        <meta-data
+            android:name="google_analytics_collection_enabled"
+            android:value="false" />
+
     </application>
 
 </manifest>
