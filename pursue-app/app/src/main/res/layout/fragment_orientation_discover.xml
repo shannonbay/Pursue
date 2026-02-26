@@ -86,7 +86,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
-            android:text="@string/orientation_create_own_group"
+            android:text="@string/orientation_try_a_challenge"
             android:textColor="?attr/colorSecondary"
             android:textStyle="bold" />
 

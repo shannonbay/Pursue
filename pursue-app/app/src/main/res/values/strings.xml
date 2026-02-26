@@ -790,6 +790,7 @@
     <string name="orientation_step_x_of_4">Step %1$d of 4</string>
     <string name="orientation_discover_title">Find a group to join</string>
     <string name="orientation_discover_description">Browse public groups and request to join one that fits your goals.</string>
+    <string name="orientation_try_a_challenge">I\'d rather try a challenge</string>
     <string name="orientation_challenge_title">Try a challenge!</string>
     <string name="orientation_challenge_description">Challenges are time-boxed goals — like "30-Day No Sugar" or "Read Every Day for a Week." Pick a template and start today.</string>
     <string name="orientation_info_card_title">What\'s the difference between groups and challenges?</string>
