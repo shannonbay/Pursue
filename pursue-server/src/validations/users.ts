@@ -18,8 +18,11 @@ export const GetGroupsQuerySchema = z.object({
   offset: z.coerce.number().int().min(0).default(0).optional(),
 });
 
+export const ConsentActionSchema = z.enum(['grant', 'revoke']);
+
 export const RecordConsentsSchema = z.object({
   consent_types: z.array(z.string().max(50)).min(1).max(10),
+  action: ConsentActionSchema.optional(),
 }).strict();
 
 export const ConsentHashLookupSchema = z.object({

@@ -11,6 +11,7 @@ import {
   getSubscriptionEligibilityHandler,
   getUserGroups,
   getUserConsents,
+  getUserConsentStatus,
   recordConsents,
   getConsentEmailHash,
   deleteCurrentUser,
@@ -29,6 +30,7 @@ router.get('/me/providers', authenticate, getAuthProviders);
 router.get('/me/subscription', authenticate, getSubscription);
 router.get('/me/subscription/eligibility', authenticate, getSubscriptionEligibilityHandler);
 router.get('/me/groups', authenticate, getUserGroups);
+router.get('/me/consents/status', authenticate, getUserConsentStatus);
 router.get('/me/consents', authenticate, getUserConsents);
 router.post('/me/consents', authenticate, recordConsents);
 router.post('/consent-hash', getConsentEmailHash);

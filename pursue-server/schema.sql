@@ -81,12 +81,16 @@ CREATE TABLE user_consents (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   user_id UUID REFERENCES users(id) ON DELETE SET NULL,
   consent_type VARCHAR(50) NOT NULL,
+  action VARCHAR(10) NOT NULL DEFAULT 'grant'
+    CHECK (action IN ('grant', 'revoke')),
   agreed_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
   ip_address VARCHAR(45),
   email_hash VARCHAR(64)  -- SHA-256 of email + salt, set on account deletion
 );
 
 CREATE INDEX idx_user_consents_user_id ON user_consents(user_id);
+CREATE INDEX idx_user_consents_type_time
+    ON user_consents(user_id, consent_type, agreed_at DESC);
 
 -- Devices (for FCM push notifications)
 CREATE TABLE devices (

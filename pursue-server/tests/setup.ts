@@ -642,6 +642,8 @@ async function createSchema(db: Kysely<Database>) {
       id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
       user_id UUID REFERENCES users(id) ON DELETE SET NULL,
       consent_type VARCHAR(50) NOT NULL,
+      action VARCHAR(10) NOT NULL DEFAULT 'grant'
+        CHECK (action IN ('grant', 'revoke')),
       agreed_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
       ip_address VARCHAR(45),
       email_hash VARCHAR(64)
@@ -673,6 +675,23 @@ async function createSchema(db: Kysely<Database>) {
         ALTER TABLE user_consents ADD COLUMN email_hash VARCHAR(64);
       END IF;
     END $$
+  `.execute(db);
+  // Add action column to user_consents (for revocation tracking)
+  await sql`
+    DO $$ BEGIN
+      IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = 'user_consents' AND column_name = 'action'
+      ) THEN
+        ALTER TABLE user_consents
+          ADD COLUMN action VARCHAR(10) NOT NULL DEFAULT 'grant'
+            CHECK (action IN ('grant', 'revoke'));
+      END IF;
+    END $$
+  `.execute(db);
+  await sql`
+    CREATE INDEX IF NOT EXISTS idx_user_consents_type_time
+    ON user_consents(user_id, consent_type, agreed_at DESC)
   `.execute(db);
 
   // Create goals table

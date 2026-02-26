@@ -740,7 +740,7 @@ export async function getUserConsents(
 
     const consents = await db
       .selectFrom('user_consents')
-      .select(['consent_type', 'agreed_at'])
+      .select(['consent_type', 'action', 'agreed_at'])
       .where('user_id', '=', req.user.id)
       .orderBy('agreed_at', 'desc')
       .execute();
@@ -763,16 +763,49 @@ export async function recordConsents(
     }
 
     const data = RecordConsentsSchema.parse(req.body);
+    const action = data.action ?? 'grant';
 
     await db.insertInto('user_consents').values(
       data.consent_types.map(ct => ({
         user_id: req.user!.id,
         consent_type: ct,
+        action,
         ip_address: req.ip || null,
       }))
     ).execute();
 
     res.status(201).json({ success: true });
+  } catch (error) {
+    next(error);
+  }
+}
+
+// GET /api/users/me/consents/status
+export async function getUserConsentStatus(
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    if (!req.user) {
+      throw new ApplicationError('Unauthorized', 401, 'UNAUTHORIZED');
+    }
+
+    const rows = await db
+      .selectFrom('user_consents')
+      .select(['consent_type', 'action', 'agreed_at'])
+      .where('user_id', '=', req.user.id)
+      .distinctOn('consent_type')
+      .orderBy('consent_type', 'asc')
+      .orderBy('agreed_at', 'desc')
+      .execute();
+
+    const status: Record<string, { action: string; updated_at: Date }> = {};
+    for (const row of rows) {
+      status[row.consent_type] = { action: row.action, updated_at: row.agreed_at };
+    }
+
+    res.status(200).json({ status });
   } catch (error) {
     next(error);
   }

@@ -318,6 +318,7 @@ export interface UserConsentsTable {
   id: Generated<string>;
   user_id: string | null;
   consent_type: string;
+  action: ColumnType<'grant' | 'revoke', 'grant' | 'revoke' | undefined, never>;
   agreed_at: ColumnType<Date, string | undefined, never>;
   ip_address: string | null;
   email_hash: string | null;

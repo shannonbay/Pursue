@@ -29,6 +29,25 @@ describe('User Consents API', () => {
       expect(response.status).toBe(401);
     });
 
+    it('should include action field in response objects', async () => {
+      const { accessToken } = await createAuthenticatedUser();
+
+      await request(app)
+        .post('/api/users/me/consents')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send({ consent_types: ['crash_reporting'], action: 'grant' });
+
+      const response = await request(app)
+        .get('/api/users/me/consents')
+        .set('Authorization', `Bearer ${accessToken}`);
+
+      expect(response.status).toBe(200);
+      const crashEntry = response.body.consents.find((c: any) => c.consent_type === 'crash_reporting');
+      expect(crashEntry).toBeDefined();
+      expect(crashEntry).toHaveProperty('action');
+      expect(crashEntry.action).toBe('grant');
+    });
+
     it('should return consents ordered by agreed_at desc', async () => {
       const { userId, accessToken } = await createAuthenticatedUser();
 
@@ -115,6 +134,209 @@ describe('User Consents API', () => {
         });
 
       expect(response.status).toBe(400);
+    });
+
+    it('should record action: grant when explicit', async () => {
+      const { userId, accessToken } = await createAuthenticatedUser();
+
+      const response = await request(app)
+        .post('/api/users/me/consents')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send({ consent_types: ['crash_reporting'], action: 'grant' });
+
+      expect(response.status).toBe(201);
+
+      const rows = await testDb
+        .selectFrom('user_consents')
+        .select(['action'])
+        .where('user_id', '=', userId)
+        .where('consent_type', '=', 'crash_reporting')
+        .execute();
+      expect(rows.length).toBeGreaterThanOrEqual(1);
+      expect(rows[rows.length - 1].action).toBe('grant');
+    });
+
+    it('should record action: revoke', async () => {
+      const { userId, accessToken } = await createAuthenticatedUser();
+
+      const response = await request(app)
+        .post('/api/users/me/consents')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send({ consent_types: ['crash_reporting'], action: 'revoke' });
+
+      expect(response.status).toBe(201);
+
+      const rows = await testDb
+        .selectFrom('user_consents')
+        .select(['action'])
+        .where('user_id', '=', userId)
+        .where('consent_type', '=', 'crash_reporting')
+        .execute();
+      expect(rows.length).toBeGreaterThanOrEqual(1);
+      expect(rows[rows.length - 1].action).toBe('revoke');
+    });
+
+    it('should default action to grant when omitted (backwards compat)', async () => {
+      const { userId, accessToken } = await createAuthenticatedUser();
+
+      const response = await request(app)
+        .post('/api/users/me/consents')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send({ consent_types: ['crash_reporting'] });
+
+      expect(response.status).toBe(201);
+
+      const rows = await testDb
+        .selectFrom('user_consents')
+        .select(['action'])
+        .where('user_id', '=', userId)
+        .where('consent_type', '=', 'crash_reporting')
+        .execute();
+      expect(rows[rows.length - 1].action).toBe('grant');
+    });
+
+    it('should reject invalid action values', async () => {
+      const { accessToken } = await createAuthenticatedUser();
+
+      const response = await request(app)
+        .post('/api/users/me/consents')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send({ consent_types: ['crash_reporting'], action: 'delete' });
+
+      expect(response.status).toBe(400);
+    });
+
+    it('should apply single action to all types in batch', async () => {
+      const { userId, accessToken } = await createAuthenticatedUser();
+
+      const response = await request(app)
+        .post('/api/users/me/consents')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send({
+          consent_types: ['crash_reporting', 'analytics'],
+          action: 'revoke',
+        });
+
+      expect(response.status).toBe(201);
+
+      const rows = await testDb
+        .selectFrom('user_consents')
+        .select(['consent_type', 'action'])
+        .where('user_id', '=', userId)
+        .where('consent_type', 'in', ['crash_reporting', 'analytics'])
+        .execute();
+
+      expect(rows.length).toBe(2);
+      for (const row of rows) {
+        expect(row.action).toBe('revoke');
+      }
+    });
+  });
+
+  describe('GET /api/users/me/consents/status', () => {
+    it('should return 401 without authentication', async () => {
+      const response = await request(app)
+        .get('/api/users/me/consents/status');
+
+      expect(response.status).toBe(401);
+    });
+
+    it('should return action: grant after opt-in', async () => {
+      const { accessToken } = await createAuthenticatedUser();
+
+      await request(app)
+        .post('/api/users/me/consents')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send({ consent_types: ['crash_reporting'], action: 'grant' });
+
+      const response = await request(app)
+        .get('/api/users/me/consents/status')
+        .set('Authorization', `Bearer ${accessToken}`);
+
+      expect(response.status).toBe(200);
+      expect(response.body.status.crash_reporting).toBeDefined();
+      expect(response.body.status.crash_reporting.action).toBe('grant');
+      expect(response.body.status.crash_reporting.updated_at).toBeDefined();
+    });
+
+    it('should return action: revoke after opt-in then opt-out (latest wins)', async () => {
+      const { accessToken } = await createAuthenticatedUser();
+
+      await request(app)
+        .post('/api/users/me/consents')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send({ consent_types: ['crash_reporting'], action: 'grant' });
+
+      await request(app)
+        .post('/api/users/me/consents')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send({ consent_types: ['crash_reporting'], action: 'revoke' });
+
+      const response = await request(app)
+        .get('/api/users/me/consents/status')
+        .set('Authorization', `Bearer ${accessToken}`);
+
+      expect(response.status).toBe(200);
+      expect(response.body.status.crash_reporting.action).toBe('revoke');
+    });
+
+    it('should return action: grant after grant → revoke → grant (latest wins)', async () => {
+      const { accessToken } = await createAuthenticatedUser();
+
+      for (const action of ['grant', 'revoke', 'grant']) {
+        await request(app)
+          .post('/api/users/me/consents')
+          .set('Authorization', `Bearer ${accessToken}`)
+          .send({ consent_types: ['crash_reporting'], action });
+      }
+
+      const response = await request(app)
+        .get('/api/users/me/consents/status')
+        .set('Authorization', `Bearer ${accessToken}`);
+
+      expect(response.status).toBe(200);
+      expect(response.body.status.crash_reporting.action).toBe('grant');
+    });
+
+    it('should return independent statuses for multiple consent types', async () => {
+      const { accessToken } = await createAuthenticatedUser();
+
+      await request(app)
+        .post('/api/users/me/consents')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send({ consent_types: ['crash_reporting'], action: 'grant' });
+
+      await request(app)
+        .post('/api/users/me/consents')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send({ consent_types: ['analytics'], action: 'revoke' });
+
+      const response = await request(app)
+        .get('/api/users/me/consents/status')
+        .set('Authorization', `Bearer ${accessToken}`);
+
+      expect(response.status).toBe(200);
+      expect(response.body.status.crash_reporting.action).toBe('grant');
+      expect(response.body.status.analytics.action).toBe('revoke');
+    });
+
+    it('should not include other users consents', async () => {
+      const { accessToken: tokenA } = await createAuthenticatedUser(randomEmail());
+      const { accessToken: tokenB } = await createAuthenticatedUser(randomEmail());
+
+      await request(app)
+        .post('/api/users/me/consents')
+        .set('Authorization', `Bearer ${tokenA}`)
+        .send({ consent_types: ['crash_reporting'], action: 'grant' });
+
+      const response = await request(app)
+        .get('/api/users/me/consents/status')
+        .set('Authorization', `Bearer ${tokenB}`);
+
+      expect(response.status).toBe(200);
+      // User B should not see user A's crash_reporting consent
+      // (User B may have registration consents, but not crash_reporting)
+      expect(response.body.status.crash_reporting).toBeUndefined();
     });
   });
 
