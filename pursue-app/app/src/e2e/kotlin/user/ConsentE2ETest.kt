@@ -20,22 +20,24 @@ import org.junit.Test
 class ConsentE2ETest : E2ETest() {
 
     @Test
-    fun `record crash_reporting grant and status reflects grant`() = runTest {
+    fun `record analytics and crash_reporting grant and status reflects grant`() = runTest {
         val auth = getOrCreateSharedUser()
 
-        api.recordConsents(auth.access_token, listOf("crash_reporting"), action = "grant")
+        api.recordConsents(auth.access_token, listOf("analytics", "crash_reporting"), action = "grant")
 
         val status = api.getConsentStatus(auth.access_token)
+        Truth.assertThat(status.status["analytics"]?.action).isEqualTo("grant")
         Truth.assertThat(status.status["crash_reporting"]?.action).isEqualTo("grant")
     }
 
     @Test
-    fun `record crash_reporting revoke and status reflects revoke`() = runTest {
+    fun `record analytics and crash_reporting revoke and status reflects revoke`() = runTest {
         val auth = getOrCreateSharedUser()
 
-        api.recordConsents(auth.access_token, listOf("crash_reporting"), action = "revoke")
+        api.recordConsents(auth.access_token, listOf("analytics", "crash_reporting"), action = "revoke")
 
         val status = api.getConsentStatus(auth.access_token)
+        Truth.assertThat(status.status["analytics"]?.action).isEqualTo("revoke")
         Truth.assertThat(status.status["crash_reporting"]?.action).isEqualTo("revoke")
     }
 
@@ -43,11 +45,12 @@ class ConsentE2ETest : E2ETest() {
     fun `status returns latest action after full toggle cycle`() = runTest {
         val auth = getOrCreateSharedUser()
 
-        api.recordConsents(auth.access_token, listOf("crash_reporting"), action = "grant")
-        api.recordConsents(auth.access_token, listOf("crash_reporting"), action = "revoke")
-        api.recordConsents(auth.access_token, listOf("crash_reporting"), action = "grant")
+        api.recordConsents(auth.access_token, listOf("analytics", "crash_reporting"), action = "grant")
+        api.recordConsents(auth.access_token, listOf("analytics", "crash_reporting"), action = "revoke")
+        api.recordConsents(auth.access_token, listOf("analytics", "crash_reporting"), action = "grant")
 
         val status = api.getConsentStatus(auth.access_token)
+        Truth.assertThat(status.status["analytics"]?.action).isEqualTo("grant")
         Truth.assertThat(status.status["crash_reporting"]?.action).isEqualTo("grant")
     }
 
@@ -79,14 +82,18 @@ class ConsentE2ETest : E2ETest() {
     }
 
     @Test
-    fun `audit log includes action field`() = runTest {
+    fun `audit log includes action field for both analytics and crash_reporting`() = runTest {
         val auth = getOrCreateSharedUser()
 
-        api.recordConsents(auth.access_token, listOf("crash_reporting"), action = "grant")
+        api.recordConsents(auth.access_token, listOf("analytics", "crash_reporting"), action = "grant")
 
         val consents = api.getMyConsents(auth.access_token)
-        val entry = consents.consents.firstOrNull { it.consent_type == "crash_reporting" }
-        Truth.assertThat(entry).isNotNull()
-        Truth.assertThat(entry!!.action).isEqualTo("grant")
+        val crashEntry = consents.consents.firstOrNull { it.consent_type == "crash_reporting" }
+        Truth.assertThat(crashEntry).isNotNull()
+        Truth.assertThat(crashEntry!!.action).isEqualTo("grant")
+
+        val analyticsEntry = consents.consents.firstOrNull { it.consent_type == "analytics" }
+        Truth.assertThat(analyticsEntry).isNotNull()
+        Truth.assertThat(analyticsEntry!!.action).isEqualTo("grant")
     }
 }

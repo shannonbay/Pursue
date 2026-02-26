@@ -30,6 +30,7 @@ import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import app.getpursue.data.auth.SecureTokenManager
+import app.getpursue.data.crashlytics.CrashlyticsPreference
 import app.getpursue.data.network.ApiClient
 import app.getpursue.data.network.ApiException
 import app.getpursue.data.network.User
@@ -37,6 +38,7 @@ import app.getpursue.data.notifications.NotificationPreferences
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.materialswitch.MaterialSwitch
+import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.textfield.TextInputEditText
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -65,6 +67,7 @@ class ProfileFragment : Fragment() {
     private lateinit var switchNotifyProgressLogs: MaterialSwitch
     private lateinit var switchNotifyGroupEvents: MaterialSwitch
     private lateinit var switchNotifyNudges: MaterialSwitch
+    private lateinit var switchCrashReporting: MaterialSwitch
     private lateinit var loadingIndicator: ProgressBar
     private lateinit var subscriptionStatus: TextView
     private lateinit var subscriptionRenews: TextView
@@ -123,6 +126,7 @@ class ProfileFragment : Fragment() {
         switchNotifyProgressLogs = view.findViewById(R.id.switch_notify_progress_logs)
         switchNotifyGroupEvents = view.findViewById(R.id.switch_notify_group_events)
         switchNotifyNudges = view.findViewById(R.id.switch_notify_nudges)
+        switchCrashReporting = view.findViewById(R.id.switch_crash_reporting)
         loadingIndicator = view.findViewById(R.id.loading_indicator)
         subscriptionStatus = view.findViewById(R.id.subscription_status)
         subscriptionRenews = view.findViewById(R.id.subscription_renews)
@@ -142,7 +146,26 @@ class ProfileFragment : Fragment() {
         switchNotifyNudges.setOnCheckedChangeListener { _, isChecked ->
             NotificationPreferences.setNotifyNudges(requireContext(), isChecked)
         }
-        
+
+        switchCrashReporting.isChecked = CrashlyticsPreference.isEnabled(requireContext())
+        switchCrashReporting.setOnCheckedChangeListener { _, isChecked ->
+            CrashlyticsPreference.setEnabled(requireContext(), isChecked)
+            Snackbar.make(requireView(), R.string.crash_reporting_restart_hint, Snackbar.LENGTH_LONG).show()
+            lifecycleScope.launch(Dispatchers.IO) {
+                try {
+                    val token = SecureTokenManager.getInstance(requireContext()).getAccessToken()
+                        ?: return@launch
+                    ApiClient.recordConsents(
+                        token,
+                        listOf("analytics", "crash_reporting"),
+                        action = if (isChecked) "grant" else "revoke"
+                    )
+                } catch (e: Exception) {
+                    // Non-critical — local preference already saved
+                }
+            }
+        }
+
         // Set up click listeners
         avatarImage.setOnClickListener {
             showImageSourceDialog()

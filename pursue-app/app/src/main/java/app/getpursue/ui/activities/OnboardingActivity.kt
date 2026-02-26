@@ -16,9 +16,13 @@ import app.getpursue.data.auth.GoogleSignInHelper
 import app.getpursue.data.auth.GoogleSignInResult
 import app.getpursue.data.auth.SecureTokenManager
 import app.getpursue.data.config.PolicyConfigManager
+import app.getpursue.data.crashlytics.CrashlyticsEvents
+import app.getpursue.data.crashlytics.CrashlyticsLogger
+import app.getpursue.data.crashlytics.CrashlyticsPreference
 import app.getpursue.data.fcm.FcmRegistrationHelper
 import app.getpursue.data.network.ApiClient
 import app.getpursue.data.network.ApiException
+import com.google.firebase.crashlytics.FirebaseCrashlytics
 import app.getpursue.ui.fragments.onboarding.SignInEmailFragment
 import app.getpursue.ui.fragments.onboarding.SignUpEmailFragment
 import app.getpursue.ui.fragments.onboarding.WelcomeFragment
@@ -108,16 +112,22 @@ class OnboardingActivity : AppCompatActivity(),
                     Log.w("OnboardingActivity", "FCM token registration failed", e)
                 }
 
+                response.user?.id?.let {
+                    FirebaseCrashlytics.getInstance().setUserId(it)
+                    CrashlyticsPreference.setCurrentUser(this@OnboardingActivity, it)
+                }
+                CrashlyticsLogger.log(CrashlyticsEvents.USER_LOGGED_IN)
+
                 // Navigate to main app (ensure UI operations run on main thread)
                 runOnUiThread {
                     Toast.makeText(this@OnboardingActivity, "Sign in successful", Toast.LENGTH_SHORT).show()
-
-                    // Start MainAppActivity with flags to ensure fresh instance and clear task stack
-                    val intent = Intent(this@OnboardingActivity, MainAppActivity::class.java)
-                    intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
                     Log.d("OnboardingActivity", "Navigating to MainAppActivity after email sign-in")
-                    startActivity(intent)
-                    finish()
+
+                    if (!CrashlyticsPreference.isConsentAsked(this@OnboardingActivity)) {
+                        showCrashConsentDialog(response.access_token)
+                    } else {
+                        navigateToMainApp()
+                    }
                 }
 
             } catch (e: ApiException) {
@@ -297,6 +307,12 @@ class OnboardingActivity : AppCompatActivity(),
                     Log.w("OnboardingActivity", "FCM token registration failed", e)
                 }
 
+                response.user?.id?.let {
+                    FirebaseCrashlytics.getInstance().setUserId(it)
+                    CrashlyticsPreference.setCurrentUser(this@OnboardingActivity, it)
+                }
+                CrashlyticsLogger.log(CrashlyticsEvents.USER_LOGGED_IN)
+
                 // Navigate to main app or orientation (ensure UI operations run on main thread)
                 runOnUiThread {
                     val successMessage = if (response.is_new_user) {
@@ -306,16 +322,20 @@ class OnboardingActivity : AppCompatActivity(),
                     }
                     Toast.makeText(this@OnboardingActivity, successMessage, Toast.LENGTH_SHORT).show()
 
-                    val intent = if (response.is_new_user) {
+                    if (response.is_new_user) {
                         Log.d("OnboardingActivity", "New user — navigating to OrientationActivity")
-                        OrientationActivity.newIntent(this@OnboardingActivity)
+                        val intent = OrientationActivity.newIntent(this@OnboardingActivity)
+                        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                        startActivity(intent)
+                        finish()
                     } else {
                         Log.d("OnboardingActivity", "Returning user — navigating to MainAppActivity")
-                        Intent(this@OnboardingActivity, MainAppActivity::class.java)
+                        if (!CrashlyticsPreference.isConsentAsked(this@OnboardingActivity)) {
+                            showCrashConsentDialog(response.access_token)
+                        } else {
+                            navigateToMainApp()
+                        }
                     }
-                    intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-                    startActivity(intent)
-                    finish()
                 }
 
             } catch (e: ApiException) {
@@ -343,6 +363,40 @@ class OnboardingActivity : AppCompatActivity(),
                 runOnUiThread {
                     Toast.makeText(this@OnboardingActivity, errorMessage, Toast.LENGTH_LONG).show()
                 }
+            }
+        }
+    }
+
+    private fun navigateToMainApp() {
+        val intent = Intent(this, MainAppActivity::class.java)
+        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        startActivity(intent)
+        finish()
+    }
+
+    private fun showCrashConsentDialog(accessToken: String) {
+        CrashlyticsPreference.markConsentAsked(this)
+        MaterialAlertDialogBuilder(this)
+            .setTitle(R.string.crash_reporting_consent_title)
+            .setMessage(R.string.crash_reporting_consent_message)
+            .setPositiveButton(R.string.crash_reporting_consent_positive) { _, _ ->
+                CrashlyticsPreference.setEnabled(this, true)
+                syncCrashConsent(accessToken, "grant")
+                navigateToMainApp()
+            }
+            .setNegativeButton(R.string.crash_reporting_consent_negative) { _, _ ->
+                navigateToMainApp()
+            }
+            .setCancelable(false)
+            .show()
+    }
+
+    private fun syncCrashConsent(accessToken: String, action: String) {
+        lifecycleScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+            try {
+                ApiClient.recordConsents(accessToken, listOf("analytics", "crash_reporting"), action)
+            } catch (e: Exception) {
+                // Non-critical
             }
         }
     }
