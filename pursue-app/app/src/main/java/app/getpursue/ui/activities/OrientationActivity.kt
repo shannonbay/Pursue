@@ -7,6 +7,8 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.commit
 import androidx.lifecycle.lifecycleScope
 import app.getpursue.R
+import app.getpursue.data.analytics.AnalyticsEvents
+import app.getpursue.data.analytics.AnalyticsLogger
 import app.getpursue.data.auth.SecureTokenManager
 import app.getpursue.data.crashlytics.CrashlyticsPreference
 import app.getpursue.data.network.ApiClient
@@ -18,10 +20,22 @@ import kotlinx.coroutines.launch
 /**
  * Hosts the post-onboarding orientation flow for new users.
  *
- * A 3-step wizard (Join Group → Start Challenge → Create Group)
+ * A 4-step wizard (Join Group → Discover → Start Challenge → Create Group)
  * shown once after registration, without bottom navigation.
  */
 class OrientationActivity : AppCompatActivity() {
+
+    private var pendingOutcome: String = AnalyticsEvents.OrientationOutcome.SKIPPED_ALL
+
+    fun setOrientationOutcome(outcome: String) {
+        pendingOutcome = outcome
+    }
+
+    private fun fireOrientationEvent() {
+        AnalyticsLogger.logEvent(AnalyticsEvents.ORIENTATION_COMPLETED, Bundle().apply {
+            putString(AnalyticsEvents.Param.ORIENTATION_OUTCOME, pendingOutcome)
+        })
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -51,8 +65,12 @@ class OrientationActivity : AppCompatActivity() {
             .apply()
 
         if (!CrashlyticsPreference.isConsentAsked(this)) {
-            showCrashConsentDialog { navigateToMain(destinationIntent) }
+            showCrashConsentDialog {
+                fireOrientationEvent()
+                navigateToMain(destinationIntent)
+            }
         } else {
+            fireOrientationEvent()
             navigateToMain(destinationIntent)
         }
     }

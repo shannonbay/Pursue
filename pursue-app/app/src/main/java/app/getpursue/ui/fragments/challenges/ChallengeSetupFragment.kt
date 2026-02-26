@@ -14,6 +14,7 @@ import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import app.getpursue.R
+import app.getpursue.data.analytics.AnalyticsEvents
 import app.getpursue.data.auth.SecureTokenManager
 import app.getpursue.data.network.ApiClient
 import app.getpursue.data.network.ApiException
@@ -234,6 +235,7 @@ class ChallengeSetupFragment : Fragment() {
 
                 val currentActivity = requireActivity()
                 if (currentActivity is OrientationActivity) {
+                    currentActivity.setOrientationOutcome(AnalyticsEvents.OrientationOutcome.CHALLENGE_STEP_3)
                     currentActivity.completeOrientation(intent)
                 } else {
                     startActivity(intent)

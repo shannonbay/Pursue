@@ -214,6 +214,10 @@ class PublicGroupDetailBottomSheet : BottomSheetDialogFragment() {
                     putString(AnalyticsEvents.Param.GROUP_ID, id)
                     putString(AnalyticsEvents.Param.SOURCE, AnalyticsEvents.Source.DISCOVER)
                 })
+                parentFragmentManager.setFragmentResult(
+                    RESULT_JOIN_REQUESTED,
+                    Bundle().apply { putString("group_id", id) }
+                )
                 transitionToJoinState(JoinState.SUCCESS)
                 maybeShowCommunityStandards()
                 Toast.makeText(requireContext(), getString(R.string.discover_join_request_sent), Toast.LENGTH_SHORT).show()
@@ -296,6 +300,7 @@ class PublicGroupDetailBottomSheet : BottomSheetDialogFragment() {
     companion object {
         private const val ARG_GROUP_ID = "group_id"
         const val TAG = "PublicGroupDetailBottomSheet"
+        const val RESULT_JOIN_REQUESTED = "public_group_join_requested"
 
         fun show(fragmentManager: FragmentManager, groupId: String) {
             val sheet = PublicGroupDetailBottomSheet()

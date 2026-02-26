@@ -87,7 +87,8 @@
             android:layout_height="wrap_content"
             android:layout_gravity="center"
             android:text="@string/orientation_create_own_group"
-            android:textColor="?attr/colorOnSurfaceVariant" />
+            android:textColor="?attr/colorSecondary"
+            android:textStyle="bold" />
 
         <include
             android:id="@+id/progress_dots"

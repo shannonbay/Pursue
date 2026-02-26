@@ -8,6 +8,7 @@ import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.commit
 import app.getpursue.R
+import app.getpursue.data.analytics.AnalyticsEvents
 import app.getpursue.ui.activities.GroupDetailActivity
 import app.getpursue.ui.activities.OrientationActivity
 import app.getpursue.ui.fragments.groups.CreateGroupFragment
@@ -28,8 +29,8 @@ class OrientationCreateGroupFragment : Fragment(), CreateGroupFragment.Callbacks
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // Setup progress dots for step 3
-        setupProgressDots(view.findViewById(R.id.progress_dots), 3)
+        // Setup progress dots for step 4
+        setupProgressDots(view.findViewById(R.id.progress_dots), 4)
 
         // Back / Skip
         view.findViewById<MaterialButton>(R.id.button_back).setOnClickListener {
@@ -64,7 +65,9 @@ class OrientationCreateGroupFragment : Fragment(), CreateGroupFragment.Callbacks
             putExtra(GroupDetailActivity.EXTRA_GROUP_ICON_EMOJI, iconEmoji)
             putExtra(GroupDetailActivity.EXTRA_OPEN_INVITE_SHEET, true)
         }
-        (requireActivity() as OrientationActivity).completeOrientation(intent)
+        val activity = requireActivity() as OrientationActivity
+        activity.setOrientationOutcome(AnalyticsEvents.OrientationOutcome.GROUP_CREATED_STEP_4)
+        activity.completeOrientation(intent)
     }
 
     companion object {

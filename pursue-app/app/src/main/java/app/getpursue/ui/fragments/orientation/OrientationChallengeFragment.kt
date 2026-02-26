@@ -26,8 +26,8 @@ class OrientationChallengeFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // Setup progress dots for step 2
-        setupProgressDots(view.findViewById(R.id.progress_dots), 2)
+        // Setup progress dots for step 3
+        setupProgressDots(view.findViewById(R.id.progress_dots), 3)
 
         // Back / Skip
         view.findViewById<MaterialButton>(R.id.button_back).setOnClickListener {

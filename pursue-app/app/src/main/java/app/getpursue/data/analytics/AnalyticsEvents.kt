@@ -59,6 +59,9 @@ object AnalyticsEvents {
     // Referral
     const val REFERRAL_ATTRIBUTED = "referral_attributed"
 
+    // Orientation
+    const val ORIENTATION_COMPLETED = "orientation_completed"
+
     // Param name constants
     object Param {
         const val CADENCE         = "cadence"
@@ -77,7 +80,8 @@ object AnalyticsEvents {
         const val CARD_TYPE       = "card_type"
         const val NOTIFICATION_ID = "notification_id"
         const val COMPLETION_RATE = "completion_rate"
-        const val INVITE_CODE     = "invite_code"
+        const val INVITE_CODE        = "invite_code"
+        const val ORIENTATION_OUTCOME = "orientation_outcome"
     }
 
     // Source channel constants (used with Param.SOURCE)
@@ -87,6 +91,15 @@ object AnalyticsEvents {
         const val INVITE_MANUAL = "invite_manual"
         const val ONBOARDING    = "onboarding"
         const val INVITE_LINK   = "invite_link"
+    }
+
+    // Orientation outcome constants (used with Param.ORIENTATION_OUTCOME)
+    object OrientationOutcome {
+        const val JOINED_STEP_1         = "joined_step_1"
+        const val JOIN_REQUESTED_STEP_2 = "join_requested_step_2"
+        const val CHALLENGE_STEP_3      = "challenge_step_3"
+        const val GROUP_CREATED_STEP_4  = "group_created_step_4"
+        const val SKIPPED_ALL           = "skipped_all"
     }
 
     // Share method constants (used with Param.METHOD)

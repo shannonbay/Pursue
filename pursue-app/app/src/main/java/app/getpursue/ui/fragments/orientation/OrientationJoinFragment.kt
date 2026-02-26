@@ -201,13 +201,17 @@ class OrientationJoinFragment : Fragment() {
                     putExtra(GroupDetailActivity.EXTRA_GROUP_NAME, group.name)
                     putExtra(GroupDetailActivity.EXTRA_GROUP_HAS_ICON, false)
                 }
-                (requireActivity() as OrientationActivity).completeOrientation(intent)
+                val activity = requireActivity() as OrientationActivity
+                activity.setOrientationOutcome(AnalyticsEvents.OrientationOutcome.JOINED_STEP_1)
+                activity.completeOrientation(intent)
             } catch (e: ApiException) {
                 if (!isAdded) return@launch
                 buttonJoin.isEnabled = true
                 if (e.code == 409) {
                     Toast.makeText(requireContext(), getString(R.string.join_group_success), Toast.LENGTH_SHORT).show()
-                    (requireActivity() as OrientationActivity).completeOrientation()
+                    val activity = requireActivity() as OrientationActivity
+                    activity.setOrientationOutcome(AnalyticsEvents.OrientationOutcome.JOINED_STEP_1)
+                    activity.completeOrientation()
                 } else {
                     inputLayout.error = getString(R.string.orientation_invite_code_error)
                 }
@@ -221,7 +225,7 @@ class OrientationJoinFragment : Fragment() {
 
     private fun goToStep2() {
         requireActivity().supportFragmentManager.commit {
-            replace(R.id.fragment_container, OrientationChallengeFragment.newInstance())
+            replace(R.id.fragment_container, OrientationDiscoverFragment.newInstance())
             addToBackStack(null)
         }
     }

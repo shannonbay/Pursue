@@ -787,6 +787,9 @@
     <string name="orientation_scan_qr">Scan QR Code</string>
     <string name="orientation_no_invite_code">I don\'t have an invite code</string>
     <string name="orientation_step_x_of_3">Step %1$d of 3</string>
+    <string name="orientation_step_x_of_4">Step %1$d of 4</string>
+    <string name="orientation_discover_title">Find a group to join</string>
+    <string name="orientation_discover_description">Browse public groups and request to join one that fits your goals.</string>
     <string name="orientation_challenge_title">Try a challenge!</string>
     <string name="orientation_challenge_description">Challenges are time-boxed goals — like "30-Day No Sugar" or "Read Every Day for a Week." Pick a template and start today.</string>
     <string name="orientation_info_card_title">What\'s the difference between groups and challenges?</string>

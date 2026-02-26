@@ -37,6 +37,16 @@ import kotlinx.coroutines.withContext
 
 class DiscoverFragment : Fragment() {
 
+    fun interface GroupJoinedCallback {
+        fun onJoinRequested()
+    }
+
+    private var groupJoinedCallback: GroupJoinedCallback? = null
+
+    fun setGroupJoinedCallback(callback: GroupJoinedCallback?) {
+        groupJoinedCallback = callback
+    }
+
     private enum class UiState { LOADING, SUCCESS_WITH_DATA, SUCCESS_EMPTY, ERROR }
 
     // Filter/sort state
@@ -103,6 +113,13 @@ class DiscoverFragment : Fragment() {
         setupSearch()
         setupRecyclerView()
         swipeRefreshLayout.setOnRefreshListener { loadGroups(reset = true) }
+
+        childFragmentManager.setFragmentResultListener(
+            PublicGroupDetailBottomSheet.RESULT_JOIN_REQUESTED,
+            viewLifecycleOwner
+        ) { _, _ ->
+            groupJoinedCallback?.onJoinRequested()
+        }
 
         loadGroups(reset = true)
     }

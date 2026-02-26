@@ -40,4 +40,14 @@
         android:layout_height="8dp"
         android:background="@drawable/bg_dot_empty" />
 
+    <View
+        android:layout_width="8dp"
+        android:layout_height="0dp" />
+
+    <View
+        android:id="@+id/dot4"
+        android:layout_width="8dp"
+        android:layout_height="8dp"
+        android:background="@drawable/bg_dot_empty" />
+
 </LinearLayout>
