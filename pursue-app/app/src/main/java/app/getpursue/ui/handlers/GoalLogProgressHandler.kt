@@ -291,7 +291,8 @@ class GoalLogProgressHandler(
     private fun showJournalLogDialog(goal: GoalForLogging) {
         val dialog = LogProgressDialog.Companion.newJournalInstance(
             goalTitle = goal.title,
-            logTitlePrompt = goal.logTitlePrompt
+            logTitlePrompt = goal.logTitlePrompt,
+            currentLogTitle = goal.title
         )
         dialog.setJournalLogProgressListener(object : LogProgressDialog.JournalLogProgressListener {
             override fun onLogJournalProgress(logTitle: String, note: String?) {

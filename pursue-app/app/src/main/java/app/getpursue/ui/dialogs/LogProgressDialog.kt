@@ -174,10 +174,13 @@ class LogProgressDialog : DialogFragment() {
             journalPromptText.visibility = View.VISIBLE
             logTitleInputLayout.visibility = View.VISIBLE
 
-            // Pre-fill title if in edit mode
-            if (isEditMode && !currentLogTitle.isNullOrEmpty()) {
+            // Pre-fill title if available (edit mode uses saved title; new entries use goal title)
+            if (!currentLogTitle.isNullOrEmpty()) {
                 logTitleInput.setText(currentLogTitle)
                 logButton.isEnabled = true
+                if (!isEditMode) {
+                    logTitleInput.post { logTitleInput.selectAll() }
+                }
             } else {
                 logButton.isEnabled = false
             }
