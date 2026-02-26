@@ -79,6 +79,8 @@ class JoinGroupBottomSheet : BottomSheetDialogFragment() {
 
     private var pendingInviteCode: String? = null
     private var pendingVibrate = false
+    private var joinSource: String = AnalyticsEvents.Source.INVITE_MANUAL
+    private var pendingJoinSource: String = AnalyticsEvents.Source.INVITE_MANUAL
 
     override fun onResume() {
         super.onResume()
@@ -89,6 +91,7 @@ class JoinGroupBottomSheet : BottomSheetDialogFragment() {
         // If we have a code from a scan that happened while we weren't ready, show it now
         pendingInviteCode?.let { code ->
             if (isAdded && !isStateSaved) {
+                joinSource = pendingJoinSource
                 editCode.setText(code)
                 inputLayout.error = null
                 showCovenant(code)
@@ -138,6 +141,7 @@ class JoinGroupBottomSheet : BottomSheetDialogFragment() {
 
                     if (code != null) {
                         if (isAdded && !isStateSaved) {
+                            joinSource = AnalyticsEvents.Source.INVITE_QR
                             view?.let { HapticFeedbackUtils.vibrateSuccess(it) }
                             editCode.setText(code)
                             inputLayout.error = null
@@ -147,6 +151,7 @@ class JoinGroupBottomSheet : BottomSheetDialogFragment() {
                             }
                         } else {
                             // Fragment is not ready, handled in onResume
+                            pendingJoinSource = AnalyticsEvents.Source.INVITE_QR
                             pendingVibrate = true
                             pendingInviteCode = code
                         }
@@ -215,6 +220,7 @@ class JoinGroupBottomSheet : BottomSheetDialogFragment() {
                         AnalyticsLogger.logEvent(AnalyticsEvents.GROUP_JOINED, android.os.Bundle().apply {
                             putString(AnalyticsEvents.Param.GROUP_ID, response.group.id)
                             putString(AnalyticsEvents.Param.STATUS, response.status)
+                            putString(AnalyticsEvents.Param.SOURCE, joinSource)
                         })
                         Toast.makeText(requireContext(), response.message, Toast.LENGTH_LONG).show()
                         parentFragmentManager.setFragmentResult("join_group_result", Bundle().apply {
@@ -226,6 +232,7 @@ class JoinGroupBottomSheet : BottomSheetDialogFragment() {
                         AnalyticsLogger.logEvent(AnalyticsEvents.GROUP_JOINED, android.os.Bundle().apply {
                             putString(AnalyticsEvents.Param.GROUP_ID, response.group.id)
                             putString(AnalyticsEvents.Param.STATUS, response.status)
+                            putString(AnalyticsEvents.Param.SOURCE, joinSource)
                         })
                         Toast.makeText(requireContext(), getString(R.string.join_group_success), Toast.LENGTH_SHORT).show()
                         // Subscribe to FCM topics for the new group

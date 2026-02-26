@@ -52,5 +52,14 @@ object AnalyticsEvents {
         const val SORT         = "sort"
         const val QUERY        = "query"
         const val STATUS       = "status"
+        const val SOURCE       = "source"
+    }
+
+    // Source channel constants (used with Param.SOURCE)
+    object Source {
+        const val DISCOVER      = "discover"
+        const val INVITE_QR     = "invite_qr"
+        const val INVITE_MANUAL = "invite_manual"
+        const val ONBOARDING    = "onboarding"
     }
 }

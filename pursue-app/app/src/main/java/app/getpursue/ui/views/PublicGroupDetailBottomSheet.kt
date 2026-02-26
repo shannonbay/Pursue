@@ -212,6 +212,7 @@ class PublicGroupDetailBottomSheet : BottomSheetDialogFragment() {
                 if (!isAdded) return@launch
                 AnalyticsLogger.logEvent(AnalyticsEvents.GROUP_JOIN_REQUESTED, android.os.Bundle().apply {
                     putString(AnalyticsEvents.Param.GROUP_ID, id)
+                    putString(AnalyticsEvents.Param.SOURCE, AnalyticsEvents.Source.DISCOVER)
                 })
                 transitionToJoinState(JoinState.SUCCESS)
                 maybeShowCommunityStandards()

@@ -13,6 +13,8 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.commit
 import androidx.lifecycle.lifecycleScope
 import app.getpursue.R
+import app.getpursue.data.analytics.AnalyticsEvents
+import app.getpursue.data.analytics.AnalyticsLogger
 import app.getpursue.data.auth.SecureTokenManager
 import app.getpursue.data.fcm.FcmTopicManager
 import app.getpursue.data.network.ApiClient
@@ -182,6 +184,12 @@ class OrientationJoinFragment : Fragment() {
                     ApiClient.joinGroup(token, code)
                 }
                 if (!isAdded) return@launch
+
+                AnalyticsLogger.logEvent(AnalyticsEvents.GROUP_JOINED, android.os.Bundle().apply {
+                    putString(AnalyticsEvents.Param.GROUP_ID, response.group.id)
+                    putString(AnalyticsEvents.Param.STATUS, response.status)
+                    putString(AnalyticsEvents.Param.SOURCE, AnalyticsEvents.Source.ONBOARDING)
+                })
 
                 // Subscribe to FCM topics
                 val groupId = response.group.id
