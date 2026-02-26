@@ -22,9 +22,11 @@ import androidx.lifecycle.lifecycleScope
 import app.getpursue.data.auth.AuthRepository
 import app.getpursue.data.auth.SecureTokenManager
 import app.getpursue.data.config.PolicyConfigManager
+import app.getpursue.data.crashlytics.CrashlyticsPreference
 import app.getpursue.data.fcm.FcmRegistrationHelper
 import app.getpursue.data.network.ApiClient
 import app.getpursue.data.network.ApiException
+import com.google.firebase.crashlytics.FirebaseCrashlytics
 import app.getpursue.ui.activities.MainActivity
 import app.getpursue.R
 import kotlinx.coroutines.Dispatchers
@@ -255,7 +257,12 @@ class SignUpEmailFragment : Fragment() {
                 // Store JWT tokens securely using Android Keystore
                 val tokenManager = SecureTokenManager.Companion.getInstance(requireContext())
                 tokenManager.storeTokens(response.access_token, response.refresh_token)
-                
+
+                response.user?.id?.let {
+                    FirebaseCrashlytics.getInstance().setUserId(it)
+                    CrashlyticsPreference.setCurrentUser(requireContext(), it)
+                }
+
                 // Update auth state
                 val authRepository = AuthRepository.Companion.getInstance(requireContext())
                 authRepository.setSignedIn()

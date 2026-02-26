@@ -10,6 +10,18 @@
     <string name="notify_group_events_summary">Joins, leaves, promotions, renames</string>
     <string name="notify_nudges_label">Nudge notifications</string>
     <string name="notify_nudges_summary">Get notified when someone nudges you</string>
+
+    <!-- Diagnostics / Crash Reporting -->
+    <string name="crash_reporting_section_title">Diagnostics</string>
+    <string name="crash_reporting_toggle_title">Share diagnostics</string>
+    <string name="crash_reporting_toggle_description">Help us improve Pursue by sharing anonymous usage analytics and crash reports.</string>
+    <string name="crash_reporting_toggle_info">Includes which screens you visit and crash reports. Never includes your goal text or notes.</string>
+    <string name="crash_reporting_consent_title">Help improve Pursue?</string>
+    <string name="crash_reporting_consent_message">Help us improve Pursue by sharing anonymous usage and crash data.\n\nThis includes which features you use and crash reports when something goes wrong — never the content of your goals or notes.\n\nYou can change this at any time in Profile → Diagnostics.</string>
+    <string name="crash_reporting_consent_positive">Sure, share data</string>
+    <string name="crash_reporting_consent_negative">No thanks</string>
+    <string name="crash_reporting_restart_hint">Change takes full effect on next app launch.</string>
+
     <string name="empty_notifications_title">No notifications yet</string>
     <string name="empty_notifications_message">Reactions and nudges from your groups will appear here.</string>
     <string name="error_loading_notifications">Failed to load notifications</string>

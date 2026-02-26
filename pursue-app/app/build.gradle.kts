@@ -4,6 +4,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     id("com.google.gms.google-services")
+    id("com.google.firebase.crashlytics")
 }
 
 // Load local.properties for dev API URL (ngrok). Not committed; see local.properties.example.
@@ -37,6 +38,10 @@ android {
     buildTypes {
         debug {
             buildConfigField("String", "API_BASE_URL", "\"$devApiBaseUrl\"")
+            configure<com.google.firebase.crashlytics.buildtools.gradle.CrashlyticsExtension> {
+                mappingFileUploadEnabled = false
+            }
+            manifestPlaceholders["firebase_crashlytics_collection_enabled"] = false
         }
         release {
             buildConfigField("String", "API_BASE_URL", "\"https://api.getpursue.app/api\"")
@@ -45,6 +50,10 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            configure<com.google.firebase.crashlytics.buildtools.gradle.CrashlyticsExtension> {
+                mappingFileUploadEnabled = true
+            }
+            manifestPlaceholders["firebase_crashlytics_collection_enabled"] = true
         }
     }
     compileOptions {
@@ -95,6 +104,8 @@ dependencies {
     // Firebase
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.messaging.ktx)
+    implementation("com.google.firebase:firebase-crashlytics")
+    implementation("com.google.firebase:firebase-analytics")
     
     // Google Sign-In
     implementation(libs.googleSignIn)
