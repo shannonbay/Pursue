@@ -32,6 +32,7 @@ import app.getpursue.data.network.UpgradeSubscriptionResponse
 import app.getpursue.data.network.UploadAvatarResponse
 import app.getpursue.data.network.User
 import app.getpursue.data.network.UserConsentsResponse
+import app.getpursue.data.network.ConsentStatusResponse
 import app.getpursue.data.network.AddReactionResponse
 import app.getpursue.data.network.GetReactionsResponse
 import app.getpursue.data.network.NudgesSentTodayResponse
@@ -486,9 +487,14 @@ class E2EApiClient(private val context: Context) {
         return ApiClient.getMyConsents("")
     }
 
-    suspend fun recordConsents(accessToken: String, consentTypes: List<String>) {
+    suspend fun recordConsents(accessToken: String, consentTypes: List<String>, action: String? = null) {
         storeTokenIfPresent(accessToken)
-        ApiClient.recordConsents("", consentTypes)
+        ApiClient.recordConsents("", consentTypes, action)
+    }
+
+    suspend fun getConsentStatus(accessToken: String): ConsentStatusResponse {
+        storeTokenIfPresent(accessToken)
+        return ApiClient.getConsentStatus("")
     }
 
     suspend fun upgradeSubscription(

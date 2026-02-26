@@ -1924,9 +1924,12 @@ object ApiClient {
         }
     }
 
-    suspend fun recordConsents(accessToken: String, consentTypes: List<String>) {
-        val requestBody = gson.toJson(RecordConsentsRequest(consentTypes))
-            .toRequestBody(jsonMediaType)
+    suspend fun recordConsents(accessToken: String, consentTypes: List<String>, action: String? = null) {
+        val requestBody = if (action != null) {
+            gson.toJson(RecordConsentsWithActionRequest(consentTypes, action))
+        } else {
+            gson.toJson(RecordConsentsRequest(consentTypes))
+        }.toRequestBody(jsonMediaType)
         val request = Request.Builder()
             .url("$baseUrl/users/me/consents")
             .post(requestBody)
@@ -1934,6 +1937,16 @@ object ApiClient {
             .build()
 
         executeRequest<Unit>(request, getClient()) { Unit }
+    }
+
+    suspend fun getConsentStatus(accessToken: String): ConsentStatusResponse {
+        val request = Request.Builder()
+            .url("$baseUrl/users/me/consents/status")
+            .get()
+            .build()
+        return executeRequest(request, getClient()) { responseBody ->
+            gson.fromJson(responseBody, ConsentStatusResponse::class.java)
+        }
     }
 
     /**
@@ -2529,8 +2542,11 @@ data class UpgradeSubscriptionResponse(
 // --- Consents ---
 
 data class UserConsentsResponse(val consents: List<UserConsentEntry>)
-data class UserConsentEntry(val consent_type: String, val agreed_at: String)
+data class UserConsentEntry(val consent_type: String, val action: String, val agreed_at: String)
 data class RecordConsentsRequest(val consent_types: List<String>)
+data class RecordConsentsWithActionRequest(val consent_types: List<String>, val action: String)
+data class ConsentStatusEntry(val action: String, val updated_at: String)
+data class ConsentStatusResponse(val status: Map<String, ConsentStatusEntry>)
 
 /**
  * Request model for token refresh.
