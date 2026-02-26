@@ -130,6 +130,9 @@ dependencies {
     // Google Play Billing (subscriptions)
     implementation(libs.billing.ktx)
 
+    // Google Play Install Referrer (referral attribution)
+    implementation("com.android.installreferrer:installreferrer:2.2")
+
     testImplementation(libs.junit)
     testImplementation(libs.mockk)
     testImplementation(libs.robolectric)

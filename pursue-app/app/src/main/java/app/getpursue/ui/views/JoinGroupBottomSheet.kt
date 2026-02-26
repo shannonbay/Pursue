@@ -43,6 +43,13 @@ class JoinGroupBottomSheet : BottomSheetDialogFragment() {
             JoinGroupBottomSheet().show(fragmentManager, "JoinGroupBottomSheet")
         }
 
+        fun showWithCode(fragmentManager: FragmentManager, code: String) {
+            val sheet = JoinGroupBottomSheet()
+            sheet.pendingInviteCode = code
+            sheet.pendingJoinSource = AnalyticsEvents.Source.INVITE_LINK
+            sheet.show(fragmentManager, "JoinGroupBottomSheet")
+        }
+
         /**
          * Extracts PURSUE invite code from a scanned string (URL or bare code).
          * Supports: https://getpursue.app/join/PURSUE-XXX-XXX, https://getpursue.app/invite/PURSUE-XXX-XXX, or bare code.

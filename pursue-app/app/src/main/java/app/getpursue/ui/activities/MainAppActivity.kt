@@ -221,6 +221,10 @@ class MainAppActivity : AppCompatActivity(),
                 supportFragmentManager.commit {
                     replace(R.id.fragment_container, HomeFragment.Companion.newInstance())
                 }
+                val pendingCode = intent.getStringExtra(EXTRA_PENDING_INVITE_CODE)
+                if (pendingCode != null) {
+                    JoinGroupBottomSheet.showWithCode(supportFragmentManager, pendingCode)
+                }
             }
         } else {
             Log.d("MainAppActivity", "Restoring MainAppActivity from saved state")
@@ -913,5 +917,6 @@ class MainAppActivity : AppCompatActivity(),
         private const val KEY_NOTIFICATION_PERMISSION_REQUESTED = "notification_permission_requested"
         private const val NOTIFICATION_FETCH_INTERVAL_MS = 5 * 60 * 1000L // 5 minutes
         const val EXTRA_OPEN_PREMIUM = "extra_open_premium"
+        const val EXTRA_PENDING_INVITE_CODE = "extra_pending_invite_code"
     }
 }

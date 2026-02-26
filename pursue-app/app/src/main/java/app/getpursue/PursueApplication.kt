@@ -5,6 +5,7 @@ import app.getpursue.data.analytics.AnalyticsLogger
 import app.getpursue.data.analytics.AnalyticsPreference
 import app.getpursue.data.crashlytics.CrashlyticsPreference
 import app.getpursue.data.network.ApiClient
+import app.getpursue.data.referral.InstallReferralHelper
 import com.google.firebase.crashlytics.FirebaseCrashlytics
 
 /**
@@ -22,6 +23,7 @@ class PursueApplication : Application() {
         AnalyticsLogger.initialize(this)
         setupCrashlytics()
         setupAnalytics()
+        InstallReferralHelper.checkAndReport(this)
     }
 
     private fun setupCrashlytics() {

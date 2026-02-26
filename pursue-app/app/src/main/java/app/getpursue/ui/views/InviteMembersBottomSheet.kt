@@ -1,12 +1,18 @@
 package app.getpursue.ui.views
 
+import android.app.PendingIntent
+import android.content.BroadcastReceiver
 import android.content.ClipData
 import android.content.ClipboardManager
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.graphics.Bitmap
 import android.graphics.Color
+import android.os.Build
 import android.os.Bundle
+import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import android.view.LayoutInflater
 import android.view.View
@@ -16,6 +22,8 @@ import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
 import androidx.fragment.app.FragmentManager
+import app.getpursue.data.analytics.AnalyticsEvents
+import app.getpursue.data.analytics.AnalyticsLogger
 import app.getpursue.data.auth.SecureTokenManager
 import app.getpursue.data.network.ApiClient
 import app.getpursue.data.network.ApiException
@@ -79,6 +87,24 @@ class InviteMembersBottomSheet : BottomSheetDialogFragment() {
     private var inviteCode: String? = null
     private var inviteUrl: String? = null
 
+    private var chooserReceiverRegistered = false
+    private val chooserReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            val chosen = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                intent?.getParcelableExtra(Intent.EXTRA_CHOSEN_COMPONENT, ComponentName::class.java)
+            } else {
+                @Suppress("DEPRECATION")
+                intent?.getParcelableExtra(Intent.EXTRA_CHOSEN_COMPONENT) as? ComponentName
+            }
+            val pkg = chosen?.packageName ?: return
+            val gid = arguments?.getString(ARG_GROUP_ID) ?: return
+            AnalyticsLogger.logEvent(AnalyticsEvents.INVITE_LINK_SHARE_TARGET, Bundle().apply {
+                putString(AnalyticsEvents.Param.GROUP_ID, gid)
+                putString(AnalyticsEvents.Param.TARGET_PACKAGE, pkg)
+            })
+        }
+    }
+
     private val isAdminOrCreator: Boolean
         get() = arguments?.getString(ARG_USER_ROLE) in listOf("admin", "creator")
 
@@ -92,6 +118,13 @@ class InviteMembersBottomSheet : BottomSheetDialogFragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        ContextCompat.registerReceiver(
+            requireContext(), chooserReceiver,
+            IntentFilter("app.getpursue.action.INVITE_CHOOSER_SELECTED"),
+            ContextCompat.RECEIVER_NOT_EXPORTED
+        )
+        chooserReceiverRegistered = true
 
         val groupId = arguments?.getString(ARG_GROUP_ID) ?: return
         val groupName = arguments?.getString(ARG_GROUP_NAME) ?: ""
@@ -126,6 +159,9 @@ class InviteMembersBottomSheet : BottomSheetDialogFragment() {
                 }
                 if (!isAdded) return@launch
                 updateInviteDisplay(response.invite_code, response.share_url)
+                AnalyticsLogger.logEvent(AnalyticsEvents.INVITE_LINK_GENERATED, Bundle().apply {
+                    putString(AnalyticsEvents.Param.GROUP_ID, groupId)
+                })
                 loadingView.visibility = View.GONE
                 shareCodeLabel.visibility = View.VISIBLE
                 codeCard.visibility = View.VISIBLE
@@ -153,6 +189,10 @@ class InviteMembersBottomSheet : BottomSheetDialogFragment() {
             val cm = requireContext().getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
             cm.setPrimaryClip(ClipData.newPlainText("invite_code", url))
             Toast.makeText(requireContext(), getString(R.string.invite_code_copied), Toast.LENGTH_SHORT).show()
+            AnalyticsLogger.logEvent(AnalyticsEvents.INVITE_LINK_SHARED, Bundle().apply {
+                putString(AnalyticsEvents.Param.GROUP_ID, groupId)
+                putString(AnalyticsEvents.Param.METHOD, AnalyticsEvents.Method.CLIPBOARD)
+            })
         }
 
         buttonShare.setOnClickListener { performShare() }
@@ -171,6 +211,10 @@ class InviteMembersBottomSheet : BottomSheetDialogFragment() {
     }
 
     override fun onDestroy() {
+        if (chooserReceiverRegistered) {
+            try { requireContext().unregisterReceiver(chooserReceiver) } catch (_: Exception) {}
+            chooserReceiverRegistered = false
+        }
         scope.cancel()
         super.onDestroy()
     }
@@ -191,7 +235,21 @@ class InviteMembersBottomSheet : BottomSheetDialogFragment() {
             type = "text/plain"
             putExtra(Intent.EXTRA_TEXT, shareText)
         }
-        startActivity(Intent.createChooser(sendIntent, getString(R.string.share)))
+        AnalyticsLogger.logEvent(AnalyticsEvents.INVITE_LINK_SHARED, Bundle().apply {
+            putString(AnalyticsEvents.Param.GROUP_ID, arguments?.getString(ARG_GROUP_ID) ?: "")
+            putString(AnalyticsEvents.Param.METHOD, AnalyticsEvents.Method.SHARE_SHEET)
+        })
+        val chooserIntent = Intent.createChooser(sendIntent, getString(R.string.share))
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP_MR1) {
+            val callbackIntent = Intent("app.getpursue.action.INVITE_CHOOSER_SELECTED")
+                .setPackage(requireContext().packageName)
+            val flags = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S)
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE
+            else PendingIntent.FLAG_UPDATE_CURRENT
+            val pending = PendingIntent.getBroadcast(requireContext(), 1003, callbackIntent, flags)
+            chooserIntent.putExtra(Intent.EXTRA_CHOSEN_COMPONENT_INTENT_SENDER, pending.intentSender)
+        }
+        startActivity(chooserIntent)
     }
 
     private fun performShareQrCode() {
@@ -214,7 +272,21 @@ class InviteMembersBottomSheet : BottomSheetDialogFragment() {
                 putExtra(Intent.EXTRA_STREAM, contentUri)
                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
             }
-            startActivity(Intent.createChooser(sendIntent, getString(R.string.share_qr_code)))
+            AnalyticsLogger.logEvent(AnalyticsEvents.INVITE_LINK_SHARED, Bundle().apply {
+                putString(AnalyticsEvents.Param.GROUP_ID, arguments?.getString(ARG_GROUP_ID) ?: "")
+                putString(AnalyticsEvents.Param.METHOD, AnalyticsEvents.Method.QR_SHARE)
+            })
+            val chooserIntent = Intent.createChooser(sendIntent, getString(R.string.share_qr_code))
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP_MR1) {
+                val callbackIntent = Intent("app.getpursue.action.INVITE_CHOOSER_SELECTED")
+                    .setPackage(requireContext().packageName)
+                val flags = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S)
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE
+                else PendingIntent.FLAG_UPDATE_CURRENT
+                val pending = PendingIntent.getBroadcast(requireContext(), 1004, callbackIntent, flags)
+                chooserIntent.putExtra(Intent.EXTRA_CHOSEN_COMPONENT_INTENT_SENDER, pending.intentSender)
+            }
+            startActivity(chooserIntent)
         } catch (e: Exception) {
             Toast.makeText(requireContext(), getString(R.string.invite_generate_failed), Toast.LENGTH_SHORT).show()
         }

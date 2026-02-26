@@ -4,6 +4,8 @@ import android.content.Intent
 import android.content.SharedPreferences
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
+import app.getpursue.data.analytics.AnalyticsEvents
+import app.getpursue.data.analytics.AnalyticsLogger
 import app.getpursue.data.auth.SecureTokenManager
 
 /**
@@ -24,6 +26,15 @@ class MainActivity : AppCompatActivity() {
 
         if (isFinishing) return
 
+        // Detect App Link (invite or challenge URL)
+        val appLinkCode = handleAppLinkCode(intent)
+        if (appLinkCode != null) {
+            AnalyticsLogger.logEvent(AnalyticsEvents.INVITE_LINK_OPENED, Bundle().apply {
+                putString(AnalyticsEvents.Param.INVITE_CODE, appLinkCode)
+            })
+            prefs.edit().putString(KEY_PENDING_INVITE_CODE, appLinkCode).apply()
+        }
+
         // Check for FCM deep link data
         val fcmIntent = buildFcmDeepLinkIntent(intent)
 
@@ -34,12 +45,29 @@ class MainActivity : AppCompatActivity() {
                 // User started orientation but didn't complete it (app killed mid-flow)
                 startActivity(OrientationActivity.newIntent(this))
             } else {
-                startActivity(Intent(this, MainAppActivity::class.java))
+                startActivity(Intent(this, MainAppActivity::class.java).apply {
+                    if (appLinkCode != null) putExtra(MainAppActivity.EXTRA_PENDING_INVITE_CODE, appLinkCode)
+                })
             }
         } else {
             startActivity(Intent(this, OnboardingActivity::class.java))
         }
         finish()
+    }
+
+    /**
+     * Extracts an invite or challenge code from an App Link intent.
+     * Returns null if the intent is not an App Link for a known path.
+     */
+    private fun handleAppLinkCode(intent: Intent): String? {
+        if (intent.action != Intent.ACTION_VIEW) return null
+        val path = intent.data?.path ?: return null
+        val code = when {
+            path.startsWith("/join/")      -> path.removePrefix("/join/")
+            path.startsWith("/challenge/") -> path.removePrefix("/challenge/")
+            else -> return null
+        }.substringBefore("?").trim()
+        return code.takeIf { it.isNotBlank() }
     }
 
     /**
@@ -88,5 +116,6 @@ class MainActivity : AppCompatActivity() {
     companion object {
         const val PREFS_NAME = "pursue_prefs"
         const val KEY_HAS_IDENTITY = "has_identity"
+        const val KEY_PENDING_INVITE_CODE = "pending_invite_code"
     }
 }

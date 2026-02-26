@@ -41,18 +41,43 @@ object AnalyticsEvents {
     const val DISCOVER_SORT_CHANGED    = "discover_sort_changed"
     const val DISCOVER_GROUP_TAPPED    = "discover_group_tapped"
 
+    // Invite
+    const val INVITE_LINK_GENERATED    = "invite_link_generated"
+    const val INVITE_LINK_SHARED       = "invite_link_shared"
+    const val INVITE_LINK_SHARE_TARGET = "invite_link_share_target"
+    const val INVITE_LINK_OPENED       = "invite_link_opened"
+
+    // Milestone cards
+    const val MILESTONE_CARD_VIEWED             = "milestone_card_viewed"
+    const val MILESTONE_CARD_SHARED             = "milestone_card_shared"
+    const val MILESTONE_CARD_SHARE_TARGET       = "milestone_card_share_target"
+    const val MILESTONE_CARD_SAVED              = "milestone_card_saved"
+    const val MILESTONE_CARD_INSTAGRAM_FALLBACK = "milestone_card_instagram_fallback"
+    const val CHALLENGE_CARD_VIEWED             = "challenge_card_viewed"
+    const val CHALLENGE_CARD_SHARED             = "challenge_card_shared"
+
+    // Referral
+    const val REFERRAL_ATTRIBUTED = "referral_attributed"
+
     // Param name constants
     object Param {
-        const val CADENCE      = "cadence"
-        const val METRIC_TYPE  = "metric_type"
-        const val VISIBILITY   = "visibility"
-        const val CATEGORY     = "category"
-        const val GROUP_ID     = "group_id"
-        const val TAB          = "tab"
-        const val SORT         = "sort"
-        const val QUERY        = "query"
-        const val STATUS       = "status"
-        const val SOURCE       = "source"
+        const val CADENCE         = "cadence"
+        const val METRIC_TYPE     = "metric_type"
+        const val VISIBILITY      = "visibility"
+        const val CATEGORY        = "category"
+        const val GROUP_ID        = "group_id"
+        const val TAB             = "tab"
+        const val SORT            = "sort"
+        const val QUERY           = "query"
+        const val STATUS          = "status"
+        const val SOURCE          = "source"
+        const val METHOD          = "method"
+        const val TARGET_PACKAGE  = "target_package"
+        const val MILESTONE_TYPE  = "milestone_type"
+        const val CARD_TYPE       = "card_type"
+        const val NOTIFICATION_ID = "notification_id"
+        const val COMPLETION_RATE = "completion_rate"
+        const val INVITE_CODE     = "invite_code"
     }
 
     // Source channel constants (used with Param.SOURCE)
@@ -61,5 +86,15 @@ object AnalyticsEvents {
         const val INVITE_QR     = "invite_qr"
         const val INVITE_MANUAL = "invite_manual"
         const val ONBOARDING    = "onboarding"
+        const val INVITE_LINK   = "invite_link"
+    }
+
+    // Share method constants (used with Param.METHOD)
+    object Method {
+        const val CLIPBOARD          = "clipboard"
+        const val SHARE_SHEET        = "share_sheet"
+        const val QR_SHARE           = "qr_share"
+        const val INSTAGRAM          = "instagram"
+        const val INSTAGRAM_FALLBACK = "instagram_fallback"
     }
 }

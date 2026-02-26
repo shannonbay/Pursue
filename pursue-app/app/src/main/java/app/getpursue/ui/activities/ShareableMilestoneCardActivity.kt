@@ -26,6 +26,8 @@ import androidx.core.content.FileProvider
 import androidx.core.view.drawToBitmap
 import androidx.lifecycle.lifecycleScope
 import app.getpursue.R
+import app.getpursue.data.analytics.AnalyticsEvents
+import app.getpursue.data.analytics.AnalyticsLogger
 import app.getpursue.data.auth.SecureTokenManager
 import app.getpursue.data.network.ApiClient
 import com.bumptech.glide.Glide
@@ -126,11 +128,11 @@ class ShareableMilestoneCardActivity : AppCompatActivity() {
             }
             val pkg = chosen?.packageName ?: return
             trackEvent(
-                "milestone_card_share_target",
+                AnalyticsEvents.MILESTONE_CARD_SHARE_TARGET,
                 mapOf(
-                    "notification_id" to notificationId,
-                    "milestone_type" to (cardData?.milestoneType ?: "unknown"),
-                    "target_package" to pkg
+                    AnalyticsEvents.Param.NOTIFICATION_ID to notificationId,
+                    AnalyticsEvents.Param.MILESTONE_TYPE to (cardData?.milestoneType ?: "unknown"),
+                    AnalyticsEvents.Param.TARGET_PACKAGE to pkg
                 )
             )
         }
@@ -365,15 +367,15 @@ class ShareableMilestoneCardActivity : AppCompatActivity() {
         }
 
         if (data.cardType == "challenge_invite") {
-            val props = mutableMapOf("card_type" to data.cardType)
-            groupId?.let { props["group_id"] = it }
-            trackEvent("challenge_card_viewed", props)
+            val props = mutableMapOf(AnalyticsEvents.Param.CARD_TYPE to data.cardType)
+            groupId?.let { props[AnalyticsEvents.Param.GROUP_ID] = it }
+            trackEvent(AnalyticsEvents.CHALLENGE_CARD_VIEWED, props)
         } else {
             trackEvent(
-                "milestone_card_viewed",
+                AnalyticsEvents.MILESTONE_CARD_VIEWED,
                 mapOf(
-                    "notification_id" to notificationId,
-                    "milestone_type" to data.milestoneType
+                    AnalyticsEvents.Param.NOTIFICATION_ID to notificationId,
+                    AnalyticsEvents.Param.MILESTONE_TYPE to data.milestoneType
                 )
             )
         }
@@ -436,25 +438,26 @@ class ShareableMilestoneCardActivity : AppCompatActivity() {
             startActivity(chooserIntent)
             if (data.cardType == "challenge_invite") {
                 val props = mutableMapOf(
-                    "share_method" to "generic",
-                    "card_type" to data.cardType
+                    AnalyticsEvents.Param.METHOD to AnalyticsEvents.Method.SHARE_SHEET,
+                    AnalyticsEvents.Param.CARD_TYPE to data.cardType
                 )
-                groupId?.let { props["group_id"] = it }
-                trackEvent("challenge_invite_shared", props)
+                groupId?.let { props[AnalyticsEvents.Param.GROUP_ID] = it }
+                trackEvent(AnalyticsEvents.CHALLENGE_CARD_SHARED, props)
             } else if (data.cardType == "challenge_completion") {
                 val props = mutableMapOf(
-                    "share_method" to "generic",
-                    "card_type" to data.cardType
+                    AnalyticsEvents.Param.METHOD to AnalyticsEvents.Method.SHARE_SHEET,
+                    AnalyticsEvents.Param.CARD_TYPE to data.cardType
                 )
-                groupId?.let { props["group_id"] = it }
-                completionRatePercent(data)?.let { props["completion_rate"] = it }
-                trackEvent("challenge_completed_card_shared", props)
+                groupId?.let { props[AnalyticsEvents.Param.GROUP_ID] = it }
+                completionRatePercent(data)?.let { props[AnalyticsEvents.Param.COMPLETION_RATE] = it }
+                trackEvent(AnalyticsEvents.CHALLENGE_CARD_SHARED, props)
             } else {
                 trackEvent(
-                    "milestone_card_shared_generic",
+                    AnalyticsEvents.MILESTONE_CARD_SHARED,
                     mapOf(
-                        "notification_id" to notificationId,
-                        "milestone_type" to data.milestoneType
+                        AnalyticsEvents.Param.NOTIFICATION_ID to notificationId,
+                        AnalyticsEvents.Param.MILESTONE_TYPE to data.milestoneType,
+                        AnalyticsEvents.Param.METHOD to AnalyticsEvents.Method.SHARE_SHEET
                     )
                 )
             }
@@ -479,25 +482,26 @@ class ShareableMilestoneCardActivity : AppCompatActivity() {
             startActivity(intent)
             if (data.cardType == "challenge_invite") {
                 val props = mutableMapOf(
-                    "share_method" to "instagram",
-                    "card_type" to data.cardType
+                    AnalyticsEvents.Param.METHOD to AnalyticsEvents.Method.INSTAGRAM,
+                    AnalyticsEvents.Param.CARD_TYPE to data.cardType
                 )
-                groupId?.let { props["group_id"] = it }
-                trackEvent("challenge_invite_shared", props)
+                groupId?.let { props[AnalyticsEvents.Param.GROUP_ID] = it }
+                trackEvent(AnalyticsEvents.CHALLENGE_CARD_SHARED, props)
             } else if (data.cardType == "challenge_completion") {
                 val props = mutableMapOf(
-                    "share_method" to "instagram",
-                    "card_type" to data.cardType
+                    AnalyticsEvents.Param.METHOD to AnalyticsEvents.Method.INSTAGRAM,
+                    AnalyticsEvents.Param.CARD_TYPE to data.cardType
                 )
-                groupId?.let { props["group_id"] = it }
-                completionRatePercent(data)?.let { props["completion_rate"] = it }
-                trackEvent("challenge_completed_card_shared", props)
+                groupId?.let { props[AnalyticsEvents.Param.GROUP_ID] = it }
+                completionRatePercent(data)?.let { props[AnalyticsEvents.Param.COMPLETION_RATE] = it }
+                trackEvent(AnalyticsEvents.CHALLENGE_CARD_SHARED, props)
             } else {
                 trackEvent(
-                    "milestone_card_shared_instagram",
+                    AnalyticsEvents.MILESTONE_CARD_SHARED,
                     mapOf(
-                        "notification_id" to notificationId,
-                        "milestone_type" to data.milestoneType
+                        AnalyticsEvents.Param.NOTIFICATION_ID to notificationId,
+                        AnalyticsEvents.Param.MILESTONE_TYPE to data.milestoneType,
+                        AnalyticsEvents.Param.METHOD to AnalyticsEvents.Method.INSTAGRAM
                     )
                 )
             }
@@ -505,10 +509,10 @@ class ShareableMilestoneCardActivity : AppCompatActivity() {
             shareGeneric()
             if (data.cardType != "challenge_completion") {
                 trackEvent(
-                    "milestone_card_shared_instagram_fallback",
+                    AnalyticsEvents.MILESTONE_CARD_INSTAGRAM_FALLBACK,
                     mapOf(
-                        "notification_id" to notificationId,
-                        "milestone_type" to data.milestoneType
+                        AnalyticsEvents.Param.NOTIFICATION_ID to notificationId,
+                        AnalyticsEvents.Param.MILESTONE_TYPE to data.milestoneType
                     )
                 )
             }
@@ -550,10 +554,10 @@ class ShareableMilestoneCardActivity : AppCompatActivity() {
 
             Toast.makeText(this, getString(R.string.shareable_card_saved), Toast.LENGTH_SHORT).show()
             trackEvent(
-                "milestone_card_saved",
+                AnalyticsEvents.MILESTONE_CARD_SAVED,
                 mapOf(
-                    "notification_id" to notificationId,
-                    "milestone_type" to data.milestoneType
+                    AnalyticsEvents.Param.NOTIFICATION_ID to notificationId,
+                    AnalyticsEvents.Param.MILESTONE_TYPE to data.milestoneType
                 )
             )
         } catch (_: Exception) {
@@ -608,6 +612,8 @@ class ShareableMilestoneCardActivity : AppCompatActivity() {
     }
 
     private fun trackEvent(name: String, properties: Map<String, String>) {
-        Log.i(TAG, "event=$name properties=$properties")
+        AnalyticsLogger.logEvent(name, Bundle().apply {
+            properties.forEach { (k, v) -> putString(k, v) }
+        })
     }
 }
