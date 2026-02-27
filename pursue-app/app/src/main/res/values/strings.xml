@@ -78,6 +78,18 @@
     <string name="nudge_failed">Couldn\'t send nudge. Try again.</string>
     <string name="nudge_button_description">Nudge member</string>
 
+    <!-- Daily Pulse widget -->
+    <string name="pulse_header_today">Who\'s in today?</string>
+    <string name="pulse_header_everyone_logged">Everyone\'s in! 🎉</string>
+    <string name="pulse_logged_count">%1$d / %2$d</string>
+    <string name="pulse_n_more">+%1$d more ›</string>
+    <string name="pulse_logged_today">%1$s has logged today</string>
+    <string name="pulse_not_logged">%1$s hasn\'t logged yet</string>
+    <string name="pulse_nudge_cta">Send %1$s a nudge</string>
+    <string name="pulse_already_nudged">You already nudged %1$s today</string>
+    <string name="pulse_logged_status">Logged today ✓</string>
+    <string name="pulse_logged_at_time">Logged at %1$s</string>
+
     <!-- Onboarding: Welcome (4.1.1) -->
     <string name="welcome_tagline">Achieve goals together</string>
     <string name="continue_with_google">Continue with Google</string>

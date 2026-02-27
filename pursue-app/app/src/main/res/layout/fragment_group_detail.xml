@@ -286,6 +286,12 @@
                 </LinearLayout>
             </LinearLayout>
 
+            <app.getpursue.ui.views.DailyPulseWidget
+                android:id="@+id/daily_pulse_widget"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:visibility="gone" />
+
         </LinearLayout>
 
         <!-- Tabs (sticky — no scroll flags) -->

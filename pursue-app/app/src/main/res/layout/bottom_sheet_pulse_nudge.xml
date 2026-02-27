@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="24dp">
+
+    <!-- Avatar + name row -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <ImageView
+            android:id="@+id/pulse_nudge_avatar"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:scaleType="centerCrop"
+            tools:src="@drawable/ic_person_add" />
+
+        <TextView
+            android:id="@+id/pulse_nudge_name"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="12dp"
+            android:textAppearance="?attr/textAppearanceTitleMedium"
+            android:textColor="@color/on_surface"
+            tools:text="Shannon Thompson" />
+
+    </LinearLayout>
+
+    <!-- Already nudged message -->
+    <TextView
+        android:id="@+id/pulse_nudge_already_sent"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:textAppearance="?attr/textAppearanceBodyMedium"
+        android:textColor="@color/on_surface_variant"
+        android:visibility="gone"
+        tools:text="You already nudged Shannon today"
+        tools:visibility="gone" />
+
+    <!-- Nudge button -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/pulse_nudge_button"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:minHeight="48dp"
+        tools:text="Send Shannon a nudge" />
+
+</LinearLayout>

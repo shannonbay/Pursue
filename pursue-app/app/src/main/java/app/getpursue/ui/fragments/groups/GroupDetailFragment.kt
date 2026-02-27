@@ -45,6 +45,7 @@ import androidx.viewpager2.widget.ViewPager2
 import app.getpursue.data.analytics.AnalyticsEvents
 import app.getpursue.data.analytics.AnalyticsLogger
 import app.getpursue.data.auth.SecureTokenManager
+import app.getpursue.ui.views.DailyPulseWidget
 import app.getpursue.data.fcm.FcmTopicManager
 import app.getpursue.data.network.ApiClient
 import app.getpursue.data.network.ApiException
@@ -70,8 +71,11 @@ import com.google.android.material.tabs.TabLayoutMediator
 import com.google.android.material.textfield.TextInputEditText
 import com.google.gson.Gson
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.IOException
@@ -125,6 +129,11 @@ class GroupDetailFragment : Fragment() {
     private var groupDetail: GroupDetailResponse? = null
     private var hasOpenedInitialInviteSheet = false
     internal var nowProvider: () -> LocalDateTime = { LocalDateTime.now() }
+
+    private lateinit var dailyPulseWidget: DailyPulseWidget
+    private var pollingJob: Job? = null
+    private var lastKnownMembers: List<GroupMember>? = null
+    private var currentUserId: String? = null
     
     private lateinit var groupIconContainer: FrameLayout
     private lateinit var groupIconImage: ImageView
@@ -178,6 +187,13 @@ class GroupDetailFragment : Fragment() {
         }
         // Refresh when returning from Edit Group (or other nested screens)
         loadGroupDetails()
+        startPulsePolling()
+    }
+
+    override fun onPause() {
+        super.onPause()
+        pollingJob?.cancel()
+        pollingJob = null
     }
 
     override fun onCreateView(
@@ -217,6 +233,8 @@ class GroupDetailFragment : Fragment() {
         tabLayout = view.findViewById(R.id.tab_layout)
         viewPager = view.findViewById(R.id.view_pager)
         fabAction = view.findViewById(R.id.fab_action)
+        dailyPulseWidget = view.findViewById(R.id.daily_pulse_widget)
+        dailyPulseWidget.setFragmentManager(childFragmentManager, groupId ?: "")
 
         // Heat section tap -> show info dialog
         val heatClickListener = View.OnClickListener { showHeatInfoDialog() }
@@ -507,6 +525,14 @@ class GroupDetailFragment : Fragment() {
                             null
                         }
                     }
+                    // Fetch current user ID once if we don't already have it
+                    if (currentUserId == null) {
+                        async(Dispatchers.IO) {
+                            try {
+                                currentUserId = ApiClient.getMyUser(accessToken).id
+                            } catch (_: Exception) { /* non-fatal */ }
+                        }
+                    }
                     val details = detailsDeferred.await()
                     val membersList = membersDeferred.await()
                     Pair(details, membersList)
@@ -516,6 +542,29 @@ class GroupDetailFragment : Fragment() {
                 groupDetail = response
 
                 updateHeader(response, members)
+
+                // Daily Pulse widget
+                val uid = currentUserId ?: ""
+                // Default hasGoals=true; widget hides itself when members.size <= 1
+                if (members != null) {
+                    val animate = lastKnownMembers != null
+                    dailyPulseWidget.setFragmentManager(childFragmentManager, groupId)
+                    dailyPulseWidget.bindMembers(members, uid, hasGoals = true, animate = animate)
+                    lastKnownMembers = members
+                    if (members.size > 1) {
+                        AnalyticsLogger.logEvent(
+                            AnalyticsEvents.DAILY_PULSE_VIEWED,
+                            Bundle().apply {
+                                putString("group_id", groupId)
+                                putInt("member_count", members.size)
+                                putInt("logged_count", members.count { it.logged_this_period })
+                            }
+                        )
+                    }
+                } else {
+                    dailyPulseWidget.showLoading()
+                }
+
                 updateCommLinkRow(response.comm_platform, response.comm_link)
                 loadGroupIcon(
                     hasIcon = response.has_icon,
@@ -1455,6 +1504,27 @@ class GroupDetailFragment : Fragment() {
                 )
             } catch (_: IllegalArgumentException) {
                 groupIconLetter.backgroundTintList = ColorStateList.valueOf(fallbackColor)
+            }
+        }
+    }
+
+    private fun startPulsePolling() {
+        pollingJob?.cancel()
+        pollingJob = lifecycleScope.launch {
+            while (isActive) {
+                delay(60_000L)
+                if (!isAdded) break
+                val gid = groupId ?: break
+                val ctx = context ?: break
+                val token = SecureTokenManager.getInstance(ctx).getAccessToken() ?: break
+                try {
+                    val fresh = withContext(Dispatchers.IO) {
+                        ApiClient.getGroupMembers(token, gid).members
+                    }
+                    if (!isAdded) break
+                    lastKnownMembers = fresh
+                    dailyPulseWidget.updateMembers(fresh, animate = true)
+                } catch (_: Exception) { /* silent — poll retry next cycle */ }
             }
         }
     }

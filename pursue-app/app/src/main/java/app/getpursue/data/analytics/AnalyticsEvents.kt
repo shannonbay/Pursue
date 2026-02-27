@@ -62,6 +62,12 @@ object AnalyticsEvents {
     // Orientation
     const val ORIENTATION_COMPLETED = "orientation_completed"
 
+    // Daily Pulse
+    const val DAILY_PULSE_VIEWED        = "daily_pulse_viewed"
+    const val DAILY_PULSE_AVATAR_TAPPED = "daily_pulse_avatar_tapped"
+    const val DAILY_PULSE_NUDGE_SENT    = "daily_pulse_nudge_sent"
+    const val DAILY_PULSE_GRID_OPENED   = "daily_pulse_grid_opened"
+
     // Param name constants
     object Param {
         const val CADENCE         = "cadence"
