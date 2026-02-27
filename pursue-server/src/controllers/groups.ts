@@ -1,6 +1,6 @@
 import type { Response, NextFunction, Request } from 'express';
 import multer, { type FileFilterCallback } from 'multer';
-import { sql } from 'kysely';
+import { sql, type SqlBool } from 'kysely';
 import { db } from '../database/index.js';
 import { ApplicationError } from '../middleware/errorHandler.js';
 import type { AuthRequest } from '../types/express.js';
@@ -1046,6 +1046,22 @@ export async function listMembers(
     await ensureGroupExists(group_id);
     await requireActiveGroupMember(req.user.id, group_id);
 
+    // Determine the group's primary cadence for the Daily Pulse widget.
+    // Daily takes precedence over weekly when the group has mixed cadences.
+    const goals = await db
+      .selectFrom('goals')
+      .select('cadence')
+      .where('group_id', '=', group_id)
+      .where('deleted_at', 'is', null)
+      .execute();
+
+    const cadences = new Set(goals.map((g) => g.cadence));
+    const primaryCadence = cadences.has('daily')
+      ? 'daily'
+      : cadences.has('weekly')
+        ? 'weekly'
+        : null;
+
     const members = await db
       .selectFrom('group_memberships')
       .innerJoin('users', 'group_memberships.user_id', 'users.id')
@@ -1062,14 +1078,54 @@ export async function listMembers(
       .orderBy('group_memberships.joined_at', 'asc')
       .execute();
 
+    // Build per-member log status map for the Daily Pulse widget.
+    // Maps user_id → most recent logged_at timestamp within the current period.
+    const logStatusMap = new Map<string, Date>();
+    if (primaryCadence !== null) {
+      const baseLogQuery = db
+        .selectFrom('progress_entries as pe')
+        .innerJoin('goals as g', 'pe.goal_id', 'g.id')
+        .innerJoin('users as u', 'pe.user_id', 'u.id')
+        .select([
+          'pe.user_id',
+          sql<Date>`MAX(pe.logged_at)`.as('last_log_at'),
+        ])
+        .where('g.group_id', '=', group_id)
+        .where('g.deleted_at', 'is', null);
+
+      const periodicQuery =
+        primaryCadence === 'daily'
+          ? baseLogQuery.where(
+              sql<SqlBool>`pe.period_start = (NOW() AT TIME ZONE COALESCE(u.timezone, 'UTC'))::date`
+            )
+          : baseLogQuery
+              .where(
+                sql<SqlBool>`pe.period_start >= date_trunc('week', NOW() AT TIME ZONE COALESCE(u.timezone, 'UTC'))::date`
+              )
+              .where(
+                sql<SqlBool>`pe.period_start <= (NOW() AT TIME ZONE COALESCE(u.timezone, 'UTC'))::date`
+              );
+
+      const logRows = await periodicQuery.groupBy('pe.user_id').execute();
+
+      for (const row of logRows) {
+        logStatusMap.set(row.user_id, row.last_log_at);
+      }
+    }
+
     res.status(200).json({
-      members: members.map((m) => ({
-        user_id: m.user_id,
-        display_name: m.display_name,
-        has_avatar: Boolean(m.has_avatar),
-        role: m.role,
-        joined_at: m.joined_at,
-      })),
+      members: members.map((m) => {
+        const lastLogAt = logStatusMap.get(m.user_id) ?? null;
+        return {
+          user_id: m.user_id,
+          display_name: m.display_name,
+          has_avatar: Boolean(m.has_avatar),
+          role: m.role,
+          joined_at: m.joined_at,
+          logged_this_period: lastLogAt !== null,
+          last_log_at: lastLogAt,
+        };
+      }),
     });
   } catch (error) {
     next(error);

@@ -34,6 +34,12 @@ class GroupMembersE2ETest : E2ETest() {
         assertThat(member.display_name).isNotEmpty()
         assertThat(member.role).isNotEmpty()
         assertThat(member.joined_at).isNotEmpty()
+
+        // Daily Pulse fields must be present on every member (spec §12)
+        assertThat(member.logged_this_period).isIn(listOf(true, false))
+        if (member.last_log_at != null) {
+            assertThat(member.last_log_at).isNotEmpty()
+        }
     }
     
     @Test

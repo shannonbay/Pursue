@@ -294,6 +294,8 @@ CREATE INDEX idx_progress_user_logged_at_id ON progress_entries(user_id, logged_
 CREATE INDEX idx_progress_goal_user_period ON progress_entries(goal_id, user_id, period_start);
 -- Journal entries: filter by log_title presence
 CREATE INDEX idx_progress_journal_entries ON progress_entries(goal_id, period_start DESC) WHERE log_title IS NOT NULL;
+-- Daily Pulse: covering index for per-member log status aggregation (goal_id, period_start, user_id, logged_at)
+CREATE INDEX idx_progress_goal_period_user ON progress_entries(goal_id, period_start, user_id, logged_at DESC);
 
 COMMENT ON COLUMN progress_entries.period_start IS 'User local date (DATE not TIMESTAMP). For daily goal, this is the user local day they completed it, e.g., 2026-01-17. Critical for timezone handling - a Friday workout at 11 PM EST should count for Friday, not Saturday UTC.';
 
