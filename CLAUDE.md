@@ -157,7 +157,8 @@ data/fcm/PursueFirebaseMessagingService.kt - Incoming push notification handler
 data/notifications/NotificationPreferences.kt - User notification settings
 data/analytics/AnalyticsPreference.kt - reads CrashlyticsPreference.isEnabled(), syncs FirebaseAnalytics SDK
 data/analytics/AnalyticsLogger.kt - logEvent() + setScreen() with consent guard, initialized in PursueApplication
-data/analytics/AnalyticsEvents.kt - custom event and param name constants
+data/analytics/AnalyticsEvents.kt - custom event and param name constants (invite, milestone card, referral events)
+data/referral/InstallReferralHelper.kt - Play Install Referrer listener, fires referral_attributed on first launch
 
 # Models
 models/Group.kt - Group data model

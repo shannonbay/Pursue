@@ -45,6 +45,7 @@ export const CreateGroupSchema = z
     category: z.enum(VALID_CATEGORIES).optional(),
     spot_limit: z.number().int().min(2).max(500).optional(),
     template_id: z.string().uuid().optional(),
+    language: z.string().max(10).optional(),
   })
   .strict();
 
@@ -152,6 +153,7 @@ export const DiscoverGroupsQuerySchema = z
     q: z.string().max(200).optional(),
     cursor: z.string().optional(),
     limit: z.coerce.number().int().min(1).max(50).optional().default(20),
+    language: z.string().max(10).optional(),
   })
   .strict();
 

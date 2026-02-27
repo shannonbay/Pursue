@@ -130,6 +130,7 @@ CREATE TABLE groups (
   comm_platform TEXT CHECK (comm_platform IS NULL OR comm_platform IN ('discord','whatsapp','telegram')),
   comm_link TEXT,
   search_embedding vector(1536),
+  language VARCHAR(10) DEFAULT NULL,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   deleted_at TIMESTAMP WITH TIME ZONE -- NULL if active, timestamp if soft deleted
@@ -141,6 +142,7 @@ CREATE INDEX idx_groups_challenge_status ON groups(is_challenge, challenge_statu
 CREATE INDEX idx_groups_template ON groups(template_id) WHERE template_id IS NOT NULL;
 CREATE INDEX idx_groups_name_trgm ON groups USING gin (name gin_trgm_ops);
 CREATE INDEX idx_groups_search_embedding ON groups USING hnsw (search_embedding vector_cosine_ops);
+CREATE INDEX idx_groups_language ON groups(language) WHERE visibility = 'public' AND deleted_at IS NULL;
 
 ALTER TABLE groups ADD CONSTRAINT chk_groups_challenge_fields CHECK (
   (is_challenge = FALSE AND challenge_start_date IS NULL AND challenge_end_date IS NULL AND challenge_status IS NULL)

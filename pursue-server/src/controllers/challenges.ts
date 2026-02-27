@@ -351,6 +351,7 @@ export async function createChallenge(
           template_id: template?.id ?? null,
           challenge_status: status,
           challenge_invite_card_data: inviteCardBase,
+          language: data.language ?? null,
         })
         .returning([
           'id',

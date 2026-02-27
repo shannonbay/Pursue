@@ -177,6 +177,7 @@ export async function createGroup(
           category: data.category ?? null,
           spot_limit: data.spot_limit ?? null,
           template_id: template?.id ?? null,
+          language: data.language ?? null,
         })
         .returning([
           'id',

@@ -294,6 +294,133 @@ describe('GET /api/discover/groups', () => {
 });
 
 // ============================================================
+// Language support in GET /api/discover/groups
+// ============================================================
+
+describe('GET /api/discover/groups — language support', () => {
+  // Helper: create a public group with a specific language directly in the DB
+  async function createPublicGroupWithLanguage(
+    token: string,
+    name: string,
+    language: string | null
+  ): Promise<string> {
+    const res = await request(app)
+      .post('/api/groups')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ name, visibility: 'public', category: 'fitness', language: language ?? undefined });
+    if (res.status !== 201) {
+      throw new Error(`Failed to create group: ${JSON.stringify(res.body)}`);
+    }
+    return res.body.id;
+  }
+
+  it('should rank pt-BR groups first when language=pt-BR', async () => {
+    const { accessToken: token1 } = await createAuthenticatedUser(randomEmail());
+    const { accessToken: token2 } = await createAuthenticatedUser(randomEmail());
+
+    const ptId = await createPublicGroupWithLanguage(token1, 'PT-BR Group Language Test', 'pt-BR');
+    const enId = await createPublicGroupWithLanguage(token2, 'EN Group Language Test', null);
+
+    const res = await request(app).get('/api/discover/groups?language=pt-BR&limit=50');
+    expect(res.status).toBe(200);
+    const ids: string[] = res.body.groups.map((g: any) => g.id);
+    expect(ids).toContain(ptId);
+    expect(ids).toContain(enId);
+    expect(ids.indexOf(ptId)).toBeLessThan(ids.indexOf(enId));
+  });
+
+  it('should rank English/null groups first when language=en-US', async () => {
+    const { accessToken: token1 } = await createAuthenticatedUser(randomEmail());
+    const { accessToken: token2 } = await createAuthenticatedUser(randomEmail());
+
+    const enId = await createPublicGroupWithLanguage(token1, 'EN Group Lang Priority', null);
+    const ptId = await createPublicGroupWithLanguage(token2, 'PT-BR Group Lang Priority', 'pt-BR');
+
+    const res = await request(app).get('/api/discover/groups?language=en-US&limit=50');
+    expect(res.status).toBe(200);
+    const ids: string[] = res.body.groups.map((g: any) => g.id);
+    expect(ids).toContain(enId);
+    expect(ids).toContain(ptId);
+    expect(ids.indexOf(enId)).toBeLessThan(ids.indexOf(ptId));
+  });
+
+  it('should return groups without language bias when no language param', async () => {
+    const { accessToken: token1 } = await createAuthenticatedUser(randomEmail());
+    const { accessToken: token2 } = await createAuthenticatedUser(randomEmail());
+
+    const ptId = await createPublicGroupWithLanguage(token1, 'PT-BR No Lang Param', 'pt-BR');
+    const enId = await createPublicGroupWithLanguage(token2, 'EN No Lang Param', null);
+
+    // No language param — both groups appear but heat/member sort applies
+    const res = await request(app).get('/api/discover/groups?limit=50');
+    expect(res.status).toBe(200);
+    const ids: string[] = res.body.groups.map((g: any) => g.id);
+    expect(ids).toContain(ptId);
+    expect(ids).toContain(enId);
+  });
+
+  it('should store language on group creation and return valid response', async () => {
+    const { accessToken } = await createAuthenticatedUser(randomEmail());
+
+    const res = await request(app)
+      .post('/api/groups')
+      .set('Authorization', `Bearer ${accessToken}`)
+      .send({ name: 'PT-BR Language Store Test', visibility: 'public', language: 'pt-BR' });
+    expect(res.status).toBe(201);
+
+    const groupId = res.body.id;
+    const row = await testDb
+      .selectFrom('groups')
+      .select('language')
+      .where('id', '=', groupId)
+      .executeTakeFirst();
+    expect(row?.language).toBe('pt-BR');
+  });
+
+  it('should maintain language-first ordering across cursor pages (pt-BR)', async () => {
+    // Create 5 pt-BR groups + 3 English groups to test page boundary
+    const ptTokens: string[] = [];
+    const ptIds: string[] = [];
+    for (let i = 0; i < 5; i++) {
+      const { accessToken } = await createAuthenticatedUser(randomEmail());
+      ptTokens.push(accessToken);
+      const id = await createPublicGroupWithLanguage(accessToken, `PT Cursor Group ${i}`, 'pt-BR');
+      ptIds.push(id);
+    }
+    const enIds: string[] = [];
+    for (let i = 0; i < 3; i++) {
+      const { accessToken } = await createAuthenticatedUser(randomEmail());
+      const id = await createPublicGroupWithLanguage(accessToken, `EN Cursor Group ${i}`, null);
+      enIds.push(id);
+    }
+
+    // Page 1: limit=4 — should be all pt-BR
+    const res1 = await request(app).get('/api/discover/groups?language=pt-BR&limit=4&sort=members');
+    expect(res1.status).toBe(200);
+    expect(res1.body.has_more).toBe(true);
+    const ids1: string[] = res1.body.groups.map((g: any) => g.id);
+    // All 4 from page 1 should be pt-BR groups (or at least the pt-BR ones appear first)
+    const ptOnPage1 = ids1.filter((id) => ptIds.includes(id));
+    const enOnPage1 = ids1.filter((id) => enIds.includes(id));
+    // pt-BR groups must appear before English groups on page 1
+    if (enOnPage1.length > 0) {
+      const lastPtIdx = Math.max(...ptOnPage1.map((id) => ids1.indexOf(id)));
+      const firstEnIdx = Math.min(...enOnPage1.map((id) => ids1.indexOf(id)));
+      expect(lastPtIdx).toBeLessThan(firstEnIdx);
+    }
+
+    // Page 2: use cursor — no duplicates
+    const res2 = await request(app).get(
+      `/api/discover/groups?language=pt-BR&limit=4&sort=members&cursor=${res1.body.next_cursor}`
+    );
+    expect(res2.status).toBe(200);
+    const ids2: string[] = res2.body.groups.map((g: any) => g.id);
+    const overlap = ids1.filter((id) => ids2.includes(id));
+    expect(overlap.length).toBe(0);
+  });
+});
+
+// ============================================================
 // GET /api/discover/groups/:group_id
 // ============================================================
 

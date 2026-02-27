@@ -516,6 +516,18 @@ async function createSchema(db: Kysely<Database>) {
     END $$
   `.execute(db);
 
+  // Add language column to groups (for multilingual discovery)
+  await sql`
+    DO $$ BEGIN
+      IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = 'groups' AND column_name = 'language'
+      ) THEN
+        ALTER TABLE groups ADD COLUMN language VARCHAR(10) DEFAULT NULL;
+      END IF;
+    END $$
+  `.execute(db);
+
   // Create query embedding cache table
   await sql`
     CREATE TABLE IF NOT EXISTS search_query_embeddings (

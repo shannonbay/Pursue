@@ -101,6 +101,7 @@ export interface GroupsTable {
   comm_link: string | null;
   // Never written via Kysely typed setters — uses sql template for vector insert
   search_embedding: ColumnType<string | null, never, never>;
+  language: string | null;
   created_at: ColumnType<Date, string | undefined, never>;
   updated_at: ColumnType<Date, string | undefined, string | undefined>;
   deleted_at: ColumnType<Date | null, string | undefined, string | undefined>;

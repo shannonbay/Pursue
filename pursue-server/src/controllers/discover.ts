@@ -33,6 +33,13 @@ function getTierName(tier: number): string {
   return TIER_NAMES[tier] ?? 'Cold';
 }
 
+function computeLangMatch(rowLanguage: string | null, reqLanguage: string): number {
+  if (reqLanguage.startsWith('en')) {
+    return rowLanguage === null || rowLanguage.startsWith('en') ? 1 : 0;
+  }
+  return rowLanguage === reqLanguage ? 1 : 0;
+}
+
 // GET /api/discover/groups
 export async function listPublicGroups(
   req: Request,
@@ -42,7 +49,13 @@ export async function listPublicGroups(
   try {
     const query = DiscoverGroupsQuerySchema.parse(req.query);
 
-    const { categories, sort, q, cursor, limit } = query;
+    const { categories, sort, q, cursor, limit, language } = query;
+
+    const languageMatchSql = language
+      ? language.startsWith('en')
+        ? sql<number>`CASE WHEN groups.language IS NULL OR groups.language LIKE 'en%' THEN 1 ELSE 0 END`
+        : sql<number>`CASE WHEN groups.language = ${language} THEN 1 ELSE 0 END`
+      : null;
 
     // Try to get a semantic embedding for the query (null if OpenAI unavailable/fails)
     const queryEmbedding = q ? await getQueryEmbedding(q) : null;
@@ -129,6 +142,7 @@ export async function listPublicGroups(
         sql<number>`COALESCE(group_heat.heat_tier, 0)`.as('heat_tier'),
         sql<number>`COALESCE(mc.member_count, 0)`.as('member_count'),
         sql<number>`COALESCE(gc.goal_count, 0)`.as('goal_count'),
+        'groups.language',
       ])
       .where('groups.visibility', '=', 'public')
       .where('groups.deleted_at', 'is', null);
@@ -179,54 +193,96 @@ export async function listPublicGroups(
     if (q && combinedScoreSql && cursor) {
       try {
         const decoded = JSON.parse(Buffer.from(cursor, 'base64url').toString('utf8'));
-        dbQuery = dbQuery.where(
-          sql<SqlBool>`(${combinedScoreSql}) < ${decoded.combined_score}
-            OR ((${combinedScoreSql}) = ${decoded.combined_score} AND groups.id < ${decoded.id})`
-        );
+        if (languageMatchSql && decoded.lang_match !== undefined) {
+          dbQuery = dbQuery.where(
+            sql<SqlBool>`(${languageMatchSql}) < ${decoded.lang_match}
+              OR ((${languageMatchSql}) = ${decoded.lang_match}
+                AND ((${combinedScoreSql}) < ${decoded.combined_score}
+                  OR ((${combinedScoreSql}) = ${decoded.combined_score} AND groups.id < ${decoded.id})))`
+          );
+        } else {
+          dbQuery = dbQuery.where(
+            sql<SqlBool>`(${combinedScoreSql}) < ${decoded.combined_score}
+              OR ((${combinedScoreSql}) = ${decoded.combined_score} AND groups.id < ${decoded.id})`
+          );
+        }
       } catch { /* invalid cursor — ignore */ }
     }
 
-    // --- Engagement cursor (no q) — existing logic ---
+    // --- Engagement cursor (no q) — two-tier keyset when lang_match present ---
     if (!q && cursor) {
       try {
         const decoded = JSON.parse(Buffer.from(cursor, 'base64url').toString('utf8'));
         if (sort === 'heat') {
-          dbQuery = dbQuery.where((eb) =>
-            eb.or([
-              eb(sql<number>`COALESCE(group_heat.heat_score, 0)`, '<', decoded.heat_score),
-              eb.and([
-                eb(sql<number>`COALESCE(group_heat.heat_score, 0)`, '=', decoded.heat_score),
-                eb('groups.id', '<', decoded.id),
-              ]),
-            ])
-          );
+          if (languageMatchSql && decoded.lang_match !== undefined) {
+            dbQuery = dbQuery.where(
+              sql<SqlBool>`(${languageMatchSql}) < ${decoded.lang_match}
+                OR ((${languageMatchSql}) = ${decoded.lang_match}
+                  AND (COALESCE(group_heat.heat_score, 0) < ${decoded.heat_score}
+                    OR (COALESCE(group_heat.heat_score, 0) = ${decoded.heat_score}
+                      AND groups.id < ${decoded.id})))`
+            );
+          } else {
+            dbQuery = dbQuery.where((eb) =>
+              eb.or([
+                eb(sql<number>`COALESCE(group_heat.heat_score, 0)`, '<', decoded.heat_score),
+                eb.and([
+                  eb(sql<number>`COALESCE(group_heat.heat_score, 0)`, '=', decoded.heat_score),
+                  eb('groups.id', '<', decoded.id),
+                ]),
+              ])
+            );
+          }
         } else if (sort === 'newest') {
-          dbQuery = dbQuery.where((eb) =>
-            eb.or([
-              eb('groups.created_at', '<', new Date(decoded.created_at)),
-              eb.and([
-                eb('groups.created_at', '=', new Date(decoded.created_at)),
-                eb('groups.id', '<', decoded.id),
-              ]),
-            ])
-          );
+          if (languageMatchSql && decoded.lang_match !== undefined) {
+            dbQuery = dbQuery.where(
+              sql<SqlBool>`(${languageMatchSql}) < ${decoded.lang_match}
+                OR ((${languageMatchSql}) = ${decoded.lang_match}
+                  AND (groups.created_at < ${new Date(decoded.created_at)}
+                    OR (groups.created_at = ${new Date(decoded.created_at)}
+                      AND groups.id < ${decoded.id})))`
+            );
+          } else {
+            dbQuery = dbQuery.where((eb) =>
+              eb.or([
+                eb('groups.created_at', '<', new Date(decoded.created_at)),
+                eb.and([
+                  eb('groups.created_at', '=', new Date(decoded.created_at)),
+                  eb('groups.id', '<', decoded.id),
+                ]),
+              ])
+            );
+          }
         } else if (sort === 'members') {
-          dbQuery = dbQuery.where((eb) =>
-            eb.or([
-              eb(sql<number>`COALESCE(mc.member_count, 0)`, '<', decoded.member_count),
-              eb.and([
-                eb(sql<number>`COALESCE(mc.member_count, 0)`, '=', decoded.member_count),
-                eb('groups.id', '<', decoded.id),
-              ]),
-            ])
-          );
+          if (languageMatchSql && decoded.lang_match !== undefined) {
+            dbQuery = dbQuery.where(
+              sql<SqlBool>`(${languageMatchSql}) < ${decoded.lang_match}
+                OR ((${languageMatchSql}) = ${decoded.lang_match}
+                  AND (COALESCE(mc.member_count, 0) < ${decoded.member_count}
+                    OR (COALESCE(mc.member_count, 0) = ${decoded.member_count}
+                      AND groups.id < ${decoded.id})))`
+            );
+          } else {
+            dbQuery = dbQuery.where((eb) =>
+              eb.or([
+                eb(sql<number>`COALESCE(mc.member_count, 0)`, '<', decoded.member_count),
+                eb.and([
+                  eb(sql<number>`COALESCE(mc.member_count, 0)`, '=', decoded.member_count),
+                  eb('groups.id', '<', decoded.id),
+                ]),
+              ])
+            );
+          }
         }
       } catch {
         // Invalid cursor — ignore and start from beginning
       }
     }
 
-    // Sort — combined score overrides sort param when a search query is present
+    // Sort — language-first, then combined score / engagement sort
+    if (languageMatchSql) {
+      (dbQuery as any) = (dbQuery as any).orderBy(languageMatchSql, 'desc');
+    }
     if (q && combinedScoreSql) {
       dbQuery = dbQuery
         .orderBy(combinedScoreSql, 'desc')
@@ -294,6 +350,9 @@ export async function listPublicGroups(
         cursorData = { created_at: last.created_at, id: last.id };
       } else {
         cursorData = { member_count: Number(last.member_count), id: last.id };
+      }
+      if (language) {
+        cursorData.lang_match = computeLangMatch((last as any).language ?? null, language);
       }
       nextCursor = Buffer.from(JSON.stringify(cursorData)).toString('base64url');
     }

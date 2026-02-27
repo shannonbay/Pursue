@@ -799,7 +799,8 @@ object ApiClient {
                 visibility = visibility,
                 category = category,
                 spot_limit = spotLimit,
-                template_id = templateId
+                template_id = templateId,
+                language = java.util.Locale.getDefault().toLanguageTag()
             )
         ).toRequestBody(jsonMediaType)
         
@@ -1030,7 +1031,8 @@ object ApiClient {
                 group_description = groupDescription,
                 icon_emoji = iconEmoji,
                 goals = goals,
-                visibility = visibility
+                visibility = visibility,
+                language = java.util.Locale.getDefault().toLanguageTag()
             )
         ).toRequestBody(jsonMediaType)
 
@@ -2209,6 +2211,7 @@ object ApiClient {
         q?.let { params.add("q=${URLEncoder.encode(it, "UTF-8")}") }
         cursor?.let { params.add("cursor=${URLEncoder.encode(it, "UTF-8")}") }
         limit?.let { params.add("limit=$it") }
+        params.add("language=${URLEncoder.encode(java.util.Locale.getDefault().toLanguageTag(), "UTF-8")}")
         val url = if (params.isEmpty()) "$baseUrl/discover/groups"
                   else "$baseUrl/discover/groups?${params.joinToString("&")}"
         val request = Request.Builder()
@@ -2579,7 +2582,8 @@ data class CreateGroupRequest(
     val visibility: String? = null,
     val category: String? = null,
     val spot_limit: Int? = null,
-    val template_id: String? = null
+    val template_id: String? = null,
+    val language: String? = null
 )
 
 /**
@@ -2769,7 +2773,8 @@ data class CreateChallengeRequest(
     val group_description: String? = null,
     val icon_emoji: String? = null,
     val goals: List<CreateChallengeGoal>? = null,
-    val visibility: String? = null
+    val visibility: String? = null,
+    val language: String? = null
 )
 
 data class ChallengeGoal(
