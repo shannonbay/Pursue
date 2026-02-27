@@ -168,7 +168,7 @@ class MainAppActivity : AppCompatActivity(),
         val toolbar: Toolbar = findViewById(R.id.toolbar)
         setSupportActionBar(toolbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(false)
-        supportActionBar?.title = getString(R.string.groups_title)
+        supportActionBar?.title = getString(R.string.today_title)
 
         bottomNavigation = findViewById(R.id.bottom_navigation)
         bottomNavigation.setOnItemSelectedListener(this)
@@ -217,9 +217,9 @@ class MainAppActivity : AppCompatActivity(),
                     replace(R.id.fragment_container, PremiumFragment.Companion.newInstance())
                 }
             } else {
-                Log.d("MainAppActivity", "Loading HomeFragment on first launch")
+                Log.d("MainAppActivity", "Loading TodayFragment on first launch")
                 supportFragmentManager.commit {
-                    replace(R.id.fragment_container, HomeFragment.Companion.newInstance())
+                    replace(R.id.fragment_container, TodayFragment.Companion.newInstance())
                 }
                 val pendingCode = intent.getStringExtra(EXTRA_PENDING_INVITE_CODE)
                 if (pendingCode != null) {
