@@ -1,79 +1,5 @@
 # TODO
 
-## Testing
-
-### Testing of Home Screen Implementation (Section 4.2)
-
-**Plan**: `implement_home_screen_(section_4.2)_f1952564.plan.md`
-
-Create comprehensive unit tests for the Home Screen implementation including:
-
-- **HomeFragment Tests**:
-  - Test groups list display with empty state
-  - Test groups list display with multiple groups
-  - Test pull-to-refresh functionality
-  - Test API integration and error handling
-  - Test FAB click handling
-  - Test empty state button clicks (Join Group, Create Group)
-  - Test group card click navigation
-
-- **GroupAdapter Tests**:
-  - Test group card data binding
-  - Test timestamp formatting (relative time)
-  - Test click listener invocation
-  - Test progress bar display
-
-- **MainAppActivity Tests**:
-  - Test bottom navigation tab switching
-  - Test fragment navigation
-  - Test toolbar title updates
-
-- **API Integration Tests**:
-  - Test `getMyGroups()` API call
-  - Test error handling (network errors, invalid tokens)
-  - Test pagination (if implemented)
-
-**Reference**: See `app/TESTING.md` for testing patterns and best practices.
-
----
-
-### Testing of Sign In Flow Implementation
-
-**Plan**: `implement_sign_in_flow_with_login_api,_token_storage,_and_fcm_registration_d28cee02.plan.md`
-
-Create comprehensive unit tests for the Sign In Flow implementation including:
-
-- **SignInEmailFragment Tests**:
-  - Test successful sign-in flow
-  - Test loading state during API call
-  - Test error handling (401, 400, network errors)
-  - Test button state management
-  - Test navigation to MainAppActivity on success
-
-- **OnboardingActivity Sign-In Tests**:
-  - Test token storage after successful login
-  - Test FCM token registration (success and failure scenarios)
-  - Test navigation flow
-  - Test error message display
-
-- **ApiClient Login Tests**:
-  - Test `login()` API call with valid credentials
-  - Test `login()` API call with invalid credentials
-  - Test error response handling
-  - Test `registerDevice()` API call
-
-- **FcmTokenManager Tests** (if implemented):
-  - Test FCM token retrieval
-  - Test token caching
-  - Test error handling when Firebase unavailable
-
-**Reference**: See `app/TESTING.md` for testing patterns and best practices. See `app/src/test/java/com/github/shannonbay/pursue/SignUpEmailFragmentTest.kt` for similar test patterns.
-
----
-Blurb
-Track goals
-See each other's progress
----
 
 My TODOs
 - Ask sonnet to update the backend spec to support creating expired tokens for E2E testing
@@ -84,9 +10,8 @@ My TODOs
 - Subscriptions
 - Ads - What would Regan do
 - Upload custom images for group icons
+
 - Red teaming - completed up to bash password retry loop
-- Create new group -> Back -> Fix activity toolbar title
-- Join group -> Back -> not in any groups yet
 - Caching
 - Ads
 
@@ -118,6 +43,8 @@ My TODOs
 - Premium users can create custom challenges
 - Onboarding flow
 - Notifications for challenges
+- Don't require category for private groups
+- Create custom challenges
 
 TODO: Redis-backed sliding-window limits
 
