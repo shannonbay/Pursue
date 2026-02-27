@@ -98,7 +98,7 @@ class DailyPulseWidget @JvmOverloads constructor(
             val placeholder = View(context).apply {
                 val size = dpToPx(40)
                 layoutParams = LinearLayout.LayoutParams(size, size).apply {
-                    marginEnd = dpToPx(8)
+                    marginEnd = dpToPx(4)
                 }
                 setBackgroundResource(R.drawable.circle_background)
                 backgroundTintList = android.content.res.ColorStateList.valueOf(
@@ -293,7 +293,7 @@ class DailyPulseWidget @JvmOverloads constructor(
                 LinearLayout.LayoutParams.WRAP_CONTENT,
                 dpToPx(40)
             ).apply {
-                marginEnd = dpToPx(8)
+                marginEnd = dpToPx(4)
                 gravity = android.view.Gravity.CENTER_VERTICAL
             }
             gravity = android.view.Gravity.CENTER
