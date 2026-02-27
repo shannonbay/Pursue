@@ -57,7 +57,11 @@ class DiscoverFragment : Fragment() {
         listOf(getString(R.string.category_all)) +
         GroupCategories.SLUGS.map { GroupCategories.displayName(requireContext(), it) }
     private val sortValues = listOf("heat", "newest", "members")
-    private val sortLabels = listOf("Heat", "Newest", "Members")
+    private fun buildSortLabels(): List<String> = listOf(
+        getString(R.string.sort_heat),
+        getString(R.string.sort_newest),
+        getString(R.string.sort_members)
+    )
 
     private var selectedCategoryIndex = 0
     private var selectedSortIndex = 0
@@ -147,7 +151,7 @@ class DiscoverFragment : Fragment() {
         val spinnerAdapter = ArrayAdapter(
             requireContext(),
             android.R.layout.simple_spinner_item,
-            sortLabels
+            buildSortLabels()
         ).also { it.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item) }
         sortSpinner.adapter = spinnerAdapter
         sortSpinner.setSelection(selectedSortIndex, false)

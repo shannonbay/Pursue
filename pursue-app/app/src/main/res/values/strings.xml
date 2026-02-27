@@ -905,6 +905,11 @@
     <string name="category_sports">Sports &amp; Training</string>
     <string name="category_other">Other</string>
 
+    <!-- Sort -->
+    <string name="sort_heat">Heat</string>
+    <string name="sort_newest">Newest</string>
+    <string name="sort_members">Members</string>
+
     <!-- External Communication Link -->
     <string name="section_external_communication">External Communication</string>
     <string name="label_comm_platform">Platform</string>

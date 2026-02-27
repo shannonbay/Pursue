@@ -902,6 +902,11 @@
     <string name="category_sports">Esportes &amp; Treino</string>
     <string name="category_other">Outro</string>
 
+    <!-- Sort -->
+    <string name="sort_heat">Em Alta</string>
+    <string name="sort_newest">Mais Recentes</string>
+    <string name="sort_members">Membros</string>
+
     <!-- External Communication Link -->
     <string name="section_external_communication">Comunicação Externa</string>
     <string name="label_comm_platform">Plataforma</string>
