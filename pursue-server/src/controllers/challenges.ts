@@ -115,6 +115,36 @@ export async function getChallengeTemplates(
           .orderBy('sort_order', 'asc')
           .execute();
 
+    // Fetch translations if a non-English language was requested
+    const language = query.language;
+    const templateTranslationsMap = new Map<string, { title: string; description: string }>();
+    const goalTranslationsMap = new Map<string, { title: string; description: string | null; log_title_prompt: string | null }>();
+
+    if (language !== 'en' && templateIds.length > 0) {
+      const templateTranslations = await db
+        .selectFrom('group_template_translations')
+        .select(['template_id', 'title', 'description'])
+        .where('template_id', 'in', templateIds)
+        .where('language', '=', language)
+        .execute();
+      for (const t of templateTranslations) {
+        templateTranslationsMap.set(t.template_id, { title: t.title, description: t.description });
+      }
+
+      const goalIds = goals.map((g) => g.id);
+      if (goalIds.length > 0) {
+        const goalTranslations = await db
+          .selectFrom('group_template_goal_translations')
+          .select(['goal_id', 'title', 'description', 'log_title_prompt'])
+          .where('goal_id', 'in', goalIds)
+          .where('language', '=', language)
+          .execute();
+        for (const t of goalTranslations) {
+          goalTranslationsMap.set(t.goal_id, { title: t.title, description: t.description, log_title_prompt: t.log_title_prompt });
+        }
+      }
+    }
+
     const goalsByTemplate = new Map<string, typeof goals>();
     for (const goal of goals) {
       if (!goalsByTemplate.has(goal.template_id)) {
@@ -125,29 +155,35 @@ export async function getChallengeTemplates(
 
     const categories = [...new Set(templates.map((t) => t.category))];
     res.status(200).json({
-      templates: templates.map((template) => ({
-        id: template.id,
-        slug: template.slug,
-        title: template.title,
-        description: template.description,
-        icon_emoji: template.icon_emoji,
-        icon_url: template.icon_url ?? null,
-        duration_days: template.duration_days,
-        category: template.category,
-        difficulty: template.difficulty,
-        is_featured: template.is_featured,
-        is_challenge: template.is_challenge,
-        goals: (goalsByTemplate.get(template.id) ?? []).map((g) => ({
-          title: g.title,
-          description: g.description,
-          cadence: g.cadence,
-          metric_type: g.metric_type,
-          target_value: g.target_value,
-          unit: g.unit,
-          log_title_prompt: g.log_title_prompt,
-          ...serializeActiveDays(g.active_days),
-        })),
-      })),
+      templates: templates.map((template) => {
+        const tTrans = templateTranslationsMap.get(template.id);
+        return {
+          id: template.id,
+          slug: template.slug,
+          title: tTrans?.title ?? template.title,
+          description: tTrans?.description ?? template.description,
+          icon_emoji: template.icon_emoji,
+          icon_url: template.icon_url ?? null,
+          duration_days: template.duration_days,
+          category: template.category,
+          difficulty: template.difficulty,
+          is_featured: template.is_featured,
+          is_challenge: template.is_challenge,
+          goals: (goalsByTemplate.get(template.id) ?? []).map((g) => {
+            const gTrans = goalTranslationsMap.get(g.id);
+            return {
+              title: gTrans?.title ?? g.title,
+              description: gTrans !== undefined ? (gTrans.description ?? g.description) : g.description,
+              cadence: g.cadence,
+              metric_type: g.metric_type,
+              target_value: g.target_value,
+              unit: g.unit,
+              log_title_prompt: gTrans !== undefined ? (gTrans.log_title_prompt ?? g.log_title_prompt) : g.log_title_prompt,
+              ...serializeActiveDays(g.active_days),
+            };
+          }),
+        };
+      }),
       categories,
     });
   } catch (error) {

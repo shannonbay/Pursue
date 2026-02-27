@@ -198,6 +198,29 @@ CREATE TABLE group_template_goals (
 
 CREATE INDEX idx_group_template_goals ON group_template_goals(template_id, sort_order);
 
+-- Template translations (title + description only; non-text fields stay in master table)
+CREATE TABLE group_template_translations (
+  template_id UUID NOT NULL REFERENCES group_templates(id) ON DELETE CASCADE,
+  language    VARCHAR(10) NOT NULL,  -- e.g. 'pt-BR', 'es'
+  title       VARCHAR(200) NOT NULL,
+  description TEXT NOT NULL,
+  PRIMARY KEY (template_id, language)
+);
+
+CREATE INDEX idx_group_template_translations ON group_template_translations(template_id, language);
+
+-- Goal translations (title, description, log_title_prompt only)
+CREATE TABLE group_template_goal_translations (
+  goal_id           UUID NOT NULL REFERENCES group_template_goals(id) ON DELETE CASCADE,
+  language          VARCHAR(10) NOT NULL,
+  title             VARCHAR(200) NOT NULL,
+  description       TEXT,
+  log_title_prompt  VARCHAR(80),
+  PRIMARY KEY (goal_id, language)
+);
+
+CREATE INDEX idx_group_template_goal_translations ON group_template_goal_translations(goal_id, language);
+
 ALTER TABLE groups ADD CONSTRAINT fk_groups_template
   FOREIGN KEY (template_id) REFERENCES group_templates(id) ON DELETE SET NULL;
 

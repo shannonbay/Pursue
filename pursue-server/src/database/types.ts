@@ -151,6 +151,29 @@ export interface GroupTemplateGoalsTable {
 export type GroupTemplateGoal = Selectable<GroupTemplateGoalsTable>;
 export type NewGroupTemplateGoal = Insertable<GroupTemplateGoalsTable>;
 
+// Group template translations table (i18n for title + description)
+export interface GroupTemplateTranslationsTable {
+  template_id: string;
+  language: string;
+  title: string;
+  description: string;
+}
+
+export type GroupTemplateTranslation = Selectable<GroupTemplateTranslationsTable>;
+export type NewGroupTemplateTranslation = Insertable<GroupTemplateTranslationsTable>;
+
+// Group template goal translations table (i18n for title, description, log_title_prompt)
+export interface GroupTemplateGoalTranslationsTable {
+  goal_id: string;
+  language: string;
+  title: string;
+  description: string | null;
+  log_title_prompt: string | null;
+}
+
+export type GroupTemplateGoalTranslation = Selectable<GroupTemplateGoalTranslationsTable>;
+export type NewGroupTemplateGoalTranslation = Insertable<GroupTemplateGoalTranslationsTable>;
+
 // Group memberships table
 export interface GroupMembershipsTable {
   id: Generated<string>;
@@ -595,6 +618,8 @@ export interface Database {
   groups: GroupsTable;
   group_templates: GroupTemplatesTable;
   group_template_goals: GroupTemplateGoalsTable;
+  group_template_translations: GroupTemplateTranslationsTable;
+  group_template_goal_translations: GroupTemplateGoalTranslationsTable;
   group_memberships: GroupMembershipsTable;
   invite_codes: InviteCodesTable;
   goals: GoalsTable;

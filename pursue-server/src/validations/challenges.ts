@@ -56,6 +56,7 @@ export const GetChallengeTemplatesSchema = z
       .union([z.literal('true'), z.literal('false')])
       .optional()
       .transform((v) => (v === undefined ? undefined : v === 'true')),
+    language: z.string().min(2).max(10).optional().default('en'),
   })
   .strict();
 
