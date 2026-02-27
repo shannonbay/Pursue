@@ -344,7 +344,7 @@ class TodayFragment : Fragment() {
         try {
             val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.US)
             val date = dateFormat.parse(response.date)
-            val displayFormat = SimpleDateFormat("EEEE, MMMM d", Locale.US)
+            val displayFormat = SimpleDateFormat("EEEE, MMMM d", Locale.getDefault())
             dateText.text = date?.let { displayFormat.format(it) } ?: response.date
         } catch (e: Exception) {
             dateText.text = response.date

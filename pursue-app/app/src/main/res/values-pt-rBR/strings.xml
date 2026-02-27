@@ -1,0 +1,951 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Pursue</string>
+
+    <!-- Notifications -->
+    <string name="notification_channel_name">Pursue</string>
+    <string name="notifications_section_title">Notificações</string>
+    <string name="notify_progress_logs_label">Registros de progresso</string>
+    <string name="notify_progress_logs_summary">Quando alguém registra progresso em uma meta</string>
+    <string name="notify_group_events_label">Eventos do grupo</string>
+    <string name="notify_group_events_summary">Entradas, saídas, promoções, renomeações</string>
+    <string name="notify_nudges_label">Notificações de cutucada</string>
+    <string name="notify_nudges_summary">Seja notificado quando alguém te cutucar</string>
+
+    <!-- Diagnostics / Crash Reporting -->
+    <string name="crash_reporting_section_title">Diagnósticos</string>
+    <string name="crash_reporting_toggle_title">Compartilhar diagnósticos</string>
+    <string name="crash_reporting_toggle_description">Ajude-nos a melhorar o Pursue compartilhando análises de uso anônimas e relatórios de falhas.</string>
+    <string name="crash_reporting_toggle_info">Inclui quais telas você visita e relatórios de falhas. Nunca inclui o texto das suas metas ou anotações.</string>
+    <string name="crash_reporting_consent_title">Ajudar a melhorar o Pursue?</string>
+    <string name="crash_reporting_consent_message">Ajude-nos a melhorar o Pursue compartilhando dados anônimos de uso e falhas.\n\nIsso inclui quais recursos você usa e relatórios de falhas quando algo dá errado — nunca o conteúdo das suas metas ou anotações.\n\nVocê pode alterar isso a qualquer momento em Perfil → Diagnósticos.</string>
+    <string name="crash_reporting_consent_positive">Claro, compartilhar dados</string>
+    <string name="crash_reporting_consent_negative">Não, obrigado</string>
+    <string name="crash_reporting_restart_hint">A alteração entra em vigor completamente na próxima abertura do aplicativo.</string>
+
+    <string name="empty_notifications_title">Sem notificações ainda</string>
+    <string name="empty_notifications_message">Reações e cutucadas dos seus grupos aparecerão aqui.</string>
+    <string name="error_loading_notifications">Falha ao carregar notificações</string>
+    <string name="notification_deleted">Notificação removida</string>
+    <string name="no_longer_member_toast">Você não é mais membro deste grupo</string>
+    <string name="notification_reaction">%1$s reagiu %2$s ao seu registro de %3$s</string>
+    <string name="notification_nudge">%1$s te cutucou em %2$s</string>
+    <string name="notification_approved">Sua solicitação para entrar em %1$s foi aprovada</string>
+    <string name="notification_rejected">Sua solicitação para entrar em %1$s não foi aprovada</string>
+    <string name="notification_promoted">%1$s te tornou administrador em %2$s</string>
+    <string name="notification_removed">Você foi removido de %1$s</string>
+    <string name="notification_join_request">%1$s quer entrar em %2$s</string>
+    <string name="notification_milestone_first">Você registrou seu primeiro progresso!</string>
+    <string name="notification_milestone_streak">Você atingiu uma sequência de %1$d dias em %2$s!</string>
+    <string name="notification_milestone_total_logs">Você chegou a 100 registros no total!</string>
+    <string name="notification_milestone_challenge_completed">Desafio concluído: %1$s (%2$d%% de conclusão)!</string>
+    <string name="notification_challenge_suggestion">Pronto para um desafio? Comece um desafio de 30 dias com amigos. 🏆</string>
+    <string name="notification_challenge_starts_tomorrow">O desafio começa amanhã: %1$s! 🏁</string>
+    <string name="notification_challenge_started">Dia 1 de %1$s — vamos lá! 🚀</string>
+    <string name="notification_challenge_halfway">Você está na metade de %1$s! 🔥</string>
+    <string name="notification_challenge_three_days">3 dias restantes em %1$s! ⏰</string>
+    <string name="notification_challenge_final_day">Último dia de %1$s — termine forte! 🏆</string>
+    <string name="notification_weekly_recap">📊 %1$s — Resumo da Semana</string>
+    <string name="shareable_card_title">Sua Conquista</string>
+    <string name="shareable_card_unavailable">Este cartão de marco não está disponível</string>
+    <string name="shareable_card_saved">Salvo em Fotos</string>
+    <string name="shareable_card_save_failed">Não foi possível salvar a imagem</string>
+    <string name="shareable_card_share_failed">Não foi possível abrir as opções de compartilhamento</string>
+    <string name="shareable_card_share_chooser_title">Compartilhe sua conquista</string>
+    <string name="challenge_invite_share_chooser_title">Compartilhar Desafio</string>
+    <string name="challenge_completion_share_chooser_title">Compartilhar Conclusão do Desafio</string>
+    <string name="shareable_card_share_text">Veja meu progresso no Pursue! %1$s</string>
+    <string name="shareable_card_btn_share_primary">Compartilhe Sua Conquista</string>
+    <string name="challenge_invite_btn_share_primary">Compartilhar Desafio</string>
+    <string name="challenge_completion_btn_share_primary">Compartilhar Conclusão do Desafio</string>
+    <string name="shareable_card_btn_share_instagram">Compartilhar no Instagram Stories</string>
+    <string name="shareable_card_btn_save">Salvar em Fotos</string>
+    <string name="shareable_card_branding_line_1">Acompanhe metas com amigos no Pursue</string>
+    <string name="shareable_card_branding_line_2">getpursue.app</string>
+    <string name="shareable_card_quote_template">"%1$s"</string>
+    <string name="shareable_card_content_description">Cartão de marco mostrando %1$s - %2$s %3$s</string>
+
+    <!-- Weekly Recap Card -->
+    <string name="recap_completion_rate_label">Taxa de Conclusão do Grupo</string>
+    <string name="recap_highlights_header">🏆  DESTAQUES</string>
+    <string name="recap_goals_header">📋  DETALHAMENTO DE METAS</string>
+    <string name="recap_heat_header">🔥  CALOR DO GRUPO</string>
+    <string name="recap_open_group">Abrir Grupo →</string>
+
+    <!-- Nudge feature -->
+    <string name="nudge_sent">Cutucada enviada para %1$s! 👊</string>
+    <string name="already_nudged_today">Você já cutucou %1$s hoje</string>
+    <string name="nudge_daily_limit">Você atingiu o limite diário de cutucadas</string>
+    <string name="nudge_failed">Não foi possível enviar a cutucada. Tente novamente.</string>
+    <string name="nudge_button_description">Cutucar membro</string>
+
+    <!-- Daily Pulse widget -->
+    <string name="pulse_header_today">Quem está hoje?</string>
+    <string name="pulse_header_everyone_logged">Todo mundo está! 🎉</string>
+    <string name="pulse_logged_count">%1$d / %2$d</string>
+    <string name="pulse_n_more">+%1$d mais ›</string>
+    <string name="pulse_logged_today">%1$s registrou hoje</string>
+    <string name="pulse_not_logged">%1$s ainda não registrou</string>
+    <string name="pulse_nudge_cta">Cutucar %1$s</string>
+    <string name="pulse_already_nudged">Você já cutucou %1$s hoje</string>
+    <string name="pulse_logged_status">Registrado hoje ✓</string>
+    <string name="pulse_logged_at_time">Registrado às %1$s</string>
+
+    <!-- Onboarding: Welcome (4.1.1) -->
+    <string name="welcome_tagline">Alcance metas juntos</string>
+    <string name="continue_with_google">Continuar com Google</string>
+    <string name="or">ou</string>
+    <string name="sign_in_with_email">Entrar com e-mail</string>
+    <string name="dont_have_account">Não tem uma conta?</string>
+    <string name="create_account">Criar Conta</string>
+
+    <!-- Google Sign-In Configuration -->
+    <string name="google_client_id">170178530674-n58jfi6m6kgqosu6bn86gkbmi62dcdr0.apps.googleusercontent.com</string>
+    <string name="signing_in_with_google">Entrando com Google…</string>
+    <string name="google_sign_in_failed">Falha no login com Google. Tente novamente.</string>
+    <string name="google_sign_in_cancelled">Login cancelado</string>
+    <string name="welcome_back">Bem-vindo de volta!</string>
+    <string name="account_created_google">Conta criada!</string>
+
+    <!-- Onboarding: Sign In with Email (4.1.3) -->
+    <string name="sign_in_title">Bem-vindo de volta!</string>
+    <string name="email_label">E-mail</string>
+    <string name="email_hint">seu@email.com</string>
+    <string name="password_label">Senha</string>
+    <string name="password_hint">Digite a senha</string>
+    <string name="forgot_password">Esqueceu a senha?</string>
+    <string name="sign_in_button">Entrar</string>
+    <string name="email_error">Por favor, insira um endereço de e-mail válido</string>
+    <string name="password_error">A senha é obrigatória</string>
+    <string name="signing_in">Entrando…</string>
+
+    <!-- Onboarding: Sign Up with Email (4.1.4) -->
+    <string name="sign_up_title">Crie Sua Conta</string>
+    <string name="display_name_label">Nome de Exibição *</string>
+    <string name="display_name_hint">Digite seu nome</string>
+    <string name="display_name_char_counter">%1$d/30</string>
+    <string name="display_name_error">O nome de exibição deve ter entre 1 e 30 caracteres</string>
+    <string name="email_label_signup">E-mail *</string>
+    <string name="confirm_password_label">Confirmar Senha *</string>
+    <string name="confirm_password_hint">Digite a senha novamente</string>
+    <string name="password_strength">Força: %1$s</string>
+    <string name="password_weak">Fraca</string>
+    <string name="password_medium">Média</string>
+    <string name="password_strong">Forte</string>
+    <string name="password_mismatch">As senhas não coincidem</string>
+    <string name="create_account_button">Criar Conta</string>
+    <string name="creating_account">Criando conta…</string>
+    <string name="account_created">Conta criada!</string>
+
+    <!-- Avatar/Profile Picture -->
+    <string name="change_profile_picture">Alterar Foto de Perfil</string>
+    <string name="remove_photo">Remover Foto</string>
+    <string name="profile_picture_updated">Foto de perfil atualizada!</string>
+    <string name="profile_picture_removed">Foto de perfil removida</string>
+    <string name="profile_picture_upload_failed">Falha ao enviar foto de perfil. Tente novamente.</string>
+    <string name="profile_picture_delete_failed">Falha ao remover foto de perfil. Tente novamente.</string>
+    <string name="select_image_source">Selecionar Fonte da Imagem</string>
+    <string name="from_gallery">Da Galeria</string>
+    <string name="from_camera">Tirar Foto</string>
+    <string name="cancel">Cancelar</string>
+
+    <!-- Progress Photo (post-log photo prompt) -->
+    <string name="post_log_photo_title">Registrado</string>
+    <string name="add_photo_prompt">Adicionar uma foto?</string>
+    <string name="add_photo_camera">Câmera</string>
+    <string name="add_photo_gallery">Galeria</string>
+    <string name="photo_uploaded">Foto enviada</string>
+    <string name="photo_upload_failed">Falha no envio da foto</string>
+    <string name="photo_quota_exceeded">Você usou todos os uploads gratuitos de fotos desta semana</string>
+    <string name="photo_compressing">Preparando foto…</string>
+    <string name="camera_permission_required">É necessária permissão de câmera para tirar fotos</string>
+    <string name="photo_capture_failed">Falha ao tirar foto</string>
+    <string name="progress_photo_content_description">Foto de progresso</string>
+    <string name="photo_expired">Esta foto expirou</string>
+
+    <!-- Home Screen: Groups List (4.2) -->
+    <string name="groups_title">Grupos</string>
+    <string name="my_groups">Meus Grupos</string>
+    <string name="members_and_goals">%1$d membros · %2$d metas ativas</string>
+    <string name="read_only_badge">Somente Leitura</string>
+    <string name="empty_groups_title">Você ainda não está em nenhum grupo</string>
+    <string name="empty_groups_message">Entre em um grupo para começar ou crie seu próprio grupo de responsabilidade com amigos.</string>
+    <string name="empty_groups_message_fab">Use o botão + abaixo para entrar em um grupo ou criar seu próprio grupo de responsabilidade.</string>
+    <string name="join_group">Entrar no Grupo</string>
+    <string name="create_group">Criar Grupo</string>
+    <string name="start_challenge">Iniciar Desafio</string>
+    <string name="hours_ago">há %1$d horas</string>
+    <string name="hour_ago">há 1 hora</string>
+    <string name="minutes_ago">há %1$d minutos</string>
+    <string name="minute_ago">há 1 minuto</string>
+    <string name="days_ago">há %1$d dias</string>
+    <string name="day_ago">há 1 dia</string>
+    <string name="just_now">Agora mesmo</string>
+    <string name="last_week">Semana passada</string>
+    <string name="weeks_ago">há %1$d semanas</string>
+    <string name="week_ago">há 1 semana</string>
+    <string name="last_month">Mês passado</string>
+    <string name="months_ago">há %1$d meses</string>
+    <string name="month_ago">há 1 mês</string>
+    <string name="last_year">Ano passado</string>
+    <string name="years_ago">há %1$d anos</string>
+    <string name="year_ago">há 1 ano</string>
+    <string name="joined_format">Entrou %1$s</string>
+    <string name="error_loading_groups">Falha ao carregar grupos</string>
+
+    <!-- Today Screen (4.4) - Placeholder -->
+    <string name="today_title">Hoje</string>
+    <string name="today_placeholder">Tela de Hoje</string>
+
+    <!-- Profile Screen (4.5) - Placeholder -->
+    <string name="profile_title">Perfil</string>
+    <string name="profile_placeholder">Tela de Perfil</string>
+    <string name="sign_out">Sair</string>
+    <string name="signed_out_toast">Você saiu da conta</string>
+    <string name="delete_account">Deleta Conta</string>
+    <string name="delete_account_title">Deleta Conta?</string>
+    <string name="delete_account_message">Isso deletara permanentemente sua conta e todos os seus dados, incluindo registros de progresso, associações a grupos e metas. Esta ação não pode ser desfeita.</string>
+    <string name="delete_account_type_to_confirm">Digite \"deleta\" abaixo para confirmar.</string>
+    <string name="delete_account_confirm">Deleta Conta</string>
+    <string name="delete_account_hint">Digite \"deleta\" para confirmar</string>
+    <string name="delete_account_confirm_keyword">deleta</string>
+    <string name="delete_account_success">Sua conta foi excluída</string>
+    <string name="delete_account_failed">Falha ao deleta conta</string>
+
+    <!-- Subscription (pursue-subscription-spec) -->
+    <string name="upgrade_to_premium">Fazer Upgrade para Premium</string>
+    <string name="maybe_later">Talvez Depois</string>
+    <string name="group_limit_reached_dialog_title">Fazer Upgrade para Premium</string>
+    <string name="group_limit_reached_message">Você atingiu o limite do plano gratuito de 1 grupo regular. Usuários gratuitos também podem participar de 1 desafio ativo.</string>
+    <string name="group_read_only_upgrade_message">Este grupo é somente leitura no plano gratuito. Faça upgrade para Premium para registrar progresso e criar metas em todos os seus grupos.</string>
+    <string name="group_limit_reached_bullets">Faça upgrade para Premium e obtenha:\n• Até 10 grupos\n• Até 10 desafios ativos\n• Todos os recursos desbloqueados\n• Apenas $30/ano</string>
+    <string name="choose_your_group_dialog_title">Escolha Seu Grupo</string>
+    <string name="choose_your_group_message">Sua assinatura expirou. Selecione UM grupo regular para manter:</string>
+    <string name="choose_your_group_footer">Outros grupos: somente leitura por 30 dias</string>
+    <string name="keep_selected_group">Manter Grupo Selecionado</string>
+    <string name="subscription_free_format">Gratuito • %1$d/%2$d grupos • %3$d/%4$d desafios ativos</string>
+    <string name="subscription_premium_format">Premium • %1$d/%2$d grupos • %3$d/%4$d desafios ativos</string>
+    <string name="subscription_renews_format">Renova em %1$s</string>
+    <string name="pursue_premium_title">Pursue Premium</string>
+    <string name="pursue_premium_price">$30/ano</string>
+    <string name="pursue_premium_subscribe">Assinar</string>
+    <string name="pursue_premium_footer">Renovação automática anual. Cancele quando quiser.</string>
+    <string name="export_limit_reached_title">Limite de Exportação Atingido</string>
+    <string name="export_limit_reached_message">Usuários gratuitos podem exportar até 30 dias de dados por vez.</string>
+    <string name="export_limit_reached_selected">Você selecionou: %1$s – %2$s (%3$d dias)</string>
+    <string name="export_limit_reached_upgrade">Faça upgrade para Premium e obtenha:\n• Exportar até 12 meses\n• Apenas $30/ano</string>
+    <string name="adjust_dates">Ajustar Datas</string>
+
+    <!-- Loading States -->
+    <string name="loading_groups">Carregando grupos…</string>
+    <string name="loading_today_goals">Carregando metas de hoje…</string>
+    <string name="loading_progress">Carregando progresso…</string>
+
+    <!-- Error States -->
+    <string name="error_network_title">Sem conexão com a internet</string>
+    <string name="error_network_message">Verifique sua conexão e tente novamente</string>
+    <string name="error_server_title">Erro no servidor</string>
+    <string name="error_server_message">Nossos servidores estão com problemas. Tente novamente mais tarde</string>
+    <string name="error_timeout_title">Tempo de requisição esgotado</string>
+    <string name="error_timeout_message">A requisição demorou muito. Tente novamente</string>
+    <string name="error_unauthorized_title">Sessão expirada</string>
+    <string name="error_unauthorized_message">Por favor, faça login novamente</string>
+    <string name="error_pending_approval_title">Solicitação de entrada pendente</string>
+    <string name="error_pending_approval_message">Sua solicitação para entrar neste grupo está aguardando aprovação de um administrador.</string>
+    <string name="error_forbidden_title">Acesso negado</string>
+    <string name="error_forbidden_message">Você não tem permissão para ver este conteúdo.</string>
+    <string name="error_failed_to_load_groups">Falha ao carregar grupos</string>
+    <string name="error_failed_to_load_goals">Falha ao carregar as metas de hoje</string>
+    <string name="error_failed_to_load_progress">Falha ao carregar progresso</string>
+    <string name="retry">Tentar novamente</string>
+
+    <!-- Empty States -->
+    <string name="empty_today_title">Sem metas diárias ainda</string>
+    <string name="empty_today_message">Adicione metas diárias aos seus grupos para acompanhá-las aqui.</string>
+    <string name="browse_groups">Explorar Grupos</string>
+    <string name="empty_progress_title">Sem dados de progresso ainda</string>
+    <string name="empty_progress_message">Conclua metas nos seus grupos para ver seu progresso aqui.</string>
+    <string name="view_todays_goals">Ver Metas de Hoje</string>
+
+    <!-- Offline States -->
+    <string name="offline_banner_title">Offline - mostrando dados em cache</string>
+    <string name="last_updated">Última atualização: %1$s</string>
+    <string name="data_may_be_outdated">Os dados podem estar desatualizados</string>
+
+    <!-- Today Screen -->
+    <string name="today_complete">%1$d%% concluído</string>
+    <string name="log_progress">Registrar Progresso</string>
+
+    <!-- My Progress Screen -->
+    <string name="my_progress_title">Meu Progresso</string>
+    <string name="current_streak">Sequência Atual</string>
+    <string name="streak_days">%1$d Dias</string>
+    <string name="longest_streak">Maior sequência: %1$d dias</string>
+    <string name="streak_goal">Meta: %1$d dias (%2$d%%)</string>
+    <string name="this_weeks_activity">Atividade desta Semana</string>
+    <string name="goals_completed">%1$d de %2$d metas concluídas</string>
+    <string name="last_30_days">Últimos 30 Dias</string>
+    <string name="goal_breakdown">Detalhamento de Metas</string>
+    <string name="view_all">Ver Tudo →</string>
+
+    <!-- Create Group Flow (4.8) -->
+    <string name="create_group_title">Criar Novo Grupo</string>
+    <string name="group_icon_label">Ícone do Grupo (opcional)</string>
+    <string name="choose_icon">Escolher Ícone</string>
+    <string name="group_name_label">Nome do Grupo *</string>
+    <string name="group_name_hint">Digite o nome do grupo</string>
+    <string name="group_name_error">O nome do grupo deve ter entre 1 e 100 caracteres</string>
+    <string name="description_label">Descrição (opcional)</string>
+    <string name="description_hint">Descreva seu grupo</string>
+    <string name="description_char_counter">%1$d/500</string>
+    <string name="initial_goals_label">Metas Iniciais (opcional)</string>
+    <string name="add_goal">+ Adicionar uma meta</string>
+    <string name="create_group_button">Criar</string>
+    <string name="creating_group">Criando grupo…</string>
+    <string name="group_created">Grupo criado!</string>
+    <string name="group_creation_failed">Falha ao criar grupo. Tente novamente.</string>
+
+    <!-- Icon Picker -->
+    <string name="icon_picker_title">Escolher Ícone do Grupo</string>
+    <string name="icon_picker_title_goal">Escolher Ícone da Meta</string>
+    <string name="icons_tab">Ícones</string>
+    <string name="emoji_tab">Emoji</string>
+    <string name="icon_content_description">Ícone</string>
+    <string name="upload_tab">Enviar</string>
+    <string name="color_tab">Cor</string>
+    <string name="search_emoji">Pesquisar emoji…</string>
+    <string name="upload_coming_soon">Enviar ícone personalizado (em breve)</string>
+    <string name="background_color">Cor de Fundo</string>
+    <string name="color_blue">Azul</string>
+    <string name="color_yellow">Amarelo</string>
+    <string name="color_green">Verde</string>
+    <string name="color_red">Vermelho</string>
+    <string name="color_purple">Roxo</string>
+    <string name="color_orange">Laranja</string>
+    <string name="color_pink">Rosa</string>
+    <string name="color_teal">Verde-azulado</string>
+
+    <!-- Group Detail Screen (4.3) -->
+    <string name="group_detail_title">Detalhes do Grupo</string>
+    <string name="members_count">%1$d membros</string>
+    <string name="active_goals_count">%1$d metas ativas</string>
+    <string name="members_and_goals_subtitle">%1$d membros · %2$d metas ativas</string>
+    <string name="created_by">Criado por %1$s</string>
+    <string name="unknown">Desconhecido</string>
+
+    <!-- Tabs -->
+    <string name="tab_goals">Metas</string>
+    <string name="tab_members">Membros</string>
+    <string name="tab_activity">Atividade</string>
+
+    <!-- Overflow Menu -->
+    <string name="menu_edit_group">Editar Grupo</string>
+    <string name="menu_manage_members">Gerenciar Membros</string>
+    <string name="menu_invite_members">Convidar Membros</string>
+    <string name="menu_cancel_challenge">Cancelar Desafio</string>
+    <string name="menu_leave_group">Sair do Grupo</string>
+    <string name="menu_delete_group">Deleta Grupo</string>
+    <string name="menu_edit_goal">Editar Meta</string>
+    <string name="menu_delete_goal">Deleta Meta</string>
+
+    <!-- Smart Reminders (7.2) -->
+    <string name="reminder_settings_title">Configurações de Lembretes</string>
+    <string name="reminder_settings_goal">Meta: %1$s</string>
+    <string name="reminder_settings_group">Grupo: %1$s</string>
+    <string name="reminder_enable">Ativar lembretes</string>
+    <string name="reminder_enable_content_description">Ativar ou desativar lembretes para esta meta</string>
+    <string name="reminder_mode_label">Modo de lembrete</string>
+    <string name="reminder_mode_smart">Inteligente (aprende seu padrão)</string>
+    <string name="reminder_mode_fixed">Horário fixo</string>
+    <string name="reminder_mode_off">Desativado</string>
+    <string name="reminder_pattern_label">Seu padrão</string>
+    <string name="reminder_pattern_time_range">%1$s – %2$s</string>
+    <string name="reminder_pattern_based_on_logs">Baseado em %1$d registros (confiança %2$s)</string>
+    <string name="reminder_confidence_high">Alta</string>
+    <string name="reminder_confidence_medium">Média</string>
+    <string name="reminder_confidence_low">Baixa</string>
+    <string name="reminder_recalculate_pattern">Recalcular padrão</string>
+    <string name="reminder_recalculate_pattern_content_description">Recalcular quando você geralmente registra esta meta</string>
+    <string name="reminder_recalculate_insufficient">Dados insuficientes para calcular o padrão (necessário pelo menos 5 registros)</string>
+    <string name="reminder_recalculate_success">Padrão atualizado</string>
+    <string name="reminder_recalculate_failed">Não foi possível recalcular o padrão. Tente novamente.</string>
+    <string name="reminder_time_label">Horário do lembrete</string>
+    <string name="reminder_time_content_description">Definir a hora para lembretes em horário fixo</string>
+    <string name="reminder_level_label">Nível de lembrete</string>
+    <string name="reminder_level_gentle">Suave (apenas última chance)</string>
+    <string name="reminder_level_balanced">Equilibrado (todos os lembretes)</string>
+    <string name="reminder_level_persistent">Persistente (intervalos menores)</string>
+    <string name="reminder_quiet_hours">Horas silenciosas</string>
+    <string name="reminder_quiet_from">De</string>
+    <string name="reminder_quiet_to">Até</string>
+    <string name="reminder_quiet_from_content_description">Início das horas silenciosas</string>
+    <string name="reminder_quiet_to_content_description">Fim das horas silenciosas</string>
+    <string name="reminder_save">Salvar alterações</string>
+    <string name="reminder_save_content_description">Salvar configurações de lembrete</string>
+    <string name="reminder_saved">Configurações de lembrete salvas</string>
+    <string name="reminder_load_failed">Falha ao carregar configurações de lembrete. Tente novamente.</string>
+    <string name="reminder_save_failed">Falha ao salvar. Tente novamente.</string>
+    <string name="menu_export_progress">Exportar progresso</string>
+    <string name="export_progress_dialog_title">Exportar progresso</string>
+    <string name="export_progress_timeframe">Período</string>
+    <string name="export_progress_last_30_days">Últimos 30 dias</string>
+    <string name="export_progress_last_3_months">Últimos 3 meses</string>
+    <string name="export_progress_last_6_months">Últimos 6 meses</string>
+    <string name="export_progress_last_12_months">Últimos 12 meses</string>
+    <string name="export_progress_export">Exportar</string>
+    <string name="export_progress_exporting">Exportando…</string>
+    <string name="export_progress_success">Relatório de progresso salvo</string>
+
+    <!-- Group Ideas / Ongoing Group Templates -->
+    <string name="browse_group_ideas">Explorar Ideias de Grupos</string>
+    <string name="group_ideas_popular">Populares</string>
+    <string name="group_setup_title">Configurar Seu Grupo</string>
+    <string name="group_create_button">Criar Grupo</string>
+    <string name="group_create_failed">Falha ao criar grupo. Tente novamente.</string>
+
+    <!-- Challenges -->
+    <string name="challenge_featured">Em Destaque</string>
+    <string name="challenge_setup_title">Configurar Desafio</string>
+    <string name="challenge_start_button">Iniciar Desafio</string>
+    <string name="challenge_duration_difficulty_format">%1$d dias · %2$s</string>
+    <string name="challenge_category_all">Todos</string>
+    <string name="challenge_category_custom">Personalizado</string>
+    <string name="challenge_custom_title">Desafio Personalizado (Premium)</string>
+    <string name="challenge_custom_subtitle">Crie suas próprias metas, duração e regras de desafio.</string>
+    <string name="challenge_create_custom_button">Criar Personalizado</string>
+    <string name="challenge_custom_premium_title">Premium Necessário</string>
+    <string name="challenge_custom_premium_message">Desafios personalizados estão disponíveis no Premium.</string>
+    <string name="error_loading_challenge_templates">Falha ao carregar modelos de desafio</string>
+    <string name="challenge_template_not_found">Modelo de desafio não encontrado</string>
+    <string name="challenge_start_date_label">Data de Início</string>
+    <string name="challenge_pick_date">Escolher Data</string>
+    <string name="challenge_invalid_start_date">A data de início deve ser dentro dos próximos 30 dias</string>
+    <string name="challenge_end_date_format">Data de Término: %1$s (%2$d dias)</string>
+    <string name="challenge_goals_included">Metas Incluídas</string>
+    <string name="challenge_create_failed">Falha ao criar desafio</string>
+    <string name="challenge_share_button">Compartilhar</string>
+    <string name="challenge_share_result_button">Compartilhar Resultado</string>
+    <string name="challenge_invite_card_title">Convite para Desafio</string>
+    <string name="challenge_completion_card_title">Desafio Concluído</string>
+    <string name="challenge_invite_button">Convidar Amigos</string>
+    <string name="challenge_default_name">seu desafio</string>
+    <string name="challenge_share_text">Participe do meu desafio "%1$s" no Pursue: %2$s</string>
+    <string name="challenge_completion_share_text">Completei %1$s no Pursue! %2$s</string>
+    <string name="challenge_share_failed">Falha ao compartilhar desafio</string>
+    <string name="challenge_cancel_confirmation">Cancelar este desafio para todos os membros?</string>
+    <string name="challenge_cancel_success">Desafio cancelado</string>
+    <string name="challenge_cancel_failed">Falha ao cancelar desafio</string>
+    <string name="challenge_goals_locked">Não é possível adicionar metas enquanto este desafio está ativo.</string>
+    <string name="challenge_progress_locked_not_active">O progresso só pode ser registrado após o início do desafio.</string>
+    <string name="export_progress_failed">Falha na exportação. Tente novamente.</string>
+    <string name="export_progress_open_file">Abrir arquivo</string>
+    <string name="export_progress_open_folder">Abrir pasta</string>
+    <string name="export_progress_share">Compartilhar</string>
+    <string name="export_progress_no_app_to_open_file">Nenhum aplicativo pode abrir este arquivo</string>
+    <string name="back">Voltar</string>
+    <string name="recent_entries">Entradas Recentes</string>
+    <string name="view_all_history">Ver Todo o Histórico</string>
+    <string name="progress_this_week">Progresso desta Semana</string>
+    <string name="progress_this_month">Progresso deste Mês</string>
+    <string name="progress_this_year">Progresso deste Ano</string>
+    <string name="progress_today">Progresso Hoje</string>
+    <string name="current_streak_weeks">Sequência Atual: 🔥 %1$d semanas</string>
+    <string name="current_streak_days">Sequência Atual: 🔥 %1$d dias</string>
+    <string name="best_streak_weeks">Melhor Sequência: %1$d semanas</string>
+    <string name="best_streak_days">Melhor Sequência: %1$d dias</string>
+    <string name="progress_complete">%1$d de %2$d concluído</string>
+    <string name="progress_percentage">%1$d%% (%2$d/%3$d)</string>
+    <string name="no_entries_yet">Sem entradas ainda</string>
+    <string name="edit_entry">Editar Entrada</string>
+    <string name="delete_entry">Deleta Entrada</string>
+    <string name="delete_entry_confirmation">Deleta esta entrada?</string>
+    <string name="delete_goal_confirmation">Deleta esta meta? Esta ação não pode ser desfeita.</string>
+    <string name="delete">Deleta</string>
+    <string name="entry_deleted">Entrada excluída</string>
+    <string name="goal_deleted">Meta excluída</string>
+    <string name="error_loading_goal">Falha ao carregar detalhes da meta</string>
+    <string name="error_loading_entries">Falha ao carregar entradas</string>
+    <string name="loading_goal">Carregando meta…</string>
+    <string name="logged_at">Registrado às %1$s</string>
+    <string name="delete_group_confirmation">Tem certeza que deseja deleta este grupo? Esta ação não pode ser desfeita.</string>
+    <string name="delete_group_dialog_title">Deleta \"%1$s\"?</string>
+    <string name="delete_group_dialog_message">Isso deletara permanentemente:\n• Todas as metas do grupo\n• Todo o progresso dos membros\n• Toda a atividade do grupo\n\nIsso não pode ser desfeito.</string>
+    <string name="delete_group_type_delete_to_confirm">Digite \"deleta\" abaixo para confirmar.</string>
+    <string name="delete_group_confirm_hint">deleta</string>
+    <string name="group_updated_toast">Grupo atualizado!</string>
+    <string name="group_deleted_toast">Grupo excluído</string>
+    <string name="leave_group_confirmation">Tem certeza que deseja sair deste grupo?</string>
+    <string name="leave_group_toast">Você saiu do grupo</string>
+    <string name="leave">Sair</string>
+
+    <!-- FAB Actions -->
+    <string name="fab_open_menu">Abrir menu</string>
+    <string name="fab_close_menu">Fechar menu</string>
+    <string name="fab_log_progress">Registrar Progresso</string>
+    <string name="fab_invite">Convidar</string>
+    <string name="fab_add_goal">Adicionar meta</string>
+    <string name="fab_invite_members">Convidar membros</string>
+
+    <!-- Invite Members Flow (4.9) -->
+    <string name="invite_to_group_title">Convidar para %1$s</string>
+    <string name="share_invite_code">Compartilhar código de convite:</string>
+    <string name="share_invite_message">Entre no meu grupo no Pursue!\n\nURL: %1$s\nCódigo de convite: %2$s</string>
+    <string name="share_qr_code">Compartilhar QR Code</string>
+    <string name="copy">Copiar</string>
+    <string name="share">Compartilhar</string>
+    <string name="expires_never">Expira: Nunca</string>
+    <string name="max_uses_unlimited">Usos máximos: Ilimitado</string>
+    <string name="change_settings">Alterar Configurações</string>
+    <string name="change_settings_coming_soon">Alterar configurações (em breve)</string>
+    <string name="regenerate_code">Regenerar Código</string>
+    <string name="regenerate_code_confirm">Regenerar código de convite? O código antigo deixará de funcionar.</string>
+    <string name="regenerate_code_success">Código de convite regenerado</string>
+    <string name="regenerate_code_failed">Falha ao regenerar código de convite</string>
+    <string name="menu_regenerate_invite">Regenerar Link de Convite</string>
+    <string name="regenerate_invite_title">Regenerar Link de Convite?</string>
+    <string name="regenerate_invite_message">Isso criará um novo link de convite e invalidará todos os links de convite existentes para este grupo. Qualquer pessoa com o link antigo não poderá mais entrar.</string>
+    <string name="regenerate_invite_type_to_confirm">Digite \"regenerar\" abaixo para confirmar.</string>
+    <string name="regenerate_invite_hint">Digite \"regenerar\" para confirmar</string>
+    <string name="regenerate_invite_confirm_keyword">regenerar</string>
+    <string name="regenerate_invite_confirm_button">Regenerar</string>
+    <string name="done">Concluído</string>
+    <string name="invite_code_copied">Código de convite copiado</string>
+    <string name="invite_generate_failed">Falha ao carregar código de convite. Tente novamente.</string>
+    <string name="generating_invite">Gerando convite…</string>
+    <string name="join_group_title">Entrar no Grupo</string>
+    <string name="enter_invite_code">Digite o código de convite:</string>
+    <string name="invite_code_hint">PURSUE-XXXXXX-XXXXXX</string>
+    <string name="paste">Colar</string>
+    <string name="or_scan_qr">Ou escaneie o QR code:</string>
+    <string name="scan_code">Escanear Código</string>
+    <string name="scan_code_coming_soon">Escanear código (em breve)</string>
+    <string name="invite_code_required">Por favor, insira um código de convite</string>
+    <string name="invite_code_invalid">Código de convite inválido</string>
+    <string name="join_group_failed">Falha ao entrar no grupo. Tente novamente.</string>
+    <string name="join_group_success">Você entrou no grupo!</string>
+    <string name="join_group_confirm_title">Entrar neste grupo?</string>
+    <string name="view_goal_details">Ver detalhes da meta</string>
+
+    <!-- Goals Tab (4.3.1) -->
+    <string name="daily_goals">Metas Diárias</string>
+    <string name="weekly_goals">Metas Semanais</string>
+    <string name="monthly_goals">Metas Mensais</string>
+    <string name="yearly_goals">Metas Anuais</string>
+    <string name="empty_goals_title">Sem metas ainda</string>
+    <string name="empty_goals_message">Adicione metas a este grupo para acompanhar o progresso juntos.</string>
+    <string name="empty_goals_message_admin">Comece criando sua primeira meta</string>
+    <string name="empty_goals_message_admin_link">Crie metas para começar</string>
+    <string name="empty_goals_message_member">Peça a um administrador para criar metas para começar.</string>
+    <string name="add_goal_to_group">Adicionar Meta</string>
+    <string name="create_goal">Criar Meta</string>
+    <string name="error_loading_goals">Falha ao carregar metas</string>
+    <string name="loading_goals">Carregando metas…</string>
+    <string name="logged_with_undo">✅ Registrado!</string>
+    <string name="unlogged_with_undo">Registro removido!</string>
+    <string name="undone">Desfeito</string>
+    <string name="undo">Desfazer</string>
+    <string name="log_progress_title">Registrar Progresso</string>
+    <string name="log_progress_value_label">Valor</string>
+    <string name="log_progress_unit_label">%1$s</string>
+    <string name="log_progress_note_label">Observação (opcional)</string>
+    <string name="log_progress_value_required">O valor é obrigatório</string>
+    <string name="log_progress_value_negative">O valor não pode ser negativo</string>
+    <string name="log_progress_value_too_large">O valor é muito grande (máx. 999.999,99)</string>
+    <string name="log_progress_value_invalid">Por favor, insira um número válido</string>
+    <string name="log">Registrar</string>
+    <string name="log_progress_failed">Falha ao registrar progresso. Tente novamente.</string>
+    <string name="log_progress_duplicate">Você já registrou progresso para este período</string>
+    <string name="remove_progress_title">Remover registro de hoje?</string>
+    <string name="remove_progress_confirm">Remover</string>
+    <string name="progress_removed_toast">Progresso removido</string>
+    <string name="edit_progress_title">Editar Progresso</string>
+    <string name="save">Salvar</string>
+    <string name="delete_progress_confirm">Deleta Entrada</string>
+    <string name="delete_progress_message">Tem certeza que deseja deleta esta entrada de progresso?</string>
+
+    <!-- Members Tab (4.3.2) -->
+    <string name="admins">Administradores</string>
+    <string name="members_section">Membros (%1$d)</string>
+    <string name="promote_to_admin">Promover a Administrador</string>
+    <string name="remove_from_group">Remover do grupo</string>
+    <string name="confirm_promote_title">Promover %1$s a administrador?</string>
+    <string name="confirm_promote_message">Eles poderão gerenciar membros e metas.</string>
+    <string name="confirm_remove_member_title">Remover %1$s do grupo?</string>
+    <string name="confirm_remove_member_message">Eles perderão acesso a este grupo.</string>
+    <string name="remove_member_type_to_confirm">Digite \"remover\" abaixo para confirmar.</string>
+    <string name="remove_member_confirm_hint">remover</string>
+    <string name="member_promoted_toast">Membro promovido a administrador</string>
+    <string name="member_removed_toast">Membro removido do grupo</string>
+    <string name="last_active_now">Última atividade: Agora</string>
+    <string name="last_active">Última atividade: %1$s</string>
+    <string name="you">(Você)</string>
+    <string name="empty_members_title">Sem membros</string>
+    <string name="empty_members_message">Convide membros para entrar neste grupo.</string>
+    <string name="error_loading_members">Falha ao carregar membros</string>
+    <string name="loading_members">Carregando membros…</string>
+
+    <!-- Pending Approvals (UI-Spec-Approval-Queue) -->
+    <string name="pending_requests_title">Solicitações Pendentes</string>
+    <string name="pending_requests_card">Solicitações Pendentes (%1$d)</string>
+    <string name="pending_requests_count_people">%1$d pessoas aguardando aprovação</string>
+    <string name="approve_all">Aprovar Todos</string>
+    <string name="requested_ago">Solicitado %1$s</string>
+    <string name="approve">Aprovar</string>
+    <string name="decline">Recusar</string>
+    <string name="decline_join_request_title">Recusar solicitação de entrada?</string>
+    <string name="decline_join_request_message">%1$s não poderá ver o conteúdo do grupo. Eles podem solicitar entrar novamente.</string>
+    <string name="approve_all_confirm_title">Aprovar todas as %1$d solicitações?</string>
+    <string name="approve_all_confirm_names">%1$s</string>
+    <string name="toast_approved">%1$s aprovado</string>
+    <string name="toast_request_declined">Solicitação recusada</string>
+    <string name="toast_approve_failed">Falha ao aprovar %1$s. Tente novamente.</string>
+    <string name="toast_already_approved">%1$s já foi aprovado</string>
+    <string name="toast_members_approved">%1$d membros aprovados</string>
+    <string name="empty_pending_title">Tudo em dia!</string>
+    <string name="empty_pending_message">Sem solicitações de entrada pendentes</string>
+    <string name="content_description_approve">Aprovar solicitação de %1$s</string>
+    <string name="content_description_decline">Recusar solicitação de %1$s</string>
+    <string name="content_description_pending_count">%1$d solicitações pendentes</string>
+
+    <!-- Activity Tab (4.3.3) -->
+    <string name="today">Hoje</string>
+    <string name="yesterday">Ontem</string>
+    <string name="empty_activity_title">Sem atividade ainda</string>
+    <string name="empty_activity_message">A atividade dos membros do grupo aparecerá aqui.</string>
+    <string name="error_loading_activity">Falha ao carregar atividade</string>
+    <string name="loading_activity">Carregando atividade…</string>
+
+    <!-- Activity Types -->
+    <string name="activity_progress_logged">%1$s concluiu \"%2$s\"</string>
+    <string name="activity_progress_logged_journal">%1$s registrou:</string>
+    <string name="activity_member_joined">%1$s entrou no grupo</string>
+    <string name="activity_group_created">%1$s criou o grupo</string>
+    <string name="activity_member_left">%1$s saiu do grupo</string>
+    <string name="activity_member_promoted">%1$s foi promovido a administrador</string>
+    <string name="activity_member_removed">%1$s foi removido do grupo</string>
+    <string name="activity_goal_added">%1$s adicionou a meta \"%2$s\"</string>
+    <string name="activity_goal_archived">A meta \"%1$s\" foi arquivada</string>
+    <string name="activity_group_renamed">Grupo renomeado para \"%1$s\"</string>
+    <string name="activity_join_request">%1$s solicitou entrar no grupo</string>
+    <string name="activity_member_approved">%1$s foi aprovado para entrar no grupo</string>
+    <string name="activity_member_declined">A solicitação de entrada de %1$s foi recusada</string>
+    <string name="activity_nudge_sent">%1$s cutucou %2$s por \"%3$s\"</string>
+    <string name="activity_invite_code_regenerated">%1$s regenerou o código de convite</string>
+    <string name="activity_export_progress">%1$s exportou o progresso (%2$s a %3$s)</string>
+    <string name="activity_heat_tier_up">O calor do grupo está subindo! Agora em %1$s.</string>
+    <string name="activity_heat_tier_down">A chama do grupo está esfriando — continue registrando!</string>
+    <string name="activity_heat_supernova_reached">SUPERNOVA! O grupo está ardendo violeta-quente!</string>
+    <string name="activity_heat_streak_milestone">%1$d dias de sequência de calor! Mantenha o ritmo!</string>
+
+    <!-- Reactions -->
+    <string name="reactions_you">Você</string>
+    <string name="reactions_you_and_one">Você e %1$s</string>
+    <string name="reactions_you_and_others">Você e outros %1$d</string>
+    <string name="reactions_one_and_one">%1$s e %2$s</string>
+    <string name="reactions_one_and_others">%1$s e outros %2$d</string>
+    <string name="reactions_title">Reações</string>
+    <string name="reactions_tab_all">Todos %1$d</string>
+    <string name="reaction_button_content_description">Adicionar reação</string>
+    <string name="reaction_failed">Não foi possível reagir — tente novamente</string>
+
+    <!-- Time Formatting -->
+    <string name="yesterday_at">Ontem às %1$s</string>
+    <string name="at_time">%1$s às %2$s</string>
+
+    <!-- Create Goal Screen (4.3.5) -->
+    <string name="create_goal_title">Criar Meta</string>
+    <string name="goal_title_label">Título da Meta *</string>
+    <string name="goal_title_hint">ex.: Correr 3x por semana</string>
+    <string name="goal_title_error">O título da meta deve ter entre 1 e 100 caracteres</string>
+    <string name="goal_icon_label">Ícone (opcional)</string>
+    <string name="default_goal_icon">🎯</string>
+
+    <!-- Cadence -->
+    <string name="cadence_label">Com que frequência?</string>
+    <string name="cadence_daily">Diário</string>
+    <string name="cadence_weekly">Semanal</string>
+    <string name="cadence_monthly">Mensal</string>
+    <string name="cadence_yearly">Anual</string>
+
+    <!-- Metric Type -->
+    <string name="metric_type_label">Métrica</string>
+    <string name="metric_type_binary">Sim/Não</string>
+    <string name="metric_type_numeric">Número</string>
+    <string name="metric_type_duration">Duração</string>
+    <string name="metric_type_journal">Diário</string>
+
+    <!-- Journal metric type -->
+    <string name="log_title_prompt_label">Prompt de entrada (opcional)</string>
+    <string name="log_title_prompt_hint">ex.: O que você aprendeu hoje?</string>
+    <string name="log_title_label">Título *</string>
+    <string name="log_title_hint">O que você fez?</string>
+    <string name="log_title_required">O título é obrigatório</string>
+    <string name="log_title_char_limit">O título deve ter 120 caracteres ou menos</string>
+
+    <!-- Target -->
+    <string name="target_label">Alvo</string>
+    <string name="target_times_per_day">vezes por dia</string>
+    <string name="target_times_per_week">vezes por semana</string>
+    <string name="target_times_per_month">vezes por mês</string>
+    <string name="target_times_per_year">vezes por ano</string>
+    <string name="target_value_required">O valor alvo é obrigatório</string>
+    <string name="target_hint">Digite o alvo</string>
+    <string name="per_day">por dia</string>
+    <string name="per_week">por semana</string>
+    <string name="per_month">por mês</string>
+    <string name="per_year">por ano</string>
+
+    <!-- Units -->
+    <string name="unit_label">Unidade</string>
+    <string name="unit_miles">milhas</string>
+    <string name="unit_km">km</string>
+    <string name="unit_meters">metros</string>
+    <string name="unit_minutes">minutos</string>
+    <string name="unit_hours">horas</string>
+    <string name="unit_reps">repetições</string>
+    <string name="unit_pages">páginas</string>
+    <string name="unit_items">itens</string>
+    <string name="unit_count">quantidade</string>
+    <string name="unit_chapters">capítulos</string>
+
+    <!-- Start Date -->
+    <string name="start_date_label">Data de Início (opcional)</string>
+    <string name="start_date_today">Hoje</string>
+
+    <!-- Actions &amp; Dialogs -->
+    <string name="save_goal">Salvar</string>
+    <string name="creating_goal">Criando meta…</string>
+    <string name="goal_created">Meta criada!</string>
+    <string name="goal_creation_failed">Falha ao criar meta</string>
+    <string name="discard_changes_title">Descartar alterações?</string>
+    <string name="discard_changes_message">Você tem alterações não salvas.</string>
+    <string name="discard">Descartar</string>
+    <string name="keep_editing">Continuar Editando</string>
+    <string name="validation_error_title">Por favor, corrija o seguinte:</string>
+
+    <!-- Consent -->
+    <string name="consent_checkbox_text">Concordo com os &lt;a href="https://getpursue.app/terms/"&gt;Termos de Serviço&lt;/a&gt; e a &lt;a href="https://getpursue.app/privacy/"&gt;Política de Privacidade&lt;/a&gt;, e entendo que meu progresso nas metas será visível para os membros dos grupos que eu entrar.</string>
+    <string name="consent_dialog_title">Termos &amp; Privacidade</string>
+    <string name="consent_continue">Continuar</string>
+
+    <!-- Policy Version Enforcement -->
+    <string name="policy_update_title">Termos &amp; Política de Privacidade Atualizados</string>
+    <string name="policy_reconsent_text">Atualizamos nossos &lt;a href="https://getpursue.app/terms/"&gt;Termos de Serviço&lt;/a&gt; e &lt;a href="https://getpursue.app/privacy/"&gt;Política de Privacidade&lt;/a&gt;. Por favor, revise e concorde para continuar usando o Pursue.</string>
+
+    <!-- Member Detail Screen -->
+    <string name="timeframe_this_week">Esta Semana</string>
+    <string name="timeframe_last_7_days">Últimos 7 Dias</string>
+    <string name="timeframe_this_month">Este Mês</string>
+    <string name="timeframe_last_30_days">Últimos 30 Dias</string>
+    <string name="timeframe_last_3_months">Últimos 3 Meses</string>
+    <string name="timeframe_last_6_months">Últimos 6 Meses</string>
+    <string name="timeframe_last_12_months">Últimos 12 Meses</string>
+    <string name="goal_overview_section">Visão Geral da Meta</string>
+    <string name="activity_log_section">Registro de Atividade</string>
+    <string name="member_joined">Entrou em %1$s</string>
+    <string name="role_admin">Administrador</string>
+    <string name="role_member">Membro</string>
+    <string name="progress_days">%1$d / %2$d dias</string>
+    <string name="progress_weeks">%1$d / %2$d semanas</string>
+    <string name="progress_months">%1$d / %2$d meses</string>
+    <string name="progress_value">%1$.0f / %2$.0f %3$s</string>
+    <string name="empty_member_activity_title">Sem atividade ainda</string>
+    <string name="empty_member_activity_message">%1$s não registrou nenhum progresso neste período.</string>
+    <string name="unlock_full_history_title">Desbloquear Histórico Completo de Progresso</string>
+    <string name="unlock_full_history_message">Veja até 12 meses de histórico de progresso de qualquer membro do grupo. O Premium também inclui criação ilimitada de grupos e exportação de dados.</string>
+    <string name="content_description_member_avatar">Avatar de %1$s</string>
+    <string name="content_description_progress_bar">%1$s: %2$d%% concluído, %3$s</string>
+    <string name="content_description_locked_timeframe">%1$s, requer assinatura Premium</string>
+    <string name="binary_completion">%1$d / %2$d %3$s</string>
+    <string name="numeric_completion">%1$.0f / %2$.0f %3$s</string>
+    <string name="error_loading_member_progress">Falha ao carregar progresso do membro</string>
+    <string name="loading_member_progress">Carregando progresso do membro…</string>
+
+    <!-- Group Heat -->
+    <string name="heat_score_format">· Pontuação: %1$d</string>
+    <string name="heat_streak_format">sequência de %1$d dias</string>
+    <string name="heat_gcr_format">Ontem: %1$d%%</string>
+    <string name="heat_gcr_with_baseline">Ontem: %1$d%% (base: %2$d%%)</string>
+    <string name="heat_content_description">Calor do grupo: %1$s (pontuação %2$d)</string>
+    <string name="heat_info_title">O que é o Calor do Grupo?</string>
+    <string name="heat_info_body">O Calor do Grupo mostra o ritmo do seu grupo com base em quão consistentemente todos estão concluindo suas metas diárias.\n\nA pontuação compara a taxa de conclusão de ontem com a média recente do grupo. Quando o grupo vai melhor que o normal, a chama cresce. Quando a atividade diminui, ela esfria.\n\nNíveis de calor: Frio, Faísca, Brasa, Chama, Constante, Labareda, Inferno e Supernova. Continue registrando para chegar ao topo!</string>
+    <string name="heat_info_ok">Entendi</string>
+    <string name="heat_cold">Frio</string>
+    <string name="heat_spark">Faísca</string>
+    <string name="heat_ember">Brasa</string>
+    <string name="heat_flicker">Chama</string>
+    <string name="heat_steady">Constante</string>
+    <string name="heat_blaze">Labareda</string>
+    <string name="heat_inferno">Inferno</string>
+    <string name="heat_supernova">Supernova</string>
+
+    <!-- Covenant -->
+    <string name="covenant_title">O PACTO PURSUE</string>
+    <string name="covenant_body">Estou entrando neste grupo para crescer,\nnão para julgar.\n\nVou torcer pelos outros nos seus dias bons\ne ter compaixão nos dias difíceis —\nincluindo por mim mesmo.\n\nO progresso aqui é pessoal.\nNão vou comparar para competir.\nNão usarei o que vejo para criticar\nou envergonhar.\n\nVou aparecer com honestidade,\nencorajar com generosidade,\ne lembrar que todos aqui\nestão perseguindo algo que importa para eles.</string>
+    <string name="covenant_challenge_line">Estou encarando este desafio ao lado de outros, não contra eles.\n</string>
+    <string name="covenant_hold_to_commit">Segure para confirmar</string>
+    <string name="covenant_committed">✓ Confirmado</string>
+    <string name="covenant_tap_fallback">Não consegue pressionar e segurar? Toque aqui.</string>
+    <string name="covenant_confirm_title">Entrar neste grupo?</string>
+    <string name="covenant_confirm_message">Ao entrar, você aceita o Pacto Pursue.</string>
+    <string name="covenant_confirm_join">Entrar</string>
+
+    <!-- Orientation Flow -->
+    <string name="orientation_skip">Pular</string>
+    <string name="orientation_join_title">Foi convidado para um grupo?</string>
+    <string name="orientation_join_description">Se alguém enviou um código de convite, insira-o abaixo para entrar no grupo.</string>
+    <string name="orientation_join_button">Entrar no Grupo</string>
+    <string name="orientation_scan_qr">Escanear QR Code</string>
+    <string name="orientation_no_invite_code">Não tenho um código de convite</string>
+    <string name="orientation_step_x_of_3">Passo %1$d de 3</string>
+    <string name="orientation_step_x_of_4">Passo %1$d de 4</string>
+    <string name="orientation_discover_title">Encontre um grupo para entrar</string>
+    <string name="orientation_discover_description">Explore grupos públicos e solicite entrar em um que combine com suas metas.</string>
+    <string name="orientation_try_a_challenge">Prefiro tentar um desafio</string>
+    <string name="orientation_challenge_title">Tente um desafio!</string>
+    <string name="orientation_challenge_description">Desafios são metas com tempo definido — como "30 Dias Sem Açúcar" ou "Leia Todo Dia por Uma Semana". Escolha um modelo e comece hoje.</string>
+    <string name="orientation_info_card_title">Qual é a diferença entre grupos e desafios?</string>
+    <string name="orientation_info_card_groups">🔄 Grupos são contínuos\nResponsabilidade aberta sem data de término. Perfeito para hábitos diários e metas de longo prazo que você quer acompanhar para sempre.</string>
+    <string name="orientation_info_card_challenges">🏆 Desafios têm tempo definido\nUm número fixo de dias com início e fim claros. Ótimo para criar novos hábitos ou experimentar algo por um período determinado.</string>
+    <string name="orientation_info_card_both">Ambos incluem todos os mesmos recursos — reações, cutucadas, acompanhamento de progresso e feed de atividade do grupo.</string>
+    <string name="orientation_create_own_group">Prefiro criar meu próprio grupo</string>
+    <string name="orientation_create_title">Crie seu grupo</string>
+    <string name="orientation_create_description">Grupos são contínuos — perfeitos para hábitos diários e metas semanais com amigos. Sem data de término, apenas responsabilidade consistente.</string>
+    <string name="orientation_group_name_hint">Nome do Grupo (ex.: Corredores Matinais)</string>
+    <string name="orientation_goal_hint">Sua primeira meta (ex.: Correr 30 minutos)</string>
+    <string name="orientation_create_button">Criar Grupo</string>
+    <string name="orientation_cadence_daily">Diário</string>
+    <string name="orientation_cadence_weekly">Semanal</string>
+    <string name="orientation_cadence_monthly">Mensal</string>
+    <string name="orientation_type_binary">Sim/Não</string>
+    <string name="orientation_type_numeric">Numérico</string>
+    <string name="orientation_target_hint">Alvo (opcional, ex.: 30)</string>
+    <string name="orientation_unit_hint">Unidade (opcional, ex.: minutos)</string>
+    <string name="orientation_invite_code_error">Código de convite inválido ou expirado. Verifique com seu amigo e tente novamente.</string>
+
+    <!-- Onboarding Tooltips -->
+    <string name="onboarding_tap_to_log_tooltip">Toque no título da meta para registrar progresso</string>
+
+    <!-- Active Days Selector -->
+    <string name="active_days_label">Dias Ativos</string>
+    <string name="active_days_every_day">Todos os dias</string>
+    <string name="rest_day_today">Dia de descanso hoje</string>
+    <string name="active_days_weekdays">Dias úteis</string>
+    <string name="active_days_weekends">Fins de semana</string>
+    <string name="active_days_at_least_one">Pelo menos um dia deve estar ativo</string>
+    <string name="active_days_summary_every_day">Todos os dias</string>
+    <string name="active_days_weekdays_only">Apenas dias úteis</string>
+    <string name="active_days_weekends_only">Apenas fins de semana</string>
+    <string name="active_days_days_per_week">dias/semana</string>
+    <!-- Day full names for accessibility content descriptions -->
+    <string name="day_sunday">Domingo</string>
+    <string name="day_monday">Segunda-feira</string>
+    <string name="day_tuesday">Terça-feira</string>
+    <string name="day_wednesday">Quarta-feira</string>
+    <string name="day_thursday">Quinta-feira</string>
+    <string name="day_friday">Sexta-feira</string>
+    <string name="day_saturday">Sábado</string>
+    <!-- Day single-letter abbreviations for toggle buttons (D S T Q Q S S) -->
+    <string name="day_abbrev_sun">D</string>
+    <string name="day_abbrev_mon">S</string>
+    <string name="day_abbrev_tue">T</string>
+    <string name="day_abbrev_wed">Q</string>
+    <string name="day_abbrev_thu">Q</string>
+    <string name="day_abbrev_fri">S</string>
+    <string name="day_abbrev_sat">S</string>
+
+    <!-- Generic error -->
+    <string name="error_generic">Algo deu errado. Tente novamente.</string>
+
+    <!-- Discover / Public Group Listings -->
+    <string name="discover_title">Descobrir</string>
+    <string name="discover_search_hint">Pesquisar grupos…</string>
+    <string name="discover_empty_title">Nenhum grupo encontrado</string>
+    <string name="discover_empty_message">Tente ajustar seus filtros ou termos de pesquisa</string>
+    <string name="discover_detail_goals_title">Metas</string>
+    <string name="discover_join_request_button">Solicitar Entrada</string>
+    <string name="discover_submit_request_button">Enviar Solicitação</string>
+    <string name="discover_request_pending">Solicitação Pendente</string>
+    <string name="discover_already_member">Já é Membro</string>
+    <string name="discover_group_full">Grupo Lotado</string>
+    <string name="discover_submitting">Enviando…</string>
+    <string name="discover_join_note_hint">Adicione uma observação (opcional)</string>
+    <string name="discover_join_request_sent">Solicitação de entrada enviada!</string>
+    <string name="discover_sign_in_to_join">Faça login para solicitar entrar em grupos</string>
+    <string name="discover_spots_left">%1$d de %2$d vagas restantes</string>
+
+    <!-- Public Listing / Visibility -->
+    <string name="label_public_listing">Listagem Pública</string>
+    <string name="public_listing_tooltip">A listagem pública permite que outros descubram seu grupo e solicitem entrar. Eles verão o nome do grupo, contagem de membros, pontuação de calor e metas — mas não seu registro de atividade ou detalhes dos membros.</string>
+
+    <!-- Spot Limit -->
+    <string name="label_spot_limit">Limite de Vagas</string>
+    <string name="spot_limit_unlimited">Ilimitado</string>
+    <string name="spot_limit_custom">Limitar a</string>
+    <string name="spot_limit_members_suffix">membros (2–500)</string>
+    <string name="spot_limit_hint">50</string>
+    <string name="spot_limit_error">Digite um número entre 2 e 500</string>
+
+    <!-- Category -->
+    <string name="label_category">Categoria</string>
+    <string name="category_required_error">Por favor, selecione uma categoria</string>
+    <string name="category_fitness">Fitness &amp; Exercício</string>
+    <string name="category_nutrition">Nutrição &amp; Dieta</string>
+    <string name="category_mindfulness">Mindfulness &amp; Saúde Mental</string>
+    <string name="category_learning">Aprendizado &amp; Habilidades</string>
+    <string name="category_creativity">Criatividade &amp; Artes</string>
+    <string name="category_productivity">Produtividade &amp; Carreira</string>
+    <string name="category_finance">Finanças &amp; Poupança</string>
+    <string name="category_social">Social &amp; Relacionamentos</string>
+    <string name="category_lifestyle">Estilo de Vida &amp; Hábitos</string>
+    <string name="category_sports">Esportes &amp; Treino</string>
+    <string name="category_other">Outro</string>
+
+    <!-- External Communication Link -->
+    <string name="section_external_communication">Comunicação Externa</string>
+    <string name="label_comm_platform">Plataforma</string>
+    <string name="label_comm_link">Link de convite</string>
+    <string name="comm_link_helper">Este link é visível apenas para membros aprovados.</string>
+    <string name="comm_platform_none">Nenhum</string>
+    <string name="comm_platform_discord">Discord</string>
+    <string name="comm_platform_whatsapp">WhatsApp</string>
+    <string name="comm_platform_telegram">Telegram</string>
+    <string name="comm_link_error_discord">Digite um link de convite válido do Discord (ex.: https://discord.gg/…)</string>
+    <string name="comm_link_error_whatsapp">Digite um link de convite válido do WhatsApp (ex.: https://chat.whatsapp.com/…)</string>
+    <string name="comm_link_error_telegram">Digite um link válido do Telegram (ex.: https://t.me/…)</string>
+    <string name="comm_link_join_discord">Entrar no grupo do Discord</string>
+    <string name="comm_link_join_whatsapp">Entrar no grupo do WhatsApp</string>
+    <string name="comm_link_join_telegram">Entrar no grupo do Telegram</string>
+    <string name="comm_link_open_failed">Não foi possível abrir o link</string>
+
+    <!-- Report Entry -->
+    <string name="report_entry_title">Denunciar esta entrada</string>
+    <string name="report_reason_inappropriate">Conteúdo inapropriado ou ofensivo</string>
+    <string name="report_reason_harassment">Assédio ou bullying</string>
+    <string name="report_reason_spam">Spam ou atividade falsa</string>
+    <string name="report_reason_other">Outra coisa</string>
+    <string name="report_submit_button">Denunciar</string>
+    <string name="report_submitted">Denúncia enviada</string>
+    <string name="report_already_submitted">Você já denunciou esta entrada</string>
+    <string name="report_failed">Falha ao enviar denúncia. Tente novamente.</string>
+    <string name="report_activity_menu_item">Denunciar</string>
+    <string name="overflow_menu_description">Mais opções</string>
+
+    <!-- Dispute -->
+    <string name="dispute_title">Contestar esta remoção</string>
+    <string name="dispute_hint">Por que isso deveria ser permitido? (opcional)</string>
+    <string name="dispute_submit_button">Enviar</string>
+    <string name="dispute_submitted">Contestação enviada. Revisaremos em até 5 dias úteis.</string>
+    <string name="dispute_failed">Falha ao enviar contestação. Tente novamente.</string>
+
+    <!-- Moderation notifications -->
+    <string name="notification_content_removed">Uma publicação sua em %1$s foi removida por violar as Normas da Comunidade. Toque para contestar.</string>
+    <string name="notification_content_warned">Uma publicação sua em %1$s foi sinalizada como potencialmente inapropriada. Ela não foi removida.</string>
+    <string name="your_group">seu grupo</string>
+
+    <!-- Community standards -->
+    <string name="community_standards_title">Pursue é um lugar para crescer juntos</string>
+    <string name="community_standards_body">Seja autêntico, seja gentil. Filtramos automaticamente o conteúdo para manter os grupos seguros, e os membros podem denunciar qualquer coisa que não pertença. Violações graves resultam em suspensão da conta.</string>
+    <string name="community_standards_got_it">Entendi</string>
+
+</resources>

@@ -769,7 +769,7 @@ class GroupDetailFragment : Fragment() {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
             override fun afterTextChanged(s: Editable?) {
-                positiveButton?.isEnabled = (editText.text?.toString()?.trim() == "delete")
+                positiveButton?.isEnabled = (editText.text?.toString()?.trim().equals(getString(R.string.delete_group_confirm_hint), ignoreCase = true))
             }
         })
     }
@@ -794,7 +794,7 @@ class GroupDetailFragment : Fragment() {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
             override fun afterTextChanged(s: Editable?) {
-                positiveButton?.isEnabled = (editText.text?.toString()?.trim()?.equals("regenerate", ignoreCase = true) == true)
+                positiveButton?.isEnabled = (editText.text?.toString()?.trim()?.equals(getString(R.string.regenerate_invite_confirm_keyword), ignoreCase = true) == true)
             }
         })
     }

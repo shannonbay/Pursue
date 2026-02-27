@@ -211,6 +211,7 @@
     <string name="delete_account_type_to_confirm">Type \"delete\" below to confirm.</string>
     <string name="delete_account_confirm">Delete Account</string>
     <string name="delete_account_hint">Type \"delete\" to confirm</string>
+    <string name="delete_account_confirm_keyword">delete</string>
     <string name="delete_account_success">Your account has been deleted</string>
     <string name="delete_account_failed">Failed to delete account</string>
 
@@ -508,6 +509,7 @@
     <string name="regenerate_invite_message">This will create a new invite link and invalidate all existing invite links for this group. Anyone with the old link will no longer be able to join.</string>
     <string name="regenerate_invite_type_to_confirm">Type \"regenerate\" below to confirm.</string>
     <string name="regenerate_invite_hint">Type \"regenerate\" to confirm</string>
+    <string name="regenerate_invite_confirm_keyword">regenerate</string>
     <string name="regenerate_invite_confirm_button">Regenerate</string>
     <string name="done">Done</string>
     <string name="invite_code_copied">Invite code copied</string>
