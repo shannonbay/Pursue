@@ -68,6 +68,7 @@ class DailyPulseWidget @JvmOverloads constructor(
     private var fragmentManager: FragmentManager? = null
     private var groupId: String = ""
     private var currentUserId: String = ""
+    private var memberNudgeGroups: Map<String, String> = emptyMap()
 
     init {
         LayoutInflater.from(context).inflate(R.layout.view_daily_pulse, this, true)
@@ -126,8 +127,10 @@ class DailyPulseWidget @JvmOverloads constructor(
         members: List<GroupMember>,
         currentUserId: String,
         hasGoals: Boolean,
-        animate: Boolean = false
+        animate: Boolean = false,
+        memberNudgeGroups: Map<String, String> = emptyMap()
     ) {
+        this.memberNudgeGroups = memberNudgeGroups
         this.currentUserId = currentUserId
 
         if (members.size <= 1 || !hasGoals) {
@@ -308,7 +311,7 @@ class DailyPulseWidget @JvmOverloads constructor(
                 memberId    = member.user_id,
                 displayName = member.display_name,
                 hasAvatar   = member.has_avatar,
-                groupId     = groupId
+                groupId     = memberNudgeGroups[member.user_id] ?: groupId
             )
         }
     }

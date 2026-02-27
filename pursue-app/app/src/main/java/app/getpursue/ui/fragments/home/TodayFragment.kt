@@ -16,11 +16,13 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import app.getpursue.data.network.ApiClient
 import app.getpursue.data.network.ApiException
+import app.getpursue.ui.views.DailyPulseWidget
 import app.getpursue.ui.views.EmptyStateView
 import app.getpursue.ui.views.ErrorStateView
 import app.getpursue.R
 import app.getpursue.data.auth.SecureTokenManager
 import androidx.fragment.app.commit
+import app.getpursue.models.GroupMember
 import app.getpursue.models.TodayGoalsResponse
 import app.getpursue.ui.adapters.TodayGoalAdapter
 import app.getpursue.ui.fragments.goals.GoalDetailFragment
@@ -29,6 +31,8 @@ import app.getpursue.ui.views.OnboardingTooltip
 import app.getpursue.data.prefs.OnboardingPrefs
 import com.google.android.material.snackbar.Snackbar
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -57,6 +61,7 @@ class TodayFragment : Fragment() {
         OFFLINE
     }
 
+    private lateinit var dailyPulseWidget: DailyPulseWidget
     private lateinit var goalsRecyclerView: RecyclerView
     private lateinit var swipeRefreshLayout: SwipeRefreshLayout
     private lateinit var headerContainer: LinearLayout
@@ -83,6 +88,7 @@ class TodayFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        dailyPulseWidget = view.findViewById(R.id.daily_pulse_widget)
         goalsRecyclerView = view.findViewById<RecyclerView>(R.id.goals_recycler_view)
         swipeRefreshLayout = view.findViewById<SwipeRefreshLayout>(R.id.swipe_refresh)
         headerContainer = view.findViewById<LinearLayout>(R.id.header_container)
@@ -92,8 +98,12 @@ class TodayFragment : Fragment() {
         emptyStateContainer = view.findViewById<FrameLayout>(R.id.empty_state_container)
         errorStateContainer = view.findViewById<FrameLayout>(R.id.error_state_container)
 
+        dailyPulseWidget.setFragmentManager(childFragmentManager, "")
+        dailyPulseWidget.showLoading()
+
         // Setup RecyclerView
         goalsRecyclerView.layoutManager = LinearLayoutManager(requireContext())
+        goalsRecyclerView.isNestedScrollingEnabled = false
         val userDate = LocalDate.now().format(DateTimeFormatter.ISO_DATE)
         val userTimezone = ZoneId.systemDefault().id
         logProgressHandler = GoalLogProgressHandler(
@@ -267,6 +277,11 @@ class TodayFragment : Fragment() {
                     updateUiState(TodayUiState.SUCCESS_EMPTY)
                 } else {
                     updateUiState(TodayUiState.SUCCESS_WITH_DATA)
+                }
+
+                // Load pulse in parallel — goals are already visible
+                viewLifecycleOwner.lifecycleScope.launch {
+                    loadAndBindPulse(accessToken)
                 }
 
             } catch (e: ApiException) {
@@ -475,6 +490,73 @@ class TodayFragment : Fragment() {
             loadTodayGoals()
         }
         snackbar.show()
+    }
+
+    private suspend fun loadAndBindPulse(accessToken: String) {
+        try {
+            val allGroups = withContext(Dispatchers.IO) {
+                ApiClient.getMyGroups(accessToken).groups
+            }
+            if (allGroups.isEmpty()) {
+                if (isAdded) dailyPulseWidget.showHidden()
+                return
+            }
+
+            // Fetch all group member lists in parallel
+            val membersByGroup: List<Pair<String, List<GroupMember>>> =
+                withContext(Dispatchers.IO) {
+                    coroutineScope {
+                        allGroups.map { group ->
+                            async {
+                                val members = ApiClient.getGroupMembers(accessToken, group.id).members
+                                group.id to members
+                            }
+                        }.map { it.await() }
+                    }
+                }
+
+            // Deduplicate: for each user, merge logged status across groups.
+            // For nudging, prefer a group where the user has NOT yet logged.
+            data class Entry(val member: GroupMember, val nudgeGroupId: String)
+            val seen = mutableMapOf<String, Entry>()
+
+            for ((groupId, members) in membersByGroup) {
+                for (member in members) {
+                    val existing = seen[member.user_id]
+                    if (existing == null) {
+                        seen[member.user_id] = Entry(member, groupId)
+                    } else {
+                        val mergedLogged = existing.member.logged_this_period || member.logged_this_period
+                        val mergedLastLog = listOfNotNull(existing.member.last_log_at, member.last_log_at)
+                            .maxOrNull()
+                        val merged = existing.member.copy(
+                            logged_this_period = mergedLogged,
+                            last_log_at = mergedLastLog
+                        )
+                        val nudgeGroup = if (!member.logged_this_period) groupId else existing.nudgeGroupId
+                        seen[member.user_id] = Entry(merged, nudgeGroup)
+                    }
+                }
+            }
+
+            val aggregated = seen.values.map { it.member }
+            val nudgeMap = seen.mapValues { it.value.nudgeGroupId }
+
+            if (!isAdded) return
+            val currentUserId = try {
+                withContext(Dispatchers.IO) { ApiClient.getMyUser(accessToken).id }
+            } catch (_: Exception) { "" }
+
+            if (!isAdded) return
+            dailyPulseWidget.bindMembers(
+                members = aggregated,
+                currentUserId = currentUserId,
+                hasGoals = true,
+                memberNudgeGroups = nudgeMap
+            )
+        } catch (_: Exception) {
+            if (isAdded) dailyPulseWidget.showHidden()
+        }
     }
 
     companion object {
