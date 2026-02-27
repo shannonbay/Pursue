@@ -22,6 +22,7 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import app.getpursue.R
 import app.getpursue.data.analytics.AnalyticsEvents
 import app.getpursue.data.analytics.AnalyticsLogger
+import app.getpursue.utils.GroupCategories
 import app.getpursue.data.network.ApiClient
 import app.getpursue.data.network.ApiException
 import app.getpursue.data.network.DiscoverGroupItem
@@ -50,14 +51,11 @@ class DiscoverFragment : Fragment() {
     private enum class UiState { LOADING, SUCCESS_WITH_DATA, SUCCESS_EMPTY, ERROR }
 
     // Filter/sort state
-    private val categoryValues = listOf(
-        null, "fitness", "nutrition", "mindfulness", "learning",
-        "creativity", "productivity", "finance", "social", "lifestyle", "sports", "other"
-    )
-    private val categoryLabels = listOf(
-        "All", "Fitness", "Nutrition", "Mindfulness", "Learning",
-        "Creativity", "Productivity", "Finance", "Social", "Lifestyle", "Sports", "Other"
-    )
+    private val categoryValues = listOf(null) + GroupCategories.SLUGS
+
+    private fun buildCategoryLabels(): List<String> =
+        listOf(getString(R.string.category_all)) +
+        GroupCategories.SLUGS.map { GroupCategories.displayName(requireContext(), it) }
     private val sortValues = listOf("heat", "newest", "members")
     private val sortLabels = listOf("Heat", "Newest", "Members")
 
@@ -125,6 +123,7 @@ class DiscoverFragment : Fragment() {
     }
 
     private fun setupCategoryChips() {
+        val categoryLabels = buildCategoryLabels()
         categoryValues.forEachIndexed { index, _ ->
             val chip = Chip(requireContext()).apply {
                 text = categoryLabels[index]

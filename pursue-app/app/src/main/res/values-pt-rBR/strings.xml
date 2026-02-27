@@ -888,6 +888,7 @@
 
     <!-- Category -->
     <string name="label_category">Categoria</string>
+    <string name="category_all">Todos</string>
     <string name="category_required_error">Por favor, selecione uma categoria</string>
     <string name="category_fitness">Fitness &amp; Exercício</string>
     <string name="category_nutrition">Nutrição &amp; Dieta</string>

@@ -891,6 +891,7 @@
 
     <!-- Category -->
     <string name="label_category">Category</string>
+    <string name="category_all">All</string>
     <string name="category_required_error">Please select a category</string>
     <string name="category_fitness">Fitness &amp; Exercise</string>
     <string name="category_nutrition">Nutrition &amp; Diet</string>

@@ -28,6 +28,7 @@ import app.getpursue.data.network.ApiClient
 import app.getpursue.data.network.ApiException
 import app.getpursue.ui.activities.GroupDetailActivity
 import app.getpursue.ui.views.IconPickerBottomSheet
+import app.getpursue.utils.GroupCategories
 import app.getpursue.utils.IconUrlUtils
 import app.getpursue.R
 import com.google.android.material.button.MaterialButton
@@ -66,21 +67,6 @@ class EditGroupFragment : Fragment() {
             "discord"   to "Discord",
             "whatsapp"  to "WhatsApp",
             "telegram"  to "Telegram"
-        )
-
-        /** API value → display label mapping for group categories. */
-        val CATEGORIES: List<Pair<String, String>> = listOf(
-            "fitness"      to "Fitness & Exercise",
-            "nutrition"    to "Nutrition & Diet",
-            "mindfulness"  to "Mindfulness & Mental Health",
-            "learning"     to "Learning & Skills",
-            "creativity"   to "Creativity & Arts",
-            "productivity" to "Productivity & Career",
-            "finance"      to "Finance & Savings",
-            "social"       to "Social & Relationships",
-            "lifestyle"    to "Lifestyle & Habits",
-            "sports"       to "Sports & Training",
-            "other"        to "Other"
         )
 
         fun newInstance(
@@ -307,21 +293,22 @@ class EditGroupFragment : Fragment() {
     }
 
     private fun setupCategoryDropdown() {
-        val displayNames = CATEGORIES.map { it.second }
+        val categories = GroupCategories.entries(requireContext())
+        val displayNames = categories.map { it.second }
         val adapter = ArrayAdapter(requireContext(), android.R.layout.simple_dropdown_item_1line, displayNames)
         dropdownCategory.setAdapter(adapter)
 
         // Pre-select if category already set
         val cat = selectedCategory
         if (cat != null) {
-            val display = CATEGORIES.find { it.first == cat }?.second
+            val display = categories.find { it.first == cat }?.second
             if (display != null) {
                 dropdownCategory.setText(display, false)
             }
         }
 
         dropdownCategory.setOnItemClickListener { _, _, position, _ ->
-            selectedCategory = CATEGORIES[position].first
+            selectedCategory = categories[position].first
             inputCategory.error = null
         }
     }

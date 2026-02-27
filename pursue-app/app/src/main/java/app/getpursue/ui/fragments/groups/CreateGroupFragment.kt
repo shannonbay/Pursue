@@ -39,6 +39,7 @@ import app.getpursue.ui.activities.GroupDetailActivity
 import app.getpursue.ui.views.ActiveDaysSelectorView
 import app.getpursue.ui.views.CovenantBottomSheet
 import app.getpursue.ui.views.IconPickerBottomSheet
+import app.getpursue.utils.GroupCategories
 import app.getpursue.utils.IconUrlUtils
 import app.getpursue.R
 import kotlinx.coroutines.Dispatchers
@@ -58,21 +59,6 @@ class CreateGroupFragment : Fragment() {
 
     companion object {
         private const val ARG_HIDE_CANCEL_BUTTON = "hide_cancel_button"
-
-        /** API value → display label mapping for group categories. */
-        val CATEGORIES: List<Pair<String, String>> = listOf(
-            "fitness"      to "Fitness & Exercise",
-            "nutrition"    to "Nutrition & Diet",
-            "mindfulness"  to "Mindfulness & Mental Health",
-            "learning"     to "Learning & Skills",
-            "creativity"   to "Creativity & Arts",
-            "productivity" to "Productivity & Career",
-            "finance"      to "Finance & Savings",
-            "social"       to "Social & Relationships",
-            "lifestyle"    to "Lifestyle & Habits",
-            "sports"       to "Sports & Training",
-            "other"        to "Other"
-        )
 
         fun newInstance(hideCancelButton: Boolean = false): CreateGroupFragment {
             return CreateGroupFragment().apply {
@@ -200,11 +186,12 @@ class CreateGroupFragment : Fragment() {
     }
 
     private fun setupCategoryDropdown() {
-        val displayNames = CATEGORIES.map { it.second }
+        val categories = GroupCategories.entries(requireContext())
+        val displayNames = categories.map { it.second }
         val adapter = ArrayAdapter(requireContext(), android.R.layout.simple_dropdown_item_1line, displayNames)
         dropdownCategory.setAdapter(adapter)
         dropdownCategory.setOnItemClickListener { _, _, position, _ ->
-            selectedCategory = CATEGORIES[position].first
+            selectedCategory = categories[position].first
             inputCategory.error = null
         }
     }
