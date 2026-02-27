@@ -204,7 +204,29 @@ class DailyPulseWidget @JvmOverloads constructor(
      */
     fun updateMembers(freshMembers: List<GroupMember>, animate: Boolean = true) {
         if (visibility != View.VISIBLE) return
-        bindMembers(freshMembers, currentUserId, hasGoals = true, animate = animate)
+        bindMembers(freshMembers, currentUserId, hasGoals = true, animate = animate,
+            memberNudgeGroups = this.memberNudgeGroups)
+    }
+
+    /**
+     * Optimistically marks the signed-in user as having logged for this period.
+     * Triggers the colored-ring + scale animation on their avatar.
+     * No-op if the widget isn't visible or data isn't loaded yet.
+     */
+    fun markCurrentUserAsLogged() {
+        if (visibility != View.VISIBLE) return
+        if (currentUserId.isEmpty()) return
+        val alreadyLogged = lastMembers.any { it.user_id == currentUserId && it.logged_this_period }
+        if (alreadyLogged) return
+
+        val now = java.time.Instant.now().toString()
+        val updated = lastMembers.map { member ->
+            if (member.user_id == currentUserId)
+                member.copy(logged_this_period = true, last_log_at = now)
+            else
+                member
+        }
+        updateMembers(updated, animate = true)
     }
 
     // --- Private helpers ---

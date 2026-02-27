@@ -196,6 +196,11 @@ class TodayFragment : Fragment() {
 
         // Update adapter in-place to preserve scroll position
         adapter?.updateGoal(goalId, completed, progressValue?.toInt())
+
+        // Optimistically reflect the log in the pulse widget
+        if (completed || (progressValue != null && progressValue > 0)) {
+            dailyPulseWidget.markCurrentUserAsLogged()
+        }
     }
 
     /**
