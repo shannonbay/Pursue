@@ -24,6 +24,7 @@ import com.google.android.material.button.MaterialButton
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.switchmaterial.SwitchMaterial
 import com.google.android.material.textfield.TextInputEditText
+import java.util.Locale
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -85,7 +86,8 @@ class GroupSetupFragment : Fragment() {
                     showError(getString(R.string.error_unauthorized_message))
                     return@launch
                 }
-                val templates = withContext(Dispatchers.IO) { ApiClient.getGroupTemplates(token) }
+                val language = Locale.getDefault().toLanguageTag()
+                val templates = withContext(Dispatchers.IO) { ApiClient.getGroupTemplates(token, language = language) }
                 if (!isAdded) return@launch
                 selectedTemplate = templates.templates.find { it.id == templateId }
                 val template = selectedTemplate

@@ -7,6 +7,7 @@ import app.getpursue.data.network.GroupTemplate
 import app.getpursue.ui.adapters.TemplateCardData
 import app.getpursue.ui.fragments.challenges.TemplatesBrowserData
 import app.getpursue.ui.fragments.challenges.TemplatesBrowserFragment
+import java.util.Locale
 
 class GroupIdeasFragment : TemplatesBrowserFragment() {
 
@@ -15,7 +16,8 @@ class GroupIdeasFragment : TemplatesBrowserFragment() {
     override val buttonLabelRes = R.string.group_create_button
 
     override suspend fun fetchTemplates(token: String): TemplatesBrowserData {
-        val resp = ApiClient.getGroupTemplates(token)
+        val language = Locale.getDefault().toLanguageTag()
+        val resp = ApiClient.getGroupTemplates(token, language = language)
         return TemplatesBrowserData(
             templates = resp.templates.map { it.toCardData() },
             categories = resp.categories

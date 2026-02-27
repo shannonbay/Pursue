@@ -8,6 +8,7 @@ import app.getpursue.data.network.ChallengeTemplate
 import app.getpursue.ui.activities.MainAppActivity
 import app.getpursue.ui.adapters.TemplateCardData
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import java.util.Locale
 
 class ChallengeTemplatesFragment : TemplatesBrowserFragment() {
 
@@ -15,7 +16,8 @@ class ChallengeTemplatesFragment : TemplatesBrowserFragment() {
     override val featuredLabelRes = R.string.challenge_featured
 
     override suspend fun fetchTemplates(token: String): TemplatesBrowserData {
-        val resp = ApiClient.getChallengeTemplates(token)
+        val language = Locale.getDefault().toLanguageTag()
+        val resp = ApiClient.getChallengeTemplates(token, language = language)
         return TemplatesBrowserData(
             templates = resp.templates.map { it.toCardData() },
             categories = resp.categories

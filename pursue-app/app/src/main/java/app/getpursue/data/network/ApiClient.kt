@@ -963,11 +963,13 @@ object ApiClient {
     suspend fun getChallengeTemplates(
         accessToken: String,
         category: String? = null,
-        featured: Boolean? = null
+        featured: Boolean? = null,
+        language: String? = null
     ): ChallengeTemplatesResponse {
         val params = mutableListOf<String>("is_challenge=true")
         category?.let { params.add("category=${URLEncoder.encode(it, "UTF-8")}") }
         featured?.let { params.add("featured=$it") }
+        language?.let { params.add("language=${URLEncoder.encode(it, "UTF-8")}") }
         val url = "$baseUrl/group-templates?${params.joinToString("&")}"
         val request = Request.Builder()
             .url(url)
@@ -986,11 +988,13 @@ object ApiClient {
     suspend fun getGroupTemplates(
         accessToken: String,
         category: String? = null,
-        featured: Boolean? = null
+        featured: Boolean? = null,
+        language: String? = null
     ): GroupTemplatesResponse {
         val params = mutableListOf<String>("is_challenge=false")
         category?.let { params.add("category=${URLEncoder.encode(it, "UTF-8")}") }
         featured?.let { params.add("featured=$it") }
+        language?.let { params.add("language=${URLEncoder.encode(it, "UTF-8")}") }
         val url = "$baseUrl/group-templates?${params.joinToString("&")}"
         val request = Request.Builder()
             .url(url)
