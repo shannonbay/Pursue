@@ -215,6 +215,7 @@ export interface GoalsTable {
   unit: string | null;
   active_days: number | null;
   log_title_prompt: string | null;
+  template_goal_id: string | null;
   created_by_user_id: string | null;
   created_at: ColumnType<Date, string | undefined, never>;
   deleted_at: Date | null;

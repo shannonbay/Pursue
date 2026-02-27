@@ -448,11 +448,13 @@ export async function listGoals(
       archived: req.query.archived,
       include_progress: req.query.include_progress,
       user_timezone: req.query.user_timezone,
+      language: req.query.language,
     });
     const cadence = parsed.success ? parsed.data.cadence : undefined;
     const archived = parsed.success ? parsed.data.archived : undefined;
     const includeProgress = parsed.success ? parsed.data.include_progress : undefined;
     const userTimezone = parsed.success ? parsed.data.user_timezone : undefined;
+    const language = parsed.success ? parsed.data.language : undefined;
     const includeArchived = archived === 'true';
 
     let query = db
@@ -468,6 +470,7 @@ export async function listGoals(
         'unit',
         'active_days',
         'log_title_prompt',
+        'template_goal_id',
         'created_by_user_id',
         'created_at',
         'deleted_at',
@@ -486,7 +489,7 @@ export async function listGoals(
       .orderBy('created_at', 'desc')
       .execute();
 
-    const goals = rows.map((r) => ({
+    let goals = rows.map((r) => ({
       id: r.id,
       group_id: r.group_id,
       title: r.title,
@@ -500,11 +503,43 @@ export async function listGoals(
       created_by_user_id: r.created_by_user_id,
       created_at: r.created_at,
       archived_at: r.deleted_at ?? null,
+      template_goal_id: r.template_goal_id ?? null,
     }));
 
+    // Translation overlay for non-English locales
+    if (language && language !== 'en') {
+      const templateGoalIds = goals
+        .map(g => g.template_goal_id)
+        .filter((id): id is string => id != null);
+
+      if (templateGoalIds.length > 0) {
+        const translations = await db
+          .selectFrom('group_template_goal_translations')
+          .select(['goal_id', 'title', 'description', 'log_title_prompt'])
+          .where('goal_id', 'in', templateGoalIds)
+          .where('language', '=', language)
+          .execute();
+
+        const tMap = new Map(translations.map(t => [t.goal_id, t]));
+        goals = goals.map(g => {
+          const t = g.template_goal_id ? tMap.get(g.template_goal_id) : undefined;
+          if (!t) return g;
+          return {
+            ...g,
+            title: t.title,
+            description: t.description ?? g.description,
+            log_title_prompt: t.log_title_prompt ?? g.log_title_prompt,
+          };
+        });
+      }
+    }
+
+    // Strip internal template_goal_id before sending response
+    const goalsForResponse = goals.map(({ template_goal_id: _tgid, ...rest }) => rest);
+
     // If include_progress requested, attach progress data
-    if (includeProgress === 'true' && goals.length > 0) {
-      const goalsWithProgress = await attachProgressToGoals(goals, req.user.id, group_id, userTimezone);
+    if (includeProgress === 'true' && goalsForResponse.length > 0) {
+      const goalsWithProgress = await attachProgressToGoals(goalsForResponse, req.user.id, group_id, userTimezone);
 
       res.status(200).json({
         goals: goalsWithProgress,
@@ -514,7 +549,7 @@ export async function listGoals(
     }
 
     // Default: return goals without progress
-    res.status(200).json({ goals, total: goals.length });
+    res.status(200).json({ goals: goalsForResponse, total: goalsForResponse.length });
   } catch (error) {
     next(error);
   }

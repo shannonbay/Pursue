@@ -273,6 +273,7 @@ CREATE TABLE goals (
   unit VARCHAR(50), -- e.g., 'km', 'pages', 'minutes'
   log_title_prompt VARCHAR(80), -- Prompt shown to users when logging journal entries
   active_days INTEGER DEFAULT NULL, -- Bitmask for day-of-week scheduling (1=Mon..64=Sun, NULL=every day)
+  template_goal_id UUID REFERENCES group_template_goals(id) ON DELETE SET NULL, -- Source template goal for i18n translation lookup (NULL for manually created goals)
   created_by_user_id UUID REFERENCES users(id) ON DELETE SET NULL,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   deleted_at TIMESTAMP WITH TIME ZONE, -- Soft delete: NULL if active, timestamp if deleted
