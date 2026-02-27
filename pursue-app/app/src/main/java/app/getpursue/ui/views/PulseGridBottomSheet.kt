@@ -1,9 +1,12 @@
 package app.getpursue.ui.views
 
+import android.graphics.Color
+import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.fragment.app.FragmentManager
@@ -88,14 +91,18 @@ class PulseGridBottomSheet : BottomSheetDialogFragment() {
     ) : RecyclerView.Adapter<PulseGridAdapter.VH>() {
 
         inner class VH(val root: View) : RecyclerView.ViewHolder(root) {
-            val avatar: ImageView = root.findViewById(R.id.grid_avatar_image)
-            val name: TextView    = root.findViewById(R.id.grid_member_name)
+            val ringContainer: FrameLayout = root.findViewById(R.id.grid_avatar_ring_container)
+            val avatar: ImageView          = root.findViewById(R.id.grid_avatar_image)
+            val name: TextView             = root.findViewById(R.id.grid_member_name)
         }
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): VH =
             VH(LayoutInflater.from(parent.context).inflate(R.layout.item_pulse_grid_member, parent, false))
 
         override fun getItemCount() = members.size
+
+        private fun dpToPx(dp: Int): Int =
+            (dp * resources.displayMetrics.density).toInt()
 
         override fun onBindViewHolder(holder: VH, position: Int) {
             val member   = members[position]
@@ -116,6 +123,16 @@ class PulseGridBottomSheet : BottomSheetDialogFragment() {
                 holder.avatar.setImageDrawable(
                     ImageUtils.createLetterAvatar(holder.root.context, member.display_name, color)
                 )
+            }
+
+            if (isActive) {
+                holder.ringContainer.background = GradientDrawable().apply {
+                    shape = GradientDrawable.OVAL
+                    setColor(Color.TRANSPARENT)
+                    setStroke(dpToPx(3), DailyPulseWidget.avatarColorForUser(member.user_id))
+                }
+            } else {
+                holder.ringContainer.background = null
             }
 
             holder.avatar.alpha = if (isActive) 1f else 0.5f

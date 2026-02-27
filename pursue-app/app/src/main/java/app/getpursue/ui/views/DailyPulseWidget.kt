@@ -4,6 +4,7 @@ import android.animation.AnimatorSet
 import android.animation.ObjectAnimator
 import android.content.Context
 import android.graphics.Color
+import android.graphics.drawable.GradientDrawable
 import android.os.Handler
 import android.os.Looper
 import android.util.AttributeSet
@@ -233,7 +234,17 @@ class DailyPulseWidget @JvmOverloads constructor(
             img.setImageDrawable(ImageUtils.createLetterAvatar(context, member.display_name, color))
         }
 
-        img.alpha = if (isActive) 1f else 0.5f
+        if (isActive) {
+            v.background = GradientDrawable().apply {
+                shape = GradientDrawable.OVAL
+                setColor(Color.TRANSPARENT)
+                setStroke(dpToPx(3), avatarColorForUser(member.user_id))
+            }
+        } else {
+            v.background = null
+        }
+
+        v.alpha = if (isActive) 1f else 0.5f
         img.contentDescription = if (isActive)
             context.getString(R.string.pulse_logged_today, member.display_name)
         else

@@ -8,12 +8,21 @@
     android:gravity="center"
     android:padding="8dp">
 
-    <ImageView
-        android:id="@+id/grid_avatar_image"
-        android:layout_width="48dp"
-        android:layout_height="48dp"
-        android:scaleType="centerCrop"
-        tools:src="@drawable/ic_person_add" />
+    <FrameLayout
+        android:id="@+id/grid_avatar_ring_container"
+        android:layout_width="52dp"
+        android:layout_height="52dp"
+        android:layout_gravity="center">
+
+        <ImageView
+            android:id="@+id/grid_avatar_image"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_gravity="center"
+            android:scaleType="centerCrop"
+            tools:src="@drawable/ic_person_add" />
+
+    </FrameLayout>
 
     <TextView
         android:id="@+id/grid_member_name"
