@@ -207,14 +207,13 @@ class DailyPulseWidget @JvmOverloads constructor(
     // --- Private helpers ---
 
     private fun sortMembers(members: List<GroupMember>, currentUserId: String): List<GroupMember> {
-        val me      = members.filter { it.user_id == currentUserId }
         val logged  = members
-            .filter { it.user_id != currentUserId && it.logged_this_period }
+            .filter { it.logged_this_period }
             .sortedByDescending { it.last_log_at ?: "" }
         val unlogged = members
-            .filter { it.user_id != currentUserId && !it.logged_this_period }
+            .filter { !it.logged_this_period }
             .sortedBy { it.display_name }
-        return me + logged + unlogged
+        return logged + unlogged
     }
 
     private fun buildAvatarView(member: GroupMember): View {
@@ -250,7 +249,9 @@ class DailyPulseWidget @JvmOverloads constructor(
         else
             context.getString(R.string.pulse_not_logged, member.display_name)
 
-        img.setOnClickListener { onAvatarTap(member) }
+        if (member.user_id != currentUserId) {
+            img.setOnClickListener { onAvatarTap(member) }
+        }
         return v
     }
 

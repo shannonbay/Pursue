@@ -138,25 +138,29 @@ class PulseGridBottomSheet : BottomSheetDialogFragment() {
             holder.avatar.alpha = if (isActive) 1f else 0.5f
             holder.name.alpha   = if (isActive) 1f else 0.5f
 
-            holder.root.setOnClickListener {
-                val fm = childFragmentManager
-                if (member.logged_this_period) {
-                    PulseLoggedMemberBottomSheet.show(
-                        fm,
-                        memberId    = member.user_id,
-                        displayName = member.display_name,
-                        hasAvatar   = member.has_avatar,
-                        lastLogAt   = member.last_log_at
-                    )
-                } else {
-                    PulseNudgeBottomSheet.show(
-                        fm,
-                        memberId    = member.user_id,
-                        displayName = member.display_name,
-                        hasAvatar   = member.has_avatar,
-                        groupId     = groupId
-                    )
+            if (member.user_id != currentUserId) {
+                holder.root.setOnClickListener {
+                    val fm = childFragmentManager
+                    if (member.logged_this_period) {
+                        PulseLoggedMemberBottomSheet.show(
+                            fm,
+                            memberId    = member.user_id,
+                            displayName = member.display_name,
+                            hasAvatar   = member.has_avatar,
+                            lastLogAt   = member.last_log_at
+                        )
+                    } else {
+                        PulseNudgeBottomSheet.show(
+                            fm,
+                            memberId    = member.user_id,
+                            displayName = member.display_name,
+                            hasAvatar   = member.has_avatar,
+                            groupId     = groupId
+                        )
+                    }
                 }
+            } else {
+                holder.root.setOnClickListener(null)
             }
         }
     }
