@@ -1,0 +1,961 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Pursue</string>
+
+    <!-- Notifications -->
+    <string name="notification_channel_name">Pursue</string>
+    <string name="notifications_section_title">通知</string>
+    <string name="notify_progress_logs_label">进度日志</string>
+    <string name="notify_progress_logs_summary">当有人在一个目标上记录进度时</string>
+    <string name="notify_group_events_label">小组事件</string>
+    <string name="notify_group_events_summary">加入、离开、晋升、重命名</string>
+    <string name="notify_nudges_label">戳一戳通知</string>
+    <string name="notify_nudges_summary">当有人给你发戳时得到通知</string>
+
+    <!-- Diagnostics / Crash Reporting -->
+    <string name="crash_reporting_section_title">诊断</string>
+    <string name="crash_reporting_toggle_title">分享诊断信息</string>
+    <string name="crash_reporting_toggle_description">通过分享匿名使用数据和崩溃报告来帮助我们改进 Pursue。</string>
+    <string name="crash_reporting_toggle_info">包括你访问的屏幕和崩溃报告。永远不包括你的目标文本或笔记。</string>
+    <string name="crash_reporting_consent_title">帮助改进 Pursue？</string>
+    <string name="crash_reporting_consent_message">通过分享匿名使用和崩溃数据帮助我们改进 Pursue。\n\n这包括你使用哪些功能和出现问题时的崩溃报告——永远不包括你的目标或笔记内容。\n\n你可以随时在个人资料 → 诊断中更改此设置。</string>
+    <string name="crash_reporting_consent_positive">好的，分享数据</string>
+    <string name="crash_reporting_consent_negative">不了</string>
+    <string name="crash_reporting_restart_hint">更改将在下次应用启动时生效。</string>
+
+    <string name="empty_notifications_title">还没有通知</string>
+    <string name="empty_notifications_message">来自你的小组的反应和戳会显示在这里。</string>
+    <string name="error_loading_notifications">加载通知失败</string>
+    <string name="notification_deleted">通知已移除</string>
+    <string name="no_longer_member_toast">你不再是这个小组的成员</string>
+    <string name="notification_reaction">%1$s 对你的%3$s 记录做出了 %2$s 反应</string>
+    <string name="notification_nudge">%1$s 在 %2$s 戳了你</string>
+    <string name="notification_approved">你加入 %1$s 的请求已被批准</string>
+    <string name="notification_rejected">你加入 %1$s 的请求未被批准</string>
+    <string name="notification_promoted">%1$s 让你成为了 %2$s 的管理员</string>
+    <string name="notification_removed">你被从 %1$s 中移除了</string>
+    <string name="notification_join_request">%1$s 想加入 %2$s</string>
+    <string name="notification_milestone_first">你记录了第一条进度！</string>
+    <string name="notification_milestone_streak">你在 %2$s 上达成了 %1$d 天的连续成就！</string>
+    <string name="notification_milestone_total_logs">你达到了 100 条记录！</string>
+    <string name="notification_milestone_challenge_completed">挑战完成：%1$s（%2$d%% 完成度）！</string>
+    <string name="notification_challenge_suggestion">准备好挑战了吗？与朋友开始一个 30 天挑战。🏆</string>
+    <string name="notification_challenge_starts_tomorrow">挑战明天开始：%1$s！🏁</string>
+    <string name="notification_challenge_started">%1$s 第 1 天——加油！🚀</string>
+    <string name="notification_challenge_halfway">你已经完成了 %1$s 的一半！🔥</string>
+    <string name="notification_challenge_three_days">%1$s 还剩 3 天！⏰</string>
+    <string name="notification_challenge_final_day">%1$s 的最后一天——冲刺吧！🏆</string>
+    <string name="notification_weekly_recap">📊 %1$s——周回顾</string>
+    <string name="shareable_card_title">你的成就</string>
+    <string name="shareable_card_unavailable">这个成就卡片不可用</string>
+    <string name="shareable_card_saved">已保存到照片</string>
+    <string name="shareable_card_save_failed">无法保存图像</string>
+    <string name="shareable_card_share_failed">无法打开分享选项</string>
+    <string name="shareable_card_share_chooser_title">分享你的成就</string>
+    <string name="challenge_invite_share_chooser_title">分享挑战</string>
+    <string name="challenge_completion_share_chooser_title">分享挑战完成</string>
+    <string name="shareable_card_share_text">看看我在 Pursue 上的进度！%1$s</string>
+    <string name="shareable_card_btn_share_primary">分享你的成就</string>
+    <string name="challenge_invite_btn_share_primary">分享挑战</string>
+    <string name="challenge_completion_btn_share_primary">分享挑战完成</string>
+    <string name="shareable_card_btn_share_instagram">分享到 Instagram Stories</string>
+    <string name="shareable_card_btn_save">保存到照片</string>
+    <string name="shareable_card_branding_line_1">在 Pursue 上与朋友一起追踪目标</string>
+    <string name="shareable_card_branding_line_2">getpursue.app</string>
+    <string name="shareable_card_quote_template">"%1$s"</string>
+    <string name="shareable_card_content_description">成就卡片显示 %1$s - %2$s %3$s</string>
+
+    <!-- Weekly Recap Card -->
+    <string name="recap_completion_rate_label">小组完成率</string>
+    <string name="recap_highlights_header">🏆  亮点</string>
+    <string name="recap_goals_header">📋  目标分解</string>
+    <string name="recap_heat_header">🔥  小组热度</string>
+    <string name="recap_open_group">打开小组 →</string>
+
+    <!-- Nudge feature -->
+    <string name="nudge_sent">戳已发送给 %1$s！👊</string>
+    <string name="already_nudged_today">你今天已经戳过 %1$s 了</string>
+    <string name="nudge_daily_limit">你已达到每日戳的限制</string>
+    <string name="nudge_failed">无法发送戳。请重试。</string>
+    <string name="nudge_button_description">戳成员</string>
+
+    <!-- Daily Pulse widget -->
+    <string name="pulse_header_today">谁今天在线？</string>
+    <string name="pulse_header_everyone_logged">大家都在！🎉</string>
+    <string name="pulse_logged_count">%1$d / %2$d</string>
+    <string name="pulse_n_more">+%1$d 更多 ›</string>
+    <string name="pulse_logged_today">%1$s 今天已记录</string>
+    <string name="pulse_not_logged">%1$s 还没有记录</string>
+    <string name="pulse_nudge_cta">给 %1$s 发送戳</string>
+    <string name="pulse_already_nudged">你今天已经戳过 %1$s 了</string>
+    <string name="pulse_logged_status">今天已记录 ✓</string>
+    <string name="pulse_logged_at_time">在 %1$s 记录</string>
+
+    <!-- Onboarding: Welcome (4.1.1) -->
+    <string name="welcome_tagline">一起实现目标</string>
+    <string name="continue_with_google">使用 Google 继续</string>
+    <string name="or">或</string>
+    <string name="sign_in_with_email">使用电子邮件登录</string>
+    <string name="dont_have_account">还没有账户？</string>
+    <string name="create_account">创建账户</string>
+
+    <!-- Google Sign-In Configuration -->
+    <!-- android google client id 170178530674-hqsukacp5hkk656977l4lhcgd075t56r.apps.googleusercontent.com -->
+    <!-- web google client id 170178530674-n58jfi6m6kgqosu6bn86gkbmi62dcdr0.apps.googleusercontent.com -->
+    <string name="google_client_id">170178530674-n58jfi6m6kgqosu6bn86gkbmi62dcdr0.apps.googleusercontent.com</string>
+    <!-- GetPursue Android Client - It seems like we just use a web client id so don't actually need this -->
+    <!-- string name="google_client_id">170178530674-li10s2m320i3bqgdcudm3p7ms14paktg.apps.googleusercontent.com</string -->
+    <string name="signing_in_with_google">正在使用 Google 登录…</string>
+    <string name="google_sign_in_failed">Google 登录失败。请重试。</string>
+    <string name="google_sign_in_cancelled">登录已取消</string>
+    <string name="welcome_back">欢迎回来！</string>
+    <string name="account_created_google">账户已创建！</string>
+
+    <!-- Onboarding: Sign In with Email (4.1.3) -->
+    <string name="sign_in_title">欢迎回来！</string>
+    <string name="email_label">电子邮件</string>
+    <string name="email_hint">your@email.com</string>
+    <string name="password_label">密码</string>
+    <string name="password_hint">输入密码</string>
+    <string name="forgot_password">忘记密码？</string>
+    <string name="sign_in_button">登录</string>
+    <string name="email_error">请输入有效的电子邮件地址</string>
+    <string name="password_error">密码是必需的</string>
+    <string name="signing_in">正在登录…</string>
+
+    <!-- Onboarding: Sign Up with Email (4.1.4) -->
+    <string name="sign_up_title">创建你的账户</string>
+    <string name="display_name_label">显示名称 *</string>
+    <string name="display_name_hint">输入你的名字</string>
+    <string name="display_name_char_counter">%1$d/30</string>
+    <string name="display_name_error">显示名称必须在 1 到 30 个字符之间</string>
+    <string name="email_label_signup">电子邮件 *</string>
+    <string name="confirm_password_label">确认密码 *</string>
+    <string name="confirm_password_hint">重新输入密码</string>
+    <string name="password_strength">强度：%1$s</string>
+    <string name="password_weak">弱</string>
+    <string name="password_medium">中</string>
+    <string name="password_strong">强</string>
+    <string name="password_mismatch">密码不匹配</string>
+    <string name="create_account_button">创建账户</string>
+    <string name="creating_account">正在创建账户…</string>
+    <string name="account_created">账户已创建！</string>
+
+    <!-- Avatar/Profile Picture -->
+    <string name="change_profile_picture">更改个人资料照片</string>
+    <string name="remove_photo">移除照片</string>
+    <string name="profile_picture_updated">个人资料照片已更新！</string>
+    <string name="profile_picture_removed">个人资料照片已移除</string>
+    <string name="profile_picture_upload_failed">无法上传个人资料照片。请重试。</string>
+    <string name="profile_picture_delete_failed">无法移除个人资料照片。请重试。</string>
+    <string name="select_image_source">选择图像来源</string>
+    <string name="from_gallery">从相册</string>
+    <string name="from_camera">拍照</string>
+    <string name="cancel">取消</string>
+
+    <!-- Progress Photo (post-log photo prompt) -->
+    <string name="post_log_photo_title">已记录</string>
+    <string name="add_photo_prompt">添加照片？</string>
+    <string name="add_photo_camera">摄像头</string>
+    <string name="add_photo_gallery">相册</string>
+    <string name="photo_uploaded">照片已上传</string>
+    <string name="photo_upload_failed">照片上传失败</string>
+    <string name="photo_quota_exceeded">你本周已用完免费照片上传配额</string>
+    <string name="photo_compressing">正在准备照片…</string>
+    <string name="camera_permission_required">需要摄像头权限才能拍照</string>
+    <string name="photo_capture_failed">无法拍照</string>
+    <string name="progress_photo_content_description">进度照片</string>
+    <string name="photo_expired">这张照片已过期</string>
+
+    <!-- Home Screen: Groups List (4.2) -->
+    <string name="groups_title">小组</string>
+    <string name="my_groups">我的小组</string>
+    <string name="members_and_goals">%1$d 名成员 · %2$d 个活动目标</string>
+    <string name="read_only_badge">仅查看</string>
+    <string name="empty_groups_title">你还没加入任何小组</string>
+    <string name="empty_groups_message">加入一个小组开始或与朋友创建你自己的问责小组。</string>
+    <string name="empty_groups_message_fab">使用下面的 + 按钮加入一个小组或创建你自己的问责小组。</string>
+    <string name="join_group">加入小组</string>
+    <string name="create_group">创建小组</string>
+    <string name="start_challenge">开始挑战</string>
+    <string name="hours_ago">%1$d 小时前</string>
+    <string name="hour_ago">1 小时前</string>
+    <string name="minutes_ago">%1$d 分钟前</string>
+    <string name="minute_ago">1 分钟前</string>
+    <string name="days_ago">%1$d 天前</string>
+    <string name="day_ago">1 天前</string>
+    <string name="just_now">刚刚</string>
+    <string name="last_week">上周</string>
+    <string name="weeks_ago">%1$d 周前</string>
+    <string name="week_ago">1 周前</string>
+    <string name="last_month">上月</string>
+    <string name="months_ago">%1$d 月前</string>
+    <string name="month_ago">1 月前</string>
+    <string name="last_year">去年</string>
+    <string name="years_ago">%1$d 年前</string>
+    <string name="year_ago">1 年前</string>
+    <string name="joined_format">加入于 %1$s</string>
+    <string name="error_loading_groups">加载小组失败</string>
+
+    <!-- Today Screen (4.4) - Placeholder -->
+    <string name="today_title">今天</string>
+    <string name="today_placeholder">今天屏幕</string>
+
+    <!-- Profile Screen (4.5) - Placeholder -->
+    <string name="profile_title">个人资料</string>
+    <string name="profile_placeholder">个人资料屏幕</string>
+    <string name="sign_out">登出</string>
+    <string name="signed_out_toast">你已被登出</string>
+    <string name="delete_account">删除账户</string>
+    <string name="delete_account_title">删除账户？</string>
+    <string name="delete_account_message">这将永久删除你的账户和所有数据，包括进度记录、小组成员身份和目标。此操作无法撤销。</string>
+    <string name="delete_account_type_to_confirm">在下方输入"delete"来确认。</string>
+    <string name="delete_account_confirm">删除账户</string>
+    <string name="delete_account_hint">输入"delete"来确认</string>
+    <string name="delete_account_confirm_keyword">delete</string>
+    <string name="delete_account_success">你的账户已被删除</string>
+    <string name="delete_account_failed">无法删除账户</string>
+
+    <!-- Subscription (pursue-subscription-spec) -->
+    <string name="upgrade_to_premium">升级到高级版本</string>
+    <string name="maybe_later">稍后再说</string>
+    <string name="group_limit_reached_dialog_title">升级到高级版本</string>
+    <string name="group_limit_reached_message">你已达到免费版的 1 个常规小组限制。免费用户还可以加入 1 个活动挑战。</string>
+    <string name="group_read_only_upgrade_message">在免费计划中，这个小组是只读的。升级到高级版本以在所有小组中记录进度和创建目标。</string>
+    <string name="group_limit_reached_bullets">升级到高级版本以获得：\n• 最多 10 个小组\n• 最多 10 个活动挑战\n• 所有功能解锁\n• 仅需 $30/年</string>
+    <string name="choose_your_group_dialog_title">选择你的小组</string>
+    <string name="choose_your_group_message">你的订阅已过期。选择一个常规小组保留：</string>
+    <string name="choose_your_group_footer">其他小组：30 天内为只读</string>
+    <string name="keep_selected_group">保留所选小组</string>
+    <string name="subscription_free_format">免费 • %1$d/%2$d 小组 • %3$d/%4$d 活动挑战</string>
+    <string name="subscription_premium_format">高级版 • %1$d/%2$d 小组 • %3$d/%4$d 活动挑战</string>
+    <string name="subscription_renews_format">续期于 %1$s</string>
+    <string name="pursue_premium_title">Pursue 高级版</string>
+    <string name="pursue_premium_price">$30/年</string>
+    <string name="pursue_premium_subscribe">订阅</string>
+    <string name="pursue_premium_footer">每年自动续期。随时取消。</string>
+    <string name="export_limit_reached_title">导出限制已达</string>
+    <string name="export_limit_reached_message">免费用户一次最多可导出 30 天的数据。</string>
+    <string name="export_limit_reached_selected">你选择了：%1$s – %2$s（%3$d 天）</string>
+    <string name="export_limit_reached_upgrade">升级到高级版本以获得：\n• 导出最多 12 个月\n• 仅需 $30/年</string>
+    <string name="adjust_dates">调整日期</string>
+
+    <!-- Loading States -->
+    <string name="loading_groups">加载小组…</string>
+    <string name="loading_today_goals">加载今天的目标…</string>
+    <string name="loading_progress">加载进度…</string>
+
+    <!-- Error States -->
+    <string name="error_network_title">没有网络连接</string>
+    <string name="error_network_message">检查你的连接并重试</string>
+    <string name="error_server_title">服务器错误</string>
+    <string name="error_server_message">我们的服务器出现问题。请稍后重试</string>
+    <string name="error_timeout_title">请求超时</string>
+    <string name="error_timeout_message">请求花费时间过长。请重试</string>
+    <string name="error_unauthorized_title">会话已过期</string>
+    <string name="error_unauthorized_message">请重新登录</string>
+    <string name="error_pending_approval_title">加入请求待审批</string>
+    <string name="error_pending_approval_message">你加入此小组的请求正在等待管理员的批准。</string>
+    <string name="error_forbidden_title">访问被拒绝</string>
+    <string name="error_forbidden_message">你没有权限查看此内容。</string>
+    <string name="error_failed_to_load_groups">加载小组失败</string>
+    <string name="error_failed_to_load_goals">加载今天的目标失败</string>
+    <string name="error_failed_to_load_progress">加载进度失败</string>
+    <string name="retry">重试</string>
+
+    <!-- Empty States -->
+    <string name="empty_today_title">还没有日常目标</string>
+    <string name="empty_today_message">添加日常目标到你的小组来在这里追踪它们。</string>
+    <string name="browse_groups">浏览小组</string>
+    <string name="empty_progress_title">还没有进度数据</string>
+    <string name="empty_progress_message">在你的小组中完成目标来在这里查看你的进度。</string>
+    <string name="view_todays_goals">查看今天的目标</string>
+
+    <!-- Offline States -->
+    <string name="offline_banner_title">离线 - 显示缓存数据</string>
+    <string name="last_updated">最后更新：%1$s</string>
+    <string name="data_may_be_outdated">数据可能已过时</string>
+
+    <!-- Today Screen -->
+    <string name="today_complete">%1$d%% 已完成</string>
+    <string name="log_progress">记录进度</string>
+
+    <!-- My Progress Screen -->
+    <string name="my_progress_title">我的进度</string>
+    <string name="current_streak">当前连续成就</string>
+    <string name="streak_days">%1$d 天</string>
+    <string name="longest_streak">最长连续成就：%1$d 天</string>
+    <string name="streak_goal">目标：%1$d 天（%2$d%%）</string>
+    <string name="this_weeks_activity">本周活动</string>
+    <string name="goals_completed">%1$d 个目标中的 %2$d 个已完成</string>
+    <string name="last_30_days">最近 30 天</string>
+    <string name="goal_breakdown">目标分解</string>
+    <string name="view_all">查看全部 →</string>
+
+    <!-- Create Group Flow (4.8) -->
+    <string name="create_group_title">创建新小组</string>
+    <string name="group_icon_label">小组图标（可选）</string>
+    <string name="choose_icon">选择图标</string>
+    <string name="group_name_label">小组名称 *</string>
+    <string name="group_name_hint">输入小组名称</string>
+    <string name="group_name_error">小组名称必须在 1 到 100 个字符之间</string>
+    <string name="description_label">描述（可选）</string>
+    <string name="description_hint">描述你的小组</string>
+    <string name="description_char_counter">%1$d/500</string>
+    <string name="initial_goals_label">初始目标（可选）</string>
+    <string name="add_goal">+ 添加目标</string>
+    <string name="create_group_button">创建</string>
+    <string name="creating_group">正在创建小组…</string>
+    <string name="group_created">小组已创建！</string>
+    <string name="group_creation_failed">无法创建小组。请重试。</string>
+
+    <!-- Icon Picker -->
+    <string name="icon_picker_title">选择小组图标</string>
+    <string name="icon_picker_title_goal">选择目标图标</string>
+    <string name="icons_tab">图标</string>
+    <string name="emoji_tab">emoji</string>
+    <string name="icon_content_description">图标</string>
+    <string name="upload_tab">上传</string>
+    <string name="color_tab">颜色</string>
+    <string name="search_emoji">搜索 emoji…</string>
+    <string name="upload_coming_soon">上传自定义图标（即将推出）</string>
+    <string name="background_color">背景颜色</string>
+    <string name="color_blue">蓝色</string>
+    <string name="color_yellow">黄色</string>
+    <string name="color_green">绿色</string>
+    <string name="color_red">红色</string>
+    <string name="color_purple">紫色</string>
+    <string name="color_orange">橙色</string>
+    <string name="color_pink">粉红色</string>
+    <string name="color_teal">青色</string>
+
+    <!-- Group Detail Screen (4.3) -->
+    <string name="group_detail_title">小组详情</string>
+    <string name="members_count">%1$d 名成员</string>
+    <string name="active_goals_count">%1$d 个活动目标</string>
+    <string name="members_and_goals_subtitle">%1$d 名成员 · %2$d 个活动目标</string>
+    <string name="created_by">由 %1$s 创建</string>
+    <string name="unknown">未知</string>
+
+    <!-- Tabs -->
+    <string name="tab_goals">目标</string>
+    <string name="tab_members">成员</string>
+    <string name="tab_activity">活动</string>
+
+    <!-- Overflow Menu -->
+    <string name="menu_edit_group">编辑小组</string>
+    <string name="menu_manage_members">管理成员</string>
+    <string name="menu_invite_members">邀请成员</string>
+    <string name="menu_cancel_challenge">取消挑战</string>
+    <string name="menu_leave_group">离开小组</string>
+    <string name="menu_delete_group">删除小组</string>
+    <string name="menu_edit_goal">编辑目标</string>
+    <string name="menu_delete_goal">删除目标</string>
+
+    <!-- Smart Reminders (7.2) -->
+    <string name="reminder_settings_title">提醒设置</string>
+    <string name="reminder_settings_goal">目标：%1$s</string>
+    <string name="reminder_settings_group">小组：%1$s</string>
+    <string name="reminder_enable">启用提醒</string>
+    <string name="reminder_enable_content_description">为此目标打开或关闭提醒</string>
+    <string name="reminder_mode_label">提醒模式</string>
+    <string name="reminder_mode_smart">智能（学习你的习惯）</string>
+    <string name="reminder_mode_fixed">固定时间</string>
+    <string name="reminder_mode_off">关闭</string>
+    <string name="reminder_pattern_label">你的习惯</string>
+    <string name="reminder_pattern_time_range">%1$s – %2$s</string>
+    <string name="reminder_pattern_based_on_logs">基于 %1$d 条记录（%2$s 可信度）</string>
+    <string name="reminder_confidence_high">高</string>
+    <string name="reminder_confidence_medium">中</string>
+    <string name="reminder_confidence_low">低</string>
+    <string name="reminder_recalculate_pattern">重新计算习惯</string>
+    <string name="reminder_recalculate_pattern_content_description">重新计算你通常记录此目标的时间</string>
+    <string name="reminder_recalculate_insufficient">数据不足以计算习惯（需要至少 5 条记录）</string>
+    <string name="reminder_recalculate_success">习惯已更新</string>
+    <string name="reminder_recalculate_failed">无法重新计算习惯。请重试。</string>
+    <string name="reminder_time_label">提醒时间</string>
+    <string name="reminder_time_content_description">设置固定时间提醒的小时</string>
+    <string name="reminder_level_label">提醒等级</string>
+    <string name="reminder_level_gentle">温和（仅最后机会）</string>
+    <string name="reminder_level_balanced">平衡（所有提醒）</string>
+    <string name="reminder_level_persistent">持续（更短的间隔）</string>
+    <string name="reminder_quiet_hours">安静时间</string>
+    <string name="reminder_quiet_from">从</string>
+    <string name="reminder_quiet_to">至</string>
+    <string name="reminder_quiet_from_content_description">安静时间开始时间</string>
+    <string name="reminder_quiet_to_content_description">安静时间结束时间</string>
+    <string name="reminder_save">保存更改</string>
+    <string name="reminder_save_content_description">保存提醒设置</string>
+    <string name="reminder_saved">提醒设置已保存</string>
+    <string name="reminder_load_failed">加载提醒设置失败。请重试。</string>
+    <string name="reminder_save_failed">保存失败。请重试。</string>
+    <string name="menu_export_progress">导出进度</string>
+    <string name="export_progress_dialog_title">导出进度</string>
+    <string name="export_progress_timeframe">时间框架</string>
+    <string name="export_progress_last_30_days">最近 30 天</string>
+    <string name="export_progress_last_3_months">最近 3 个月</string>
+    <string name="export_progress_last_6_months">最近 6 个月</string>
+    <string name="export_progress_last_12_months">最近 12 个月</string>
+    <string name="export_progress_export">导出</string>
+    <string name="export_progress_exporting">正在导出…</string>
+    <string name="export_progress_success">进度报告已保存</string>
+
+    <!-- Group Ideas / Ongoing Group Templates -->
+    <string name="browse_group_ideas">浏览小组创意</string>
+    <string name="group_ideas_popular">热门</string>
+    <string name="group_setup_title">设置你的小组</string>
+    <string name="group_create_button">创建小组</string>
+    <string name="group_create_failed">无法创建小组。请重试。</string>
+
+    <!-- Challenges -->
+    <string name="challenge_featured">精选</string>
+    <string name="challenge_setup_title">设置挑战</string>
+    <string name="challenge_start_button">开始挑战</string>
+    <string name="challenge_duration_difficulty_format">%1$d 天 · %2$s</string>
+    <string name="challenge_category_all">全部</string>
+    <string name="challenge_category_custom">自定义</string>
+    <string name="challenge_custom_title">自定义挑战（高级版）</string>
+    <string name="challenge_custom_subtitle">创建你自己的目标、期限和挑战规则。</string>
+    <string name="challenge_create_custom_button">创建自定义</string>
+    <string name="challenge_custom_premium_title">需要高级版</string>
+    <string name="challenge_custom_premium_message">自定义挑战仅在高级版上可用。</string>
+    <string name="error_loading_challenge_templates">加载挑战模板失败</string>
+    <string name="challenge_template_not_found">挑战模板未找到</string>
+    <string name="challenge_start_date_label">开始日期</string>
+    <string name="challenge_pick_date">选择日期</string>
+    <string name="challenge_invalid_start_date">开始日期必须在接下来的 30 天内</string>
+    <string name="challenge_end_date_format">结束日期：%1$s（%2$d 天）</string>
+    <string name="challenge_goals_included">包含的目标</string>
+    <string name="challenge_create_failed">无法创建挑战</string>
+    <string name="challenge_share_button">分享</string>
+    <string name="challenge_share_result_button">分享结果</string>
+    <string name="challenge_invite_card_title">挑战邀请</string>
+    <string name="challenge_completion_card_title">挑战完成</string>
+    <string name="challenge_invite_button">邀请朋友</string>
+    <string name="challenge_default_name">你的挑战</string>
+    <string name="challenge_share_text">在 Pursue 上加入我的挑战"%1$s"：%2$s</string>
+    <string name="challenge_completion_share_text">我在 Pursue 上完成了 %1$s！%2$s</string>
+    <string name="challenge_share_failed">无法分享挑战</string>
+    <string name="challenge_cancel_confirmation">为所有成员取消此挑战？</string>
+    <string name="challenge_cancel_success">挑战已取消</string>
+    <string name="challenge_cancel_failed">无法取消挑战</string>
+    <string name="challenge_goals_locked">在这个挑战活跃期间无法添加目标。</string>
+    <string name="challenge_progress_locked_not_active">进度只能在挑战开始后记录。</string>
+    <string name="export_progress_failed">无法导出。请重试。</string>
+    <string name="export_progress_open_file">打开文件</string>
+    <string name="export_progress_open_folder">打开文件夹</string>
+    <string name="export_progress_share">分享</string>
+    <string name="export_progress_no_app_to_open_file">没有应用可以打开此文件</string>
+    <string name="back">返回</string>
+    <string name="recent_entries">最近记录</string>
+    <string name="view_all_history">查看全部历史</string>
+    <string name="progress_this_week">本周进度</string>
+    <string name="progress_this_month">本月进度</string>
+    <string name="progress_this_year">今年进度</string>
+    <string name="progress_today">今天进度</string>
+    <string name="current_streak_weeks">当前连续成就：🔥 %1$d 周</string>
+    <string name="current_streak_days">当前连续成就：🔥 %1$d 天</string>
+    <string name="best_streak_weeks">最佳连续成就：%1$d 周</string>
+    <string name="best_streak_days">最佳连续成就：%1$d 天</string>
+    <string name="progress_complete">%1$d 个中 %2$d 个已完成</string>
+    <string name="progress_percentage">%1$d%%（%2$d/%3$d）</string>
+    <string name="no_entries_yet">还没有记录</string>
+    <string name="edit_entry">编辑记录</string>
+    <string name="delete_entry">删除记录</string>
+    <string name="delete_entry_confirmation">删除此记录？</string>
+    <string name="delete_goal_confirmation">删除此目标？此操作无法撤销。</string>
+    <string name="delete">删除</string>
+    <string name="entry_deleted">记录已删除</string>
+    <string name="goal_deleted">目标已删除</string>
+    <string name="error_loading_goal">加载目标详情失败</string>
+    <string name="error_loading_entries">加载记录失败</string>
+    <string name="loading_goal">加载目标…</string>
+    <string name="logged_at">在 %1$s 记录</string>
+    <string name="delete_group_confirmation">你确定要删除此小组吗？此操作无法撤销。</string>
+    <string name="delete_group_dialog_title">删除"%1$s"？</string>
+    <string name="delete_group_dialog_message">这将永久删除：\n• 所有小组目标\n• 所有成员进度\n• 所有小组活动\n\n此操作无法撤销。</string>
+    <string name="delete_group_type_delete_to_confirm">在下方输入"delete"来确认。</string>
+    <string name="delete_group_confirm_hint">delete</string>
+    <string name="group_updated_toast">小组已更新！</string>
+    <string name="group_deleted_toast">小组已删除</string>
+    <string name="leave_group_confirmation">你确定要离开此小组吗？</string>
+    <string name="leave_group_toast">你已离开小组</string>
+    <string name="leave">离开</string>
+
+    <!-- FAB Actions -->
+    <string name="fab_open_menu">打开菜单</string>
+    <string name="fab_close_menu">关闭菜单</string>
+    <string name="fab_log_progress">记录进度</string>
+    <string name="fab_invite">邀请</string>
+    <string name="fab_add_goal">添加目标</string>
+    <string name="fab_invite_members">邀请成员</string>
+
+    <!-- Invite Members Flow (4.9) -->
+    <string name="invite_to_group_title">邀请到 %1$s</string>
+    <string name="share_invite_code">分享邀请码：</string>
+    <string name="share_invite_message">在 Pursue 上加入我的小组！\n\nURL：%1$s\n邀请码：%2$s</string>
+    <string name="share_qr_code">分享二维码</string>
+    <string name="copy">复制</string>
+    <string name="share">分享</string>
+    <string name="expires_never">过期：永不</string>
+    <string name="max_uses_unlimited">最大用途：无限</string>
+    <string name="change_settings">更改设置</string>
+    <string name="change_settings_coming_soon">更改设置（即将推出）</string>
+    <string name="regenerate_code">重新生成码</string>
+    <string name="regenerate_code_confirm">重新生成邀请码？旧码将停止工作。</string>
+    <string name="regenerate_code_success">邀请码已重新生成</string>
+    <string name="regenerate_code_failed">无法重新生成邀请码</string>
+    <string name="menu_regenerate_invite">重新生成邀请链接</string>
+    <string name="regenerate_invite_title">重新生成邀请链接？</string>
+    <string name="regenerate_invite_message">这将创建一个新的邀请链接并使所有现有的邀请链接失效。任何拥有旧链接的人将无法再加入。</string>
+    <string name="regenerate_invite_type_to_confirm">在下方输入"regenerate"来确认。</string>
+    <string name="regenerate_invite_hint">输入"regenerate"来确认</string>
+    <string name="regenerate_invite_confirm_keyword">regenerate</string>
+    <string name="regenerate_invite_confirm_button">重新生成</string>
+    <string name="done">完成</string>
+    <string name="invite_code_copied">邀请码已复制</string>
+    <string name="invite_generate_failed">无法加载邀请码。请重试。</string>
+    <string name="generating_invite">正在生成邀请…</string>
+    <string name="join_group_title">加入小组</string>
+    <string name="enter_invite_code">输入邀请码：</string>
+    <string name="invite_code_hint">PURSUE-XXXXXX-XXXXXX</string>
+    <string name="paste">粘贴</string>
+    <string name="or_scan_qr">或扫描二维码：</string>
+    <string name="scan_code">扫描码</string>
+    <string name="scan_code_coming_soon">扫描码（即将推出）</string>
+    <string name="invite_code_required">请输入邀请码</string>
+    <string name="invite_code_invalid">无效的邀请码</string>
+    <string name="join_group_failed">无法加入小组。请重试。</string>
+    <string name="join_group_success">已加入小组！</string>
+    <string name="join_group_confirm_title">加入此小组？</string>
+    <string name="view_goal_details">查看目标详情</string>
+
+    <!-- Goals Tab (4.3.1) -->
+    <string name="daily_goals">日常目标</string>
+    <string name="weekly_goals">周目标</string>
+    <string name="monthly_goals">月目标</string>
+    <string name="yearly_goals">年目标</string>
+    <string name="empty_goals_title">还没有目标</string>
+    <string name="empty_goals_message">添加目标到此小组来一起追踪进度。</string>
+    <string name="empty_goals_message_admin">通过创建你的第一个目标来开始</string>
+    <string name="empty_goals_message_admin_link">创建目标来开始</string>
+    <string name="empty_goals_message_member">请管理员创建目标来开始。</string>
+    <string name="add_goal_to_group">添加目标</string>
+    <string name="create_goal">创建目标</string>
+    <string name="error_loading_goals">加载目标失败</string>
+    <string name="loading_goals">加载目标…</string>
+    <string name="logged_with_undo">✅ 已记录！</string>
+    <string name="unlogged_with_undo">未记录！</string>
+    <string name="undone">已撤销</string>
+    <string name="undo">撤销</string>
+    <string name="log_progress_title">记录进度</string>
+    <string name="log_progress_value_label">值</string>
+    <string name="log_progress_unit_label">%1$s</string>
+    <string name="log_progress_note_label">笔记（可选）</string>
+    <string name="log_progress_value_required">值是必需的</string>
+    <string name="log_progress_value_negative">值不能为负数</string>
+    <string name="log_progress_value_too_large">值太大（最大 999,999.99）</string>
+    <string name="log_progress_value_invalid">请输入有效的数字</string>
+    <string name="log">记录</string>
+    <string name="log_progress_failed">无法记录进度。请重试。</string>
+    <string name="log_progress_duplicate">你已经为此期间记录了进度</string>
+    <string name="remove_progress_title">移除今天的记录？</string>
+    <string name="remove_progress_confirm">移除</string>
+    <string name="progress_removed_toast">进度已移除</string>
+    <string name="edit_progress_title">编辑进度</string>
+    <string name="save">保存</string>
+    <string name="delete_progress_confirm">删除记录</string>
+    <string name="delete_progress_message">你确定要删除此进度记录吗？</string>
+
+    <!-- Members Tab (4.3.2) -->
+    <string name="admins">管理员</string>
+    <string name="members_section">成员（%1$d）</string>
+    <string name="promote_to_admin">晋升为管理员</string>
+    <string name="remove_from_group">从小组中移除</string>
+    <string name="confirm_promote_title">晋升 %1$s 为管理员？</string>
+    <string name="confirm_promote_message">他们将能够管理成员和目标。</string>
+    <string name="confirm_remove_member_title">从小组中移除 %1$s？</string>
+    <string name="confirm_remove_member_message">他们将失去对此小组的访问权限。</string>
+    <string name="remove_member_type_to_confirm">在下方输入"remove"来确认。</string>
+    <string name="remove_member_confirm_hint">remove</string>
+    <string name="member_promoted_toast">成员已晋升为管理员</string>
+    <string name="member_removed_toast">成员已从小组中移除</string>
+    <string name="last_active_now">最后活动：现在</string>
+    <string name="last_active">最后活动：%1$s</string>
+    <string name="you">（你）</string>
+    <string name="empty_members_title">没有成员</string>
+    <string name="empty_members_message">邀请成员加入此小组。</string>
+    <string name="error_loading_members">加载成员失败</string>
+    <string name="loading_members">加载成员…</string>
+
+    <!-- Pending Approvals (UI-Spec-Approval-Queue) -->
+    <string name="pending_requests_title">待审批请求</string>
+    <string name="pending_requests_card">待审批请求（%1$d）</string>
+    <string name="pending_requests_count_people">%1$d 人等待批准</string>
+    <string name="approve_all">全部批准</string>
+    <string name="requested_ago">在 %1$s 请求</string>
+    <string name="approve">批准</string>
+    <string name="decline">拒绝</string>
+    <string name="decline_join_request_title">拒绝加入请求？</string>
+    <string name="decline_join_request_message">%1$s 将无法看到小组内容。他们可以再次请求加入。</string>
+    <string name="approve_all_confirm_title">批准所有 %1$d 个请求？</string>
+    <string name="approve_all_confirm_names">%1$s</string>
+    <string name="toast_approved">%1$s 已批准</string>
+    <string name="toast_request_declined">请求已拒绝</string>
+    <string name="toast_approve_failed">无法批准 %1$s。请重试。</string>
+    <string name="toast_already_approved">%1$s 已经被批准</string>
+    <string name="toast_members_approved">%1$d 名成员已批准</string>
+    <string name="empty_pending_title">全部完成！</string>
+    <string name="empty_pending_message">没有待审批的加入请求</string>
+    <string name="content_description_approve">批准 %1$s 的请求</string>
+    <string name="content_description_decline">拒绝 %1$s 的请求</string>
+    <string name="content_description_pending_count">%1$d 个待审批请求</string>
+
+    <!-- Activity Tab (4.3.3) -->
+    <string name="today">今天</string>
+    <string name="yesterday">昨天</string>
+    <string name="empty_activity_title">还没有活动</string>
+    <string name="empty_activity_message">小组成员的活动将显示在这里。</string>
+    <string name="error_loading_activity">加载活动失败</string>
+    <string name="loading_activity">加载活动…</string>
+
+    <!-- Activity Types -->
+    <string name="activity_progress_logged">%1$s 完成了"%2$s"</string>
+    <string name="activity_progress_logged_journal">%1$s 记录了：</string>
+    <string name="activity_member_joined">%1$s 加入了小组</string>
+    <string name="activity_group_created">%1$s 创建了小组</string>
+    <string name="activity_member_left">%1$s 离开了小组</string>
+    <string name="activity_member_promoted">%1$s 被晋升为管理员</string>
+    <string name="activity_member_removed">%1$s 被从小组中移除</string>
+    <string name="activity_goal_added">%1$s 添加了目标"%2$s"</string>
+    <string name="activity_goal_archived">目标"%1$s"已存档</string>
+    <string name="activity_group_renamed">小组重命名为"%1$s"</string>
+    <string name="activity_join_request">%1$s 请求加入小组</string>
+    <string name="activity_member_approved">%1$s 被批准加入小组</string>
+    <string name="activity_member_declined">来自 %1$s 的加入请求被拒绝</string>
+    <string name="activity_nudge_sent">%1$s 为"%3$s"戳了 %2$s</string>
+    <string name="activity_invite_code_regenerated">%1$s 重新生成了邀请码</string>
+    <string name="activity_export_progress">%1$s 导出了进度（%2$s 至 %3$s）</string>
+    <string name="activity_heat_tier_up">小组热度上升！现在在 %1$s。</string>
+    <string name="activity_heat_tier_down">小组热度下降——继续记录！</string>
+    <string name="activity_heat_supernova_reached">超新星！小组在烧红了！</string>
+    <string name="activity_heat_streak_milestone">%1$d 天热度连续成就！保持势头！</string>
+
+    <!-- Reactions -->
+    <string name="reactions_you">你</string>
+    <string name="reactions_you_and_one">你和 %1$s</string>
+    <string name="reactions_you_and_others">你和另外 %1$d 人</string>
+    <string name="reactions_one_and_one">%1$s 和 %2$s</string>
+    <string name="reactions_one_and_others">%1$s 和另外 %2$d 人</string>
+    <string name="reactions_title">反应</string>
+    <string name="reactions_tab_all">全部 %1$d</string>
+    <string name="reaction_button_content_description">添加反应</string>
+    <string name="reaction_failed">无法反应——请重试</string>
+
+    <!-- Time Formatting -->
+    <string name="yesterday_at">昨天在 %1$s</string>
+    <string name="at_time">%1$s 在 %2$s</string>
+
+    <!-- Create Goal Screen (4.3.5) -->
+    <string name="create_goal_title">创建目标</string>
+    <string name="goal_title_label">目标标题 *</string>
+    <string name="goal_title_hint">例如，每周跑 3 次</string>
+    <string name="goal_title_error">目标标题必须在 1 到 100 个字符之间</string>
+    <string name="goal_icon_label">图标（可选）</string>
+    <string name="default_goal_icon">🎯</string>
+
+    <!-- Cadence -->
+    <string name="cadence_label">多常？</string>
+    <string name="cadence_daily">每天</string>
+    <string name="cadence_weekly">每周</string>
+    <string name="cadence_monthly">每月</string>
+    <string name="cadence_yearly">每年</string>
+
+    <!-- Metric Type -->
+    <string name="metric_type_label">指标</string>
+    <string name="metric_type_binary">是/否</string>
+    <string name="metric_type_numeric">数字</string>
+    <string name="metric_type_duration">持续时间</string>
+    <string name="metric_type_journal">日志</string>
+
+    <!-- Journal metric type -->
+    <string name="log_title_prompt_label">记录提示（可选）</string>
+    <string name="log_title_prompt_hint">例如，你今天学到了什么？</string>
+    <string name="log_title_label">标题 *</string>
+    <string name="log_title_hint">你做了什么？</string>
+    <string name="log_title_required">标题是必需的</string>
+    <string name="log_title_char_limit">标题必须在 120 个字符以内</string>
+
+    <!-- Target -->
+    <string name="target_label">目标</string>
+    <string name="target_times_per_day">次/天</string>
+    <string name="target_times_per_week">次/周</string>
+    <string name="target_times_per_month">次/月</string>
+    <string name="target_times_per_year">次/年</string>
+    <string name="target_value_required">目标值是必需的</string>
+    <string name="target_hint">输入目标</string>
+    <string name="per_day">每天</string>
+    <string name="per_week">每周</string>
+    <string name="per_month">每月</string>
+    <string name="per_year">每年</string>
+
+    <!-- Units -->
+    <string name="unit_label">单位</string>
+    <string name="unit_miles">英里</string>
+    <string name="unit_km">公里</string>
+    <string name="unit_meters">米</string>
+    <string name="unit_minutes">分钟</string>
+    <string name="unit_hours">小时</string>
+    <string name="unit_reps">次</string>
+    <string name="unit_pages">页</string>
+    <string name="unit_items">项</string>
+    <string name="unit_count">计数</string>
+    <string name="unit_chapters">章</string>
+
+    <!-- Start Date -->
+    <string name="start_date_label">开始日期（可选）</string>
+    <string name="start_date_today">今天</string>
+
+    <!-- Actions &amp; Dialogs -->
+    <string name="save_goal">保存</string>
+    <string name="creating_goal">正在创建目标…</string>
+    <string name="goal_created">目标已创建！</string>
+    <string name="goal_creation_failed">无法创建目标</string>
+    <string name="discard_changes_title">放弃更改？</string>
+    <string name="discard_changes_message">你有未保存的更改。</string>
+    <string name="discard">放弃</string>
+    <string name="keep_editing">继续编辑</string>
+    <string name="validation_error_title">请修复以下内容：</string>
+
+    <!-- Consent -->
+    <string name="consent_checkbox_text">我同意&lt;a href="https://getpursue.app/terms/"&gt;服务条款&lt;/a&gt;和&lt;a href="https://getpursue.app/privacy/"&gt;隐私政策&lt;/a&gt;，并且我了解我的目标进度将对我加入的小组成员可见。</string>
+    <string name="consent_dialog_title">条款和隐私</string>
+    <string name="consent_continue">继续</string>
+
+    <!-- Policy Version Enforcement -->
+    <string name="policy_update_title">已更新的条款和隐私政策</string>
+    <string name="policy_reconsent_text">我们已更新&lt;a href="https://getpursue.app/terms/"&gt;服务条款&lt;/a&gt;和&lt;a href="https://getpursue.app/privacy/"&gt;隐私政策&lt;/a&gt;。请审查并同意继续使用 Pursue。</string>
+
+    <!-- Member Detail Screen -->
+    <string name="timeframe_this_week">本周</string>
+    <string name="timeframe_last_7_days">最近 7 天</string>
+    <string name="timeframe_this_month">本月</string>
+    <string name="timeframe_last_30_days">最近 30 天</string>
+    <string name="timeframe_last_3_months">最近 3 个月</string>
+    <string name="timeframe_last_6_months">最近 6 个月</string>
+    <string name="timeframe_last_12_months">最近 12 个月</string>
+    <string name="goal_overview_section">目标概览</string>
+    <string name="activity_log_section">活动日志</string>
+    <string name="member_joined">加入于 %1$s</string>
+    <string name="role_admin">管理员</string>
+    <string name="role_member">成员</string>
+    <string name="progress_days">%1$d / %2$d 天</string>
+    <string name="progress_weeks">%1$d / %2$d 周</string>
+    <string name="progress_months">%1$d / %2$d 月</string>
+    <string name="progress_value">%1$.0f / %2$.0f %3$s</string>
+    <string name="empty_member_activity_title">还没有活动</string>
+    <string name="empty_member_activity_message">%1$s 在此期间没有记录任何进度。</string>
+    <string name="unlock_full_history_title">解锁完整进度历史</string>
+    <string name="unlock_full_history_message">查看任何小组成员最多 12 个月的进度历史。高级版还包括无限制小组创建和数据导出。</string>
+    <string name="content_description_member_avatar">%1$s 的头像</string>
+    <string name="content_description_progress_bar">%1$s：%2$d%% 完成，%3$s</string>
+    <string name="content_description_locked_timeframe">%1$s，需要高级版订阅</string>
+    <string name="binary_completion">%1$d / %2$d %3$s</string>
+    <string name="numeric_completion">%1$.0f / %2$.0f %3$s</string>
+    <string name="error_loading_member_progress">加载成员进度失败</string>
+    <string name="loading_member_progress">加载成员进度…</string>
+
+    <!-- Group Heat -->
+    <string name="heat_score_format">· 分数：%1$d</string>
+    <string name="heat_streak_format">%1$d 天连续成就</string>
+    <string name="heat_gcr_format">昨天：%1$d%%</string>
+    <string name="heat_gcr_with_baseline">昨天：%1$d%%（基准：%2$d%%）</string>
+    <string name="heat_content_description">小组热度：%1$s（分数 %2$d）</string>
+    <string name="heat_info_title">什么是小组热度？</string>
+    <string name="heat_info_body">小组热度显示你的小组基于每个人一致完成日常目标的动力。\n\n分数将昨天的完成率与你的小组最近的平均值进行比较。当小组表现得比平时更好时，火焰会增长。当活动下降时，它会冷却。\n\n热度等级：冷、火花、余烬、闪烁、稳定、烈火、地狱火和超新星。继续记录来达到顶部！</string>
+    <string name="heat_info_ok">明白了</string>
+    <string name="heat_cold">冷</string>
+    <string name="heat_spark">火花</string>
+    <string name="heat_ember">余烬</string>
+    <string name="heat_flicker">闪烁</string>
+    <string name="heat_steady">稳定</string>
+    <string name="heat_blaze">烈火</string>
+    <string name="heat_inferno">地狱火</string>
+    <string name="heat_supernova">超新星</string>
+
+    <!-- Covenant -->
+    <string name="covenant_title">PURSUE 契约</string>
+    <string name="covenant_body">我加入这个小组是为了成长，\n而不是去评判。\n\n我会在别人的好日子里为他们欢呼，\n在他们困难的日子里对他们宽容——\n包括对我自己。\n\n这里的进度是个人的。\n我不会为了竞争而比较。\n我不会用我看到的东西来批评\n或羞辱。\n\n我会诚实地出现，\n慷慨地鼓励，\n记住这里的每个人\n都在追求对他们重要的东西。</string>
+    <string name="covenant_challenge_line">我在与他人一起进行这个挑战，而不是反对他们。\n</string>
+    <string name="covenant_hold_to_commit">按住来承诺</string>
+    <string name="covenant_committed">✓ 已承诺</string>
+    <string name="covenant_tap_fallback">无法长按？点击这里。</string>
+    <string name="covenant_confirm_title">加入此小组？</string>
+    <string name="covenant_confirm_message">加入即表示你接受 Pursue 契约。</string>
+    <string name="covenant_confirm_join">加入</string>
+
+    <!-- Orientation Flow -->
+    <string name="orientation_skip">跳过</string>
+    <string name="orientation_join_title">被邀请加入一个小组？</string>
+    <string name="orientation_join_description">如果有人给你发送了邀请码，在下方输入来加入他们的小组。</string>
+    <string name="orientation_join_button">加入小组</string>
+    <string name="orientation_scan_qr">扫描二维码</string>
+    <string name="orientation_no_invite_code">我没有邀请码</string>
+    <string name="orientation_step_x_of_3">第 %1$d 步，共 3 步</string>
+    <string name="orientation_step_x_of_4">第 %1$d 步，共 4 步</string>
+    <string name="orientation_discover_title">找一个小组加入</string>
+    <string name="orientation_discover_description">浏览公开小组并请求加入符合你目标的小组。</string>
+    <string name="orientation_try_a_challenge">我宁愿尝试一个挑战</string>
+    <string name="orientation_challenge_title">试试挑战！</string>
+    <string name="orientation_challenge_description">挑战是有时间限制的目标——比如"30 天无糖"或"一周每天阅读"。选择一个模板并立即开始。</string>
+    <string name="orientation_info_card_title">小组和挑战有什么区别？</string>
+    <string name="orientation_info_card_groups">🔄 小组是进行中的\n开放式问责，没有结束日期。非常适合你想永远追踪的日常习惯和长期目标。</string>
+    <string name="orientation_info_card_challenges">🏆 挑战是有时间限制的\n固定天数的挑战，有明确的开始和结束。非常适合建立新习惯或在一段时间内尝试新东西。</string>
+    <string name="orientation_info_card_both">两者都包括所有相同的功能——反应、戳、进度追踪和小组活动源。</string>
+    <string name="orientation_create_own_group">我宁愿创建我自己的小组</string>
+    <string name="orientation_create_title">创建你的小组</string>
+    <string name="orientation_create_description">小组是进行中的——非常适合日常习惯和与朋友的周目标。没有结束日期，只是持续的问责。</string>
+    <string name="orientation_group_name_hint">小组名称（例如早晨跑步者）</string>
+    <string name="orientation_goal_hint">你的第一个目标（例如跑 30 分钟）</string>
+    <string name="orientation_create_button">创建小组</string>
+    <string name="orientation_cadence_daily">每天</string>
+    <string name="orientation_cadence_weekly">每周</string>
+    <string name="orientation_cadence_monthly">每月</string>
+    <string name="orientation_type_binary">是/否</string>
+    <string name="orientation_type_numeric">数字</string>
+    <string name="orientation_target_hint">目标（可选，例如 30）</string>
+    <string name="orientation_unit_hint">单位（可选，例如分钟）</string>
+    <string name="orientation_invite_code_error">无效或过期的邀请码。与朋友确认并重试。</string>
+
+    <!-- Onboarding Tooltips -->
+    <string name="onboarding_tap_to_log_tooltip">点击目标标题来记录进度</string>
+
+    <!-- Active Days Selector -->
+    <string name="active_days_label">活动日</string>
+    <string name="active_days_every_day">每天</string>
+    <string name="rest_day_today">今天休息</string>
+    <string name="active_days_weekdays">工作日</string>
+    <string name="active_days_weekends">周末</string>
+    <string name="active_days_at_least_one">至少一天必须活动</string>
+    <string name="active_days_summary_every_day">每天</string>
+    <string name="active_days_weekdays_only">仅工作日</string>
+    <string name="active_days_weekends_only">仅周末</string>
+    <string name="active_days_days_per_week">天/周</string>
+    <!-- Day full names for accessibility content descriptions -->
+    <string name="day_sunday">星期日</string>
+    <string name="day_monday">星期一</string>
+    <string name="day_tuesday">星期二</string>
+    <string name="day_wednesday">星期三</string>
+    <string name="day_thursday">星期四</string>
+    <string name="day_friday">星期五</string>
+    <string name="day_saturday">星期六</string>
+    <!-- Day single-letter abbreviations for toggle buttons (S M T W T F S) -->
+    <string name="day_abbrev_sun">日</string>
+    <string name="day_abbrev_mon">一</string>
+    <string name="day_abbrev_tue">二</string>
+    <string name="day_abbrev_wed">三</string>
+    <string name="day_abbrev_thu">四</string>
+    <string name="day_abbrev_fri">五</string>
+    <string name="day_abbrev_sat">六</string>
+
+    <!-- Generic error -->
+    <string name="error_generic">出错了。请重试。</string>
+
+    <!-- Discover / Public Group Listings -->
+    <string name="discover_title">发现</string>
+    <string name="discover_search_hint">搜索小组…</string>
+    <string name="discover_empty_title">未找到小组</string>
+    <string name="discover_empty_message">尝试调整你的过滤器或搜索条件</string>
+    <string name="discover_detail_goals_title">目标</string>
+    <string name="discover_join_request_button">请求加入</string>
+    <string name="discover_submit_request_button">提交请求</string>
+    <string name="discover_request_pending">请求待处理</string>
+    <string name="discover_already_member">已是成员</string>
+    <string name="discover_group_full">小组已满</string>
+    <string name="discover_submitting">正在提交…</string>
+    <string name="discover_join_note_hint">添加笔记（可选）</string>
+    <string name="discover_join_request_sent">加入请求已发送！</string>
+    <string name="discover_sign_in_to_join">登录来请求加入小组</string>
+    <string name="discover_spots_left">剩余 %1$d / %2$d 个位置</string>
+
+    <!-- Public Listing / Visibility -->
+    <string name="label_public_listing">公开列表</string>
+    <string name="public_listing_tooltip">公开列表让其他人发现你的小组并请求加入。他们会看到你的小组名称、成员数、热度分数和目标——但看不到你的活动日志或成员详情。</string>
+
+    <!-- Spot Limit -->
+    <string name="label_spot_limit">位置限制</string>
+    <string name="spot_limit_unlimited">无限</string>
+    <string name="spot_limit_custom">限制为</string>
+    <string name="spot_limit_members_suffix">成员（2–500）</string>
+    <string name="spot_limit_hint">50</string>
+    <string name="spot_limit_error">输入 2 到 500 之间的数字</string>
+
+    <!-- Category -->
+    <string name="label_category">类别</string>
+    <string name="category_all">全部</string>
+    <string name="category_required_error">请选择一个类别</string>
+    <string name="category_fitness">健身和运动</string>
+    <string name="category_nutrition">营养和饮食</string>
+    <string name="category_mindfulness">正念和心理健康</string>
+    <string name="category_learning">学习和技能</string>
+    <string name="category_creativity">创意和艺术</string>
+    <string name="category_productivity">生产力和职业</string>
+    <string name="category_finance">财务和储蓄</string>
+    <string name="category_social">社交和关系</string>
+    <string name="category_lifestyle">生活方式和习惯</string>
+    <string name="category_sports">运动和训练</string>
+    <string name="category_other">其他</string>
+
+    <!-- Sort -->
+    <string name="sort_heat">热度</string>
+    <string name="sort_newest">最新</string>
+    <string name="sort_members">成员</string>
+
+    <!-- External Communication Link -->
+    <string name="section_external_communication">外部沟通</string>
+    <string name="label_comm_platform">平台</string>
+    <string name="label_comm_link">邀请链接</string>
+    <string name="comm_link_helper">此链接仅对批准的成员可见。</string>
+    <string name="comm_platform_none">无</string>
+    <string name="comm_platform_discord">Discord</string>
+    <string name="comm_platform_whatsapp">WhatsApp</string>
+    <string name="comm_platform_telegram">Telegram</string>
+    <string name="comm_link_error_discord">输入有效的 Discord 邀请链接（例如 https://discord.gg/…）</string>
+    <string name="comm_link_error_whatsapp">输入有效的 WhatsApp 邀请链接（例如 https://chat.whatsapp.com/…）</string>
+    <string name="comm_link_error_telegram">输入有效的 Telegram 链接（例如 https://t.me/…）</string>
+    <string name="comm_link_join_discord">加入 Discord 小组</string>
+    <string name="comm_link_join_whatsapp">加入 WhatsApp 小组</string>
+    <string name="comm_link_join_telegram">加入 Telegram 小组</string>
+    <string name="comm_link_open_failed">无法打开链接</string>
+
+    <!-- Report Entry -->
+    <string name="report_entry_title">报告此记录</string>
+    <string name="report_reason_inappropriate">不适当或冒犯性内容</string>
+    <string name="report_reason_harassment">骚扰或欺凌</string>
+    <string name="report_reason_spam">垃圾邮件或虚假活动</string>
+    <string name="report_reason_other">其他</string>
+    <string name="report_submit_button">报告</string>
+    <string name="report_submitted">报告已提交</string>
+    <string name="report_already_submitted">你已经报告过此记录</string>
+    <string name="report_failed">无法提交报告。请重试。</string>
+    <string name="report_activity_menu_item">报告</string>
+    <string name="overflow_menu_description">更多选项</string>
+
+    <!-- Dispute -->
+    <string name="dispute_title">对此删除提出异议</string>
+    <string name="dispute_hint">为什么应该允许这个？（可选）</string>
+    <string name="dispute_submit_button">提交</string>
+    <string name="dispute_submitted">异议已提交。我们将在 5 个工作日内审查。</string>
+    <string name="dispute_failed">无法提交异议。请重试。</string>
+
+    <!-- Moderation notifications -->
+    <string name="notification_content_removed">你在 %1$s 中的一篇帖子因违反社区标准而被移除。点击进行异议。</string>
+    <string name="notification_content_warned">你在 %1$s 中的一篇帖子被标记为可能不适当。它还未被移除。</string>
+    <string name="your_group">你的小组</string>
+
+    <!-- Community standards -->
+    <string name="community_standards_title">Pursue 是一个一起成长的地方</string>
+    <string name="community_standards_body">保持真实，保持友善。我们自动过滤内容来保持小组安全，成员可以报告任何不合适的内容。严重违规会导致账户被暂停。</string>
+    <string name="community_standards_got_it">明白了</string>
+
+</resources>
