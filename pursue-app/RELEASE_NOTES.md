@@ -63,6 +63,10 @@ Pursue now supports five major languages, bringing the app to users worldwide:
 
 ### 🐛 Bug Fixes
 
+- Fixed "Fragment not attached to activity" crash when navigating away during async operations (photo upload, API calls)
+  - Root cause: Calling `requireActivity()` after suspension points in async coroutine blocks
+  - Solution: Capture activity reference before async operations, use lifecycle-aware helper function
+  - Impact: Prevents crash in photo upload handler, progress logging, and all async UI updates
 - Ensured consistent translation behavior across all app screens and languages
 - Fixed language fallback chain for regional variants
 
