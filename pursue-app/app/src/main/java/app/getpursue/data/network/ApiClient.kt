@@ -32,6 +32,7 @@ import app.getpursue.BuildConfig
 import app.getpursue.utils.TodayGoalsFilterUtils
 import java.net.URLEncoder
 import java.time.ZoneId
+import java.util.Locale
 
 /**
  * API client for making HTTP requests to the Pursue backend.
@@ -435,7 +436,8 @@ object ApiClient {
                     cadence = "daily",
                     archived = false,
                     includeProgress = true,
-                    userTimezone = ZoneId.systemDefault().id
+                    userTimezone = ZoneId.systemDefault().id,
+                    language = Locale.getDefault().toLanguageTag()
                 )
             } catch (e: ApiException) {
                 if (e.code == 403 || e.code == 404) continue
@@ -1447,7 +1449,8 @@ object ApiClient {
         cadence: String? = null,
         archived: Boolean = false,
         includeProgress: Boolean = true,
-        userTimezone: String? = null
+        userTimezone: String? = null,
+        language: String? = null
     ): GroupGoalsResponse {
         val urlBuilder = StringBuilder("$baseUrl/groups/$groupId/goals")
         val params = mutableListOf<String>()
@@ -1455,6 +1458,7 @@ object ApiClient {
         if (archived) params.add("archived=true")
         if (includeProgress) params.add("include_progress=true")
         if (userTimezone != null) params.add("user_timezone=${URLEncoder.encode(userTimezone, "UTF-8")}")
+        if (language != null) params.add("language=${URLEncoder.encode(language, "UTF-8")}")
         if (params.isNotEmpty()) {
             urlBuilder.append("?").append(params.joinToString("&"))
         }

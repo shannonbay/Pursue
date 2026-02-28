@@ -50,6 +50,7 @@ import kotlinx.coroutines.coroutineScope
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import java.util.Locale
 
 /**
  * Goals Tab Fragment for Group Detail (UI spec section 4.3.1).
@@ -271,7 +272,8 @@ class GoalsTabFragment : Fragment() {
                                 groupId = groupId,
                                 archived = false,
                                 includeProgress = true,
-                                userTimezone = ZoneId.systemDefault().id
+                                userTimezone = ZoneId.systemDefault().id,
+                                language = Locale.getDefault().toLanguageTag()
                             )
                         }
                         val nudgesDeferred = async {
