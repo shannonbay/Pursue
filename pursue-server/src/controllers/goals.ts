@@ -34,6 +34,7 @@ import { getSignedUrl } from '../services/gcs.service.js';
 import { daysToBitmask, bitmaskToDays, serializeActiveDays } from '../utils/activeDays.js';
 import { validateGoalName, assertValidName } from '../moderation/validate-name.js';
 import { checkTextContent } from '../services/openai-moderation.service.js';
+import { getLanguageVariants } from '../utils/language.js';
 
 function formatPeriodStart(ps: string | Date): string {
   if (typeof ps === 'string') return ps.slice(0, 10);
@@ -513,14 +514,30 @@ export async function listGoals(
         .filter((id): id is string => id != null);
 
       if (templateGoalIds.length > 0) {
+        const { exact, base } = getLanguageVariants(language);
+
         const translations = await db
           .selectFrom('group_template_goal_translations')
-          .select(['goal_id', 'title', 'description', 'log_title_prompt'])
+          .select(['goal_id', 'title', 'description', 'log_title_prompt', 'language'])
           .where('goal_id', 'in', templateGoalIds)
-          .where('language', '=', language)
+          .where('language', 'in', [exact, base])
           .execute();
 
-        const tMap = new Map(translations.map(t => [t.goal_id, t]));
+        // Prefer exact match over base language
+        const tMap = new Map<string, typeof translations[0]>();
+        const exactMatches = new Set<string>();
+        for (const t of translations) {
+          if (t.language === exact) {
+            tMap.set(t.goal_id, t);
+            exactMatches.add(t.goal_id);
+          }
+        }
+        for (const t of translations) {
+          if (t.language === base && !exactMatches.has(t.goal_id)) {
+            tMap.set(t.goal_id, t);
+          }
+        }
+
         goals = goals.map(g => {
           const t = g.template_goal_id ? tMap.get(g.template_goal_id) : undefined;
           if (!t) return g;

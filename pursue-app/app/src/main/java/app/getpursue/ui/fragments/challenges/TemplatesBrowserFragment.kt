@@ -17,6 +17,7 @@ import app.getpursue.data.network.ApiException
 import app.getpursue.ui.adapters.TemplateCardAdapter
 import app.getpursue.ui.adapters.TemplateCardData
 import app.getpursue.ui.adapters.TemplateCardListItem
+import app.getpursue.utils.GroupCategories
 import com.google.android.material.chip.Chip
 import com.google.android.material.chip.ChipGroup
 import kotlinx.coroutines.Dispatchers
@@ -141,8 +142,9 @@ abstract class TemplatesBrowserFragment : Fragment() {
             )
         }
         categories.sorted().forEach { category ->
+            val context = context ?: return@forEach
             createFilterChip(
-                label = category.replaceFirstChar { it.uppercase() },
+                label = GroupCategories.displayName(context, category),
                 filter = TemplateFilter.Category(category)
             )?.let { categoryChipGroup.addView(it) }
         }

@@ -2,6 +2,7 @@ import type { NextFunction, Request, Response } from 'express';
 import { db } from '../database/index.js';
 import { ApplicationError } from '../middleware/errorHandler.js';
 import type { AuthRequest } from '../types/express.js';
+import { getLanguageVariants } from '../utils/language.js';
 import {
   ChallengeIdParamSchema,
   CreateChallengeSchema,
@@ -121,26 +122,51 @@ export async function getChallengeTemplates(
     const goalTranslationsMap = new Map<string, { title: string; description: string | null; log_title_prompt: string | null }>();
 
     if (language !== 'en' && templateIds.length > 0) {
+      const { exact, base } = getLanguageVariants(language);
+
+      // Query both exact and base language, then filter/prefer in-memory
       const templateTranslations = await db
         .selectFrom('group_template_translations')
-        .select(['template_id', 'title', 'description'])
+        .select(['template_id', 'title', 'description', 'language'])
         .where('template_id', 'in', templateIds)
-        .where('language', '=', language)
+        .where('language', 'in', [exact, base])
         .execute();
+
+      // Prefer exact match over base language
+      const exactMatches = new Set<string>();
       for (const t of templateTranslations) {
-        templateTranslationsMap.set(t.template_id, { title: t.title, description: t.description });
+        if (t.language === exact) {
+          templateTranslationsMap.set(t.template_id, { title: t.title, description: t.description });
+          exactMatches.add(t.template_id);
+        }
+      }
+      for (const t of templateTranslations) {
+        if (t.language === base && !exactMatches.has(t.template_id)) {
+          templateTranslationsMap.set(t.template_id, { title: t.title, description: t.description });
+        }
       }
 
       const goalIds = goals.map((g) => g.id);
       if (goalIds.length > 0) {
         const goalTranslations = await db
           .selectFrom('group_template_goal_translations')
-          .select(['goal_id', 'title', 'description', 'log_title_prompt'])
+          .select(['goal_id', 'title', 'description', 'log_title_prompt', 'language'])
           .where('goal_id', 'in', goalIds)
-          .where('language', '=', language)
+          .where('language', 'in', [exact, base])
           .execute();
+
+        // Prefer exact match over base language
+        const exactGoalMatches = new Set<string>();
         for (const t of goalTranslations) {
-          goalTranslationsMap.set(t.goal_id, { title: t.title, description: t.description, log_title_prompt: t.log_title_prompt });
+          if (t.language === exact) {
+            goalTranslationsMap.set(t.goal_id, { title: t.title, description: t.description, log_title_prompt: t.log_title_prompt });
+            exactGoalMatches.add(t.goal_id);
+          }
+        }
+        for (const t of goalTranslations) {
+          if (t.language === base && !exactGoalMatches.has(t.goal_id)) {
+            goalTranslationsMap.set(t.goal_id, { title: t.title, description: t.description, log_title_prompt: t.log_title_prompt });
+          }
         }
       }
     }
