@@ -3,7 +3,7 @@ SET client_encoding = 'UTF8';
 BEGIN;
 
 -- Insert Chinese group template translations (68 templates)
-INSERT INTO group_template_translations (group_template_id, locale, title, description)
+INSERT INTO group_template_translations (template_id, language, title, description)
 SELECT t.id, 'zh', v.zh_title, v.zh_description
 FROM (VALUES
   ('30-Day Gratitude Journal', '30 天感恩日记', '每天写感恩清单。'),
@@ -76,10 +76,10 @@ FROM (VALUES
   ('Budget Accountability', '预算问责', '每天一起追踪每一美元。记录你何时审查预算或追踪当天的支出。意识是第一步。')
 ) AS v(en_title, zh_title, zh_description)
 JOIN group_templates t ON t.title = v.en_title
-ON CONFLICT (group_template_id, locale) DO NOTHING;
+ON CONFLICT (template_id, language) DO NOTHING;
 
 -- Insert Chinese group template goal translations (80 goals)
-INSERT INTO group_template_goal_translations (template_goal_id, locale, title, description, log_title_prompt)
+INSERT INTO group_template_goal_translations (goal_id, language, title, description, log_title_prompt)
 SELECT tg.id, 'zh', v.zh_title, v.zh_description, v.zh_log_prompt
 FROM (VALUES
   ('30-Day Gratitude Journal', 'Gratitude entry', '感恩记录', '今天写你的感恩清单。', NULL),
@@ -164,7 +164,7 @@ FROM (VALUES
   ('Budget Accountability', 'Tracked spending today', '今天追踪支出', NULL, NULL)
 ) AS v(en_template, en_goal, zh_title, zh_description, zh_log_prompt)
 JOIN group_templates t ON t.title = v.en_template
-JOIN group_template_goals tg ON tg.group_template_id = t.id AND tg.title = v.en_goal
-ON CONFLICT (template_goal_id, locale) DO NOTHING;
+JOIN group_template_goals tg ON tg.template_id = t.id AND tg.title = v.en_goal
+ON CONFLICT (goal_id, language) DO NOTHING;
 
 COMMIT;
