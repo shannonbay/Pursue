@@ -250,7 +250,7 @@ export async function createGroup(
       if (template) {
         const templateGoals = await trx
           .selectFrom('group_template_goals')
-          .select(['title', 'description', 'cadence', 'metric_type', 'target_value', 'unit', 'active_days', 'log_title_prompt', 'sort_order'])
+          .select(['id', 'title', 'description', 'cadence', 'metric_type', 'target_value', 'unit', 'active_days', 'log_title_prompt', 'sort_order'])
           .where('template_id', '=', template.id)
           .orderBy('sort_order', 'asc')
           .execute();
@@ -268,6 +268,7 @@ export async function createGroup(
               unit: g.unit ?? null,
               active_days: g.active_days ?? null,
               log_title_prompt: g.log_title_prompt ?? null,
+              template_goal_id: g.id,
               created_by_user_id: userId,
             })))
             .returning(['id', 'title', 'description', 'cadence', 'metric_type', 'target_value', 'unit', 'active_days', 'log_title_prompt'])
