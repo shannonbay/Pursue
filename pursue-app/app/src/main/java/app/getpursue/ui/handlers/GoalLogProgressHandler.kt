@@ -43,6 +43,18 @@ class GoalLogProgressHandler(
     private val onOptimisticUpdate: ((goalId: String, completed: Boolean, progressValue: Double?) -> Unit)? = null,
     private val onRefresh: (silent: Boolean) -> Unit = {}
 ) {
+    /**
+     * Safely executes UI operations on the activity's main thread.
+     * Handles fragment lifecycle: if fragment is detached, silently skips UI update.
+     * Must be called from activity that still exists.
+     */
+    private fun runUiSafely(activity: android.app.Activity, block: () -> Unit) {
+        activity.runOnUiThread {
+            if (fragment.isAdded) {
+                block()
+            }
+        }
+    }
     private fun showUpgradeDialog() {
         val ctx = fragment.context ?: return
         val d = MaterialAlertDialogBuilder(ctx)
@@ -101,6 +113,7 @@ class GoalLogProgressHandler(
             }
             return
         }
+        val activity = fragment.activity ?: return  // Capture activity BEFORE async operation
         val newValue = 1.0
         val previousCompleted = goal.completed
         val previousProgressValue = goal.progressValue
@@ -111,25 +124,23 @@ class GoalLogProgressHandler(
                     ApiClient.logProgress(accessToken, goal.id, newValue, null, null, userDate, userTimezone)
                 }
                 val entryId = response.id
-                fragment.requireActivity().runOnUiThread {
-                    if (fragment.isAdded) {
-                        AnalyticsLogger.logEvent(AnalyticsEvents.PROGRESS_LOGGED, android.os.Bundle().apply {
-                            putString(AnalyticsEvents.Param.METRIC_TYPE, goal.metricType)
-                            putString(AnalyticsEvents.Param.CADENCE, goal.cadence)
-                        })
-                        HapticFeedbackUtils.vibrateToggle(snackbarParentView)
-                        showPostLogPhotoSheet(entryId) {
-                            performUndo(goal.id, entryId, previousCompleted, previousProgressValue, accessToken)
-                        }
+                runUiSafely(activity) {
+                    AnalyticsLogger.logEvent(AnalyticsEvents.PROGRESS_LOGGED, android.os.Bundle().apply {
+                        putString(AnalyticsEvents.Param.METRIC_TYPE, goal.metricType)
+                        putString(AnalyticsEvents.Param.CADENCE, goal.cadence)
+                    })
+                    HapticFeedbackUtils.vibrateToggle(snackbarParentView)
+                    showPostLogPhotoSheet(entryId) {
+                        performUndo(goal.id, entryId, previousCompleted, previousProgressValue, accessToken)
                     }
                 }
             } catch (e: ApiException) {
-                fragment.requireActivity().runOnUiThread {
+                runUiSafely(activity) {
                     onOptimisticUpdate?.invoke(goal.id, previousCompleted, previousProgressValue)
                     handleLogApiException(e)
                 }
             } catch (e: Exception) {
-                fragment.requireActivity().runOnUiThread {
+                runUiSafely(activity) {
                     onOptimisticUpdate?.invoke(goal.id, previousCompleted, previousProgressValue)
                     fragment.context?.let { ctx ->
                         Toast.makeText(ctx, fragment.getString(R.string.log_progress_failed), Toast.LENGTH_SHORT).show()
@@ -163,18 +174,17 @@ class GoalLogProgressHandler(
         accessToken: String
     ) {
         onOptimisticUpdate?.invoke(goalId, previousCompleted, previousProgressValue)
+        val activity = fragment.activity ?: return  // Capture activity BEFORE async operation
         fragment.viewLifecycleOwner.lifecycleScope.launch {
             try {
                 withContext(Dispatchers.IO) {
                     ApiClient.deleteProgressEntry(accessToken, entryId)
                 }
-                fragment.requireActivity().runOnUiThread {
-                    if (fragment.isAdded) {
-                        Snackbar.make(snackbarParentView, fragment.getString(R.string.undone), Snackbar.LENGTH_SHORT).show()
-                    }
+                runUiSafely(activity) {
+                    Snackbar.make(snackbarParentView, fragment.getString(R.string.undone), Snackbar.LENGTH_SHORT).show()
                 }
             } catch (_: Exception) {
-                fragment.requireActivity().runOnUiThread {
+                runUiSafely(activity) {
                     fragment.context?.let { ctx ->
                         Toast.makeText(ctx, "Failed to undo", Toast.LENGTH_SHORT).show()
                     }
@@ -185,55 +195,50 @@ class GoalLogProgressHandler(
 
     private fun handlePhotoUpload(entryId: String, uri: Uri) {
         val accessToken = tokenSupplier() ?: return
+        val activity = fragment.activity ?: return  // Capture activity BEFORE async operation
         fragment.viewLifecycleOwner.lifecycleScope.launch {
             try {
                 val ctx = fragment.context ?: return@launch
                 val compressed = compressPhotoForUpload(ctx, uri)
                 if (compressed == null) {
-                    fragment.requireActivity().runOnUiThread {
-                        if (fragment.isAdded) {
-                            Snackbar.make(snackbarParentView, fragment.getString(R.string.photo_upload_failed), Snackbar.LENGTH_SHORT).show()
-                        }
+                    runUiSafely(activity) {
+                        Snackbar.make(snackbarParentView, fragment.getString(R.string.photo_upload_failed), Snackbar.LENGTH_SHORT).show()
                     }
                     return@launch
                 }
                 withContext(Dispatchers.IO) {
                     ApiClient.uploadProgressPhoto(accessToken, entryId, compressed.file, compressed.width, compressed.height)
                 }
-                fragment.requireActivity().runOnUiThread {
+                runUiSafely(activity) {
                     AnalyticsLogger.logEvent(AnalyticsEvents.PROGRESS_PHOTO_UPLOADED)
                     fragment.context?.let { c ->
                         Toast.makeText(c, fragment.getString(R.string.photo_uploaded), Toast.LENGTH_SHORT).show()
                     }
                 }
             } catch (e: ApiException) {
-                fragment.requireActivity().runOnUiThread {
-                    if (fragment.isAdded) {
-                        AnalyticsLogger.logEvent(AnalyticsEvents.PROGRESS_PHOTO_FAILED)
-                        if (e.code == 422) {
-                            val snackbar = Snackbar.make(
-                                snackbarParentView,
-                                fragment.getString(R.string.photo_quota_exceeded),
-                                Snackbar.LENGTH_LONG
-                            )
-                            snackbar.setAction(fragment.getString(R.string.upgrade_to_premium)) {
-                                showUpgradeDialog()
-                            }
-                            fragment.context?.let { c ->
-                                snackbar.setActionTextColor(ContextCompat.getColor(c, R.color.primary))
-                            }
-                            snackbar.show()
-                        } else {
-                            Snackbar.make(snackbarParentView, fragment.getString(R.string.photo_upload_failed), Snackbar.LENGTH_SHORT).show()
+                runUiSafely(activity) {
+                    AnalyticsLogger.logEvent(AnalyticsEvents.PROGRESS_PHOTO_FAILED)
+                    if (e.code == 422) {
+                        val snackbar = Snackbar.make(
+                            snackbarParentView,
+                            fragment.getString(R.string.photo_quota_exceeded),
+                            Snackbar.LENGTH_LONG
+                        )
+                        snackbar.setAction(fragment.getString(R.string.upgrade_to_premium)) {
+                            showUpgradeDialog()
                         }
+                        fragment.context?.let { c ->
+                            snackbar.setActionTextColor(ContextCompat.getColor(c, R.color.primary))
+                        }
+                        snackbar.show()
+                    } else {
+                        Snackbar.make(snackbarParentView, fragment.getString(R.string.photo_upload_failed), Snackbar.LENGTH_SHORT).show()
                     }
                 }
             } catch (e: Exception) {
-                fragment.requireActivity().runOnUiThread {
-                    if (fragment.isAdded) {
-                        AnalyticsLogger.logEvent(AnalyticsEvents.PROGRESS_PHOTO_FAILED)
-                        Snackbar.make(snackbarParentView, fragment.getString(R.string.photo_upload_failed), Snackbar.LENGTH_SHORT).show()
-                    }
+                runUiSafely(activity) {
+                    AnalyticsLogger.logEvent(AnalyticsEvents.PROGRESS_PHOTO_FAILED)
+                    Snackbar.make(snackbarParentView, fragment.getString(R.string.photo_upload_failed), Snackbar.LENGTH_SHORT).show()
                 }
             }
         }
@@ -245,6 +250,7 @@ class GoalLogProgressHandler(
             Toast.makeText(ctx, fragment.getString(R.string.error_unauthorized_message), Toast.LENGTH_SHORT).show()
             return
         }
+        val activity = fragment.activity ?: return  // Capture activity BEFORE async operation
         MaterialAlertDialogBuilder(ctx)
             .setTitle(fragment.getString(R.string.remove_progress_title))
             .setPositiveButton(fragment.getString(R.string.remove_progress_confirm)) { _, _ ->
@@ -257,20 +263,18 @@ class GoalLogProgressHandler(
                             withContext(Dispatchers.IO) {
                                 ApiClient.deleteProgressEntry(accessToken, entryInfo.first)
                             }
-                            fragment.requireActivity().runOnUiThread {
-                                if (fragment.isAdded) {
-                                    onOptimisticUpdate?.invoke(goal.id, false, null)
-                                }
+                            runUiSafely(activity) {
+                                onOptimisticUpdate?.invoke(goal.id, false, null)
                             }
                         } else {
-                            fragment.requireActivity().runOnUiThread {
+                            runUiSafely(activity) {
                                 fragment.context?.let { c ->
                                     Toast.makeText(c, "Entry not found", Toast.LENGTH_SHORT).show()
                                 }
                             }
                         }
                     } catch (e: Exception) {
-                        fragment.requireActivity().runOnUiThread {
+                        runUiSafely(activity) {
                             fragment.context?.let { c ->
                                 Toast.makeText(c, fragment.getString(R.string.log_progress_failed), Toast.LENGTH_SHORT).show()
                             }
@@ -313,12 +317,13 @@ class GoalLogProgressHandler(
 
     private fun showEditJournalDialog(goal: GoalForLogging) {
         val accessToken = tokenSupplier() ?: return
+        val activity = fragment.activity ?: return  // Capture activity BEFORE async operation
         fragment.viewLifecycleOwner.lifecycleScope.launch {
             try {
                 val entryInfo = withContext(Dispatchers.IO) {
                     fetchCurrentPeriodEntry(accessToken, goal.id, goal.cadence)
                 }
-                fragment.requireActivity().runOnUiThread {
+                runUiSafely(activity) {
                     if (entryInfo != null) {
                         val (entryId, existingNote, existingLogTitle) = entryInfo
                         val dialog = LogProgressDialog.Companion.newJournalInstance(
@@ -347,7 +352,7 @@ class GoalLogProgressHandler(
                     }
                 }
             } catch (e: Exception) {
-                fragment.requireActivity().runOnUiThread {
+                runUiSafely(activity) {
                     fragment.context?.let { c ->
                         Toast.makeText(c, fragment.getString(R.string.log_progress_failed), Toast.LENGTH_SHORT).show()
                     }
@@ -358,6 +363,7 @@ class GoalLogProgressHandler(
 
     private fun logJournalProgress(goal: GoalForLogging, logTitle: String, note: String?) {
         val accessToken = tokenSupplier() ?: return
+        val activity = fragment.activity ?: return  // Capture activity BEFORE async operation
         val previousProgressValue = goal.progressValue
         val previousCompleted = goal.completed
         onOptimisticUpdate?.invoke(goal.id, true, 1.0)
@@ -367,25 +373,23 @@ class GoalLogProgressHandler(
                     ApiClient.logProgress(accessToken, goal.id, 1.0, note, logTitle, userDate, userTimezone)
                 }
                 val entryId = response.id
-                fragment.requireActivity().runOnUiThread {
-                    if (fragment.isAdded) {
-                        AnalyticsLogger.logEvent(AnalyticsEvents.PROGRESS_LOGGED, android.os.Bundle().apply {
-                            putString(AnalyticsEvents.Param.METRIC_TYPE, goal.metricType)
-                            putString(AnalyticsEvents.Param.CADENCE, goal.cadence)
-                        })
-                        HapticFeedbackUtils.vibrateToggle(snackbarParentView)
-                        showPostLogPhotoSheet(entryId) {
-                            performUndo(goal.id, entryId, previousCompleted, previousProgressValue, accessToken)
-                        }
+                runUiSafely(activity) {
+                    AnalyticsLogger.logEvent(AnalyticsEvents.PROGRESS_LOGGED, android.os.Bundle().apply {
+                        putString(AnalyticsEvents.Param.METRIC_TYPE, goal.metricType)
+                        putString(AnalyticsEvents.Param.CADENCE, goal.cadence)
+                    })
+                    HapticFeedbackUtils.vibrateToggle(snackbarParentView)
+                    showPostLogPhotoSheet(entryId) {
+                        performUndo(goal.id, entryId, previousCompleted, previousProgressValue, accessToken)
                     }
                 }
             } catch (e: ApiException) {
-                fragment.requireActivity().runOnUiThread {
+                runUiSafely(activity) {
                     onOptimisticUpdate?.invoke(goal.id, previousCompleted, previousProgressValue)
                     handleLogApiException(e)
                 }
             } catch (e: Exception) {
-                fragment.requireActivity().runOnUiThread {
+                runUiSafely(activity) {
                     onOptimisticUpdate?.invoke(goal.id, previousCompleted, previousProgressValue)
                     fragment.context?.let { c ->
                         Toast.makeText(c, fragment.getString(R.string.log_progress_failed), Toast.LENGTH_SHORT).show()
@@ -397,6 +401,7 @@ class GoalLogProgressHandler(
 
     private fun updateJournalProgress(goal: GoalForLogging, entryId: String, newLogTitle: String, newNote: String?) {
         val accessToken = tokenSupplier() ?: return
+        val activity = fragment.activity ?: return  // Capture activity BEFORE async operation
         val previousProgressValue = goal.progressValue
         val previousCompleted = goal.completed
         onOptimisticUpdate?.invoke(goal.id, true, 1.0)
@@ -409,21 +414,19 @@ class GoalLogProgressHandler(
                     ApiClient.logProgress(accessToken, goal.id, 1.0, newNote, newLogTitle, userDate, userTimezone)
                 }
                 val newEntryId = response.id
-                fragment.requireActivity().runOnUiThread {
-                    if (fragment.isAdded) {
-                        HapticFeedbackUtils.vibrateToggle(snackbarParentView)
-                        showPostLogPhotoSheet(newEntryId) {
-                            performUndo(goal.id, newEntryId, previousCompleted, previousProgressValue, accessToken)
-                        }
+                runUiSafely(activity) {
+                    HapticFeedbackUtils.vibrateToggle(snackbarParentView)
+                    showPostLogPhotoSheet(newEntryId) {
+                        performUndo(goal.id, newEntryId, previousCompleted, previousProgressValue, accessToken)
                     }
                 }
             } catch (e: ApiException) {
-                fragment.requireActivity().runOnUiThread {
+                runUiSafely(activity) {
                     onOptimisticUpdate?.invoke(goal.id, previousCompleted, previousProgressValue)
                     handleLogApiException(e)
                 }
             } catch (e: Exception) {
-                fragment.requireActivity().runOnUiThread {
+                runUiSafely(activity) {
                     onOptimisticUpdate?.invoke(goal.id, previousCompleted, previousProgressValue)
                     fragment.context?.let { c ->
                         Toast.makeText(c, fragment.getString(R.string.log_progress_failed), Toast.LENGTH_SHORT).show()
@@ -435,12 +438,13 @@ class GoalLogProgressHandler(
 
     private fun showEditProgressDialog(goal: GoalForLogging) {
         val accessToken = tokenSupplier() ?: return
+        val activity = fragment.activity ?: return  // Capture activity BEFORE async operation
         fragment.viewLifecycleOwner.lifecycleScope.launch {
             try {
                 val entryInfo = withContext(Dispatchers.IO) {
                     fetchCurrentPeriodEntry(accessToken, goal.id, goal.cadence)
                 }
-                fragment.requireActivity().runOnUiThread {
+                runUiSafely(activity) {
                     if (entryInfo != null) {
                         val (entryId, existingNote, _) = entryInfo
                         val existingValue = goal.progressValue ?: 0.0
@@ -470,7 +474,7 @@ class GoalLogProgressHandler(
                     }
                 }
             } catch (e: Exception) {
-                fragment.requireActivity().runOnUiThread {
+                runUiSafely(activity) {
                     fragment.context?.let { c ->
                         Toast.makeText(c, fragment.getString(R.string.log_progress_failed), Toast.LENGTH_SHORT).show()
                     }
@@ -481,6 +485,7 @@ class GoalLogProgressHandler(
 
     private fun logNumericProgress(goal: GoalForLogging, value: Double, note: String?) {
         val accessToken = tokenSupplier() ?: return
+        val activity = fragment.activity ?: return  // Capture activity BEFORE async operation
         val previousProgressValue = goal.progressValue
         val previousCompleted = goal.completed
         val currentProgress = goal.progressValue ?: 0.0
@@ -493,25 +498,23 @@ class GoalLogProgressHandler(
                     ApiClient.logProgress(accessToken, goal.id, newProgressValue, note, null, userDate, userTimezone)
                 }
                 val entryId = response.id
-                fragment.requireActivity().runOnUiThread {
-                    if (fragment.isAdded) {
-                        AnalyticsLogger.logEvent(AnalyticsEvents.PROGRESS_LOGGED, android.os.Bundle().apply {
-                            putString(AnalyticsEvents.Param.METRIC_TYPE, goal.metricType)
-                            putString(AnalyticsEvents.Param.CADENCE, goal.cadence)
-                        })
-                        HapticFeedbackUtils.vibrateToggle(snackbarParentView)
-                        showPostLogPhotoSheet(entryId) {
-                            performUndo(goal.id, entryId, previousCompleted, previousProgressValue, accessToken)
-                        }
+                runUiSafely(activity) {
+                    AnalyticsLogger.logEvent(AnalyticsEvents.PROGRESS_LOGGED, android.os.Bundle().apply {
+                        putString(AnalyticsEvents.Param.METRIC_TYPE, goal.metricType)
+                        putString(AnalyticsEvents.Param.CADENCE, goal.cadence)
+                    })
+                    HapticFeedbackUtils.vibrateToggle(snackbarParentView)
+                    showPostLogPhotoSheet(entryId) {
+                        performUndo(goal.id, entryId, previousCompleted, previousProgressValue, accessToken)
                     }
                 }
             } catch (e: ApiException) {
-                fragment.requireActivity().runOnUiThread {
+                runUiSafely(activity) {
                     onOptimisticUpdate?.invoke(goal.id, previousCompleted, previousProgressValue)
                     handleLogApiException(e)
                 }
             } catch (e: Exception) {
-                fragment.requireActivity().runOnUiThread {
+                runUiSafely(activity) {
                     onOptimisticUpdate?.invoke(goal.id, previousCompleted, previousProgressValue)
                     fragment.context?.let { c ->
                         Toast.makeText(c, fragment.getString(R.string.log_progress_failed), Toast.LENGTH_SHORT).show()
@@ -523,6 +526,7 @@ class GoalLogProgressHandler(
 
     private fun updateNumericProgress(goal: GoalForLogging, entryId: String, newValue: Double, newNote: String?) {
         val accessToken = tokenSupplier() ?: return
+        val activity = fragment.activity ?: return  // Capture activity BEFORE async operation
         val previousProgressValue = goal.progressValue
         val previousCompleted = goal.completed
         val newCompleted = goal.targetValue != null && newValue >= goal.targetValue!!
@@ -536,21 +540,19 @@ class GoalLogProgressHandler(
                     ApiClient.logProgress(accessToken, goal.id, newValue, newNote, null, userDate, userTimezone)
                 }
                 val newEntryId = response.id
-                fragment.requireActivity().runOnUiThread {
-                    if (fragment.isAdded) {
-                        HapticFeedbackUtils.vibrateToggle(snackbarParentView)
-                        showPostLogPhotoSheet(newEntryId) {
-                            performUndo(goal.id, newEntryId, previousCompleted, previousProgressValue, accessToken)
-                        }
+                runUiSafely(activity) {
+                    HapticFeedbackUtils.vibrateToggle(snackbarParentView)
+                    showPostLogPhotoSheet(newEntryId) {
+                        performUndo(goal.id, newEntryId, previousCompleted, previousProgressValue, accessToken)
                     }
                 }
             } catch (e: ApiException) {
-                fragment.requireActivity().runOnUiThread {
+                runUiSafely(activity) {
                     onOptimisticUpdate?.invoke(goal.id, previousCompleted, previousProgressValue)
                     handleLogApiException(e)
                 }
             } catch (e: Exception) {
-                fragment.requireActivity().runOnUiThread {
+                runUiSafely(activity) {
                     onOptimisticUpdate?.invoke(goal.id, previousCompleted, previousProgressValue)
                     fragment.context?.let { c ->
                         Toast.makeText(c, fragment.getString(R.string.log_progress_failed), Toast.LENGTH_SHORT).show()
@@ -562,13 +564,14 @@ class GoalLogProgressHandler(
 
     private fun deleteProgressEntry(goal: GoalForLogging, entryId: String) {
         val accessToken = tokenSupplier() ?: return
+        val activity = fragment.activity ?: return  // Capture activity BEFORE async operation
         onOptimisticUpdate?.invoke(goal.id, false, 0.0)
         fragment.viewLifecycleOwner.lifecycleScope.launch {
             try {
                 withContext(Dispatchers.IO) {
                     ApiClient.deleteProgressEntry(accessToken, entryId)
                 }
-                fragment.requireActivity().runOnUiThread {
+                runUiSafely(activity) {
                     AnalyticsLogger.logEvent(AnalyticsEvents.PROGRESS_DELETED, android.os.Bundle().apply {
                         putString(AnalyticsEvents.Param.CADENCE, goal.cadence)
                     })
@@ -577,7 +580,7 @@ class GoalLogProgressHandler(
                     }
                 }
             } catch (e: Exception) {
-                fragment.requireActivity().runOnUiThread {
+                runUiSafely(activity) {
                     onOptimisticUpdate?.invoke(goal.id, goal.completed, goal.progressValue)
                     fragment.context?.let { c ->
                         Toast.makeText(c, fragment.getString(R.string.log_progress_failed), Toast.LENGTH_SHORT).show()
