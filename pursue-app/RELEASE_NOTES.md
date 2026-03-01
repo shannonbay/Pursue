@@ -1,5 +1,28 @@
 # Pursue App Release Notes
 
+## Version 1.2.1 (Build 4)
+**Release Date:** March 1, 2026
+
+### ✨ New Features
+
+#### Password Requirements Checklist
+- Sign-up form now shows a real-time checklist as you type your password, indicating which requirements are met:
+  - At least 8 characters
+  - Lowercase letter (a–z)
+  - Uppercase letter (A–Z)
+  - Number (0–9)
+  - Special character (!@#$%^&*)
+- Each requirement displays a green check when satisfied or a grey X when not
+- The "Create Account" button remains disabled until all five requirements are met and passwords match
+- Strength indicator (Weak / Medium / Strong) now only appears once all requirements are satisfied, avoiding the confusing state where a password reads "Strong" but the form cannot be submitted
+
+### 📱 Requirements
+
+- **Android:** 6.0 (API 24) or higher
+- **Backend:** No backend changes required
+
+---
+
 ## Version 1.2.0 (Build 3)
 **Release Date:** February 28, 2026
 
