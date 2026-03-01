@@ -2371,6 +2371,237 @@ object ApiClient {
             throw ApiException(0, "Network error: ${e.message}")
         }
     }
+
+    // --- Focus Session Endpoints ---
+
+    /**
+     * Create an ad-hoc focus session (starts in lobby).
+     * POST /api/groups/:groupId/sessions
+     */
+    suspend fun createFocusSession(
+        accessToken: String,
+        groupId: String,
+        focusDurationMinutes: Int
+    ): CreateFocusSessionResponse {
+        val body = gson.toJson(CreateFocusSessionRequest(focus_duration_minutes = focusDurationMinutes))
+            .toRequestBody(jsonMediaType)
+        val request = Request.Builder()
+            .url("$baseUrl/groups/$groupId/sessions")
+            .post(body)
+            .addHeader("Content-Type", "application/json")
+            .build()
+        return executeRequest(request, getClient()) { responseBody ->
+            gson.fromJson(responseBody, CreateFocusSessionResponse::class.java)
+        }
+    }
+
+    /**
+     * Get all active sessions for a group (lobby, focus, chit-chat).
+     * GET /api/groups/:groupId/sessions/active
+     */
+    suspend fun getActiveSessions(
+        accessToken: String,
+        groupId: String
+    ): ActiveSessionsResponse {
+        val request = Request.Builder()
+            .url("$baseUrl/groups/$groupId/sessions/active")
+            .get()
+            .addHeader("Content-Type", "application/json")
+            .build()
+        return executeRequest(request, getClient()) { responseBody ->
+            gson.fromJson(responseBody, ActiveSessionsResponse::class.java)
+        }
+    }
+
+    /**
+     * Join a session. Returns spawned=true + 201 when a new session was auto-created due to overflow.
+     * POST /api/groups/:groupId/sessions/:sessionId/join
+     */
+    suspend fun joinSession(
+        accessToken: String,
+        groupId: String,
+        sessionId: String
+    ): JoinSessionResponse {
+        val request = Request.Builder()
+            .url("$baseUrl/groups/$groupId/sessions/$sessionId/join")
+            .post("".toRequestBody(jsonMediaType))
+            .addHeader("Content-Type", "application/json")
+            .build()
+        return executeRequest(request, getClient()) { responseBody ->
+            gson.fromJson(responseBody, JoinSessionResponse::class.java)
+        }
+    }
+
+    /**
+     * Host starts the focus block (lobby → focus).
+     * POST /api/groups/:groupId/sessions/:sessionId/start
+     */
+    suspend fun startSession(
+        accessToken: String,
+        groupId: String,
+        sessionId: String
+    ): StartSessionResponse {
+        val request = Request.Builder()
+            .url("$baseUrl/groups/$groupId/sessions/$sessionId/start")
+            .post("".toRequestBody(jsonMediaType))
+            .addHeader("Content-Type", "application/json")
+            .build()
+        return executeRequest(request, getClient()) { responseBody ->
+            gson.fromJson(responseBody, StartSessionResponse::class.java)
+        }
+    }
+
+    /**
+     * Host ends the session early. Returns 200 with ended session.
+     * POST /api/groups/:groupId/sessions/:sessionId/end
+     */
+    suspend fun endSession(
+        accessToken: String,
+        groupId: String,
+        sessionId: String
+    ): EndSessionResponse {
+        val request = Request.Builder()
+            .url("$baseUrl/groups/$groupId/sessions/$sessionId/end")
+            .post("".toRequestBody(jsonMediaType))
+            .addHeader("Content-Type", "application/json")
+            .build()
+        return executeRequest(request, getClient()) { responseBody ->
+            gson.fromJson(responseBody, EndSessionResponse::class.java)
+        }
+    }
+
+    /**
+     * Leave a session. Returns 204.
+     * DELETE /api/groups/:groupId/sessions/:sessionId/leave
+     */
+    suspend fun leaveSession(
+        accessToken: String,
+        groupId: String,
+        sessionId: String
+    ) {
+        val request = Request.Builder()
+            .url("$baseUrl/groups/$groupId/sessions/$sessionId/leave")
+            .delete()
+            .addHeader("Content-Type", "application/json")
+            .build()
+        executeRequest<Unit>(request, getClient()) { Unit }
+    }
+
+    // --- Focus Slot Endpoints ---
+
+    /**
+     * Create a scheduled focus slot.
+     * POST /api/groups/:groupId/slots
+     */
+    suspend fun createFocusSlot(
+        accessToken: String,
+        groupId: String,
+        scheduledStart: String,
+        focusDurationMinutes: Int,
+        note: String? = null
+    ): CreateFocusSlotResponse {
+        val body = gson.toJson(
+            CreateFocusSlotRequest(
+                scheduled_start = scheduledStart,
+                focus_duration_minutes = focusDurationMinutes,
+                note = note
+            )
+        ).toRequestBody(jsonMediaType)
+        val request = Request.Builder()
+            .url("$baseUrl/groups/$groupId/slots")
+            .post(body)
+            .addHeader("Content-Type", "application/json")
+            .build()
+        return executeRequest(request, getClient()) { responseBody ->
+            gson.fromJson(responseBody, CreateFocusSlotResponse::class.java)
+        }
+    }
+
+    /**
+     * List upcoming, non-cancelled slots for a group.
+     * GET /api/groups/:groupId/slots
+     */
+    suspend fun listFocusSlots(
+        accessToken: String,
+        groupId: String
+    ): ListFocusSlotsResponse {
+        val request = Request.Builder()
+            .url("$baseUrl/groups/$groupId/slots")
+            .get()
+            .addHeader("Content-Type", "application/json")
+            .build()
+        return executeRequest(request, getClient()) { responseBody ->
+            gson.fromJson(responseBody, ListFocusSlotsResponse::class.java)
+        }
+    }
+
+    /**
+     * Cancel a scheduled slot (creator only). Returns 204.
+     * DELETE /api/groups/:groupId/slots/:slotId
+     */
+    suspend fun cancelFocusSlot(
+        accessToken: String,
+        groupId: String,
+        slotId: String
+    ) {
+        val request = Request.Builder()
+            .url("$baseUrl/groups/$groupId/slots/$slotId")
+            .delete()
+            .addHeader("Content-Type", "application/json")
+            .build()
+        executeRequest<Unit>(request, getClient()) { Unit }
+    }
+
+    /**
+     * RSVP to a scheduled slot.
+     * POST /api/groups/:groupId/slots/:slotId/rsvp
+     */
+    suspend fun rsvpFocusSlot(
+        accessToken: String,
+        groupId: String,
+        slotId: String
+    ): RsvpFocusSlotResponse {
+        val request = Request.Builder()
+            .url("$baseUrl/groups/$groupId/slots/$slotId/rsvp")
+            .post("".toRequestBody(jsonMediaType))
+            .addHeader("Content-Type", "application/json")
+            .build()
+        return executeRequest(request, getClient()) { responseBody ->
+            gson.fromJson(responseBody, RsvpFocusSlotResponse::class.java)
+        }
+    }
+
+    /**
+     * Un-RSVP from a scheduled slot. Returns 204.
+     * DELETE /api/groups/:groupId/slots/:slotId/rsvp
+     */
+    suspend fun unrsvpFocusSlot(
+        accessToken: String,
+        groupId: String,
+        slotId: String
+    ) {
+        val request = Request.Builder()
+            .url("$baseUrl/groups/$groupId/slots/$slotId/rsvp")
+            .delete()
+            .addHeader("Content-Type", "application/json")
+            .build()
+        executeRequest<Unit>(request, getClient()) { Unit }
+    }
+
+    /**
+     * Get all upcoming slots across all groups the user is a member of.
+     * GET /api/me/slots
+     */
+    suspend fun getMySlots(accessToken: String): MyFocusSlotsResponse {
+        val request = Request.Builder()
+            .url("$baseUrl/me/slots")
+            .get()
+            .addHeader("Content-Type", "application/json")
+            .build()
+        return executeRequest(request, getClient()) { responseBody ->
+            gson.fromJson(responseBody, MyFocusSlotsResponse::class.java)
+        }
+    }
 }
 
 /**
@@ -3437,3 +3668,69 @@ data class CreateDisputeRequest(
 )
 
 data class CreateDisputeResponse(val id: String)
+
+// --- Focus Session DTOs ---
+
+data class FocusParticipant(
+    val id: String,
+    val user_id: String,
+    val display_name: String?,
+    val joined_at: String,
+    val left_at: String?
+)
+
+data class FocusSession(
+    val id: String,
+    val group_id: String,
+    val host_user_id: String,
+    val status: String,
+    val focus_duration_minutes: Int,
+    val started_at: String?,
+    val ended_at: String?,
+    val created_at: String,
+    val participants: List<FocusParticipant>? = null
+)
+
+data class CreateFocusSessionRequest(val focus_duration_minutes: Int)
+data class CreateFocusSessionResponse(val session: FocusSession)
+data class ActiveSessionsResponse(val sessions: List<FocusSession>)
+data class JoinSessionResponse(val session: FocusSession, val spawned: Boolean? = null)
+data class StartSessionResponse(val session: FocusSession)
+data class EndSessionResponse(val session: FocusSession)
+
+// --- Focus Slot DTOs ---
+
+data class FocusSlot(
+    val id: String,
+    val group_id: String,
+    val created_by: String,
+    val scheduled_start: String,
+    val focus_duration_minutes: Int,
+    val note: String?,
+    val session_id: String?,
+    val created_at: String,
+    val cancelled_at: String?,
+    val rsvp_count: Int? = null,
+    val user_rsvped: Boolean? = null,
+    val group_name: String? = null,
+    val group_icon_emoji: String? = null
+)
+
+data class CreateFocusSlotRequest(
+    val scheduled_start: String,
+    val focus_duration_minutes: Int,
+    val note: String? = null
+)
+
+data class CreateFocusSlotResponse(val slot: FocusSlot)
+data class ListFocusSlotsResponse(val slots: List<FocusSlot>)
+
+data class FocusSlotRsvp(
+    val id: String,
+    val slot_id: String,
+    val user_id: String,
+    val created_at: String
+)
+
+data class RsvpFocusSlotResponse(val rsvp: FocusSlotRsvp)
+data class MyFocusSlotsResponse(val slots: List<FocusSlot>)

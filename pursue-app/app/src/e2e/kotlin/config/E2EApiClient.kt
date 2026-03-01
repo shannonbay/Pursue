@@ -61,6 +61,15 @@ import app.getpursue.data.network.PatchGroupResponse
 import app.getpursue.data.network.ReportContentResponse
 import app.getpursue.data.network.CreateDisputeResponse
 import app.getpursue.data.network.GoalProgressEntry
+import app.getpursue.data.network.CreateFocusSessionResponse
+import app.getpursue.data.network.ActiveSessionsResponse
+import app.getpursue.data.network.JoinSessionResponse
+import app.getpursue.data.network.StartSessionResponse
+import app.getpursue.data.network.EndSessionResponse
+import app.getpursue.data.network.CreateFocusSlotResponse
+import app.getpursue.data.network.ListFocusSlotsResponse
+import app.getpursue.data.network.RsvpFocusSlotResponse
+import app.getpursue.data.network.MyFocusSlotsResponse
 import app.getpursue.models.GroupsResponse
 import app.getpursue.models.GroupDetailResponse
 import app.getpursue.models.GroupMembersResponse
@@ -732,6 +741,114 @@ class E2EApiClient(private val context: Context) {
     ): CreateDisputeResponse {
         storeTokenIfPresent(accessToken)
         return ApiClient.createDispute("", contentType, contentId, userExplanation)
+    }
+
+    // --- Focus Session Endpoints ---
+
+    suspend fun createFocusSession(
+        accessToken: String,
+        groupId: String,
+        focusDurationMinutes: Int = 25
+    ): CreateFocusSessionResponse {
+        storeTokenIfPresent(accessToken)
+        return ApiClient.createFocusSession("", groupId, focusDurationMinutes)
+    }
+
+    suspend fun getActiveSessions(
+        accessToken: String,
+        groupId: String
+    ): ActiveSessionsResponse {
+        storeTokenIfPresent(accessToken)
+        return ApiClient.getActiveSessions("", groupId)
+    }
+
+    suspend fun joinSession(
+        accessToken: String,
+        groupId: String,
+        sessionId: String
+    ): JoinSessionResponse {
+        storeTokenIfPresent(accessToken)
+        return ApiClient.joinSession("", groupId, sessionId)
+    }
+
+    suspend fun startSession(
+        accessToken: String,
+        groupId: String,
+        sessionId: String
+    ): StartSessionResponse {
+        storeTokenIfPresent(accessToken)
+        return ApiClient.startSession("", groupId, sessionId)
+    }
+
+    suspend fun endSession(
+        accessToken: String,
+        groupId: String,
+        sessionId: String
+    ): EndSessionResponse {
+        storeTokenIfPresent(accessToken)
+        return ApiClient.endSession("", groupId, sessionId)
+    }
+
+    suspend fun leaveSession(
+        accessToken: String,
+        groupId: String,
+        sessionId: String
+    ) {
+        storeTokenIfPresent(accessToken)
+        ApiClient.leaveSession("", groupId, sessionId)
+    }
+
+    // --- Focus Slot Endpoints ---
+
+    suspend fun createFocusSlot(
+        accessToken: String,
+        groupId: String,
+        scheduledStart: String,
+        focusDurationMinutes: Int = 25,
+        note: String? = null
+    ): CreateFocusSlotResponse {
+        storeTokenIfPresent(accessToken)
+        return ApiClient.createFocusSlot("", groupId, scheduledStart, focusDurationMinutes, note)
+    }
+
+    suspend fun listFocusSlots(
+        accessToken: String,
+        groupId: String
+    ): ListFocusSlotsResponse {
+        storeTokenIfPresent(accessToken)
+        return ApiClient.listFocusSlots("", groupId)
+    }
+
+    suspend fun cancelFocusSlot(
+        accessToken: String,
+        groupId: String,
+        slotId: String
+    ) {
+        storeTokenIfPresent(accessToken)
+        ApiClient.cancelFocusSlot("", groupId, slotId)
+    }
+
+    suspend fun rsvpFocusSlot(
+        accessToken: String,
+        groupId: String,
+        slotId: String
+    ): RsvpFocusSlotResponse {
+        storeTokenIfPresent(accessToken)
+        return ApiClient.rsvpFocusSlot("", groupId, slotId)
+    }
+
+    suspend fun unrsvpFocusSlot(
+        accessToken: String,
+        groupId: String,
+        slotId: String
+    ) {
+        storeTokenIfPresent(accessToken)
+        ApiClient.unrsvpFocusSlot("", groupId, slotId)
+    }
+
+    suspend fun getMySlots(accessToken: String): MyFocusSlotsResponse {
+        storeTokenIfPresent(accessToken)
+        return ApiClient.getMySlots("")
     }
 
     // --- Internal Jobs ---
