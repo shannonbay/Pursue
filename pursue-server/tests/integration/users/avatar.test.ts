@@ -2,7 +2,7 @@ import request from 'supertest';
 import { sql } from 'kysely';
 import { app } from '../../../src/app';
 import { testDb } from '../../setup';
-import { createAuthenticatedUser, createGoogleUser } from '../../helpers';
+import { createAuthenticatedUser, createGoogleUser, randomEmail } from '../../helpers';
 import { generateAccessToken } from '../../../src/utils/jwt.js';
 import { uploadUserAvatar, deleteUserAvatar } from '../../../src/services/storage.service.js';
 import sharp from 'sharp';
@@ -242,7 +242,7 @@ describe('POST /api/users/me/avatar', () => {
         .set('Authorization', `Bearer ${accessToken}`)
         .attach('avatar', testImage, 'avatar.png');
 
-      expect(response.status).toBe(404);
+      expect(response.status).toBe(401);
     });
   });
 
@@ -345,7 +345,8 @@ describe('POST /api/users/me/avatar', () => {
 
       // GET avatar and verify Content-Type
       const getResponse = await request(app)
-        .get(`/api/users/${userId}/avatar`);
+        .get(`/api/users/${userId}/avatar`)
+        .set('Authorization', `Bearer ${accessToken}`);
 
       expect(getResponse.status).toBe(200);
       expect(getResponse.headers['content-type']).toBe('image/webp');
@@ -371,7 +372,8 @@ describe('POST /api/users/me/avatar', () => {
 
       // GET avatar and verify Content-Type
       const getResponse = await request(app)
-        .get(`/api/users/${userId}/avatar`);
+        .get(`/api/users/${userId}/avatar`)
+        .set('Authorization', `Bearer ${accessToken}`);
 
       expect(getResponse.status).toBe(200);
       expect(getResponse.headers['content-type']).toBe('image/webp');
@@ -454,7 +456,8 @@ describe('DELETE /api/users/me/avatar', () => {
 
       // Verify GET /api/users/:user_id/avatar returns 404
       const avatarResponse = await request(app)
-        .get(`/api/users/${userId}/avatar`);
+        .get(`/api/users/${userId}/avatar`)
+        .set('Authorization', `Bearer ${accessToken}`);
 
       expect(avatarResponse.status).toBe(404);
     });
@@ -503,7 +506,7 @@ describe('DELETE /api/users/me/avatar', () => {
       expect(response.body.error.code).toBe('INVALID_TOKEN');
     });
 
-    it('should return 404 for soft-deleted user', async () => {
+    it('should return 401 for soft-deleted user', async () => {
       const { accessToken, userId } = await createAuthenticatedUser();
 
       // Soft delete the user
@@ -517,7 +520,7 @@ describe('DELETE /api/users/me/avatar', () => {
         .delete('/api/users/me/avatar')
         .set('Authorization', `Bearer ${accessToken}`);
 
-      expect(response.status).toBe(404);
+      expect(response.status).toBe(401);
     });
   });
 });
@@ -525,7 +528,7 @@ describe('DELETE /api/users/me/avatar', () => {
 describe('GET /api/users/:user_id/avatar', () => {
   describe('Happy Path', () => {
     it('should return avatar image for user with avatar', async () => {
-      const { userId } = await createAuthenticatedUser();
+      const { accessToken, userId } = await createAuthenticatedUser();
       const testImage = await createTestImage('png', 10, 10);
 
       // Upload avatar
@@ -539,7 +542,8 @@ describe('GET /api/users/:user_id/avatar', () => {
         .executeTakeFirst();
 
       const response = await request(app)
-        .get(`/api/users/${userId}/avatar`);
+        .get(`/api/users/${userId}/avatar`)
+        .set('Authorization', `Bearer ${accessToken}`);
 
       expect(response.status).toBe(200);
       expect(response.headers['content-type']).toBe('image/webp');
@@ -553,14 +557,15 @@ describe('GET /api/users/:user_id/avatar', () => {
       expect(metadata.format).toBe('webp');
     });
 
-    it('should work without authentication (public endpoint)', async () => {
-      const { userId } = await createAuthenticatedUser();
+    it('should return avatar image when authenticated', async () => {
+      const { accessToken, userId } = await createAuthenticatedUser();
       const testImage = await createTestImage('png', 10, 10);
 
       await uploadUserAvatar(userId, testImage);
 
       const response = await request(app)
-        .get(`/api/users/${userId}/avatar`);
+        .get(`/api/users/${userId}/avatar`)
+        .set('Authorization', `Bearer ${accessToken}`);
 
       expect(response.status).toBe(200);
       expect(response.headers['content-type']).toBe('image/webp');
@@ -568,20 +573,21 @@ describe('GET /api/users/:user_id/avatar', () => {
     });
 
     it('should return correct Content-Type for WebP', async () => {
-      const { userId } = await createAuthenticatedUser();
+      const { accessToken, userId } = await createAuthenticatedUser();
       const testImage = await createTestImage('png', 10, 10);
 
       await uploadUserAvatar(userId, testImage);
 
       const response = await request(app)
-        .get(`/api/users/${userId}/avatar`);
+        .get(`/api/users/${userId}/avatar`)
+        .set('Authorization', `Bearer ${accessToken}`);
 
       expect(response.status).toBe(200);
       expect(response.headers['content-type']).toBe('image/webp');
     });
 
     it('should return correct ETag format', async () => {
-      const { userId } = await createAuthenticatedUser();
+      const { accessToken, userId } = await createAuthenticatedUser();
       const testImage = await createTestImage('png', 10, 10);
 
       await uploadUserAvatar(userId, testImage);
@@ -593,7 +599,8 @@ describe('GET /api/users/:user_id/avatar', () => {
         .executeTakeFirst();
 
       const response = await request(app)
-        .get(`/api/users/${userId}/avatar`);
+        .get(`/api/users/${userId}/avatar`)
+        .set('Authorization', `Bearer ${accessToken}`);
 
       expect(response.status).toBe(200);
       expect(response.headers['etag']).toBeDefined();
@@ -604,10 +611,11 @@ describe('GET /api/users/:user_id/avatar', () => {
 
   describe('404 Cases', () => {
     it('should return 404 when user has no avatar', async () => {
-      const { userId } = await createAuthenticatedUser();
+      const { accessToken, userId } = await createAuthenticatedUser();
 
       const response = await request(app)
-        .get(`/api/users/${userId}/avatar`);
+        .get(`/api/users/${userId}/avatar`)
+        .set('Authorization', `Bearer ${accessToken}`);
 
       expect(response.status).toBe(404);
       expect(response.body.error).toEqual({
@@ -617,8 +625,11 @@ describe('GET /api/users/:user_id/avatar', () => {
     });
 
     it('should return 404 when user does not exist', async () => {
+      const { accessToken } = await createAuthenticatedUser();
+
       const response = await request(app)
-        .get('/api/users/invalid-user-id/avatar');
+        .get('/api/users/invalid-user-id/avatar')
+        .set('Authorization', `Bearer ${accessToken}`);
 
       expect(response.status).toBe(404);
       expect(response.body.error).toEqual({
@@ -629,6 +640,7 @@ describe('GET /api/users/:user_id/avatar', () => {
 
     it('should return 404 for soft-deleted user', async () => {
       const { userId } = await createAuthenticatedUser();
+      const { accessToken: requesterToken } = await createAuthenticatedUser(randomEmail());
       const testImage = await createTestImage('png', 10, 10);
 
       await uploadUserAvatar(userId, testImage);
@@ -641,7 +653,8 @@ describe('GET /api/users/:user_id/avatar', () => {
         .execute();
 
       const response = await request(app)
-        .get(`/api/users/${userId}/avatar`);
+        .get(`/api/users/${userId}/avatar`)
+        .set('Authorization', `Bearer ${requesterToken}`);
 
       expect(response.status).toBe(404);
       expect(response.body.error).toEqual({
@@ -653,14 +666,15 @@ describe('GET /api/users/:user_id/avatar', () => {
 
   describe('ETag / 304 Not Modified', () => {
     it('should return 304 when If-None-Match matches ETag', async () => {
-      const { userId } = await createAuthenticatedUser();
+      const { accessToken, userId } = await createAuthenticatedUser();
       const testImage = await createTestImage('png', 10, 10);
 
       await uploadUserAvatar(userId, testImage);
 
       // Get avatar and capture ETag
       const firstResponse = await request(app)
-        .get(`/api/users/${userId}/avatar`);
+        .get(`/api/users/${userId}/avatar`)
+        .set('Authorization', `Bearer ${accessToken}`);
 
       expect(firstResponse.status).toBe(200);
       const etag = firstResponse.headers['etag'];
@@ -669,6 +683,7 @@ describe('GET /api/users/:user_id/avatar', () => {
       // Request again with If-None-Match header (use the exact ETag value)
       const secondResponse = await request(app)
         .get(`/api/users/${userId}/avatar`)
+        .set('Authorization', `Bearer ${accessToken}`)
         .set('If-None-Match', String(etag));
 
       expect(secondResponse.status).toBe(304);
@@ -680,13 +695,14 @@ describe('GET /api/users/:user_id/avatar', () => {
     });
 
     it('should return 200 when If-None-Match does not match', async () => {
-      const { userId } = await createAuthenticatedUser();
+      const { accessToken, userId } = await createAuthenticatedUser();
       const testImage = await createTestImage('png', 10, 10);
 
       await uploadUserAvatar(userId, testImage);
 
       const response = await request(app)
         .get(`/api/users/${userId}/avatar`)
+        .set('Authorization', `Bearer ${accessToken}`)
         .set('If-None-Match', '"wrong-etag"');
 
       expect(response.status).toBe(200);
@@ -695,27 +711,29 @@ describe('GET /api/users/:user_id/avatar', () => {
     });
 
     it('should return 200 when If-None-Match header is missing', async () => {
-      const { userId } = await createAuthenticatedUser();
+      const { accessToken, userId } = await createAuthenticatedUser();
       const testImage = await createTestImage('png', 10, 10);
 
       await uploadUserAvatar(userId, testImage);
 
       const response = await request(app)
-        .get(`/api/users/${userId}/avatar`);
+        .get(`/api/users/${userId}/avatar`)
+        .set('Authorization', `Bearer ${accessToken}`);
 
       expect(response.status).toBe(200);
       expect(Buffer.isBuffer(response.body)).toBe(true);
     });
 
     it('should update ETag when avatar is updated', async () => {
-      const { userId } = await createAuthenticatedUser();
+      const { accessToken, userId } = await createAuthenticatedUser();
       const testImage1 = await createTestImage('png', 10, 10);
 
       await uploadUserAvatar(userId, testImage1);
 
       // Get first ETag
       const firstResponse = await request(app)
-        .get(`/api/users/${userId}/avatar`);
+        .get(`/api/users/${userId}/avatar`)
+        .set('Authorization', `Bearer ${accessToken}`);
 
       expect(firstResponse.status).toBe(200);
       const etag1 = firstResponse.headers['etag'];
@@ -729,7 +747,8 @@ describe('GET /api/users/:user_id/avatar', () => {
 
       // Get second ETag
       const secondResponse = await request(app)
-        .get(`/api/users/${userId}/avatar`);
+        .get(`/api/users/${userId}/avatar`)
+        .set('Authorization', `Bearer ${accessToken}`);
 
       expect(secondResponse.status).toBe(200);
       const etag2 = secondResponse.headers['etag'];
@@ -741,13 +760,14 @@ describe('GET /api/users/:user_id/avatar', () => {
 
   describe('Image Data', () => {
     it('should return processed 256x256 WebP image', async () => {
-      const { userId } = await createAuthenticatedUser();
+      const { accessToken, userId } = await createAuthenticatedUser();
       const largeImage = await createTestImage('png', 1000, 1000);
 
       await uploadUserAvatar(userId, largeImage);
 
       const response = await request(app)
-        .get(`/api/users/${userId}/avatar`);
+        .get(`/api/users/${userId}/avatar`)
+        .set('Authorization', `Bearer ${accessToken}`);
 
       expect(response.status).toBe(200);
       expect(Buffer.isBuffer(response.body)).toBe(true);
@@ -757,13 +777,14 @@ describe('GET /api/users/:user_id/avatar', () => {
     });
 
     it('should return binary data, not JSON', async () => {
-      const { userId } = await createAuthenticatedUser();
+      const { accessToken, userId } = await createAuthenticatedUser();
       const testImage = await createTestImage('png', 10, 10);
 
       await uploadUserAvatar(userId, testImage);
 
       const response = await request(app)
-        .get(`/api/users/${userId}/avatar`);
+        .get(`/api/users/${userId}/avatar`)
+        .set('Authorization', `Bearer ${accessToken}`);
 
       expect(response.status).toBe(200);
       expect(response.headers['content-type']).toMatch(/^image\//);
@@ -772,14 +793,14 @@ describe('GET /api/users/:user_id/avatar', () => {
     });
 
     it('should handle multiple concurrent requests', async () => {
-      const { userId } = await createAuthenticatedUser();
+      const { accessToken, userId } = await createAuthenticatedUser();
       const testImage = await createTestImage('png', 10, 10);
 
       await uploadUserAvatar(userId, testImage);
 
       // Make 5 concurrent requests
       const requests = Array.from({ length: 5 }, () =>
-        request(app).get(`/api/users/${userId}/avatar`)
+        request(app).get(`/api/users/${userId}/avatar`).set('Authorization', `Bearer ${accessToken}`)
       );
 
       const responses = await Promise.all(requests);

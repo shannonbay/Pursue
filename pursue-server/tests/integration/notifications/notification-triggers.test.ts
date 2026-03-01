@@ -112,7 +112,7 @@ describe('Notification Triggers', () => {
 
   describe('Membership approved/rejected creates notification', () => {
     it('should create notification when membership is approved', async () => {
-      const creator = await createAuthenticatedUser(randomEmail(), 'Test123!@#', 'Admin');
+      const creator = await createAuthenticatedUser(randomEmail(), 'Test123!@#', 'Organizer');
       const { groupId } = await createGroupWithGoal(creator.accessToken);
 
       const invRes = await request(app)
@@ -142,7 +142,7 @@ describe('Notification Triggers', () => {
     });
 
     it('should create notification when membership is rejected', async () => {
-      const creator = await createAuthenticatedUser(randomEmail(), 'Test123!@#', 'Admin');
+      const creator = await createAuthenticatedUser(randomEmail(), 'Test123!@#', 'Organizer');
       const { groupId } = await createGroupWithGoal(creator.accessToken);
 
       const invRes = await request(app)

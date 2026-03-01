@@ -99,8 +99,7 @@ describe('GET /api/users/me', () => {
       .get('/api/users/me')
       .set('Authorization', `Bearer ${accessToken}`);
 
-    expect(response.status).toBe(404);
-    expect(response.body.error.code).toBe('NOT_FOUND');
+    expect(response.status).toBe(401);
   });
 });
 
@@ -214,7 +213,7 @@ describe('PATCH /api/users/me', () => {
         display_name: 'Updated',
       });
 
-    expect(response.status).toBe(404);
+    expect(response.status).toBe(401);
   });
 });
 
@@ -529,7 +528,7 @@ describe('GET /api/users/me/providers', () => {
       .get('/api/users/me/providers')
       .set('Authorization', `Bearer ${accessToken}`);
 
-    expect(response.status).toBe(404);
+    expect(response.status).toBe(401);
   });
 });
 
@@ -890,7 +889,7 @@ describe('DELETE /api/users/me', () => {
       .get('/api/users/me')
       .set('Authorization', `Bearer ${accessToken}`);
 
-    expect(getResponse.status).toBe(404);
+    expect(getResponse.status).toBe(401);
 
     // Verify user cannot login after deletion
     const loginResponse = await request(app)
@@ -934,7 +933,7 @@ describe('DELETE /api/users/me', () => {
     expect(response.status).toBe(401);
   });
 
-  it('should return 404 for already soft-deleted user', async () => {
+  it('should return 401 for already soft-deleted user', async () => {
     const { accessToken, userId } = await createAuthenticatedUser();
 
     // Soft delete the user (set deleted_at)
@@ -949,6 +948,6 @@ describe('DELETE /api/users/me', () => {
       .set('Authorization', `Bearer ${accessToken}`)
       .send({ confirmation: 'delete' });
 
-    expect(response.status).toBe(404);
+    expect(response.status).toBe(401);
   });
 });

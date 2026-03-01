@@ -1,4 +1,5 @@
 import sharp from 'sharp';
+import { sql } from 'kysely';
 import { db } from '../database/index.js';
 import { logger } from '../utils/logger.js';
 
@@ -76,6 +77,7 @@ export async function uploadUserAvatar(
     .set({
       avatar_data: processedBuffer,
       avatar_mime_type: 'image/webp',
+      updated_at: sql`NOW()`,
     })
     .where('id', '=', userId)
     .execute();

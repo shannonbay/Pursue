@@ -14,7 +14,7 @@ import {
 describe('Groups API with Heat Data', () => {
   describe('GET /api/users/me/groups', () => {
     it('should include heat object in each group', async () => {
-      const { accessToken } = await createAuthenticatedUser(randomEmail(), 'Test123!@#', 'User');
+      const { accessToken } = await createAuthenticatedUser(randomEmail(), 'Test123!@#', 'Player');
 
       // Create a group
       await createGroupWithGoal(accessToken, {
@@ -40,7 +40,7 @@ describe('Groups API with Heat Data', () => {
     });
 
     it('should return Cold tier for new groups', async () => {
-      const { accessToken } = await createAuthenticatedUser(randomEmail(), 'Test123!@#', 'User');
+      const { accessToken } = await createAuthenticatedUser(randomEmail(), 'Test123!@#', 'Player');
 
       await createGroupWithGoal(accessToken, {
         includeGoal: false,
@@ -59,7 +59,7 @@ describe('Groups API with Heat Data', () => {
     });
 
     it('should reflect updated heat data', async () => {
-      const { accessToken, userId } = await createAuthenticatedUser(randomEmail(), 'Test123!@#', 'User');
+      const { accessToken, userId } = await createAuthenticatedUser(randomEmail(), 'Test123!@#', 'Player');
 
       const { groupId } = await createGroupWithGoal(accessToken, {
         includeGoal: true,
@@ -94,7 +94,7 @@ describe('Groups API with Heat Data', () => {
 
   describe('GET /api/groups/:group_id', () => {
     it('should include heat object with extended data', async () => {
-      const { accessToken } = await createAuthenticatedUser(randomEmail(), 'Test123!@#', 'User');
+      const { accessToken } = await createAuthenticatedUser(randomEmail(), 'Test123!@#', 'Player');
 
       const { groupId } = await createGroupWithGoal(accessToken, {
         includeGoal: true,
@@ -118,7 +118,7 @@ describe('Groups API with Heat Data', () => {
     });
 
     it('should return correct tier name for all tiers', async () => {
-      const { accessToken } = await createAuthenticatedUser(randomEmail(), 'Test123!@#', 'User');
+      const { accessToken } = await createAuthenticatedUser(randomEmail(), 'Test123!@#', 'Player');
 
       const { groupId } = await createGroupWithGoal(accessToken, {
         includeGoal: true,
@@ -158,7 +158,7 @@ describe('Groups API with Heat Data', () => {
     });
 
     it('should include yesterday_gcr and baseline_gcr when available', async () => {
-      const { accessToken } = await createAuthenticatedUser(randomEmail(), 'Test123!@#', 'User');
+      const { accessToken } = await createAuthenticatedUser(randomEmail(), 'Test123!@#', 'Player');
 
       const { groupId } = await createGroupWithGoal(accessToken, {
         includeGoal: true,
@@ -215,7 +215,7 @@ describe('Groups API with Heat Data', () => {
 
   describe('POST /api/groups', () => {
     it('should initialize heat record for new group', async () => {
-      const { accessToken } = await createAuthenticatedUser(randomEmail(), 'Test123!@#', 'User');
+      const { accessToken } = await createAuthenticatedUser(randomEmail(), 'Test123!@#', 'Player');
 
       const response = await request(app)
         .post('/api/groups')
@@ -241,7 +241,7 @@ describe('Groups API with Heat Data', () => {
 
   describe('Heat data with multiple groups', () => {
     it('should return correct heat for each group', async () => {
-      const { accessToken, userId } = await createAuthenticatedUser(randomEmail(), 'Test123!@#', 'User');
+      const { accessToken, userId } = await createAuthenticatedUser(randomEmail(), 'Test123!@#', 'Player');
 
       // Set user to premium so they can create multiple groups
       await setUserPremium(userId);

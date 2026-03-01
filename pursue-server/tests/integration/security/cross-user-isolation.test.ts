@@ -65,7 +65,7 @@ describe("Cross-user isolation: User A cannot read or update User B's data", () 
         .set('Authorization', `Bearer ${B.accessToken}`)
         .attach('avatar', await createTestImage(), 'avatar.png');
 
-      const getBBefore = await request(app).get(`/api/users/${B.userId}/avatar`);
+      const getBBefore = await request(app).get(`/api/users/${B.userId}/avatar`).set('Authorization', `Bearer ${B.accessToken}`);
       expect(getBBefore.status).toBe(200);
       const avatarBBefore = Buffer.from(getBBefore.body);
 
@@ -74,7 +74,7 @@ describe("Cross-user isolation: User A cannot read or update User B's data", () 
         .set('Authorization', `Bearer ${A.accessToken}`)
         .attach('avatar', await createTestImage(), 'avatar.png');
 
-      const getBAfter = await request(app).get(`/api/users/${B.userId}/avatar`);
+      const getBAfter = await request(app).get(`/api/users/${B.userId}/avatar`).set('Authorization', `Bearer ${B.accessToken}`);
       expect(getBAfter.status).toBe(200);
       const avatarBAfter = Buffer.from(getBAfter.body);
 
@@ -100,7 +100,7 @@ describe("Cross-user isolation: User A cannot read or update User B's data", () 
         .delete('/api/users/me/avatar')
         .set('Authorization', `Bearer ${A.accessToken}`);
 
-      const getB = await request(app).get(`/api/users/${B.userId}/avatar`);
+      const getB = await request(app).get(`/api/users/${B.userId}/avatar`).set('Authorization', `Bearer ${B.accessToken}`);
       expect(getB.status).toBe(200);
       expect(Buffer.isBuffer(getB.body) && getB.body.length > 0).toBe(true);
 
