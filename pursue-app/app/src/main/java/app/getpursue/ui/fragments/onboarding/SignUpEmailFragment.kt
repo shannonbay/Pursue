@@ -11,8 +11,10 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
+import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
+import androidx.core.content.ContextCompat
 import androidx.core.text.HtmlCompat
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
@@ -62,6 +64,24 @@ class SignUpEmailFragment : Fragment() {
     private lateinit var consentCheckbox: MaterialCheckBox
     private lateinit var createAccountButton: Button
     private lateinit var googleSignInButton: Button
+    private lateinit var passwordRequirementsHeader: TextView
+    private lateinit var passwordRequirementsLayout: LinearLayout
+    private lateinit var reqLengthText: TextView
+    private lateinit var reqLowercaseText: TextView
+    private lateinit var reqUppercaseText: TextView
+    private lateinit var reqNumberText: TextView
+    private lateinit var reqSpecialText: TextView
+
+    data class PasswordRequirements(
+        val hasMinLength: Boolean,
+        val hasLowercase: Boolean,
+        val hasUppercase: Boolean,
+        val hasNumber: Boolean,
+        val hasSpecialChar: Boolean
+    ) {
+        val allMet: Boolean
+            get() = hasMinLength && hasLowercase && hasUppercase && hasNumber && hasSpecialChar
+    }
 
     override fun onAttach(context: Context) {
         super.onAttach(context)
@@ -96,6 +116,13 @@ class SignUpEmailFragment : Fragment() {
         consentCheckbox = view.findViewById(R.id.checkbox_consent)
         createAccountButton = view.findViewById(R.id.button_create_account)
         googleSignInButton = view.findViewById(R.id.button_google_signin)
+        passwordRequirementsHeader = view.findViewById(R.id.text_password_requirements_header)
+        passwordRequirementsLayout = view.findViewById(R.id.layout_password_requirements)
+        reqLengthText = view.findViewById(R.id.text_req_length)
+        reqLowercaseText = view.findViewById(R.id.text_req_lowercase)
+        reqUppercaseText = view.findViewById(R.id.text_req_uppercase)
+        reqNumberText = view.findViewById(R.id.text_req_number)
+        reqSpecialText = view.findViewById(R.id.text_req_special)
 
         // Set consent text with clickable links
         val consentText = view.findViewById<TextView>(R.id.text_consent)
@@ -175,30 +202,79 @@ class SignUpEmailFragment : Fragment() {
 
     private fun updatePasswordStrength() {
         val password = passwordInput.text?.toString() ?: ""
+
         if (password.isEmpty()) {
-            passwordStrength.visibility = View.GONE
+            // Hide everything when password is empty
+            passwordRequirementsHeader.isVisible = false
+            passwordRequirementsLayout.isVisible = false
+            passwordStrength.isVisible = false
             return
         }
 
-        passwordStrength.visibility = View.VISIBLE
-        val strength = calculatePasswordStrength(password)
-        val strengthText = when (strength) {
-            PasswordStrength.WEAK -> getString(R.string.password_weak)
-            PasswordStrength.MEDIUM -> getString(R.string.password_medium)
-            PasswordStrength.STRONG -> getString(R.string.password_strong)
+        // Show requirements checklist
+        passwordRequirementsHeader.isVisible = true
+        passwordRequirementsLayout.isVisible = true
+
+        // Check each requirement
+        val reqs = checkPasswordRequirements(password)
+
+        // Update each requirement indicator
+        updateRequirementView(reqLengthText, reqs.hasMinLength)
+        updateRequirementView(reqLowercaseText, reqs.hasLowercase)
+        updateRequirementView(reqUppercaseText, reqs.hasUppercase)
+        updateRequirementView(reqNumberText, reqs.hasNumber)
+        updateRequirementView(reqSpecialText, reqs.hasSpecialChar)
+
+        // Only show strength indicator once all requirements are met
+        if (reqs.allMet) {
+            val strength = calculatePasswordStrength(password)
+            passwordStrength.isVisible = true
+            passwordStrength.text = getString(
+                R.string.password_strength,
+                when (strength) {
+                    PasswordStrength.WEAK -> getString(R.string.password_weak)
+                    PasswordStrength.MEDIUM -> getString(R.string.password_medium)
+                    PasswordStrength.STRONG -> getString(R.string.password_strong)
+                }
+            )
+        } else {
+            passwordStrength.isVisible = false
         }
-        passwordStrength.text = getString(R.string.password_strength, strengthText)
+    }
+
+    private fun updateRequirementView(textView: TextView, isMet: Boolean) {
+        if (isMet) {
+            textView.setCompoundDrawablesRelativeWithIntrinsicBounds(
+                R.drawable.ic_check_circle, 0, 0, 0
+            )
+            textView.compoundDrawablesRelative[0]?.mutate()?.setTint(
+                ContextCompat.getColor(requireContext(), R.color.approved_green_border)
+            )
+            textView.setTextColor(
+                ContextCompat.getColor(requireContext(), R.color.on_surface)
+            )
+        } else {
+            textView.setCompoundDrawablesRelativeWithIntrinsicBounds(
+                R.drawable.ic_cancel, 0, 0, 0
+            )
+            textView.compoundDrawablesRelative[0]?.mutate()?.setTint(
+                ContextCompat.getColor(requireContext(), R.color.on_surface_variant)
+            )
+            textView.setTextColor(
+                ContextCompat.getColor(requireContext(), R.color.on_surface_variant)
+            )
+        }
     }
 
     private fun calculatePasswordStrength(password: String): PasswordStrength {
         if (password.length < 8) return PasswordStrength.WEAK
-        
+
         var strength = 0
         if (password.any { it.isLowerCase() }) strength++
         if (password.any { it.isUpperCase() }) strength++
         if (password.any { it.isDigit() }) strength++
         if (password.any { !it.isLetterOrDigit() }) strength++
-        
+
         return when {
             strength >= 3 && password.length >= 12 -> PasswordStrength.STRONG
             strength >= 2 -> PasswordStrength.MEDIUM
@@ -206,32 +282,44 @@ class SignUpEmailFragment : Fragment() {
         }
     }
 
-    private fun validatePasswordMatch(): Boolean {
-        val password = passwordInput.text?.toString() ?: ""
-        val confirmPassword = confirmPasswordInput.text?.toString() ?: ""
-        
-        if (confirmPassword.isEmpty()) {
-            passwordMismatch.visibility = View.GONE
-            return false  // Confirm password must be entered
-        }
-        
-        val matches = password == confirmPassword
-        passwordMismatch.isVisible = !matches
-        return matches
+    private fun checkPasswordRequirements(password: String): PasswordRequirements {
+        return PasswordRequirements(
+            hasMinLength = password.length >= 8,
+            hasLowercase = password.any { it.isLowerCase() },
+            hasUppercase = password.any { it.isUpperCase() },
+            hasNumber = password.any { it.isDigit() },
+            hasSpecialChar = password.any { !it.isLetterOrDigit() }
+        )
     }
 
     private fun validate(): Boolean {
         val displayNameValid = validateDisplayName()
         val emailValid = validateEmail()
         val password = passwordInput.text?.toString() ?: ""
-        val passwordValid = password.length >= 8
         val confirmPassword = confirmPasswordInput.text?.toString() ?: ""
-        val confirmPasswordEntered = confirmPassword.isNotEmpty()
-        val passwordMatchValid = if (confirmPasswordEntered) validatePasswordMatch() else false
-        val consentChecked = consentCheckbox.isChecked
 
-        createAccountButton.isEnabled = displayNameValid && emailValid && passwordValid && confirmPasswordEntered && passwordMatchValid && consentChecked
-        return displayNameValid && emailValid && passwordValid && confirmPasswordEntered && passwordMatchValid && consentChecked
+        // Check password requirements
+        val reqs = checkPasswordRequirements(password)
+
+        // Update mismatch error visibility
+        passwordMismatch.isVisible = password.isNotEmpty() &&
+                                       confirmPassword.isNotEmpty() &&
+                                       password != confirmPassword
+
+        // Enable submit button only if:
+        // - Display name is valid
+        // - Email is valid
+        // - All password requirements are met
+        // - Passwords match
+        // - Consent is checked
+        createAccountButton.isEnabled = displayNameValid &&
+                                         emailValid &&
+                                         reqs.allMet &&
+                                         password == confirmPassword &&
+                                         confirmPassword.isNotEmpty() &&
+                                         consentCheckbox.isChecked
+
+        return createAccountButton.isEnabled
     }
 
     private fun registerUser(displayName: String, email: String, password: String) {
