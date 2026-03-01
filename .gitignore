@@ -10,5 +10,14 @@ pursue-app/.idea/vcs.xml
 # Temporary
 COMMIT_MSG.txt
 
+# JVM crash logs
+hs_err_pid*.log
+replay_pid*.log
+
+# Android release builds
+pursue-app/app/release/
+
 # Test output
 pursue-server/test-results.json
+pursue-server/goal_ids.txt
+pursue-server/template_ids.txt
