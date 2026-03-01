@@ -88,7 +88,7 @@ app.get('/health', async (_req, res) => {
       status: 'healthy',
       timestamp: new Date().toISOString(),
       uptime: process.uptime(),
-      db: { status: 'ok', responseTimeMs: dbResponseTimeMs },
+      db: { status: 'ok' },
     });
   } catch (error) {
     const msg = error instanceof Error ? error.message : 'Unknown error';

@@ -19,9 +19,9 @@ const router = Router();
 router.post('/register', authLimiter, register);
 router.post('/login', authLimiter, login);
 router.post('/google', authLimiter, googleAuth);
-router.post('/refresh', refresh);
+router.post('/refresh', authLimiter, refresh);
 router.post('/forgot-password', passwordResetLimiter, forgotPassword);
-router.post('/reset-password', resetPassword);
+router.post('/reset-password', passwordResetLimiter, resetPassword);
 
 // Protected routes
 router.post('/logout', authenticate, logout);

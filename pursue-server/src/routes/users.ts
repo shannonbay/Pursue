@@ -53,6 +53,6 @@ const avatarRequestLogger = (req: any, _res: any, next: any) => {
 
 router.post('/me/avatar', avatarRequestLogger, authenticate, uploadLimiter, uploadAvatar);
 router.delete('/me/avatar', avatarRequestLogger, authenticate, deleteAvatar);
-router.get('/:user_id/avatar', avatarRequestLogger, getUserAvatar); // Public endpoint (no auth required)
+router.get('/:user_id/avatar', avatarRequestLogger, authenticate, getUserAvatar); // Requires auth to prevent user enumeration
 
 export default router;

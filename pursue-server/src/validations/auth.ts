@@ -1,8 +1,29 @@
 import { z } from 'zod';
 
+// Password schema with complexity requirements
+const passwordSchema = z.string()
+  .min(8, 'Password must be at least 8 characters')
+  .max(100)
+  .refine(
+    (password) => /[a-z]/.test(password),
+    'Password must contain at least one lowercase letter'
+  )
+  .refine(
+    (password) => /[A-Z]/.test(password),
+    'Password must contain at least one uppercase letter'
+  )
+  .refine(
+    (password) => /[0-9]/.test(password),
+    'Password must contain at least one number'
+  )
+  .refine(
+    (password) => /[^a-zA-Z0-9]/.test(password),
+    'Password must contain at least one special character'
+  );
+
 export const RegisterSchema = z.object({
   email: z.string().email('Invalid email format').max(255),
-  password: z.string().min(8, 'Password must be at least 8 characters').max(100),
+  password: passwordSchema,
   display_name: z.string().min(1, 'Display name is required').max(100),
   consent_agreed: z.literal(true, {
     error: 'You must agree to the Terms of Service and Privacy Policy',
@@ -33,7 +54,7 @@ export const ForgotPasswordSchema = z.object({
 
 export const ResetPasswordSchema = z.object({
   token: z.string().min(1, 'Token is required'),
-  new_password: z.string().min(8, 'Password must be at least 8 characters').max(100),
+  new_password: passwordSchema,
 }).strict();
 
 export const LinkGoogleSchema = z.object({

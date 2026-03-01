@@ -9,11 +9,12 @@ import {
   updateChallengeStatusesJob,
 } from '../controllers/challenges.js';
 import { authenticate } from '../middleware/authenticate.js';
+import { internalJobAuth } from '../middleware/internalJobAuth.js';
 
 const router = Router();
 
-router.post('/internal/jobs/update-challenge-statuses', updateChallengeStatusesJob);
-router.post('/internal/jobs/process-challenge-completion-pushes', processChallengeCompletionPushesJob);
+router.post('/internal/jobs/update-challenge-statuses', internalJobAuth, updateChallengeStatusesJob);
+router.post('/internal/jobs/process-challenge-completion-pushes', internalJobAuth, processChallengeCompletionPushesJob);
 
 router.get('/group-templates', authenticate, getChallengeTemplates);
 // 301 redirect from old path — remove after one release cycle

@@ -483,24 +483,26 @@ export async function refresh(
     const newRefreshTokenId = crypto.randomUUID();
     const newRefreshToken = generateRefreshToken(storedToken.user_id, newRefreshTokenId);
 
-    // Revoke old token and insert new token in a transaction-like manner
-    // First, revoke the old token
-    await db
-      .updateTable('refresh_tokens')
-      .set({ revoked_at: new Date() })
-      .where('id', '=', payload.token_id)
-      .execute();
+    // Revoke old token and insert new token in a transaction (atomic operation)
+    await db.transaction().execute(async (trx) => {
+      // Revoke the old token
+      await trx
+        .updateTable('refresh_tokens')
+        .set({ revoked_at: new Date() })
+        .where('id', '=', payload.token_id)
+        .execute();
 
-    // Then, store the new refresh token
-    await db
-      .insertInto('refresh_tokens')
-      .values({
-        id: newRefreshTokenId,
-        user_id: storedToken.user_id,
-        token_hash: hashToken(newRefreshToken),
-        expires_at: getRefreshTokenExpiryDate(),
-      })
-      .execute();
+      // Store the new refresh token
+      await trx
+        .insertInto('refresh_tokens')
+        .values({
+          id: newRefreshTokenId,
+          user_id: storedToken.user_id,
+          token_hash: hashToken(newRefreshToken),
+          expires_at: getRefreshTokenExpiryDate(),
+        })
+        .execute();
+    });
 
     res.status(200).json({
       access_token: accessToken,

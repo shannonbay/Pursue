@@ -33,6 +33,28 @@ if (missingVars.length > 0) {
   process.exit(1);
 }
 
+// Validate JWT secret strength (must be at least 32 characters for HS256)
+const jwtSecret = process.env.JWT_SECRET || '';
+const jwtRefreshSecret = process.env.JWT_REFRESH_SECRET || '';
+
+if (jwtSecret.length < 32) {
+  logger.error('JWT_SECRET is too short', {
+    length: jwtSecret.length,
+    required: 32,
+    hint: 'JWT_SECRET must be at least 32 characters for secure HMAC signing',
+  });
+  process.exit(1);
+}
+
+if (jwtRefreshSecret.length < 32) {
+  logger.error('JWT_REFRESH_SECRET is too short', {
+    length: jwtRefreshSecret.length,
+    required: 32,
+    hint: 'JWT_REFRESH_SECRET must be at least 32 characters for secure HMAC signing',
+  });
+  process.exit(1);
+}
+
 // Validate GOOGLE_APPLICATION_CREDENTIALS path (required for GCS photo uploads)
 const gacPath = process.env.GOOGLE_APPLICATION_CREDENTIALS;
 if (gacPath) {

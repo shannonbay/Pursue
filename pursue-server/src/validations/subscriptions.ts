@@ -13,7 +13,6 @@ export const VerifySubscriptionSchema = z
     platform: z.enum(['google_play', 'app_store']),
     purchase_token: z.string().min(1, 'purchase_token is required'),
     product_id: z.string().min(1, 'product_id is required'),
-    user_id: z.string().uuid().optional(),
   })
   .strict();
 

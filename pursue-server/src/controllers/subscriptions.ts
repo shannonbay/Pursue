@@ -50,7 +50,7 @@ export async function upgrade(
 
 /**
  * POST /api/subscriptions/verify
- * Verify purchase with platform (internal/webhook). If user_id not provided, requires auth.
+ * Verify purchase with platform. Requires authentication.
  */
 export async function verify(
   req: AuthRequest,
@@ -58,11 +58,11 @@ export async function verify(
   next: NextFunction
 ): Promise<void> {
   try {
-    const data = VerifySubscriptionSchema.parse(req.body);
-    const userId = data.user_id ?? req.user?.id;
-    if (!userId) {
-      throw new ApplicationError('user_id required or authenticate', 401, 'UNAUTHORIZED');
+    if (!req.user) {
+      throw new ApplicationError('Unauthorized', 401, 'UNAUTHORIZED');
     }
+    const data = VerifySubscriptionSchema.parse(req.body);
+    const userId = req.user.id;
     if (data.product_id !== 'pursue_premium_annual') {
       throw new ApplicationError('Invalid product_id', 400, 'INVALID_PRODUCT');
     }

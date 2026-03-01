@@ -28,8 +28,11 @@ if (!process.env.INTERNAL_JOB_KEY) {
   process.env.INTERNAL_JOB_KEY = 'test-internal-job-key-for-testing';
 }
 
+// Get test database URL from environment or use default
 const TEST_DATABASE_URL = process.env.TEST_DATABASE_URL ||
   'postgresql://postgres:postgres@localhost:5432/pursue_test';
+
+console.log(`Using test database URL: ${TEST_DATABASE_URL}`);
 
 // Also set DATABASE_URL so the app's database module uses the test database
 process.env.DATABASE_URL = TEST_DATABASE_URL;

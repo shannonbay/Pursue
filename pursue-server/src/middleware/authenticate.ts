@@ -2,6 +2,7 @@ import type { Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import type { AuthRequest } from '../types/express.js';
 import { logger } from '../utils/logger.js';
+import { db } from '../database/index.js';
 
 interface JWTPayload {
   user_id: string;
@@ -38,6 +39,23 @@ export async function authenticate(
     const token = authHeader.substring(7);
 
     const payload = jwt.verify(token, process.env.JWT_SECRET!) as JWTPayload;
+
+    // Verify user still exists and is not deleted (invalidates tokens for deleted users)
+    const user = await db
+      .selectFrom('users')
+      .select(['id', 'deleted_at'])
+      .where('id', '=', payload.user_id)
+      .executeTakeFirst();
+
+    if (!user || user.deleted_at !== null) {
+      res.status(401).json({
+        error: {
+          message: 'Invalid or expired token',
+          code: 'INVALID_TOKEN',
+        },
+      });
+      return;
+    }
 
     req.user = {
       id: payload.user_id,

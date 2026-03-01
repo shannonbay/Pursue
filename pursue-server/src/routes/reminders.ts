@@ -4,6 +4,7 @@
 
 import { Router } from 'express';
 import { authenticate } from '../middleware/authenticate.js';
+import { internalJobAuth } from '../middleware/internalJobAuth.js';
 import {
   // Internal job endpoints
   processRemindersJob,
@@ -19,17 +20,17 @@ import {
 const router = Router();
 
 // =============================================================================
-// Internal Job Endpoints (secured by INTERNAL_JOB_KEY header, no user auth)
+// Internal Job Endpoints (secured by INTERNAL_JOB_KEY header and IP allowlist)
 // =============================================================================
 
 // Process and send reminders (every 15 minutes)
-router.post('/internal/jobs/process-reminders', processRemindersJob);
+router.post('/internal/jobs/process-reminders', internalJobAuth, processRemindersJob);
 
 // Recalculate logging patterns (weekly)
-router.post('/internal/jobs/recalculate-patterns', recalculatePatternsJob);
+router.post('/internal/jobs/recalculate-patterns', internalJobAuth, recalculatePatternsJob);
 
 // Update reminder effectiveness metrics (daily)
-router.post('/internal/jobs/update-effectiveness', updateEffectivenessJob);
+router.post('/internal/jobs/update-effectiveness', internalJobAuth, updateEffectivenessJob);
 
 // =============================================================================
 // User-Facing Endpoints (require authentication)
