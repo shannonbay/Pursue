@@ -63,6 +63,18 @@ beforeEach(async () => {
 });
 
 async function createSchema(db: Kysely<Database>) {
+  // Fast path: if the last table in our schema exists, skip all CREATE statements.
+  // This avoids 30+ redundant round-trips on every test file after the first run.
+  const result = await sql<{ exists: boolean }>`
+    SELECT EXISTS (
+      SELECT FROM information_schema.tables
+      WHERE table_schema = 'public' AND table_name = 'content_disputes'
+    ) AS exists
+  `.execute(db);
+  if ((result.rows[0] as { exists: boolean }).exists) {
+    return;
+  }
+
   // Enable UUID extension (wrapped in try-catch to handle parallel test runs)
   try {
     await sql`CREATE EXTENSION IF NOT EXISTS "uuid-ossp"`.execute(db);

@@ -45,6 +45,8 @@
     "zod": "^4.3.5"
   },
   "devDependencies": {
+    "@swc/core": "^1.15.18",
+    "@swc/jest": "^0.2.39",
     "@types/bcrypt": "^6.0.0",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
@@ -56,7 +58,6 @@
     "@types/supertest": "^6.0.3",
     "jest": "^30.2.0",
     "supertest": "^7.2.2",
-    "ts-jest": "^29.4.6",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3"
   }

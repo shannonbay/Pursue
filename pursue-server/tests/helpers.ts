@@ -41,7 +41,7 @@ export async function createTestUser(
   password: string = 'Test123!@#',
   displayName: string = 'Test User'
 ) {
-  const passwordHash = await bcrypt.hash(password, 10);
+  const passwordHash = await bcrypt.hash(password, 1);
 
   const user = await testDb
     .insertInto('users')
