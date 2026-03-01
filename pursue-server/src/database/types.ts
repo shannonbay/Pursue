@@ -610,6 +610,63 @@ export interface SuggestionDismissalsTable {
 export type SuggestionDismissal = Selectable<SuggestionDismissalsTable>;
 export type NewSuggestionDismissal = Insertable<SuggestionDismissalsTable>;
 
+// Focus sessions table (Body-Teaming)
+export interface FocusSessionsTable {
+  id: Generated<string>;
+  group_id: string;
+  host_user_id: string;
+  status: string; // 'lobby' | 'focus' | 'chit-chat' | 'ended'
+  focus_duration_minutes: number;
+  started_at: ColumnType<Date | null, Date | string | null, Date | string | null>;
+  ended_at: ColumnType<Date | null, Date | string | null, Date | string | null>;
+  created_at: Generated<Date>;
+}
+
+export type FocusSession = Selectable<FocusSessionsTable>;
+export type NewFocusSession = Insertable<FocusSessionsTable>;
+export type FocusSessionUpdate = Updateable<FocusSessionsTable>;
+
+// Focus session participants table
+export interface FocusSessionParticipantsTable {
+  id: Generated<string>;
+  session_id: string;
+  user_id: string;
+  joined_at: Generated<Date>;
+  left_at: ColumnType<Date | null, Date | string | null, Date | string | null>;
+}
+
+export type FocusSessionParticipant = Selectable<FocusSessionParticipantsTable>;
+export type NewFocusSessionParticipant = Insertable<FocusSessionParticipantsTable>;
+export type FocusSessionParticipantUpdate = Updateable<FocusSessionParticipantsTable>;
+
+// Focus slots table (scheduled availability)
+export interface FocusSlotsTable {
+  id: Generated<string>;
+  group_id: string;
+  created_by: string;
+  scheduled_start: ColumnType<Date, Date | string, Date | string>;
+  focus_duration_minutes: number;
+  note: string | null;
+  session_id: string | null;
+  created_at: Generated<Date>;
+  cancelled_at: ColumnType<Date | null, Date | string | null, Date | string | null>;
+}
+
+export type FocusSlot = Selectable<FocusSlotsTable>;
+export type NewFocusSlot = Insertable<FocusSlotsTable>;
+export type FocusSlotUpdate = Updateable<FocusSlotsTable>;
+
+// Focus slot RSVPs table
+export interface FocusSlotRsvpsTable {
+  id: Generated<string>;
+  slot_id: string;
+  user_id: string;
+  created_at: Generated<Date>;
+}
+
+export type FocusSlotRsvp = Selectable<FocusSlotRsvpsTable>;
+export type NewFocusSlotRsvp = Insertable<FocusSlotRsvpsTable>;
+
 // Database interface combining all tables
 export interface Database {
   users: UsersTable;
@@ -651,4 +708,8 @@ export interface Database {
   search_query_embeddings: SearchQueryEmbeddingsTable;
   content_reports: ContentReportsTable;
   content_disputes: ContentDisputesTable;
+  focus_sessions: FocusSessionsTable;
+  focus_session_participants: FocusSessionParticipantsTable;
+  focus_slots: FocusSlotsTable;
+  focus_slot_rsvps: FocusSlotRsvpsTable;
 }

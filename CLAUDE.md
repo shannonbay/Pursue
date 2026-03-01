@@ -87,6 +87,7 @@ controllers/progress.ts - POST/GET/DELETE progress entries
 controllers/photos.ts - POST/GET progress entry photo attachments
 controllers/devices.ts - POST/GET/DELETE FCM device registration
 controllers/nudges.ts - POST create nudge, GET sent-today by group
+controllers/sessions.ts - Session CRUD (create, join, start, end, leave), slot CRUD (create, list, cancel, RSVP/unRSVP), GET /me/slots
 controllers/subscriptions.ts - POST upgrade, verify, cancel, downgrade
 controllers/discover.ts - Public group listings, suggestions, join requests lifecycle
 
@@ -96,6 +97,7 @@ services/subscription.service.ts - Tier logic, group limits, export date validat
 services/fcm.service.ts - Push notifications, topic messaging, invalid token cleanup
 services/activity.service.ts - Group activity event logging
 services/googleAuth.ts - Google OAuth token verification
+services/signaling.service.ts - WebSocket signaling server (attachSignalingServer), peer relay, phase management
 services/storage.service.ts - Avatar/icon upload (WebP 256x256), deletion
 services/gcs.service.ts - GCS photo upload, signed URLs, user photo deletion
 services/exportProgress.service.ts - Excel workbook generation for progress export
@@ -117,6 +119,7 @@ routes/goals.ts - Goal routes (CRUD, progress)
 routes/progress.ts - Progress entry routes, photo upload/retrieval
 routes/devices.ts - Device registration routes
 routes/nudges.ts - Nudge creation routes
+routes/sessions.ts - Focus session + slot routes (mounted at /api)
 routes/subscriptions.ts - Subscription management routes
 routes/discover.ts - Public group discover routes (unauthenticated listing + suggestions)
 

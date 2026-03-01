@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { app } from './app.js';
 import { logger } from './utils/logger.js';
+import { attachSignalingServer } from './services/signaling.service.js';
 
 // Validate required environment variables
 const requiredEnvVars = [
@@ -92,6 +93,7 @@ if (!process.env.OPENAI_API_KEY) {
 const PORT = process.env.PORT || 8080;
 
 const server = app.listen(Number(PORT), '0.0.0.0', () => {
+  attachSignalingServer(server);
   const nodeEnv = process.env.NODE_ENV || 'development';
   const debugAvatar = process.env.DEBUG_AVATAR === 'true';
   const webClientId = process.env.GOOGLE_CLIENT_ID;

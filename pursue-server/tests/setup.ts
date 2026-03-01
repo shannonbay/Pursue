@@ -68,7 +68,7 @@ async function createSchema(db: Kysely<Database>) {
   const result = await sql<{ exists: boolean }>`
     SELECT EXISTS (
       SELECT FROM information_schema.tables
-      WHERE table_schema = 'public' AND table_name = 'content_disputes'
+      WHERE table_schema = 'public' AND table_name = 'focus_slot_rsvps'
     ) AS exists
   `.execute(db);
   if ((result.rows[0] as { exists: boolean }).exists) {
@@ -1169,6 +1169,59 @@ async function createSchema(db: Kysely<Database>) {
     )
   `.execute(db);
 
+  // Create focus_sessions table (Body-Teaming)
+  await sql`
+    CREATE TABLE IF NOT EXISTS focus_sessions (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      group_id UUID NOT NULL REFERENCES groups(id) ON DELETE CASCADE,
+      host_user_id UUID NOT NULL REFERENCES users(id),
+      status TEXT NOT NULL CHECK (status IN ('lobby', 'focus', 'chit-chat', 'ended')),
+      focus_duration_minutes INTEGER NOT NULL CHECK (focus_duration_minutes IN (25, 45, 60, 90)),
+      started_at TIMESTAMPTZ,
+      ended_at TIMESTAMPTZ,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    )
+  `.execute(db);
+  await sql`CREATE INDEX IF NOT EXISTS idx_focus_sessions_group ON focus_sessions(group_id, status)`.execute(db);
+
+  // Create focus_session_participants table
+  await sql`
+    CREATE TABLE IF NOT EXISTS focus_session_participants (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      session_id UUID NOT NULL REFERENCES focus_sessions(id) ON DELETE CASCADE,
+      user_id UUID NOT NULL REFERENCES users(id),
+      joined_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      left_at TIMESTAMPTZ,
+      UNIQUE(session_id, user_id)
+    )
+  `.execute(db);
+
+  // Create focus_slots table
+  await sql`
+    CREATE TABLE IF NOT EXISTS focus_slots (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      group_id UUID NOT NULL REFERENCES groups(id) ON DELETE CASCADE,
+      created_by UUID NOT NULL REFERENCES users(id),
+      scheduled_start TIMESTAMPTZ NOT NULL,
+      focus_duration_minutes INTEGER NOT NULL CHECK (focus_duration_minutes IN (25, 45, 60, 90)),
+      note TEXT,
+      session_id UUID REFERENCES focus_sessions(id),
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      cancelled_at TIMESTAMPTZ
+    )
+  `.execute(db);
+
+  // Create focus_slot_rsvps table
+  await sql`
+    CREATE TABLE IF NOT EXISTS focus_slot_rsvps (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      slot_id UUID NOT NULL REFERENCES focus_slots(id) ON DELETE CASCADE,
+      user_id UUID NOT NULL REFERENCES users(id),
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      UNIQUE(slot_id, user_id)
+    )
+  `.execute(db);
+
   // Fix FK constraints for goals (CREATE TABLE IF NOT EXISTS won't update existing constraints)
   await sql`
     ALTER TABLE goals DROP CONSTRAINT IF EXISTS goals_created_by_user_id_fkey;
@@ -1199,6 +1252,10 @@ async function cleanDatabase(db: Kysely<Database>) {
   // All tables listed explicitly to avoid issues with CASCADE not reaching all tables
   await sql`
     TRUNCATE TABLE
+      focus_slot_rsvps,
+      focus_slots,
+      focus_session_participants,
+      focus_sessions,
       content_disputes,
       content_reports,
       search_query_embeddings,

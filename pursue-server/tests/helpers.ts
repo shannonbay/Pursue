@@ -678,3 +678,81 @@ export async function setWeeklyRecapEnabled(
     .where('user_id', '=', userId)
     .execute();
 }
+
+// =============================================================================
+// Body-Teaming (Focus Sessions / Slots) Test Helpers
+// =============================================================================
+
+/**
+ * Create a focus session directly in the database (host is also inserted as participant).
+ */
+export async function createFocusSession(
+  groupId: string,
+  hostUserId: string,
+  options?: {
+    status?: 'lobby' | 'focus' | 'chit-chat' | 'ended';
+    duration?: 25 | 45 | 60 | 90;
+  }
+): Promise<string> {
+  const status = options?.status ?? 'lobby';
+  const duration = options?.duration ?? 25;
+
+  const session = await testDb
+    .insertInto('focus_sessions')
+    .values({
+      group_id: groupId,
+      host_user_id: hostUserId,
+      status,
+      focus_duration_minutes: duration,
+    })
+    .returning('id')
+    .executeTakeFirstOrThrow();
+
+  // Insert host as a participant
+  await testDb
+    .insertInto('focus_session_participants')
+    .values({ session_id: session.id, user_id: hostUserId })
+    .execute();
+
+  return session.id;
+}
+
+/**
+ * Create a focus slot directly in the database.
+ */
+export async function createFocusSlot(
+  groupId: string,
+  createdBy: string,
+  scheduledStart: Date,
+  options?: {
+    note?: string;
+    duration?: 25 | 45 | 60 | 90;
+  }
+): Promise<string> {
+  const slot = await testDb
+    .insertInto('focus_slots')
+    .values({
+      group_id: groupId,
+      created_by: createdBy,
+      scheduled_start: scheduledStart.toISOString(),
+      focus_duration_minutes: options?.duration ?? 25,
+      note: options?.note ?? null,
+    })
+    .returning('id')
+    .executeTakeFirstOrThrow();
+
+  return slot.id;
+}
+
+/**
+ * Create an RSVP for a focus slot directly in the database.
+ */
+export async function createSlotRsvp(slotId: string, userId: string): Promise<string> {
+  const rsvp = await testDb
+    .insertInto('focus_slot_rsvps')
+    .values({ slot_id: slotId, user_id: userId })
+    .returning('id')
+    .executeTakeFirstOrThrow();
+
+  return rsvp.id;
+}
