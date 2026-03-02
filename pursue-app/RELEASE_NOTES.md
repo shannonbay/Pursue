@@ -1,5 +1,14 @@
 # Pursue App Release Notes
 
+## Version 1.3.1 (Build 6)
+**Release Date:** March 2, 2026
+
+### 🐛 Bug Fixes
+
+- **Challenge QR code scan** — scanning a Challenge QR code via the Join Group FAB no longer shows "Invalid invite code". The URL path `/challenge/PURSUE-XXX-XXX` is now recognised alongside the existing `/join/` and `/invite/` paths.
+
+---
+
 ## Version 1.3.0 (Build 5)
 **Release Date:** March 2, 2026
 

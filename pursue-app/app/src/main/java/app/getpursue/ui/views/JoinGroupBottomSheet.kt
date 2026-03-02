@@ -52,7 +52,9 @@ class JoinGroupBottomSheet : BottomSheetDialogFragment() {
 
         /**
          * Extracts PURSUE invite code from a scanned string (URL or bare code).
-         * Supports: https://getpursue.app/join/PURSUE-XXX-XXX, https://getpursue.app/invite/PURSUE-XXX-XXX, or bare code.
+         * Supports: https://getpursue.app/join/PURSUE-XXX-XXX,
+         *           https://getpursue.app/challenge/PURSUE-XXX-XXX,
+         *           https://getpursue.app/invite/PURSUE-XXX-XXX, or bare code.
          */
         internal fun parseInviteCodeFromScan(raw: String?): String? {
             val s = raw?.trim() ?: return null
@@ -60,6 +62,11 @@ class JoinGroupBottomSheet : BottomSheetDialogFragment() {
             if (s.contains("/join/")) {
                 val afterJoin = s.substringAfterLast("/join/").substringBefore("?").trim()
                 if (isValidPursueCode(afterJoin)) return afterJoin
+                return null
+            }
+            if (s.contains("/challenge/")) {
+                val afterChallenge = s.substringAfterLast("/challenge/").substringBefore("?").trim()
+                if (isValidPursueCode(afterChallenge)) return afterChallenge
                 return null
             }
             if (s.contains("/invite/")) {
