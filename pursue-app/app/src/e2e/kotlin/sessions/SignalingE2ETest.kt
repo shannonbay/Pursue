@@ -59,7 +59,7 @@ class SignalingE2ETest : E2ETest() {
     private fun connectSignaling(sessionId: String, token: String): Pair<SignalingClient, SignalingEvents> {
         val events = SignalingEvents()
         val client = SignalingClient(object : SignalingClient.SignalingListener {
-            override fun onConnected() { events.connected.countDown() }
+            override fun onConnected(userId: String, isReconnect: Boolean) { events.connected.countDown() }
             override fun onPeerJoined(userId: String, displayName: String) {
                 events.peerJoined.offer(userId to displayName)
             }
@@ -73,7 +73,7 @@ class SignalingE2ETest : E2ETest() {
             override fun onIceCandidate(fromUserId: String, candidateJson: String) { /* not tested here */ }
             override fun onError(message: String) { events.errors.offer(message) }
         })
-        client.connect(LocalServerConfig.API_BASE_URL, sessionId) { token }
+        client.connect(LocalServerConfig.API_BASE_URL, LocalServerConfig.API_BASE_URL, sessionId) { token }
         return client to events
     }
 
