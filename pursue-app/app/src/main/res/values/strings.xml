@@ -136,6 +136,14 @@
     <string name="password_medium">Medium</string>
     <string name="password_strong">Strong</string>
     <string name="password_mismatch">Passwords do not match</string>
+
+    <!-- Password Requirements -->
+    <string name="password_requirements_header">Password must contain:</string>
+    <string name="password_req_length">At least 8 characters</string>
+    <string name="password_req_lowercase">At least one lowercase letter (a-z)</string>
+    <string name="password_req_uppercase">At least one uppercase letter (A-Z)</string>
+    <string name="password_req_number">At least one number (0-9)</string>
+    <string name="password_req_special">At least one special character (!@#$%^&amp;*)</string>
     <string name="create_account_button">Create Account</string>
     <string name="creating_account">Creating account…</string>
     <string name="account_created">Account created!</string>
@@ -956,5 +964,72 @@
     <string name="community_standards_title">Pursue is a place to grow together</string>
     <string name="community_standards_body">Keep it real, keep it kind. We automatically filter content to keep groups safe, and members can report anything that doesn\'t belong. Severe violations result in account suspension.</string>
     <string name="community_standards_got_it">Got it</string>
+
+    <!-- Body-Teaming: Focus Session Card (Group Detail) -->
+    <string name="focus_session_go_live">Go Live</string>
+    <string name="focus_session_schedule">Schedule</string>
+    <string name="focus_session_join">Join Session</string>
+    <string name="focus_session_rsvp_im_in">I\'m In</string>
+    <string name="focus_session_rsvp_cancel">Leave Slot</string>
+    <string name="focus_card_active_title">Session in progress</string>
+    <string name="focus_card_participant_count">%1$d here</string>
+    <string name="focus_card_slot_rsvp_count">%1$d going</string>
+
+    <!-- Body-Teaming: Focus Session Screen -->
+    <string name="focus_session_lobby">Focus Session · Lobby</string>
+    <string name="focus_session_focus_block">🎯 FOCUS</string>
+    <string name="focus_session_chit_chat">💬 Chit-Chat</string>
+    <string name="focus_session_mic_on">🔊 Mic on</string>
+    <string name="focus_session_mic_muted">🔇 Mic muted during focus</string>
+    <string name="focus_session_start_focus">Start Focus Block</string>
+    <string name="focus_session_end_early">End Session Early</string>
+    <string name="focus_session_people_here">%1$d people here</string>
+    <string name="focus_session_participant_count">%1$d participant</string>
+    <string name="focus_session_leave_confirm_title">Leave session?</string>
+    <string name="focus_session_leave_confirm_message">Are you sure you want to leave this focus session?</string>
+    <string name="focus_session_leave">Leave</string>
+    <string name="focus_session_duration_25">25 min</string>
+    <string name="focus_session_duration_45">45 min</string>
+    <string name="focus_session_duration_60">60 min</string>
+    <string name="focus_session_duration_90">90 min 🔒</string>
+    <string name="focus_session_chit_chat_prompt">How did your session go?</string>
+    <string name="focus_session_message_hint">Send a message…</string>
+    <string name="focus_session_audio_permission_title">Microphone required</string>
+    <string name="focus_session_audio_permission_message">Pursue needs microphone access to enable audio during focus sessions.</string>
+    <string name="focus_session_connecting">Connecting…</string>
+    <string name="focus_session_you">You</string>
+    <string name="focus_session_toggle_camera">Toggle camera</string>
+    <string name="focus_session_switch_camera">Switch camera</string>
+    <string name="focus_session_toggle_mic">Toggle microphone</string>
+    <string name="focus_session_camera_off">Camera off</string>
+    <string name="focus_session_camera_on">Camera on</string>
+    <string name="focus_session_camera_permission">Camera access lets others see you during body doubling</string>
+
+    <!-- Body-Teaming: Schedule Slot Bottom Sheet -->
+    <string name="schedule_slot_title">Schedule a Session</string>
+    <string name="schedule_slot_date_time">Date &amp; Time</string>
+    <string name="schedule_slot_date_time_hint">Pick date and time</string>
+    <string name="schedule_slot_duration">Duration</string>
+    <string name="schedule_slot_note_hint">e.g. Writing sprint 🖊️ (optional)</string>
+    <string name="schedule_slot_post">Post Slot</string>
+    <string name="schedule_slot_cancel">Cancel</string>
+    <string name="schedule_slot_error_future">Please select a future date and time</string>
+    <string name="schedule_slot_posted">Session slot posted!</string>
+    <string name="schedule_slot_failed">Failed to post slot. Please try again.</string>
+
+    <!-- Body-Teaming: Personal Calendar (My Sessions) -->
+    <string name="sessions_title">Sessions</string>
+    <string name="focus_slots_empty_title">No upcoming sessions</string>
+    <string name="focus_slots_empty_message">Schedule a session in any of your groups to see it here.</string>
+    <string name="focus_slots_im_in">I\'m In</string>
+    <string name="focus_slots_going">%1$s + %2$d going</string>
+    <string name="focus_slots_today">Today</string>
+    <string name="focus_slots_tomorrow">Tomorrow</string>
+    <string name="focus_slots_error">Failed to load sessions</string>
+    <string name="focus_slots_rsvp_failed">Failed to update RSVP. Please try again.</string>
+
+    <!-- Body-Teaming: Slot Reminder Notification -->
+    <string name="slot_reminder_notification_title">Starting in 15 minutes</string>
+    <string name="slot_reminder_notification_body">%1$s focus session is about to start</string>
 
 </resources>

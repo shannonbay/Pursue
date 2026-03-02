@@ -133,6 +133,14 @@
     <string name="password_medium">Média</string>
     <string name="password_strong">Forte</string>
     <string name="password_mismatch">As senhas não coincidem</string>
+
+    <!-- Password Requirements -->
+    <string name="password_requirements_header">A senha deve conter:</string>
+    <string name="password_req_length">Pelo menos 8 caracteres</string>
+    <string name="password_req_lowercase">Pelo menos uma letra minúscula (a-z)</string>
+    <string name="password_req_uppercase">Pelo menos uma letra maiúscula (A-Z)</string>
+    <string name="password_req_number">Pelo menos um número (0-9)</string>
+    <string name="password_req_special">Pelo menos um caractere especial (!@#$%^&amp;*)</string>
     <string name="create_account_button">Criar Conta</string>
     <string name="creating_account">Criando conta…</string>
     <string name="account_created">Conta criada!</string>
@@ -953,5 +961,72 @@
     <string name="community_standards_title">Pursue é um lugar para crescer juntos</string>
     <string name="community_standards_body">Seja autêntico, seja gentil. Filtramos automaticamente o conteúdo para manter os grupos seguros, e os membros podem denunciar qualquer coisa que não pertença. Violações graves resultam em suspensão da conta.</string>
     <string name="community_standards_got_it">Entendi</string>
+
+    <!-- Body-Teaming: Cartão de sessão de foco (Detalhe do grupo) -->
+    <string name="focus_session_go_live">Iniciar Sessão</string>
+    <string name="focus_session_schedule">Agendar</string>
+    <string name="focus_session_join">Entrar na Sessão</string>
+    <string name="focus_session_rsvp_im_in">Vou Participar</string>
+    <string name="focus_session_rsvp_cancel">Cancelar Participação</string>
+    <string name="focus_card_active_title">Sessão em andamento</string>
+    <string name="focus_card_participant_count">%1$d aqui</string>
+    <string name="focus_card_slot_rsvp_count">%1$d confirmados</string>
+
+    <!-- Body-Teaming: Tela de sessão de foco -->
+    <string name="focus_session_lobby">Sessão de Foco · Lobby</string>
+    <string name="focus_session_focus_block">🎯 FOCO</string>
+    <string name="focus_session_chit_chat">💬 Bate-papo</string>
+    <string name="focus_session_mic_on">🔊 Microfone ligado</string>
+    <string name="focus_session_mic_muted">🔇 Microfone silenciado durante o foco</string>
+    <string name="focus_session_start_focus">Iniciar Bloco de Foco</string>
+    <string name="focus_session_end_early">Encerrar Sessão</string>
+    <string name="focus_session_people_here">%1$d pessoas aqui</string>
+    <string name="focus_session_participant_count">%1$d participante</string>
+    <string name="focus_session_leave_confirm_title">Sair da sessão?</string>
+    <string name="focus_session_leave_confirm_message">Tem certeza que deseja sair desta sessão de foco?</string>
+    <string name="focus_session_leave">Sair</string>
+    <string name="focus_session_duration_25">25 min</string>
+    <string name="focus_session_duration_45">45 min</string>
+    <string name="focus_session_duration_60">60 min</string>
+    <string name="focus_session_duration_90">90 min 🔒</string>
+    <string name="focus_session_chit_chat_prompt">Como foi sua sessão?</string>
+    <string name="focus_session_message_hint">Enviar mensagem…</string>
+    <string name="focus_session_audio_permission_title">Microfone necessário</string>
+    <string name="focus_session_audio_permission_message">O Pursue precisa de acesso ao microfone para habilitar o áudio durante as sessões de foco.</string>
+    <string name="focus_session_connecting">Conectando…</string>
+    <string name="focus_session_you">Você</string>
+    <string name="focus_session_toggle_camera">Alternar câmera</string>
+    <string name="focus_session_switch_camera">Trocar câmera</string>
+    <string name="focus_session_toggle_mic">Alternar microfone</string>
+    <string name="focus_session_camera_off">Câmera desligada</string>
+    <string name="focus_session_camera_on">Câmera ligada</string>
+    <string name="focus_session_camera_permission">O acesso à câmera permite que outros vejam você durante a sessão</string>
+
+    <!-- Body-Teaming: Agendar slot -->
+    <string name="schedule_slot_title">Agendar uma Sessão</string>
+    <string name="schedule_slot_date_time">Data e Hora</string>
+    <string name="schedule_slot_date_time_hint">Escolher data e hora</string>
+    <string name="schedule_slot_duration">Duração</string>
+    <string name="schedule_slot_note_hint">ex: Sessão de escrita 🖊️ (opcional)</string>
+    <string name="schedule_slot_post">Publicar Slot</string>
+    <string name="schedule_slot_cancel">Cancelar</string>
+    <string name="schedule_slot_error_future">Por favor, selecione uma data e hora futuras</string>
+    <string name="schedule_slot_posted">Slot de sessão publicado!</string>
+    <string name="schedule_slot_failed">Falha ao publicar slot. Por favor, tente novamente.</string>
+
+    <!-- Body-Teaming: Calendário pessoal (Minhas Sessões) -->
+    <string name="sessions_title">Sessões</string>
+    <string name="focus_slots_empty_title">Sem sessões agendadas</string>
+    <string name="focus_slots_empty_message">Agende uma sessão em qualquer um dos seus grupos para vê-la aqui.</string>
+    <string name="focus_slots_im_in">Vou Participar</string>
+    <string name="focus_slots_going">%1$s + %2$d confirmados</string>
+    <string name="focus_slots_today">Hoje</string>
+    <string name="focus_slots_tomorrow">Amanhã</string>
+    <string name="focus_slots_error">Falha ao carregar sessões</string>
+    <string name="focus_slots_rsvp_failed">Falha ao atualizar confirmação. Por favor, tente novamente.</string>
+
+    <!-- Body-Teaming: Notificação de lembrete de slot -->
+    <string name="slot_reminder_notification_title">Começando em 15 minutos</string>
+    <string name="slot_reminder_notification_body">Sessão de foco de %1$s está prestes a começar</string>
 
 </resources>
