@@ -62,6 +62,10 @@ class WebRtcManager(private val context: Context) {
     private val localAudioTrack: AudioTrack
     private val peerConnections = mutableMapOf<String, PeerConnection>()
 
+    // ICE candidate buffer: holds candidates that arrive before remote description is set.
+    // Flushed in handleAnswer()/handleOffer() once setRemoteDescription succeeds.
+    private val pendingIceCandidates = mutableMapOf<String, MutableList<IceCandidate>>()
+
     // Video members
     private var cameraCapturer: CameraVideoCapturer? = null
     private var localVideoSource: VideoSource? = null
@@ -84,7 +88,10 @@ class WebRtcManager(private val context: Context) {
         init(context)
         factory = PeerConnectionFactory.builder()
             .setVideoEncoderFactory(DefaultVideoEncoderFactory(eglBase.eglBaseContext, true, true))
-            .setVideoDecoderFactory(DefaultVideoDecoderFactory(eglBase.eglBaseContext))
+            // Pass null to avoid EGL texture-mode decoding — uses byte-buffer mode instead.
+            // Sharing the same EglBase.Context between encoder and decoder causes SIGABRT
+            // on the DecodingQueue thread on some devices.
+            .setVideoDecoderFactory(DefaultVideoDecoderFactory(null))
             .createPeerConnectionFactory()
 
         val audioConstraints = MediaConstraints().apply {
@@ -145,16 +152,15 @@ class WebRtcManager(private val context: Context) {
      */
     fun createPeerConnection(peerId: String) {
         if (peerConnections.containsKey(peerId)) return
+        Log.d(TAG, "createPeerConnection (active) for $peerId")
 
         val pc = factory.createPeerConnection(rtcConfig(), createPeerObserver(peerId)) ?: run {
             Log.e(TAG, "Failed to create PeerConnection for $peerId")
             return
         }
 
-        val stream = factory.createLocalMediaStream(LOCAL_STREAM_ID)
-        stream.addTrack(localAudioTrack)
-        localVideoTrack?.let { stream.addTrack(it) }
-        pc.addStream(stream)
+        pc.addTrack(localAudioTrack, listOf(LOCAL_STREAM_ID))
+        localVideoTrack?.let { pc.addTrack(it, listOf(LOCAL_STREAM_ID)) }
 
         peerConnections[peerId] = pc
 
@@ -165,6 +171,7 @@ class WebRtcManager(private val context: Context) {
         }
         pc.createOffer(object : SdpObserverAdapter() {
             override fun onCreateSuccess(sdp: SessionDescription) {
+                Log.d(TAG, "Offer created for $peerId, setting local description")
                 pc.setLocalDescription(SdpObserverAdapter(), sdp)
                 onOfferCreated?.invoke(peerId, sdp.description)
             }
@@ -175,33 +182,65 @@ class WebRtcManager(private val context: Context) {
      * Handle a remote SDP offer — set as remote description, then create and send answer.
      */
     fun handleOffer(peerId: String, sdp: String) {
+        Log.d(TAG, "handleOffer from $peerId")
         val pc = getOrCreatePassivePeerConnection(peerId)
         val offer = SessionDescription(SessionDescription.Type.OFFER, sdp)
-        pc.setRemoteDescription(SdpObserverAdapter(), offer)
-
-        val constraints = MediaConstraints()
-        pc.createAnswer(object : SdpObserverAdapter() {
-            override fun onCreateSuccess(answer: SessionDescription) {
-                pc.setLocalDescription(SdpObserverAdapter(), answer)
-                onAnswerCreated?.invoke(peerId, answer.description)
+        pc.setRemoteDescription(object : SdpObserverAdapter() {
+            override fun onSetSuccess() {
+                Log.d(TAG, "Remote offer set for $peerId, flushing buffered candidates and creating answer")
+                flushIceCandidates(peerId, pc)
+                val constraints = MediaConstraints()
+                pc.createAnswer(object : SdpObserverAdapter() {
+                    override fun onCreateSuccess(answer: SessionDescription) {
+                        Log.d(TAG, "Answer created for $peerId, setting local description")
+                        pc.setLocalDescription(SdpObserverAdapter(), answer)
+                        onAnswerCreated?.invoke(peerId, answer.description)
+                    }
+                }, constraints)
             }
-        }, constraints)
+        }, offer)
     }
 
     /**
      * Handle a remote SDP answer.
      */
     fun handleAnswer(peerId: String, sdp: String) {
+        Log.d(TAG, "handleAnswer from $peerId, pc exists=${peerConnections.containsKey(peerId)}")
+        val pc = peerConnections[peerId] ?: return
         val answer = SessionDescription(SessionDescription.Type.ANSWER, sdp)
-        peerConnections[peerId]?.setRemoteDescription(SdpObserverAdapter(), answer)
+        pc.setRemoteDescription(object : SdpObserverAdapter() {
+            override fun onSetSuccess() {
+                Log.d(TAG, "Remote answer set for $peerId, flushing buffered candidates")
+                flushIceCandidates(peerId, pc)
+            }
+        }, answer)
     }
 
     /**
      * Add a remote ICE candidate.
      */
     fun addIceCandidate(peerId: String, candidateSdp: String, sdpMid: String, sdpMLineIndex: Int) {
+        val pc = peerConnections[peerId]
+        if (pc == null) {
+            Log.w(TAG, "addIceCandidate: no PC for $peerId, buffering candidate (PC not created yet)")
+            val candidate = IceCandidate(sdpMid, sdpMLineIndex, candidateSdp)
+            pendingIceCandidates.getOrPut(peerId) { mutableListOf() }.add(candidate)
+            return
+        }
         val candidate = IceCandidate(sdpMid, sdpMLineIndex, candidateSdp)
-        peerConnections[peerId]?.addIceCandidate(candidate)
+
+        // Buffer if remote description not yet set (HAVE_LOCAL_OFFER means we sent offer, awaiting answer)
+        val sigState = pc.signalingState()
+        if (sigState == PeerConnection.SignalingState.HAVE_LOCAL_OFFER ||
+            sigState == PeerConnection.SignalingState.HAVE_REMOTE_OFFER) {
+            Log.d(TAG, "addIceCandidate for $peerId: buffering (signalingState=$sigState)")
+            pendingIceCandidates.getOrPut(peerId) { mutableListOf() }.add(candidate)
+            return
+        }
+
+        Log.d(TAG, "addIceCandidate for $peerId: mid=$sdpMid idx=$sdpMLineIndex sdp=${candidateSdp.take(80)}")
+        val added = pc.addIceCandidate(candidate)
+        Log.d(TAG, "addIceCandidate result=$added for $peerId")
     }
 
     /**
@@ -217,6 +256,7 @@ class WebRtcManager(private val context: Context) {
     fun releaseAll() {
         peerConnections.values.forEach { it.close() }
         peerConnections.clear()
+        pendingIceCandidates.clear()
 
         try { cameraCapturer?.stopCapture() } catch (_: Exception) {}
         cameraCapturer?.dispose()
@@ -235,21 +275,50 @@ class WebRtcManager(private val context: Context) {
         eglBase.release()
     }
 
+    private fun flushIceCandidates(peerId: String, pc: PeerConnection) {
+        val buffered = pendingIceCandidates.remove(peerId) ?: return
+        Log.d(TAG, "Flushing ${buffered.size} buffered ICE candidates for $peerId")
+        for (candidate in buffered) {
+            val added = pc.addIceCandidate(candidate)
+            Log.d(TAG, "Flushed ICE candidate for $peerId: mid=${candidate.sdpMid} result=$added")
+        }
+    }
+
     private fun createPeerObserver(peerId: String) = object : PeerConnection.Observer {
-        override fun onSignalingChange(newState: PeerConnection.SignalingState?) {}
-        override fun onIceConnectionChange(newState: PeerConnection.IceConnectionState?) {}
+        override fun onSignalingChange(newState: PeerConnection.SignalingState?) {
+            Log.d(TAG, "[$peerId] signalingState=$newState")
+        }
+        override fun onIceConnectionChange(newState: PeerConnection.IceConnectionState?) {
+            Log.d(TAG, "[$peerId] iceConnectionState=$newState")
+        }
         override fun onIceConnectionReceivingChange(receiving: Boolean) {}
-        override fun onIceGatheringChange(newState: PeerConnection.IceGatheringState?) {}
+        override fun onIceGatheringChange(newState: PeerConnection.IceGatheringState?) {
+            Log.d(TAG, "[$peerId] iceGatheringState=$newState")
+        }
         override fun onIceCandidate(candidate: IceCandidate) {
             onIceCandidateReady?.invoke(peerId, candidate)
         }
         override fun onIceCandidatesRemoved(candidates: Array<out IceCandidate>?) {}
-        override fun onAddStream(stream: MediaStream?) {}
-        override fun onRemoveStream(stream: MediaStream?) {}
+        override fun onAddStream(stream: MediaStream?) {
+            Log.d(TAG, "[$peerId] onAddStream videoTracks=${stream?.videoTracks?.size} audioTracks=${stream?.audioTracks?.size}")
+            // Fallback: some WebRTC versions deliver tracks via onAddStream
+            // instead of (or in addition to) onAddTrack when addStream was used.
+            stream?.videoTracks?.firstOrNull()?.let { track ->
+                mainHandler.post {
+                    onRemoteVideoTrack?.invoke(peerId, track)
+                }
+            }
+        }
+        override fun onRemoveStream(stream: MediaStream?) {
+            mainHandler.post {
+                onRemoteVideoTrackRemoved?.invoke(peerId)
+            }
+        }
         override fun onDataChannel(dc: org.webrtc.DataChannel?) {}
         override fun onRenegotiationNeeded() {}
         override fun onAddTrack(receiver: RtpReceiver?, mediaStreams: Array<out MediaStream>?) {
             val track = receiver?.track()
+            Log.d(TAG, "[$peerId] onAddTrack kind=${track?.kind()} id=${track?.id()}")
             if (track is VideoTrack) {
                 mainHandler.post {
                     onRemoteVideoTrack?.invoke(peerId, track)
@@ -260,13 +329,12 @@ class WebRtcManager(private val context: Context) {
 
     private fun getOrCreatePassivePeerConnection(peerId: String): PeerConnection {
         peerConnections[peerId]?.let { return it }
+        Log.d(TAG, "getOrCreatePassivePeerConnection (new) for $peerId")
 
         val pc = factory.createPeerConnection(rtcConfig(), createPeerObserver(peerId))!!
 
-        val stream = factory.createLocalMediaStream(LOCAL_STREAM_ID + peerId)
-        stream.addTrack(localAudioTrack)
-        localVideoTrack?.let { stream.addTrack(it) }
-        pc.addStream(stream)
+        pc.addTrack(localAudioTrack, listOf(LOCAL_STREAM_ID + peerId))
+        localVideoTrack?.let { pc.addTrack(it, listOf(LOCAL_STREAM_ID + peerId)) }
         peerConnections[peerId] = pc
         return pc
     }

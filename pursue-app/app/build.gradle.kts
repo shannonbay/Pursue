@@ -38,6 +38,15 @@ android {
     buildTypes {
         debug {
             buildConfigField("String", "API_BASE_URL", "\"$devApiBaseUrl\"")
+            // SSE streams go direct to Cloud Run, bypassing Cloudflare which buffers SSE.
+            // When devApiBaseUrl is a local/ngrok URL, Cloudflare isn't involved so use it directly.
+            // When it's the production URL (behind Cloudflare), use Cloud Run directly.
+            val debugSignalUrl = if (devApiBaseUrl.contains("api.getpursue.app")) {
+                "https://pursue-api-170178530674.australia-southeast1.run.app/api"
+            } else {
+                devApiBaseUrl
+            }
+            buildConfigField("String", "SIGNAL_BASE_URL", "\"$debugSignalUrl\"")
             configure<com.google.firebase.crashlytics.buildtools.gradle.CrashlyticsExtension> {
                 mappingFileUploadEnabled = false
             }
@@ -45,6 +54,8 @@ android {
         }
         release {
             buildConfigField("String", "API_BASE_URL", "\"https://api.getpursue.app/api\"")
+            // SSE streams go direct to Cloud Run, bypassing Cloudflare which buffers SSE
+            buildConfigField("String", "SIGNAL_BASE_URL", "\"https://pursue-api-170178530674.australia-southeast1.run.app/api\"")
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
@@ -134,7 +145,7 @@ dependencies {
     implementation("com.android.installreferrer:installreferrer:2.2")
 
     // Stream WebRTC (body-teaming peer audio)
-    implementation("io.getstream:stream-webrtc-android:1.3.3")
+    implementation("io.getstream:stream-webrtc-android:1.3.9")
 
     testImplementation(libs.junit)
     testImplementation(libs.mockk)

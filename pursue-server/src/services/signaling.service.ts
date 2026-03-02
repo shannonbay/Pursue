@@ -229,6 +229,33 @@ function addPeerToRoom(sessionId: string, peer: PeerInfo): void {
   });
 }
 
+async function sendCurrentPhaseToNewPeer(sessionId: string, peer: PeerInfo): Promise<void> {
+  try {
+    const session = await db
+      .selectFrom('focus_sessions')
+      .select(['status', 'started_at', 'focus_duration_minutes'])
+      .where('id', '=', sessionId)
+      .executeTakeFirst();
+
+    if (!session || session.status === 'lobby' || session.status === 'ended') return;
+
+    const startedAt = session.started_at ? new Date(session.started_at).getTime() : Date.now();
+    const durationMs =
+      session.status === 'focus'
+        ? (session.focus_duration_minutes ?? 25) * 60 * 1000
+        : 10 * 60 * 1000; // chit-chat always 10 min
+    const endsAt = new Date(startedAt + durationMs).toISOString();
+
+    peer.send({
+      type: 'phase-changed',
+      phase: session.status,       // "focus" or "chit-chat"
+      timer: { endsAt },
+    });
+  } catch (err) {
+    logger.error('signaling: failed to send current phase to new peer', { err, sessionId });
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Shared message handler
 // ---------------------------------------------------------------------------
@@ -309,8 +336,7 @@ async function processSignalingMessage(
           sessions.delete(sessionId);
         } else {
           const newStatus = phase === 'focus' ? 'focus' : 'chit-chat';
-          const updates: Record<string, string | null> = { status: newStatus };
-          if (phase === 'focus') updates.started_at = nowIso;
+          const updates: Record<string, string | null> = { status: newStatus, started_at: nowIso };
 
           await db
             .updateTable('focus_sessions')
@@ -431,6 +457,7 @@ export function attachSignalingServer(server: Server): void {
 
     // Add to room
     addPeerToRoom(sessionId, peer);
+    await sendCurrentPhaseToNewPeer(sessionId, peer);
 
     // Handle messages (with per-connection rate limiting)
     const MESSAGE_RATE_LIMIT = 30; // messages per window
@@ -565,6 +592,7 @@ export function createSignalingRouter(): Router {
 
     // Add to room
     addPeerToRoom(sessionId, peer);
+    await sendCurrentPhaseToNewPeer(sessionId, peer);
 
     // Heartbeat every 30 seconds to keep connection alive through proxies
     const heartbeatInterval = setInterval(() => {

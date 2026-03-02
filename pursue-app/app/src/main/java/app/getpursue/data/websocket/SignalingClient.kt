@@ -49,7 +49,7 @@ import java.util.concurrent.TimeUnit
 class SignalingClient(private val listener: SignalingListener) {
 
     interface SignalingListener {
-        fun onConnected()
+        fun onConnected(userId: String)
         fun onPeerJoined(userId: String, displayName: String)
         fun onPeerLeft(userId: String)
         /** newPhase is "focus" or "chit-chat". endsAt is ISO-8601. */
@@ -72,7 +72,8 @@ class SignalingClient(private val listener: SignalingListener) {
     private var isIntentionallyClosed = false
 
     // Connection state
-    private var currentBaseUrl: String? = null
+    private var sseBaseUrl: String? = null    // Direct Cloud Run URL for SSE (bypasses Cloudflare)
+    private var postBaseUrl: String? = null   // Main API URL for POST sends (through Cloudflare)
     private var currentSessionId: String? = null
     private var tokenProvider: (() -> String)? = null
 
@@ -88,26 +89,31 @@ class SignalingClient(private val listener: SignalingListener) {
     /**
      * Connect to the session signaling server via SSE.
      *
-     * @param apiBaseUrl     The REST base URL (e.g. "https://api.getpursue.app/api").
+     * @param sseBaseUrl     Direct Cloud Run URL for SSE stream (bypasses Cloudflare).
+     * @param postBaseUrl    Main API URL for POST sends (may go through Cloudflare).
      * @param sessionId      The focus session ID.
      * @param tokenProvider  Lambda returning the user's current JWT access token.
      *                       Called on each connection attempt so reconnects use a fresh token.
      */
-    fun connect(apiBaseUrl: String, sessionId: String, tokenProvider: () -> String) {
+    fun connect(sseBaseUrl: String, postBaseUrl: String, sessionId: String, tokenProvider: () -> String) {
+        Log.d(TAG, "connect() sseBase=$sseBaseUrl postBase=$postBaseUrl sessionId=$sessionId")
         isIntentionallyClosed = false
         retryCount = 0
-        currentBaseUrl = apiBaseUrl
+        this.sseBaseUrl = sseBaseUrl
+        this.postBaseUrl = postBaseUrl
         currentSessionId = sessionId
         this.tokenProvider = tokenProvider
         openSseStream()
     }
 
     private fun openSseStream() {
-        val baseUrl = currentBaseUrl ?: return
-        val sessionId = currentSessionId ?: return
-        val token = tokenProvider?.invoke() ?: return
+        val baseUrl = sseBaseUrl ?: run { Log.w(TAG, "openSseStream: sseBaseUrl is null"); return }
+        val sessionId = currentSessionId ?: run { Log.w(TAG, "openSseStream: sessionId is null"); return }
+        val token = tokenProvider?.invoke() ?: run { Log.w(TAG, "openSseStream: token is null"); return }
 
         val streamUrl = "$baseUrl/signal/$sessionId/stream?token=$token"
+        Log.d(TAG, "openSseStream: connecting to $baseUrl/signal/$sessionId/stream")
+
         val request = Request.Builder()
             .url(streamUrl)
             .header("Accept", "text/event-stream")
@@ -115,7 +121,9 @@ class SignalingClient(private val listener: SignalingListener) {
 
         sseJob = scope.launch {
             try {
+                Log.d(TAG, "openSseStream: executing HTTP request...")
                 val response = client.newCall(request).execute()
+                Log.d(TAG, "openSseStream: response code=${response.code}")
                 if (!response.isSuccessful) {
                     val code = response.code
                     response.close()
@@ -128,11 +136,13 @@ class SignalingClient(private val listener: SignalingListener) {
                 // Read SSE stream line by line
                 val inputStream = response.body?.byteStream()
                 if (inputStream == null) {
+                    Log.w(TAG, "openSseStream: response body is null")
                     response.close()
                     if (!isIntentionallyClosed) scheduleReconnect()
                     return@launch
                 }
 
+                Log.d(TAG, "openSseStream: SSE stream open, reading events...")
                 val reader = BufferedReader(InputStreamReader(inputStream))
                 var line: String?
 
@@ -142,6 +152,7 @@ class SignalingClient(private val listener: SignalingListener) {
                     val l = line ?: continue
                     if (l.startsWith("data: ")) {
                         val jsonStr = l.substring(6)
+                        Log.d(TAG, "openSseStream: received event: ${jsonStr.take(120)}")
                         handleMessage(jsonStr)
                     }
                     // Skip empty lines and comment lines (start with ":")
@@ -157,7 +168,7 @@ class SignalingClient(private val listener: SignalingListener) {
                 }
             } catch (e: Exception) {
                 if (!isIntentionallyClosed) {
-                    Log.w(TAG, "SSE stream error: ${e.message}")
+                    Log.w(TAG, "SSE stream error: ${e.message}", e)
                     listener.onError(e.message ?: "Connection failed")
                     scheduleReconnect()
                 }
@@ -190,7 +201,7 @@ class SignalingClient(private val listener: SignalingListener) {
                 "connected" -> {
                     Log.d(TAG, "SSE connected")
                     retryCount = 0
-                    listener.onConnected()
+                    listener.onConnected(json.optString("userId"))
                 }
                 "peer-joined" -> listener.onPeerJoined(
                     json.optString("peerId"),
@@ -228,9 +239,10 @@ class SignalingClient(private val listener: SignalingListener) {
      * @param fields Optional key-value pairs merged into the top-level JSON object.
      */
     fun send(type: String, fields: Map<String, Any?> = emptyMap()) {
-        val baseUrl = currentBaseUrl ?: return
-        val sessionId = currentSessionId ?: return
-        val token = tokenProvider?.invoke() ?: return
+        val baseUrl = postBaseUrl ?: run { Log.w(TAG, "send($type): postBaseUrl null"); return }
+        val sessionId = currentSessionId ?: run { Log.w(TAG, "send($type): sessionId null"); return }
+        val token = tokenProvider?.invoke() ?: run { Log.w(TAG, "send($type): token null"); return }
+        Log.d(TAG, "send($type) to=$sessionId")
 
         val json = JSONObject().apply {
             put("type", type)

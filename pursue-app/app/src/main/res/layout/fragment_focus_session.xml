@@ -59,6 +59,16 @@
             android:contentDescription="@string/focus_session_toggle_mic"
             app:tint="@android:color/white" />
 
+        <ImageButton
+            android:id="@+id/btn_toggle_speaker"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_marginHorizontal="12dp"
+            android:src="@drawable/ic_hearing"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Speaker"
+            app:tint="@android:color/white" />
+
     </LinearLayout>
 
     <!-- ===== LOBBY CONTROLS (visible in lobby phase) ===== -->

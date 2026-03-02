@@ -2,6 +2,7 @@ package app.getpursue.ui.fragments.sessions
 
 import android.Manifest
 import android.content.Context
+import android.media.AudioManager
 import android.graphics.Color
 import android.os.Bundle
 import android.view.Gravity
@@ -21,6 +22,7 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import app.getpursue.BuildConfig
 import app.getpursue.R
 import app.getpursue.data.auth.SecureTokenManager
 import app.getpursue.data.network.ApiClient
@@ -37,6 +39,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import android.util.Log
 import org.json.JSONObject
 import org.webrtc.SurfaceViewRenderer
 import java.time.Instant
@@ -50,6 +53,7 @@ import java.time.Instant
 class FocusSessionFragment : Fragment(), SignalingClient.SignalingListener {
 
     companion object {
+        private const val TAG = "FocusSession"
         private const val ARG_SESSION_ID = "session_id"
         private const val ARG_GROUP_ID = "group_id"
         private const val ARG_GROUP_NAME = "group_name"
@@ -57,7 +61,7 @@ class FocusSessionFragment : Fragment(), SignalingClient.SignalingListener {
 
         private const val PHASE_LOBBY = "lobby"
         private const val PHASE_FOCUS = "focus"
-        private const val PHASE_CHIT_CHAT = "chit_chat"
+        private const val PHASE_CHIT_CHAT = "chit-chat"
 
         private const val CHIT_CHAT_DURATION_SECS = 10 * 60L
 
@@ -95,18 +99,23 @@ class FocusSessionFragment : Fragment(), SignalingClient.SignalingListener {
     private lateinit var signalingClient: SignalingClient
     private lateinit var webRtcManager: WebRtcManager
     private var accessToken: String? = null
+    @Volatile private var myUserId: String = ""
 
     // --- Video state ---
     private var localRenderer: SurfaceViewRenderer? = null
     private val remoteRenderers = mutableMapOf<String, SurfaceViewRenderer>()
     private var isCameraOn = true
     private var isMicOn = false  // starts muted in lobby
+    private var isSpeakerOn = false  // starts on earpiece
+    private var audioManager: AudioManager? = null
+    private var previousAudioMode: Int = AudioManager.MODE_NORMAL
 
     // --- Views: Video ---
     private lateinit var videoGrid: GridLayout
     private lateinit var btnToggleCamera: ImageButton
     private lateinit var btnSwitchCamera: ImageButton
     private lateinit var btnToggleMic: ImageButton
+    private lateinit var btnToggleSpeaker: ImageButton
 
     // --- Views: Lobby ---
     private lateinit var lobbyControls: View
@@ -151,6 +160,7 @@ class FocusSessionFragment : Fragment(), SignalingClient.SignalingListener {
         val audioGranted = results[Manifest.permission.RECORD_AUDIO] == true
         val cameraGranted = results[Manifest.permission.CAMERA] == true
         if (audioGranted) {
+            setupAudioManager()
             if (cameraGranted) {
                 webRtcManager.initLocalVideo(requireContext())
                 setupLocalVideoPreview()
@@ -206,6 +216,7 @@ class FocusSessionFragment : Fragment(), SignalingClient.SignalingListener {
         btnToggleCamera = view.findViewById(R.id.btn_toggle_camera)
         btnSwitchCamera = view.findViewById(R.id.btn_switch_camera)
         btnToggleMic = view.findViewById(R.id.btn_toggle_mic)
+        btnToggleSpeaker = view.findViewById(R.id.btn_toggle_speaker)
 
         // Lobby
         lobbyControls = view.findViewById(R.id.lobby_controls)
@@ -277,11 +288,32 @@ class FocusSessionFragment : Fragment(), SignalingClient.SignalingListener {
             webRtcManager.muteLocalAudio(!isMicOn)
             updateMicIcon()
         }
+
+        btnToggleSpeaker.setOnClickListener {
+            isSpeakerOn = !isSpeakerOn
+            audioManager?.isSpeakerphoneOn = isSpeakerOn
+            updateSpeakerIcon()
+        }
     }
 
     private fun updateMicIcon() {
         btnToggleMic.setImageResource(
             if (isMicOn) R.drawable.ic_mic else R.drawable.ic_mic_off
+        )
+    }
+
+    private fun setupAudioManager() {
+        val am = requireContext().getSystemService(Context.AUDIO_SERVICE) as AudioManager
+        audioManager = am
+        previousAudioMode = am.mode
+        am.mode = AudioManager.MODE_IN_COMMUNICATION
+        am.isSpeakerphoneOn = isSpeakerOn
+        updateSpeakerIcon()
+    }
+
+    private fun updateSpeakerIcon() {
+        btnToggleSpeaker.setImageResource(
+            if (isSpeakerOn) R.drawable.ic_volume_up else R.drawable.ic_hearing
         )
     }
 
@@ -344,46 +376,68 @@ class FocusSessionFragment : Fragment(), SignalingClient.SignalingListener {
     }
 
     private fun connectSignaling() {
+        Log.d(TAG, "connectSignaling() called")
         lifecycleScope.launch {
-            val ctx = context ?: return@launch
+            val ctx = context ?: run {
+                Log.w(TAG, "connectSignaling: context is null, aborting")
+                return@launch
+            }
             val token = withContext(Dispatchers.IO) {
                 SecureTokenManager.getInstance(ctx).getAccessToken()
-            } ?: return@launch
+            }
+            if (token == null) {
+                Log.w(TAG, "connectSignaling: no access token, aborting")
+                return@launch
+            }
             accessToken = token
 
             // Join session via REST
+            Log.d(TAG, "connectSignaling: joining session=$sessionId group=$groupId")
             try {
                 withContext(Dispatchers.IO) {
                     ApiClient.joinSession(token, groupId, sessionId)
                 }
-            } catch (_: ApiException) {
-                // May already be joined — ignore
+                Log.d(TAG, "connectSignaling: joinSession succeeded")
+            } catch (e: ApiException) {
+                Log.d(TAG, "connectSignaling: joinSession error (may be already joined): ${e.message}")
+            } catch (e: Exception) {
+                Log.e(TAG, "connectSignaling: joinSession unexpected error: ${e.message}")
             }
 
-            // Open SSE signaling stream
-            signalingClient.connect(ApiClient.getBaseUrl(), sessionId) {
+            // Open SSE signaling stream — SSE goes direct to Cloud Run (bypasses Cloudflare buffering)
+            val sseBaseUrl = BuildConfig.SIGNAL_BASE_URL
+            val apiBaseUrl = ApiClient.getBaseUrl()
+            Log.d(TAG, "connectSignaling: opening SSE to $sseBaseUrl/signal/$sessionId/stream")
+            signalingClient.connect(sseBaseUrl, apiBaseUrl, sessionId) {
                 // Token provider: returns fresh token on each call (handles token refresh)
                 SecureTokenManager.getInstance(ctx).getAccessToken() ?: ""
             }
             sessionActive = true
+            Log.d(TAG, "connectSignaling: SSE connect initiated")
         }
     }
 
     // --- SignalingListener ---
 
-    override fun onConnected() {
-        // Connected; peers will receive peer_joined events
+    override fun onConnected(userId: String) {
+        Log.d(TAG, "onConnected myUserId=$userId")
+        myUserId = userId
     }
 
     override fun onPeerJoined(userId: String, displayName: String) {
+        val localId = myUserId  // capture volatile read
+        Log.d(TAG, "onPeerJoined peerId=$userId myUserId=$localId willOffer=${localId.isNotEmpty() && localId < userId}")
         requireActivity().runOnUiThread {
             // Add synthetic participant entry to local list for UI
             val existing = participants.any { it.user_id == userId }
             if (!existing) {
                 updateParticipantCountUI()
             }
-            // Create WebRTC offer to new peer (only if we joined before them)
-            webRtcManager.createPeerConnection(userId)
+            // Glare prevention: only the peer with the lexicographically smaller
+            // userId sends the offer. The other peer waits to receive an offer.
+            if (localId.isNotEmpty() && localId < userId) {
+                webRtcManager.createPeerConnection(userId)
+            }
         }
     }
 
@@ -420,7 +474,7 @@ class FocusSessionFragment : Fragment(), SignalingClient.SignalingListener {
                     webRtcManager.muteLocalAudio(false)
                     updateMicIcon()
                     btnToggleMic.alpha = 1.0f
-                    startChitChatCountdown()
+                    startChitChatCountdown(endsAt)
                 }
                 else -> {}
             }
@@ -428,32 +482,36 @@ class FocusSessionFragment : Fragment(), SignalingClient.SignalingListener {
     }
 
     override fun onSessionEnded() {
+        Log.d(TAG, "onSessionEnded received from server")
         requireActivity().runOnUiThread { finishSession() }
     }
 
     override fun onOffer(fromUserId: String, sdp: String) {
+        Log.d(TAG, "onOffer from=$fromUserId sdpLen=${sdp.length}")
         webRtcManager.handleOffer(fromUserId, sdp)
     }
 
     override fun onAnswer(fromUserId: String, sdp: String) {
+        Log.d(TAG, "onAnswer from=$fromUserId sdpLen=${sdp.length}")
         webRtcManager.handleAnswer(fromUserId, sdp)
     }
 
     override fun onIceCandidate(fromUserId: String, candidateJson: String) {
+        Log.d(TAG, "onIceCandidate from=$fromUserId json=${candidateJson.take(120)}")
         try {
             val obj = JSONObject(candidateJson)
-            webRtcManager.addIceCandidate(
-                fromUserId,
-                obj.optString("candidate"),
-                obj.optString("sdpMid", ""),
-                obj.optInt("sdpMLineIndex", 0)
-            )
-        } catch (_: Exception) {
-            // malformed candidate — ignore
+            val sdp = obj.optString("candidate")
+            val mid = obj.optString("sdpMid", "")
+            val idx = obj.optInt("sdpMLineIndex", 0)
+            Log.d(TAG, "onIceCandidate parsed: sdp=${sdp.take(80)} mid=$mid idx=$idx")
+            webRtcManager.addIceCandidate(fromUserId, sdp, mid, idx)
+        } catch (e: Exception) {
+            Log.e(TAG, "onIceCandidate parse error: ${e.message}, raw=$candidateJson")
         }
     }
 
     override fun onError(message: String) {
+        Log.e(TAG, "onError: $message")
         requireActivity().runOnUiThread {
             Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
         }
@@ -486,9 +544,13 @@ class FocusSessionFragment : Fragment(), SignalingClient.SignalingListener {
         }
     }
 
-    private fun startChitChatCountdown() {
+    private fun startChitChatCountdown(endsAt: String? = null) {
         timerJob?.cancel()
-        var remaining = CHIT_CHAT_DURATION_SECS
+        val deadline = endsAt?.let { runCatching { Instant.parse(it) }.getOrNull() }
+        var remaining = if (deadline != null)
+            (deadline.epochSecond - Instant.now().epochSecond).coerceAtLeast(0)
+        else
+            CHIT_CHAT_DURATION_SECS
         timerJob = lifecycleScope.launch {
             while (isActive && remaining >= 0) {
                 val mm = remaining / 60
@@ -555,6 +617,7 @@ class FocusSessionFragment : Fragment(), SignalingClient.SignalingListener {
     fun isSessionActive() = sessionActive && currentPhase != "ended"
 
     private fun finishSession() {
+        Log.d(TAG, "finishSession() called", Exception("stack trace"))
         sessionActive = false
         timerJob?.cancel()
         requireActivity().finish()
@@ -584,29 +647,36 @@ class FocusSessionFragment : Fragment(), SignalingClient.SignalingListener {
             signalingClient.send("answer", mapOf("to" to peerId, "sdp" to sdp))
         }
         webRtcManager.onIceCandidateReady = { peerId, candidate ->
+            val candidateObj = JSONObject().apply {
+                put("candidate", candidate.sdp)
+                put("sdpMid", candidate.sdpMid)
+                put("sdpMLineIndex", candidate.sdpMLineIndex)
+            }
             signalingClient.send(
                 "ice-candidate",
-                mapOf(
-                    "to" to peerId,
-                    "candidate" to mapOf(
-                        "candidate" to candidate.sdp,
-                        "sdpMid" to candidate.sdpMid,
-                        "sdpMLineIndex" to candidate.sdpMLineIndex
-                    )
-                )
+                mapOf("to" to peerId, "candidate" to candidateObj)
             )
         }
 
         webRtcManager.onRemoteVideoTrack = { peerId, track ->
             requireActivity().runOnUiThread {
-                val renderer = SurfaceViewRenderer(requireContext()).apply {
-                    init(webRtcManager.getEglBaseContext(), null)
-                    setEnableHardwareScaler(true)
+                try {
+                    // Guard: both onAddStream and onAddTrack may fire; skip if already added
+                    if (remoteRenderers.containsKey(peerId)) return@runOnUiThread
+                    if (!isAdded) return@runOnUiThread
+                    Log.d(TAG, "Adding remote video tile for $peerId")
+                    val renderer = SurfaceViewRenderer(requireContext()).apply {
+                        init(webRtcManager.getEglBaseContext(), null)
+                        setEnableHardwareScaler(true)
+                    }
+                    remoteRenderers[peerId] = renderer
+                    val name = participants.find { it.user_id == peerId }?.display_name ?: "Peer"
+                    addVideoTileToGrid(renderer, name)
+                    // Add sink AFTER renderer is in the view hierarchy and laid out
+                    renderer.post { track.addSink(renderer) }
+                } catch (e: Exception) {
+                    Log.e(TAG, "Error adding remote video tile for $peerId: ${e.message}", e)
                 }
-                track.addSink(renderer)
-                remoteRenderers[peerId] = renderer
-                val name = participants.find { it.user_id == peerId }?.display_name ?: "Peer"
-                addVideoTileToGrid(renderer, name)
             }
         }
 
@@ -618,9 +688,16 @@ class FocusSessionFragment : Fragment(), SignalingClient.SignalingListener {
     }
 
     override fun onDestroyView() {
+        Log.d(TAG, "onDestroyView() called")
         super.onDestroyView()
         timerJob?.cancel()
         signalingClient.disconnect()
+
+        // Restore audio mode
+        audioManager?.let {
+            it.isSpeakerphoneOn = false
+            it.mode = previousAudioMode
+        }
 
         // Release renderers before WebRTC teardown
         localRenderer?.let { renderer ->
