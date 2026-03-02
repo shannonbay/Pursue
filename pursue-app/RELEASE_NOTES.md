@@ -1,5 +1,75 @@
 # Pursue App Release Notes
 
+## Version 1.3.0 (Build 5)
+**Release Date:** March 2, 2026
+
+### ✨ New Features
+
+#### Body-Teaming Focus Sessions
+Group members can now co-work in real-time video focus sessions — a structured body-doubling experience with three phases:
+
+**Lobby → Focus → Chit-Chat**
+1. **Lobby** — participants join and see each other on camera before the timer starts
+2. **Focus** — a timed deep-work block where everyone works silently together (mics muted by default)
+3. **Chit-Chat** — a casual debrief after the focus timer ends
+
+**Ad-hoc sessions**
+- Any group member can start a focus session from the group detail screen
+- Other members join the live session; the creator starts the timer when ready
+- Session durations: 25, 50, or 90 minutes (90 min requires Premium)
+
+**Scheduled slots**
+- Schedule a future focus session with date, time, duration, and an optional note
+- Group members can RSVP to upcoming slots
+- 15-minute alarm reminder before a scheduled slot begins
+- Personal "Sessions" tab in bottom navigation shows all upcoming slots across groups, grouped by day
+
+**Video & audio**
+- Live camera video (480×360 @ 15 fps) with a grid layout showing all participants
+- Camera and microphone toggle controls during the session
+- Graceful degradation if camera permission is denied (audio-only fallback)
+
+**Real-time connectivity**
+- WebSocket signaling for peer coordination (offer/answer/ICE relay, phase changes, presence)
+- WebRTC mesh topology for direct peer-to-peer media streams
+
+**Notifications**
+- Push notification when a session starts in your group
+- Push notification when a new slot is posted
+- Push notification when 3+ members RSVP to a slot
+
+### 🛠️ Technical Details
+
+**Backend**
+- 4 new database tables: `focus_sessions`, `focus_session_participants`, `focus_slots`, `focus_slot_rsvps`
+- REST endpoints for sessions (create, join, start, end, leave) and slots (create, list, cancel, RSVP, un-RSVP, GET /me/slots)
+- WebSocket signaling server for WebRTC peer coordination
+- Rate limiting for session endpoints
+- 52+ integration tests covering sessions, slots, and signaling
+
+**Android**
+- New bottom navigation tab: Sessions (FocusSlotsFragment)
+- FocusSessionActivity with FLAG_SECURE for screen-recording protection
+- FocusSessionFragment with 3-phase UI and WebRTC video grid
+- SignalingClient (OkHttp WebSocket) and WebRtcManager (mesh peer connections)
+- ScheduleSlotBottomSheet for creating future session slots
+- SlotAlarmReceiver for 15-minute pre-session reminders (survives reboot)
+- Group detail integration: "Start Session" / "Join Session" button, upcoming slots list
+- SignalingE2ETest with end-to-end WebSocket test coverage
+
+### 📱 Requirements
+
+- **Android:** 6.0 (API 24) or higher
+- **Backend:** Version 1.3.0 or later (required for focus session tables and WebSocket server)
+
+### 🔄 Migration Notes
+
+- New database migration adds 4 tables — run `20260301_body_teaming.sql`
+- No breaking changes to existing functionality
+- WebSocket server attaches to the existing HTTP server (no new port required)
+
+---
+
 ## Version 1.2.1 (Build 4)
 **Release Date:** March 1, 2026
 
