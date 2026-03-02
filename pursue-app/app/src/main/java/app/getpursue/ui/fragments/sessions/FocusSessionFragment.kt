@@ -419,9 +419,31 @@ class FocusSessionFragment : Fragment(), SignalingClient.SignalingListener {
 
     // --- SignalingListener ---
 
-    override fun onConnected(userId: String) {
-        Log.d(TAG, "onConnected myUserId=$userId")
+    override fun onConnected(userId: String, isReconnect: Boolean) {
+        Log.d(TAG, "onConnected myUserId=$userId isReconnect=$isReconnect")
         myUserId = userId
+        if (isReconnect) {
+            requireActivity().runOnUiThread {
+                Log.d(TAG, "Reconnected — tearing down stale WebRTC state")
+                // Close all stale peer connections (server will re-send peer-joined events)
+                webRtcManager.closeAllPeerConnections()
+                // Remove all remote video tiles
+                for ((peerId, renderer) in remoteRenderers) {
+                    for (i in 0 until videoGrid.childCount) {
+                        val tile = videoGrid.getChildAt(i) as? FrameLayout ?: continue
+                        if (tile.getChildAt(0) == renderer) {
+                            videoGrid.removeViewAt(i)
+                            break
+                        }
+                    }
+                    renderer.release()
+                }
+                remoteRenderers.clear()
+                participants.clear()
+                updateGridColumns()
+                updateParticipantCountUI()
+            }
+        }
     }
 
     override fun onPeerJoined(userId: String, displayName: String) {
@@ -691,6 +713,17 @@ class FocusSessionFragment : Fragment(), SignalingClient.SignalingListener {
         webRtcManager.onRemoteVideoTrackRemoved = { peerId ->
             requireActivity().runOnUiThread {
                 removeVideoTile(peerId)
+            }
+        }
+
+        webRtcManager.onPeerConnectionFailed = { peerId ->
+            Log.w(TAG, "ICE connection failed for $peerId, attempting recovery")
+            removeVideoTile(peerId)
+            webRtcManager.closePeerConnection(peerId)
+            // Re-create the connection using the same glare-prevention rule as onPeerJoined
+            val localId = myUserId
+            if (localId.isNotEmpty() && localId < peerId) {
+                webRtcManager.createPeerConnection(peerId)
             }
         }
     }

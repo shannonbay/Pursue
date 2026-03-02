@@ -44,12 +44,12 @@ import java.util.concurrent.TimeUnit
  *   phase-change  { type:"phase-change",  phase }
  *   leave         { type:"leave" }
  *
- * Auto-reconnects up to 3 times with exponential back-off on unexpected closure.
+ * Auto-reconnects up to 10 times with exponential back-off (max 16s) on unexpected closure.
  */
 class SignalingClient(private val listener: SignalingListener) {
 
     interface SignalingListener {
-        fun onConnected(userId: String)
+        fun onConnected(userId: String, isReconnect: Boolean)
         fun onPeerJoined(userId: String, displayName: String)
         fun onPeerLeft(userId: String)
         /** newPhase is "focus" or "chit-chat". endsAt is ISO-8601. */
@@ -63,12 +63,14 @@ class SignalingClient(private val listener: SignalingListener) {
 
     companion object {
         private const val TAG = "SignalingClient"
-        private const val MAX_RETRIES = 3
+        private const val MAX_RETRIES = 10
+        private const val MAX_BACKOFF_MS = 16_000L
     }
 
     private val scope = CoroutineScope(Dispatchers.IO + Job())
     private var sseJob: Job? = null
     private var retryCount = 0
+    private var connectCount = 0
     private var isIntentionallyClosed = false
 
     // Connection state
@@ -99,6 +101,7 @@ class SignalingClient(private val listener: SignalingListener) {
         Log.d(TAG, "connect() sseBase=$sseBaseUrl postBase=$postBaseUrl sessionId=$sessionId")
         isIntentionallyClosed = false
         retryCount = 0
+        connectCount = 0
         this.sseBaseUrl = sseBaseUrl
         this.postBaseUrl = postBaseUrl
         currentSessionId = sessionId
@@ -181,7 +184,7 @@ class SignalingClient(private val listener: SignalingListener) {
             Log.w(TAG, "Max retries reached, giving up reconnect")
             return
         }
-        val delayMs = (1000L * (1 shl retryCount)).coerceAtMost(8000L)
+        val delayMs = (1000L * (1 shl retryCount)).coerceAtMost(MAX_BACKOFF_MS)
         retryCount++
         Log.d(TAG, "Reconnecting in ${delayMs}ms (attempt $retryCount/$MAX_RETRIES)")
         scope.launch {
@@ -199,9 +202,11 @@ class SignalingClient(private val listener: SignalingListener) {
             val json = JSONObject(text)
             when (val type = json.optString("type")) {
                 "connected" -> {
-                    Log.d(TAG, "SSE connected")
+                    connectCount++
+                    val isReconnect = connectCount > 1
+                    Log.d(TAG, "SSE connected (connectCount=$connectCount, isReconnect=$isReconnect)")
                     retryCount = 0
-                    listener.onConnected(json.optString("userId"))
+                    listener.onConnected(json.optString("userId"), isReconnect)
                 }
                 "peer-joined" -> listener.onPeerJoined(
                     json.optString("peerId"),

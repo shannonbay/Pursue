@@ -16,6 +16,7 @@ interface PeerInfo {
   userId: string;
   displayName: string;
   avatarUrl: string | null;
+  connectionId: string;
   send: (message: Record<string, unknown>) => void;
   close: () => void;
 }
@@ -40,6 +41,11 @@ class SignalingError extends Error {
 // In-memory state: sessionId -> Map<userId, PeerInfo>
 // ---------------------------------------------------------------------------
 const sessions = new Map<string, Map<string, PeerInfo>>();
+
+let nextConnectionId = 0;
+function generateConnectionId(): string {
+  return `conn_${++nextConnectionId}`;
+}
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -204,6 +210,21 @@ function addPeerToRoom(sessionId: string, peer: PeerInfo): void {
     sessions.set(sessionId, new Map());
   }
   const room = sessions.get(sessionId)!;
+
+  // If the user already has a connection (reconnect), close the stale one
+  const existingPeerForUser = room.get(peer.userId);
+  if (existingPeerForUser) {
+    logger.info('signaling: replacing stale connection for user', {
+      sessionId,
+      userId: peer.userId,
+      oldConnectionId: existingPeerForUser.connectionId,
+      newConnectionId: peer.connectionId,
+    });
+    existingPeerForUser.close();
+    room.delete(peer.userId);
+    // Notify other peers so they tear down stale WebRTC state
+    broadcastToRoom(sessionId, { type: 'peer-left', peerId: peer.userId });
+  }
 
   // Notify existing peers about new peer, and tell new peer about existing peers
   for (const [existingUid, existingPeer] of room) {
@@ -436,10 +457,12 @@ export function attachSignalingServer(server: Server): void {
     const { userId, displayName, avatarUrl } = validated;
 
     // Create transport-agnostic peer
+    const connectionId = generateConnectionId();
     const peer: PeerInfo = {
       userId,
       displayName,
       avatarUrl,
+      connectionId,
       send: (msg) => {
         if (ws.readyState === WebSocket.OPEN) {
           ws.send(JSON.stringify(msg));
@@ -490,8 +513,19 @@ export function attachSignalingServer(server: Server): void {
       await processSignalingMessage(sessionId, userId, msg, peer.send);
     });
 
-    // Handle disconnect
+    // Handle disconnect — guard against stale close handler firing after reconnect
     ws.on('close', async () => {
+      const room = sessions.get(sessionId);
+      const currentPeer = room?.get(userId);
+      if (currentPeer && currentPeer.connectionId !== connectionId) {
+        logger.debug('signaling: stale WS close handler ignored', {
+          sessionId,
+          userId,
+          staleConnectionId: connectionId,
+          currentConnectionId: currentPeer.connectionId,
+        });
+        return;
+      }
       await handleLeave(sessionId, userId);
       logger.debug('signaling: peer disconnected', { sessionId, userId });
     });
@@ -574,10 +608,12 @@ export function createSignalingRouter(): Router {
     res.write(`data: ${JSON.stringify({ type: 'connected', userId })}\n\n`);
 
     // Create transport-agnostic peer
+    const connectionId = generateConnectionId();
     const peer: PeerInfo = {
       userId,
       displayName,
       avatarUrl,
+      connectionId,
       send: (msg) => {
         if (!res.writableEnded) {
           res.write(`data: ${JSON.stringify(msg)}\n\n`);
@@ -603,9 +639,20 @@ export function createSignalingRouter(): Router {
       }
     }, 30_000);
 
-    // Handle client disconnect
+    // Handle client disconnect — guard against stale close handler firing after reconnect
     req.on('close', async () => {
       clearInterval(heartbeatInterval);
+      const room = sessions.get(sessionId);
+      const currentPeer = room?.get(userId);
+      if (currentPeer && currentPeer.connectionId !== connectionId) {
+        logger.debug('signaling SSE: stale close handler ignored', {
+          sessionId,
+          userId,
+          staleConnectionId: connectionId,
+          currentConnectionId: currentPeer.connectionId,
+        });
+        return;
+      }
       await handleLeave(sessionId, userId);
       logger.debug('signaling SSE: client disconnected', { sessionId, userId });
     });

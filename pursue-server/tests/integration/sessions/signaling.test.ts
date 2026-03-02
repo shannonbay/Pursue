@@ -360,6 +360,65 @@ describe('WebSocket Signaling Server', () => {
     });
   });
 
+  describe('Reconnection resilience', () => {
+    it('stale close handler does not evict a reconnected user', async () => {
+      const { accessToken: hostToken, userId: hostId } = await createAuthenticatedUser(randomEmail(), 'Test123!@#', 'Host');
+      const { groupId } = await createGroupWithGoal(hostToken, { includeGoal: false });
+      const sessionId = await createFocusSession(groupId, hostId);
+      const { memberUserId: memberId } = await addMemberToGroup(hostToken, groupId);
+
+      const hostJwt = generateAccessToken(hostId, 'host@example.com');
+      const memberJwt = generateAccessToken(memberId, 'member@example.com');
+
+      // Host connects
+      const wsHost = await connectWs(sessionId, hostJwt);
+
+      // Member opens first connection (ws1)
+      const peerJoinedOnHost1 = waitForMessage(wsHost, 'peer-joined');
+      const ws1 = await connectWs(sessionId, memberJwt);
+      const joined1 = await peerJoinedOnHost1;
+      expect(joined1.peerId).toBe(memberId);
+
+      // Host should see peer-left (old connection replaced) then peer-joined (new connection)
+      const peerLeftOnHost = waitForMessage(wsHost, 'peer-left');
+      const peerJoinedOnHost2 = waitForMessage(wsHost, 'peer-joined');
+
+      // Member opens second connection (ws2) — simulates reconnect
+      const ws2 = await connectWs(sessionId, memberJwt);
+
+      // Server replaces ws1 with ws2: host sees peer-left then peer-joined
+      const left = await peerLeftOnHost;
+      expect(left.peerId).toBe(memberId);
+      const joined2 = await peerJoinedOnHost2;
+      expect(joined2.peerId).toBe(memberId);
+
+      // Now close the stale ws1 — this should NOT trigger another peer-left
+      // because the server should recognise the stale connectionId
+      ws1.close();
+      // Give the stale close handler time to fire
+      await new Promise((r) => setTimeout(r, 500));
+
+      // Verify ws2 can still relay messages through the room
+      const offerPromise = waitForMessage(ws2, 'offer');
+      wsHost.send(JSON.stringify({ type: 'offer', to: memberId, sdp: 'reconnect-test' }));
+      const offerMsg = await offerPromise;
+      expect(offerMsg.sdp).toBe('reconnect-test');
+      expect(offerMsg.from).toBe(hostId);
+
+      // Verify member also sees the host as a peer (ws2 got peer-joined for host)
+      // Host sends to member, member responds — proves both directions work
+      const answerPromise = waitForMessage(wsHost, 'answer');
+      ws2.send(JSON.stringify({ type: 'answer', to: hostId, sdp: 'reconnect-answer' }));
+      const answerMsg = await answerPromise;
+      expect(answerMsg.sdp).toBe('reconnect-answer');
+      expect(answerMsg.from).toBe(memberId);
+
+      wsHost.close();
+      ws2.close();
+      await Promise.all([waitForClose(wsHost), waitForClose(ws2)]).catch(() => {});
+    });
+  });
+
   describe('Rate limiting and message size (Issues #7, #8)', () => {
     it('client exceeding message rate limit gets disconnected with code 4029', async () => {
       const { accessToken: hostToken, userId: hostId } = await createAuthenticatedUser(randomEmail(), 'Test123!@#', 'Host');

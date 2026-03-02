@@ -82,6 +82,9 @@ class WebRtcManager(private val context: Context) {
     var onRemoteVideoTrack: ((peerId: String, track: VideoTrack) -> Unit)? = null
     var onRemoteVideoTrackRemoved: ((peerId: String) -> Unit)? = null
 
+    /** Callback when a peer connection's ICE state transitions to FAILED. */
+    var onPeerConnectionFailed: ((peerId: String) -> Unit)? = null
+
     private val mainHandler = Handler(Looper.getMainLooper())
 
     init {
@@ -251,6 +254,26 @@ class WebRtcManager(private val context: Context) {
     }
 
     /**
+     * Close all peer connections but keep local audio/video tracks alive.
+     * Used on SSE reconnect to rebuild WebRTC from a clean state.
+     */
+    fun closeAllPeerConnections() {
+        Log.d(TAG, "closeAllPeerConnections: closing ${peerConnections.size} connections")
+        peerConnections.values.forEach { it.close() }
+        peerConnections.clear()
+        pendingIceCandidates.clear()
+    }
+
+    /**
+     * Close a single peer connection and remove from tracking maps.
+     */
+    fun closePeerConnection(peerId: String) {
+        Log.d(TAG, "closePeerConnection: $peerId")
+        peerConnections.remove(peerId)?.close()
+        pendingIceCandidates.remove(peerId)
+    }
+
+    /**
      * Release all peer connections, video capture, and the factory.
      */
     fun releaseAll() {
@@ -290,6 +313,9 @@ class WebRtcManager(private val context: Context) {
         }
         override fun onIceConnectionChange(newState: PeerConnection.IceConnectionState?) {
             Log.d(TAG, "[$peerId] iceConnectionState=$newState")
+            if (newState == PeerConnection.IceConnectionState.FAILED) {
+                mainHandler.post { onPeerConnectionFailed?.invoke(peerId) }
+            }
         }
         override fun onIceConnectionReceivingChange(receiving: Boolean) {}
         override fun onIceGatheringChange(newState: PeerConnection.IceGatheringState?) {
