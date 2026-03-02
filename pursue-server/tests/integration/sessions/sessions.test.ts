@@ -395,4 +395,69 @@ describe('Session REST endpoints', () => {
       expect(session?.status).toBe('ended');
     });
   });
+
+  // ---------------------------------------------------------------------------
+  // UUID validation (Issue #4)
+  // ---------------------------------------------------------------------------
+  describe('UUID validation', () => {
+    it('returns 404 for invalid groupId UUID on create session', async () => {
+      const { accessToken } = await createAuthenticatedUser(randomEmail());
+
+      const res = await request(app)
+        .post('/api/groups/not-a-uuid/sessions')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send({ focus_duration_minutes: 25 });
+
+      expect(res.status).toBe(404);
+      expect(res.body.error.code).toBe('NOT_FOUND');
+    });
+
+    it('returns 404 for invalid sessionId UUID on join', async () => {
+      const { accessToken } = await createAuthenticatedUser(randomEmail());
+      const { groupId } = await createGroupWithGoal(accessToken, { includeGoal: false });
+
+      const res = await request(app)
+        .post(`/api/groups/${groupId}/sessions/not-a-uuid/join`)
+        .set('Authorization', `Bearer ${accessToken}`);
+
+      expect(res.status).toBe(404);
+      expect(res.body.error.code).toBe('NOT_FOUND');
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // Premium bypass on overflow spawn (Issue #1)
+  // ---------------------------------------------------------------------------
+  describe('Premium bypass on overflow spawn', () => {
+    it('returns 403 PREMIUM_REQUIRED when free user joins full 90-min session', async () => {
+      const { accessToken: hostToken, userId: hostId } = await createAuthenticatedUser(randomEmail(), 'Test123!@#', 'Host');
+      await setUserPremium(hostId);
+      const { groupId } = await createGroupWithGoal(hostToken, { includeGoal: false });
+
+      // Create a 90-min session
+      const res1 = await request(app)
+        .post(`/api/groups/${groupId}/sessions`)
+        .set('Authorization', `Bearer ${hostToken}`)
+        .send({ focus_duration_minutes: 90 });
+      const sessionId = res1.body.session.id;
+
+      // Fill session to 8 participants (host + 7 more)
+      for (let i = 0; i < 7; i++) {
+        const { memberUserId } = await addMemberToGroup(hostToken, groupId);
+        await testDb
+          .insertInto('focus_session_participants')
+          .values({ session_id: sessionId, user_id: memberUserId })
+          .execute();
+      }
+
+      // Free user joins full 90-min session → should get 403
+      const { memberAccessToken: freeToken } = await addMemberToGroup(hostToken, groupId);
+      const res = await request(app)
+        .post(`/api/groups/${groupId}/sessions/${sessionId}/join`)
+        .set('Authorization', `Bearer ${freeToken}`);
+
+      expect(res.status).toBe(403);
+      expect(res.body.error.code).toBe('PREMIUM_REQUIRED');
+    });
+  });
 });

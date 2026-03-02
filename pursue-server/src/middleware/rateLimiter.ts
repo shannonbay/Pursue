@@ -134,6 +134,25 @@ export const reactionLimiter = rateLimit({
   legacyHeaders: false,
 });
 
+// Session/slot write endpoints (10 per minute per user)
+export const sessionWriteLimiter = rateLimit({
+  skip: () => isTest,
+  windowMs: 60 * 1000, // 1 minute
+  max: 10,
+  keyGenerator: (req) => {
+    const authReq = req as any;
+    return authReq.user?.id || 'unknown';
+  },
+  message: {
+    error: {
+      message: 'Too many session requests, please try again later',
+      code: 'SESSION_RATE_LIMIT_EXCEEDED',
+    },
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 // Reactions read (GET full list - 60 per minute per user)
 export const reactionReadLimiter = rateLimit({
   skip: () => isTest,

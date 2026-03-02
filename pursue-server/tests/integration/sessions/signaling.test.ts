@@ -52,8 +52,12 @@ afterAll((done) => {
 function connectWs(sessionId: string, token: string): Promise<WebSocket> {
   return new Promise((resolve, reject) => {
     const ws = new WebSocket(`ws://127.0.0.1:${port}/ws/sessions/${sessionId}?token=${token}`);
-    ws.once('open', () => resolve(ws));
-    ws.once('error', reject);
+    const onError = (err: Error) => reject(err);
+    ws.once('open', () => {
+      ws.removeListener('error', onError);
+      resolve(ws);
+    });
+    ws.once('error', onError);
     ws.once('unexpected-response', (_req, res) => {
       reject(new Error(`Unexpected response: ${res.statusCode}`));
     });
@@ -288,6 +292,45 @@ describe('WebSocket Signaling Server', () => {
       await Promise.all([waitForClose(ws1), waitForClose(ws2)]).catch(() => {});
     });
 
+    it('relay does not forward arbitrary extra fields (Issue #3)', async () => {
+      const { accessToken: hostToken, userId: hostId } = await createAuthenticatedUser(randomEmail(), 'Test123!@#', 'Host');
+      const { groupId } = await createGroupWithGoal(hostToken, { includeGoal: false });
+      const sessionId = await createFocusSession(groupId, hostId);
+      const { memberUserId: memberId } = await addMemberToGroup(hostToken, groupId);
+
+      const hostToken2 = generateAccessToken(hostId, 'host@example.com');
+      const memberToken = generateAccessToken(memberId, 'member@example.com');
+
+      const ws1 = await connectWs(sessionId, hostToken2);
+      const ws2 = await connectWs(sessionId, memberToken);
+
+      await waitForMessage(ws1, 'peer-joined').catch(() => {});
+
+      const offerPromise = waitForMessage(ws2, 'offer');
+
+      // Send offer with extra malicious fields
+      ws1.send(JSON.stringify({
+        type: 'offer',
+        to: memberId,
+        sdp: 'test-sdp',
+        malicious: 'injected-data',
+        __proto__: 'attack',
+      }));
+
+      const offerMsg = await offerPromise;
+      expect(offerMsg.type).toBe('offer');
+      expect(offerMsg.sdp).toBe('test-sdp');
+      expect(offerMsg.from).toBe(hostId);
+      // Extra fields should NOT be present
+      expect(offerMsg).not.toHaveProperty('malicious');
+      // Only expected fields should be present
+      expect(Object.keys(offerMsg).sort()).toEqual(['from', 'sdp', 'to', 'type']);
+
+      ws1.close();
+      ws2.close();
+      await Promise.all([waitForClose(ws1), waitForClose(ws2)]).catch(() => {});
+    });
+
     it('non-host phase-change is rejected with error message', async () => {
       const { accessToken: hostToken, userId: hostId } = await createAuthenticatedUser(randomEmail(), 'Test123!@#', 'Host');
       const { groupId } = await createGroupWithGoal(hostToken, { includeGoal: false });
@@ -314,6 +357,54 @@ describe('WebSocket Signaling Server', () => {
       ws1.close();
       ws2.close();
       await Promise.all([waitForClose(ws1), waitForClose(ws2)]).catch(() => {});
+    });
+  });
+
+  describe('Rate limiting and message size (Issues #7, #8)', () => {
+    it('client exceeding message rate limit gets disconnected with code 4029', async () => {
+      const { accessToken: hostToken, userId: hostId } = await createAuthenticatedUser(randomEmail(), 'Test123!@#', 'Host');
+      const { groupId } = await createGroupWithGoal(hostToken, { includeGoal: false });
+      const sessionId = await createFocusSession(groupId, hostId);
+
+      const hostToken2 = generateAccessToken(hostId, 'host@example.com');
+      const ws1 = await connectWs(sessionId, hostToken2);
+
+      // Wait for server to finish async setup (DB queries, event handler registration)
+      await new Promise((r) => setTimeout(r, 200));
+
+      const closePromise = waitForClose(ws1, 10000);
+
+      // Send messages exceeding the rate limit (30 per 10s window)
+      const msg = JSON.stringify({ type: 'offer', to: 'fake-user', sdp: 'test' });
+      for (let i = 0; i < 35; i++) {
+        if (ws1.readyState !== WebSocket.OPEN) break;
+        ws1.send(msg);
+      }
+
+      const { code } = await closePromise;
+      expect(code).toBe(4029);
+    }, 15000);
+
+    it('oversized WebSocket message closes connection with code 1009', async () => {
+      const { accessToken: hostToken, userId: hostId } = await createAuthenticatedUser(randomEmail(), 'Test123!@#', 'Host');
+      const { groupId } = await createGroupWithGoal(hostToken, { includeGoal: false });
+      const sessionId = await createFocusSession(groupId, hostId);
+
+      const hostToken2 = generateAccessToken(hostId, 'host@example.com');
+      const ws1 = await connectWs(sessionId, hostToken2);
+
+      // Wait for server to finish async setup
+      await new Promise((r) => setTimeout(r, 200));
+
+      // Suppress the error the ws library emits on the client side
+      ws1.on('error', () => {});
+
+      // Send a message larger than 4KB maxPayload
+      const largePayload = JSON.stringify({ type: 'offer', sdp: 'x'.repeat(5000) });
+      ws1.send(largePayload);
+
+      const { code } = await waitForClose(ws1);
+      expect(code).toBe(1009);
     });
   });
 });

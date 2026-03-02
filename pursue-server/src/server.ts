@@ -1,5 +1,6 @@
 import 'dotenv/config';
 import fs from 'node:fs';
+import http from 'node:http';
 import path from 'node:path';
 import { app } from './app.js';
 import { logger } from './utils/logger.js';
@@ -92,8 +93,15 @@ if (!process.env.OPENAI_API_KEY) {
 // Use the port provided by the environment (Cloud Run sets PORT), default 8080
 const PORT = process.env.PORT || 8080;
 
-const server = app.listen(Number(PORT), '0.0.0.0', () => {
-  attachSignalingServer(server);
+// Create the HTTP server explicitly so the WebSocket signaling server can be
+// attached before the server starts accepting connections. This matches the test
+// setup (http.createServer + attachSignalingServer + listen) and avoids any
+// timing window where a WebSocket upgrade could arrive before the 'upgrade'
+// event listener is registered.
+const server = http.createServer(app);
+attachSignalingServer(server);
+
+server.listen(Number(PORT), '0.0.0.0', () => {
   const nodeEnv = process.env.NODE_ENV || 'development';
   const debugAvatar = process.env.DEBUG_AVATAR === 'true';
   const webClientId = process.env.GOOGLE_CLIENT_ID;

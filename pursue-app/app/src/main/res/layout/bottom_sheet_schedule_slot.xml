@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <!-- Title -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/schedule_slot_title"
+        android:textAppearance="?attr/textAppearanceTitleMedium"
+        android:textColor="@color/on_surface"
+        android:layout_marginBottom="16dp" />
+
+    <!-- Date & Time label + button -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/schedule_slot_date_time"
+        android:textAppearance="?attr/textAppearanceLabelLarge"
+        android:textColor="@color/on_surface"
+        android:layout_marginBottom="4dp" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btn_pick_datetime"
+        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/schedule_slot_date_time_hint"
+        android:gravity="start"
+        android:layout_marginBottom="16dp"
+        app:strokeColor="@color/primary" />
+
+    <!-- Duration label + selector -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/schedule_slot_duration"
+        android:textAppearance="?attr/textAppearanceLabelLarge"
+        android:textColor="@color/on_surface"
+        android:layout_marginBottom="4dp" />
+
+    <com.google.android.material.chip.ChipGroup
+        android:id="@+id/duration_chips"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="16dp"
+        app:singleSelection="true"
+        app:checkedChip="@id/schedule_chip_45">
+
+        <com.google.android.material.chip.Chip
+            android:id="@+id/schedule_chip_25"
+            style="@style/Widget.MaterialComponents.Chip.Choice"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/focus_session_duration_25" />
+
+        <com.google.android.material.chip.Chip
+            android:id="@+id/schedule_chip_45"
+            style="@style/Widget.MaterialComponents.Chip.Choice"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/focus_session_duration_45"
+            android:checked="true" />
+
+        <com.google.android.material.chip.Chip
+            android:id="@+id/schedule_chip_60"
+            style="@style/Widget.MaterialComponents.Chip.Choice"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/focus_session_duration_60" />
+
+        <com.google.android.material.chip.Chip
+            android:id="@+id/schedule_chip_90"
+            style="@style/Widget.MaterialComponents.Chip.Choice"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/focus_session_duration_90"
+            android:enabled="false" />
+
+    </com.google.android.material.chip.ChipGroup>
+
+    <!-- Note input -->
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/slot_note_layout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="@string/schedule_slot_note_hint"
+        android:layout_marginBottom="24dp"
+        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/slot_note_input"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:maxLength="100"
+            android:maxLines="2"
+            android:imeOptions="actionDone" />
+
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <!-- Error message -->
+    <TextView
+        android:id="@+id/slot_error_text"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textAppearance="?attr/textAppearanceBodySmall"
+        android:textColor="@color/error"
+        android:visibility="gone"
+        android:layout_marginBottom="8dp" />
+
+    <!-- Action buttons -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="end">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_cancel_slot"
+            style="@style/Widget.MaterialComponents.Button.TextButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/schedule_slot_cancel" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_post_slot"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:text="@string/schedule_slot_post"
+            android:textColor="@color/on_primary"
+            app:backgroundTint="@color/primary" />
+
+    </LinearLayout>
+
+</LinearLayout>

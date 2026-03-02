@@ -292,6 +292,172 @@
                 android:layout_height="wrap_content"
                 android:visibility="gone" />
 
+            <!-- Focus Session Card (3 states: no-session / active / upcoming-slot) -->
+            <LinearLayout
+                android:id="@+id/focus_session_card_container"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
+                android:paddingBottom="12dp"
+                android:visibility="gone">
+
+                <!-- State 1: No active session -->
+                <LinearLayout
+                    android:id="@+id/focus_card_no_session"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btn_go_live"
+                        android:layout_width="0dp"
+                        android:layout_height="48dp"
+                        android:layout_weight="1"
+                        android:text="@string/focus_session_go_live"
+                        android:textColor="@color/on_primary"
+                        app:backgroundTint="@color/primary" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btn_schedule_slot"
+                        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                        android:layout_width="0dp"
+                        android:layout_height="48dp"
+                        android:layout_weight="1"
+                        android:layout_marginStart="8dp"
+                        android:text="@string/focus_session_schedule"
+                        app:strokeColor="@color/primary" />
+
+                </LinearLayout>
+
+                <!-- State 2: Active session in progress -->
+                <androidx.cardview.widget.CardView
+                    android:id="@+id/focus_card_active"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:visibility="gone"
+                    app:cardCornerRadius="12dp"
+                    app:cardElevation="1dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="12dp">
+
+                        <TextView
+                            android:id="@+id/focus_card_active_title"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/focus_card_active_title"
+                            android:textAppearance="?attr/textAppearanceTitleSmall"
+                            android:textColor="@color/on_surface" />
+
+                        <HorizontalScrollView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:scrollbars="none">
+
+                            <LinearLayout
+                                android:id="@+id/focus_card_participant_avatars"
+                                android:layout_width="wrap_content"
+                                android:layout_height="40dp"
+                                android:orientation="horizontal"
+                                android:gravity="center_vertical" />
+
+                        </HorizontalScrollView>
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical">
+
+                            <TextView
+                                android:id="@+id/focus_card_participant_count"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:textAppearance="?attr/textAppearanceBodySmall"
+                                android:textColor="@color/on_surface_variant" />
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/btn_join_session"
+                                android:layout_width="wrap_content"
+                                android:layout_height="40dp"
+                                android:text="@string/focus_session_join"
+                                android:textColor="@color/on_primary"
+                                app:backgroundTint="@color/primary" />
+
+                        </LinearLayout>
+
+                    </LinearLayout>
+
+                </androidx.cardview.widget.CardView>
+
+                <!-- State 3: Upcoming slot -->
+                <androidx.cardview.widget.CardView
+                    android:id="@+id/focus_card_slot"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:visibility="gone"
+                    app:cardCornerRadius="12dp"
+                    app:cardElevation="1dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:padding="12dp"
+                        android:gravity="center_vertical">
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:id="@+id/focus_card_slot_time"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:textAppearance="?attr/textAppearanceTitleSmall"
+                                android:textColor="@color/on_surface" />
+
+                            <TextView
+                                android:id="@+id/focus_card_slot_duration"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:textAppearance="?attr/textAppearanceBodySmall"
+                                android:textColor="@color/on_surface_variant" />
+
+                            <TextView
+                                android:id="@+id/focus_card_slot_rsvp_count"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:textAppearance="?attr/textAppearanceBodySmall"
+                                android:textColor="@color/on_surface_variant" />
+
+                        </LinearLayout>
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btn_rsvp_slot"
+                            android:layout_width="wrap_content"
+                            android:layout_height="40dp"
+                            android:text="@string/focus_session_rsvp_im_in"
+                            android:textColor="@color/on_primary"
+                            app:backgroundTint="@color/primary" />
+
+                    </LinearLayout>
+
+                </androidx.cardview.widget.CardView>
+
+            </LinearLayout>
+
         </LinearLayout>
 
         <!-- Tabs (sticky — no scroll flags) -->

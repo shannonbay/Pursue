@@ -23,6 +23,7 @@ import challengeRoutes from './routes/challenges.js';
 import discoverRoutes from './routes/discover.js';
 import moderationRoutes from './routes/moderation.js';
 import sessionRoutes from './routes/sessions.js';
+import { createSignalingRouter } from './services/signaling.service.js';
 
 const app = express();
 
@@ -138,6 +139,7 @@ app.use('/api', challengeRoutes);
 app.use('/api', discoverRoutes);
 app.use('/api', moderationRoutes);
 app.use('/api', sessionRoutes);
+app.use('/api/signal', createSignalingRouter());
 
 // Error handling
 app.use(errorHandler);

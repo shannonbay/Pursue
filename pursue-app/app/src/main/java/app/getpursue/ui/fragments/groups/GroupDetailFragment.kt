@@ -44,19 +44,24 @@ import androidx.viewpager2.adapter.FragmentStateAdapter
 import androidx.viewpager2.widget.ViewPager2
 import app.getpursue.data.analytics.AnalyticsEvents
 import app.getpursue.data.analytics.AnalyticsLogger
+import android.widget.LinearLayout
 import app.getpursue.data.auth.SecureTokenManager
 import app.getpursue.ui.views.DailyPulseWidget
 import app.getpursue.data.fcm.FcmTopicManager
 import app.getpursue.data.network.ApiClient
 import app.getpursue.data.network.ApiException
+import app.getpursue.data.network.FocusSession
+import app.getpursue.data.network.FocusSlot
 import app.getpursue.data.network.toChallengeCompletionCardDataOrNull
 import app.getpursue.models.GroupDetailResponse
 import app.getpursue.models.GroupMember
+import app.getpursue.ui.activities.FocusSessionActivity
 import app.getpursue.ui.activities.GroupDetailActivity
 import app.getpursue.ui.activities.ShareableMilestoneCardActivity
 import app.getpursue.ui.fragments.goals.CreateGoalFragment
 import app.getpursue.ui.views.IconPickerBottomSheet
 import app.getpursue.ui.views.InviteMembersBottomSheet
+import app.getpursue.ui.views.ScheduleSlotBottomSheet
 import app.getpursue.utils.ChallengeDateUiUtils
 import app.getpursue.utils.EmojiUtils
 import app.getpursue.utils.HeatUtils
@@ -81,7 +86,10 @@ import kotlinx.coroutines.withContext
 import java.io.IOException
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.OffsetDateTime
 import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
+import java.util.Locale
 import java.util.TimeZone
 
 /**
@@ -161,6 +169,20 @@ class GroupDetailFragment : Fragment() {
     private lateinit var viewPager: ViewPager2
     private lateinit var fabAction: FloatingActionButton
 
+    // --- Focus session card ---
+    private var activeSession: FocusSession? = null
+    private var upcomingSlot: FocusSlot? = null
+    private lateinit var focusSessionCardContainer: LinearLayout
+    private lateinit var focusCardNoSession: LinearLayout
+    private lateinit var focusCardActive: View
+    private lateinit var focusCardSlot: View
+    private lateinit var focusCardParticipantAvatars: LinearLayout
+    private lateinit var focusCardParticipantCount: TextView
+    private lateinit var focusCardActiveTitle: TextView
+    private lateinit var focusCardSlotTime: TextView
+    private lateinit var focusCardSlotDuration: TextView
+    private lateinit var focusCardSlotRsvpCount: TextView
+
     private var pendingExportGid: String? = null
     private var pendingExportStartDate: String? = null
     private var pendingExportEndDate: String? = null
@@ -235,6 +257,19 @@ class GroupDetailFragment : Fragment() {
         fabAction = view.findViewById(R.id.fab_action)
         dailyPulseWidget = view.findViewById(R.id.daily_pulse_widget)
         dailyPulseWidget.setFragmentManager(childFragmentManager, groupId ?: "")
+
+        // Focus session card views
+        focusSessionCardContainer = view.findViewById(R.id.focus_session_card_container)
+        focusCardNoSession = view.findViewById(R.id.focus_card_no_session)
+        focusCardActive = view.findViewById(R.id.focus_card_active)
+        focusCardSlot = view.findViewById(R.id.focus_card_slot)
+        focusCardParticipantAvatars = view.findViewById(R.id.focus_card_participant_avatars)
+        focusCardParticipantCount = view.findViewById(R.id.focus_card_participant_count)
+        focusCardActiveTitle = view.findViewById(R.id.focus_card_active_title)
+        focusCardSlotTime = view.findViewById(R.id.focus_card_slot_time)
+        focusCardSlotDuration = view.findViewById(R.id.focus_card_slot_duration)
+        focusCardSlotRsvpCount = view.findViewById(R.id.focus_card_slot_rsvp_count)
+        setupFocusCardClickListeners(view)
 
         // Heat section tap -> show info dialog
         val heatClickListener = View.OnClickListener { showHeatInfoDialog() }
@@ -566,6 +601,10 @@ class GroupDetailFragment : Fragment() {
                 }
 
                 updateCommLinkRow(response.comm_platform, response.comm_link)
+
+                // Fire-and-forget focus session card (non-critical, failure silently ignored)
+                loadFocusSessionCard(accessToken)
+
                 loadGroupIcon(
                     hasIcon = response.has_icon,
                     iconEmoji = response.icon_emoji,
@@ -633,6 +672,171 @@ class GroupDetailFragment : Fragment() {
             }
         } else {
             commLinkRow.visibility = View.GONE
+        }
+    }
+
+    // --- Focus Session Card ---
+
+    private fun setupFocusCardClickListeners(view: View) {
+        view.findViewById<MaterialButton>(R.id.btn_go_live)?.setOnClickListener {
+            createSessionAndNavigate()
+        }
+        view.findViewById<MaterialButton>(R.id.btn_schedule_slot)?.setOnClickListener {
+            val gid = groupId ?: return@setOnClickListener
+            val sheet = ScheduleSlotBottomSheet.show(childFragmentManager, gid)
+            sheet.onSlotPosted = { loadFocusSessionCard(null) }
+        }
+        view.findViewById<MaterialButton>(R.id.btn_join_session)?.setOnClickListener {
+            val session = activeSession ?: return@setOnClickListener
+            navigateToSession(session.id, isHost = false)
+        }
+        view.findViewById<MaterialButton>(R.id.btn_rsvp_slot)?.setOnClickListener {
+            toggleSlotRsvp()
+        }
+    }
+
+    private fun loadFocusSessionCard(cachedToken: String?) {
+        val gid = groupId ?: return
+        lifecycleScope.launch {
+            val ctx = context ?: return@launch
+            val token = cachedToken ?: withContext(Dispatchers.IO) {
+                SecureTokenManager.getInstance(ctx).getAccessToken()
+            } ?: return@launch
+
+            try {
+                val (sessions, slots) = coroutineScope {
+                    val sessionsDeferred = async(Dispatchers.IO) {
+                        try { ApiClient.getActiveSessions(token, gid).sessions } catch (_: Exception) { emptyList() }
+                    }
+                    val slotsDeferred = async(Dispatchers.IO) {
+                        try { ApiClient.listFocusSlots(token, gid).slots } catch (_: Exception) { emptyList() }
+                    }
+                    sessionsDeferred.await() to slotsDeferred.await()
+                }
+                if (!isAdded) return@launch
+                renderFocusCard(sessions, slots)
+            } catch (_: Exception) {
+                // Non-critical; card stays hidden
+            }
+        }
+    }
+
+    private fun renderFocusCard(sessions: List<FocusSession>, slots: List<FocusSlot>) {
+        // Find first non-ended session
+        val session = sessions.firstOrNull { it.status != "ended" }
+        activeSession = session
+
+        // Find next upcoming slot (within 24h, not cancelled)
+        val now = java.time.Instant.now()
+        val cutoff = now.plusSeconds(24 * 60 * 60)
+        val slot = slots
+            .filter { it.cancelled_at == null }
+            .filter { slotInWindow(it.scheduled_start, now, cutoff) }
+            .minByOrNull { it.scheduled_start }
+        upcomingSlot = slot
+
+        focusSessionCardContainer.visibility = View.VISIBLE
+
+        when {
+            session != null -> {
+                focusCardNoSession.visibility = View.GONE
+                focusCardActive.visibility = View.VISIBLE
+                focusCardSlot.visibility = View.GONE
+
+                val count = session.participants?.size ?: 0
+                focusCardParticipantCount.text = getString(R.string.focus_card_participant_count, count)
+            }
+            slot != null -> {
+                focusCardNoSession.visibility = View.GONE
+                focusCardActive.visibility = View.GONE
+                focusCardSlot.visibility = View.VISIBLE
+
+                try {
+                    val dt = OffsetDateTime.parse(slot.scheduled_start)
+                    focusCardSlotTime.text = dt.format(
+                        DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT).withLocale(Locale.getDefault())
+                    )
+                } catch (_: Exception) {
+                    focusCardSlotTime.text = slot.scheduled_start
+                }
+                focusCardSlotDuration.text = "${slot.focus_duration_minutes} min"
+                val rsvpCount = slot.rsvp_count ?: 0
+                focusCardSlotRsvpCount.text = getString(R.string.focus_card_slot_rsvp_count, rsvpCount)
+
+                val btnRsvp = focusCardSlot.findViewById<MaterialButton>(R.id.btn_rsvp_slot)
+                if (slot.user_rsvped == true) {
+                    btnRsvp?.text = getString(R.string.focus_session_rsvp_cancel)
+                } else {
+                    btnRsvp?.text = getString(R.string.focus_session_rsvp_im_in)
+                }
+            }
+            else -> {
+                focusCardNoSession.visibility = View.VISIBLE
+                focusCardActive.visibility = View.GONE
+                focusCardSlot.visibility = View.GONE
+            }
+        }
+    }
+
+    private fun slotInWindow(isoDateTime: String, from: java.time.Instant, to: java.time.Instant): Boolean {
+        return try {
+            val instant = OffsetDateTime.parse(isoDateTime).toInstant()
+            instant.isAfter(from) && instant.isBefore(to)
+        } catch (_: Exception) { false }
+    }
+
+    private fun createSessionAndNavigate() {
+        val gid = groupId ?: return
+        lifecycleScope.launch {
+            val ctx = context ?: return@launch
+            val token = withContext(Dispatchers.IO) {
+                SecureTokenManager.getInstance(ctx).getAccessToken()
+            } ?: return@launch
+
+            try {
+                val response = withContext(Dispatchers.IO) {
+                    ApiClient.createFocusSession(token, gid, 45)
+                }
+                navigateToSession(response.session.id, isHost = true)
+            } catch (e: ApiException) {
+                Toast.makeText(ctx, e.message, Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    private fun navigateToSession(sessionId: String, isHost: Boolean) {
+        val gid = groupId ?: return
+        val gname = groupDetail?.name ?: arguments?.getString(ARG_GROUP_NAME) ?: ""
+        val intent = Intent(requireContext(), FocusSessionActivity::class.java).apply {
+            putExtra(FocusSessionActivity.EXTRA_SESSION_ID, sessionId)
+            putExtra(FocusSessionActivity.EXTRA_GROUP_ID, gid)
+            putExtra(FocusSessionActivity.EXTRA_GROUP_NAME, gname)
+            putExtra(FocusSessionActivity.EXTRA_IS_HOST, isHost)
+        }
+        startActivity(intent)
+    }
+
+    private fun toggleSlotRsvp() {
+        val slot = upcomingSlot ?: return
+        val gid = groupId ?: return
+        lifecycleScope.launch {
+            val ctx = context ?: return@launch
+            val token = withContext(Dispatchers.IO) {
+                SecureTokenManager.getInstance(ctx).getAccessToken()
+            } ?: return@launch
+
+            try {
+                withContext(Dispatchers.IO) {
+                    if (slot.user_rsvped == true) {
+                        ApiClient.unrsvpFocusSlot(token, gid, slot.id)
+                    } else {
+                        ApiClient.rsvpFocusSlot(token, gid, slot.id)
+                    }
+                }
+                loadFocusSessionCard(token)
+            } catch (e: ApiException) {
+                Toast.makeText(ctx, e.message, Toast.LENGTH_SHORT).show()
+            }
         }
     }
 

@@ -162,6 +162,8 @@ data/analytics/AnalyticsPreference.kt - reads CrashlyticsPreference.isEnabled(),
 data/analytics/AnalyticsLogger.kt - logEvent() + setScreen() with consent guard, initialized in PursueApplication
 data/analytics/AnalyticsEvents.kt - custom event and param name constants (invite, milestone card, referral events)
 data/referral/InstallReferralHelper.kt - Play Install Referrer listener, fires referral_attributed on first launch
+data/websocket/SignalingClient.kt - OkHttp WebSocket wrapper for session signaling (peer relay, phase changes, ICE/SDP)
+data/webrtc/WebRtcManager.kt - Stream WebRTC peer connection + audio management (mesh topology, mute, ICE, SDP)
 
 # Models
 models/Group.kt - Group data model
@@ -180,9 +182,10 @@ models/GoalForLogging.kt - Goal data for progress logging
 
 # Activities
 ui/activities/MainActivity.kt - Launcher, auth check, deep linking
-ui/activities/MainAppActivity.kt - Main container with bottom navigation
+ui/activities/MainAppActivity.kt - Main container with bottom navigation (5 tabs: Today, Groups, Discover, Sessions, Profile)
 ui/activities/OnboardingActivity.kt - Sign-in/sign-up container
 ui/activities/GroupDetailActivity.kt - Group detail container
+ui/activities/FocusSessionActivity.kt - Full-screen container for body-teaming focus sessions (FLAG_SECURE)
 
 # Fragments — Home
 ui/fragments/home/HomeFragment.kt - Bottom nav with Today and Progress tabs
@@ -199,6 +202,10 @@ ui/fragments/groups/ActivityTabFragment.kt - Group activity feed tab
 ui/fragments/groups/CreateGroupFragment.kt - Create new group
 ui/fragments/groups/EditGroupFragment.kt - Edit group details
 ui/fragments/groups/PendingApprovalsFragment.kt - Pending membership approvals
+
+# Fragments — Sessions (Body-Teaming)
+ui/fragments/sessions/FocusSessionFragment.kt - 3-phase session UI (Lobby / Focus / Chit-Chat) with WebSocket + WebRTC
+ui/fragments/sessions/FocusSlotsFragment.kt - Personal sessions calendar (all groups, grouped by day)
 
 # Fragments — Goals & Onboarding
 ui/fragments/goals/CreateGoalFragment.kt - Create new goal
@@ -231,6 +238,10 @@ ui/views/PublicGroupDetailBottomSheet.kt - Public group detail + join request fl
 ui/views/ReportEntryBottomSheet.kt - Report a progress entry (4 reasons → POST /api/reports)
 ui/views/DisputeBottomSheet.kt - Dispute a content removal (explanation → POST /api/disputes)
 ui/views/CommunityStandardsBottomSheet.kt - One-time community standards acknowledgement
+ui/views/ScheduleSlotBottomSheet.kt - Schedule a body-teaming focus session slot (date/time picker, duration, note, alarm)
+
+# Receivers
+receivers/SlotAlarmReceiver.kt - BroadcastReceiver for 15-min pre-session slot reminders + BOOT_COMPLETED
 
 # Utils
 utils/ImageUtils.kt - Image loading and processing

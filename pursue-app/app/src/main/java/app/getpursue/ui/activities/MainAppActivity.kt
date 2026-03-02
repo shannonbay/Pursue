@@ -60,6 +60,7 @@ import app.getpursue.ui.fragments.home.NotificationsFragment
 import app.getpursue.ui.fragments.home.PremiumFragment
 import app.getpursue.ui.fragments.home.ProfileFragment
 import app.getpursue.ui.fragments.home.TodayFragment
+import app.getpursue.ui.fragments.sessions.FocusSlotsFragment
 import app.getpursue.ui.views.JoinGroupBottomSheet
 import app.getpursue.R
 import com.google.android.material.bottomnavigation.BottomNavigationView
@@ -542,6 +543,10 @@ class MainAppActivity : AppCompatActivity(),
                 supportActionBar?.title = getString(R.string.discover_title)
                 supportActionBar?.setDisplayHomeAsUpEnabled(false)
             }
+            is app.getpursue.ui.fragments.sessions.FocusSlotsFragment -> {
+                supportActionBar?.title = getString(R.string.sessions_title)
+                supportActionBar?.setDisplayHomeAsUpEnabled(false)
+            }
             is ProfileFragment -> {
                 supportActionBar?.title = getString(R.string.profile_title)
                 supportActionBar?.setDisplayHomeAsUpEnabled(false)
@@ -623,6 +628,10 @@ class MainAppActivity : AppCompatActivity(),
                 supportActionBar?.title = getString(R.string.discover_title)
                 AnalyticsLogger.setScreen(AnalyticsEvents.SCREEN_DISCOVER)
                 DiscoverFragment.newInstance()
+            }
+            R.id.nav_sessions -> {
+                supportActionBar?.title = getString(R.string.sessions_title)
+                FocusSlotsFragment.newInstance()
             }
             R.id.nav_profile -> {
                 supportActionBar?.title = getString(R.string.profile_title)

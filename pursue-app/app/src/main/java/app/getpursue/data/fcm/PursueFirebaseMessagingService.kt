@@ -13,6 +13,7 @@ import androidx.core.content.ContextCompat
 import app.getpursue.data.auth.SecureTokenManager
 import app.getpursue.data.notifications.NotificationPreferences
 import app.getpursue.data.notifications.UnreadBadgeManager
+import app.getpursue.ui.activities.FocusSessionActivity
 import app.getpursue.ui.activities.GroupDetailActivity
 import app.getpursue.ui.activities.MainActivity
 import app.getpursue.ui.activities.ShareableMilestoneCardActivity
@@ -141,6 +142,21 @@ class PursueFirebaseMessagingService : FirebaseMessagingService() {
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
             }
         }
+        // --- Body-Teaming: session_started → open FocusSessionActivity ---
+        if (type == "session_started") {
+            val sessionId = data?.get("session_id")?.takeIf { it.isNotBlank() }
+            val gid = data?.get("group_id")?.takeIf { it.isNotBlank() }
+            if (sessionId != null && gid != null) {
+                return Intent(applicationContext, FocusSessionActivity::class.java).apply {
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                    putExtra(FocusSessionActivity.EXTRA_SESSION_ID, sessionId)
+                    putExtra(FocusSessionActivity.EXTRA_GROUP_ID, gid)
+                    putExtra(FocusSessionActivity.EXTRA_GROUP_NAME, data?.get("group_name") ?: "")
+                    putExtra(FocusSessionActivity.EXTRA_IS_HOST, false)
+                }
+            }
+        }
+
         val groupId = data?.get("group_id")?.takeIf { it.isNotBlank() }
         if (groupId == null) {
             return Intent(applicationContext, MainActivity::class.java).apply {
@@ -157,6 +173,8 @@ class PursueFirebaseMessagingService : FirebaseMessagingService() {
             "member_joined", "member_left", "member_promoted", "member_approved",
             "member_removed", "member_declined", "group_renamed", "invite_code_regenerated", "group_created" -> 1 to false
             "heat_tier_up", "heat_supernova_reached", "heat_streak_milestone" -> 2 to false
+            // Body-Teaming: slot_posted and rsvp_milestone → open GroupDetailActivity
+            "slot_posted", "rsvp_milestone" -> -1 to false
             else -> -1 to false
         }
         return Intent(applicationContext, GroupDetailActivity::class.java).apply {

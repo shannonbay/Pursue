@@ -359,4 +359,64 @@ describe('Slot REST endpoints', () => {
       expect(res.body.slots).toHaveLength(0);
     });
   });
+
+  // ---------------------------------------------------------------------------
+  // UUID validation (Issue #4)
+  // ---------------------------------------------------------------------------
+  describe('UUID validation', () => {
+    it('returns 404 for invalid groupId UUID on create slot', async () => {
+      const { accessToken } = await createAuthenticatedUser(randomEmail());
+
+      const res = await request(app)
+        .post('/api/groups/not-a-uuid/slots')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send({ scheduled_start: futureDate().toISOString(), focus_duration_minutes: 25 });
+
+      expect(res.status).toBe(404);
+      expect(res.body.error.code).toBe('NOT_FOUND');
+    });
+
+    it('returns 404 for invalid slotId UUID on RSVP', async () => {
+      const { accessToken } = await createAuthenticatedUser(randomEmail());
+      const { groupId } = await createGroupWithGoal(accessToken, { includeGoal: false });
+
+      const res = await request(app)
+        .post(`/api/groups/${groupId}/slots/not-a-uuid/rsvp`)
+        .set('Authorization', `Bearer ${accessToken}`);
+
+      expect(res.status).toBe(404);
+      expect(res.body.error.code).toBe('NOT_FOUND');
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // Slot scheduling upper bound (Issue #11)
+  // ---------------------------------------------------------------------------
+  describe('Slot scheduling upper bound', () => {
+    it('returns 400 for scheduled_start > 30 days in future', async () => {
+      const { accessToken } = await createAuthenticatedUser(randomEmail());
+      const { groupId } = await createGroupWithGoal(accessToken, { includeGoal: false });
+      const farFuture = new Date(Date.now() + 31 * 24 * 60 * 60 * 1000); // 31 days
+
+      const res = await request(app)
+        .post(`/api/groups/${groupId}/slots`)
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send({ scheduled_start: farFuture.toISOString(), focus_duration_minutes: 25 });
+
+      expect(res.status).toBe(400);
+    });
+
+    it('allows scheduled_start within 30 days', async () => {
+      const { accessToken } = await createAuthenticatedUser(randomEmail());
+      const { groupId } = await createGroupWithGoal(accessToken, { includeGoal: false });
+      const within30Days = new Date(Date.now() + 29 * 24 * 60 * 60 * 1000); // 29 days
+
+      const res = await request(app)
+        .post(`/api/groups/${groupId}/slots`)
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send({ scheduled_start: within30Days.toISOString(), focus_duration_minutes: 25 });
+
+      expect(res.status).toBe(201);
+    });
+  });
 });

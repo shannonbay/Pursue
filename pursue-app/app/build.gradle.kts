@@ -133,6 +133,9 @@ dependencies {
     // Google Play Install Referrer (referral attribution)
     implementation("com.android.installreferrer:installreferrer:2.2")
 
+    // Stream WebRTC (body-teaming peer audio)
+    implementation("io.getstream:stream-webrtc-android:1.3.3")
+
     testImplementation(libs.junit)
     testImplementation(libs.mockk)
     testImplementation(libs.robolectric)
