@@ -431,6 +431,13 @@ class FocusSessionFragment : Fragment(), SignalingClient.SignalingListener {
             // Add synthetic participant entry to local list for UI
             val existing = participants.any { it.user_id == userId }
             if (!existing) {
+                participants.add(FocusParticipant(
+                    id = userId,
+                    user_id = userId,
+                    display_name = displayName,
+                    joined_at = java.time.Instant.now().toString(),
+                    left_at = null
+                ))
                 updateParticipantCountUI()
             }
             // Glare prevention: only the peer with the lexicographically smaller
@@ -443,6 +450,7 @@ class FocusSessionFragment : Fragment(), SignalingClient.SignalingListener {
 
     override fun onPeerLeft(userId: String) {
         requireActivity().runOnUiThread {
+            participants.removeAll { it.user_id == userId }
             removeVideoTile(userId)
             updateParticipantCountUI()
         }
