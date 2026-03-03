@@ -1,7 +1,6 @@
 package app.getpursue.ui.fragments.onboarding
 
 import android.widget.DatePicker
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import android.content.Context
 import android.os.Bundle
 import android.util.Log
@@ -16,7 +15,6 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import app.getpursue.R
 import app.getpursue.data.network.ApiClient
-import com.google.android.material.textfield.TextInputEditText
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -40,7 +38,7 @@ class DobGateFragment : Fragment() {
 
     private var callbacks: Callbacks? = null
 
-    private lateinit var dobInput: TextInputEditText
+    private lateinit var dobPicker: DatePicker
     private lateinit var dobErrorText: TextView
     private lateinit var continueButton: Button
 
@@ -66,68 +64,50 @@ class DobGateFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        dobInput = view.findViewById(R.id.et_dob_gate)
+        dobPicker = view.findViewById(R.id.date_picker_dob_gate)
         dobErrorText = view.findViewById(R.id.tv_dob_gate_error)
         continueButton = view.findViewById(R.id.btn_dob_gate_continue)
 
-        dobInput.setOnClickListener { showDobPicker() }
+        val today = Calendar.getInstance()
+        val minCal = Calendar.getInstance().also { it.add(Calendar.YEAR, -120) }
+        dobPicker.maxDate = today.timeInMillis
+        dobPicker.minDate = minCal.timeInMillis
+
+        val defaultCal = Calendar.getInstance().also { it.add(Calendar.YEAR, -17) }
+        dobPicker.init(
+            defaultCal.get(Calendar.YEAR),
+            defaultCal.get(Calendar.MONTH),
+            defaultCal.get(Calendar.DAY_OF_MONTH)
+        ) { _, year, month, day ->
+            val iso = "%04d-%02d-%02d".format(year, month + 1, day)
+            val now = Calendar.getInstance()
+            var age = now.get(Calendar.YEAR) - year
+            val m = now.get(Calendar.MONTH) - month
+            if (m < 0 || (m == 0 && now.get(Calendar.DAY_OF_MONTH) < day)) age--
+
+            if (age < 18) {
+                dobIso = null
+                dobValid = false
+                dobErrorText.setText(R.string.dob_error_under_age)
+                dobErrorText.isVisible = true
+                continueButton.isEnabled = false
+            } else {
+                dobIso = iso
+                dobValid = true
+                dobErrorText.isVisible = false
+                continueButton.isEnabled = true
+            }
+        }
+
+        // Initial state: 17-year-old default → invalid, button disabled
+        dobIso = null
+        dobValid = false
+        continueButton.isEnabled = false
 
         continueButton.setOnClickListener {
             val iso = dobIso ?: return@setOnClickListener
             submitDob(iso)
         }
-    }
-
-    private fun showDobPicker() {
-        val cal = Calendar.getInstance()
-        val todayMillis = cal.timeInMillis
-        cal.add(Calendar.YEAR, -120)
-        val minMillis = cal.timeInMillis
-
-        val dialogView = layoutInflater.inflate(R.layout.dialog_dob_picker, null)
-        val datePicker = dialogView.findViewById<DatePicker>(R.id.date_picker)
-        datePicker.maxDate = todayMillis
-        datePicker.minDate = minMillis
-        val defaultCal = Calendar.getInstance()
-        defaultCal.add(Calendar.YEAR, -25)
-        datePicker.updateDate(
-            defaultCal.get(Calendar.YEAR),
-            defaultCal.get(Calendar.MONTH),
-            defaultCal.get(Calendar.DAY_OF_MONTH)
-        )
-
-        MaterialAlertDialogBuilder(requireContext())
-            .setTitle(R.string.dob_label)
-            .setView(dialogView)
-            .setPositiveButton(android.R.string.ok) { _, _ ->
-                val year = datePicker.year
-                val month = datePicker.month
-                val day = datePicker.dayOfMonth
-                val iso = "%04d-%02d-%02d".format(year, month + 1, day)
-                val today = Calendar.getInstance()
-                var age = today.get(Calendar.YEAR) - year
-                val m = today.get(Calendar.MONTH) - month
-                if (m < 0 || (m == 0 && today.get(Calendar.DAY_OF_MONTH) < day)) age--
-
-                if (age < 18) {
-                    dobIso = null
-                    dobValid = false
-                    dobInput.setText("")
-                    dobErrorText.setText(R.string.dob_error_under_age)
-                    dobErrorText.isVisible = true
-                    continueButton.isEnabled = false
-                    callbacks?.onDobUnderAge()
-                } else {
-                    dobIso = iso
-                    dobValid = true
-                    val display = "%02d/%02d/%04d".format(month + 1, day, year)
-                    dobInput.setText(display)
-                    dobErrorText.isVisible = false
-                    continueButton.isEnabled = true
-                }
-            }
-            .setNegativeButton(android.R.string.cancel, null)
-            .show()
     }
 
     private fun submitDob(iso: String) {

@@ -1,7 +1,6 @@
 package app.getpursue.ui.fragments.onboarding
 
 import android.widget.DatePicker
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import android.content.Context
 import android.os.Bundle
 import android.text.Editable
@@ -56,7 +55,7 @@ class SignUpEmailFragment : Fragment() {
     private var callbacks: Callbacks? = null
 
     private lateinit var displayNameInput: TextInputEditText
-    private lateinit var dobInput: TextInputEditText
+    private lateinit var dobPicker: DatePicker
     private lateinit var dobErrorText: TextView
     private lateinit var emailInput: TextInputEditText
     private lateinit var passwordInput: TextInputEditText
@@ -113,7 +112,7 @@ class SignUpEmailFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         displayNameInput = view.findViewById(R.id.input_display_name)
-        dobInput = view.findViewById(R.id.et_dob)
+        dobPicker = view.findViewById(R.id.date_picker_dob)
         dobErrorText = view.findViewById(R.id.tv_dob_error)
         emailInput = view.findViewById(R.id.input_email)
         passwordInput = view.findViewById(R.id.input_password)
@@ -144,8 +143,40 @@ class SignUpEmailFragment : Fragment() {
 
         consentCheckbox.setOnCheckedChangeListener { _, _ -> validate() }
 
-        // DOB picker
-        dobInput.setOnClickListener { showDobPicker() }
+        // Inline DOB spinner
+        val todayDob = Calendar.getInstance()
+        val minCalDob = Calendar.getInstance().also { it.add(Calendar.YEAR, -120) }
+        dobPicker.maxDate = todayDob.timeInMillis
+        dobPicker.minDate = minCalDob.timeInMillis
+
+        val defaultCalDob = Calendar.getInstance().also { it.add(Calendar.YEAR, -17) }
+        dobPicker.init(
+            defaultCalDob.get(Calendar.YEAR),
+            defaultCalDob.get(Calendar.MONTH),
+            defaultCalDob.get(Calendar.DAY_OF_MONTH)
+        ) { _, year, month, day ->
+            val iso = "%04d-%02d-%02d".format(year, month + 1, day)
+            val now = Calendar.getInstance()
+            var age = now.get(Calendar.YEAR) - year
+            val m = now.get(Calendar.MONTH) - month
+            if (m < 0 || (m == 0 && now.get(Calendar.DAY_OF_MONTH) < day)) age--
+
+            if (age < 18) {
+                dobIso = null
+                dobSelected = false
+                dobErrorText.setText(R.string.dob_error_under_age)
+                dobErrorText.isVisible = true
+            } else {
+                dobIso = iso
+                dobSelected = true
+                dobErrorText.isVisible = false
+            }
+            validate()
+        }
+
+        // Initial state: 17-year-old default → invalid
+        dobIso = null
+        dobSelected = false
 
         // Initialize character counter
         charCounter.text = getString(R.string.display_name_char_counter, 0)
@@ -336,56 +367,6 @@ class SignUpEmailFragment : Fragment() {
                                          consentCheckbox.isChecked
 
         return createAccountButton.isEnabled
-    }
-
-    private fun showDobPicker() {
-        val cal = Calendar.getInstance()
-        val todayMillis = cal.timeInMillis
-        cal.add(Calendar.YEAR, -120)
-        val minMillis = cal.timeInMillis
-
-        val dialogView = layoutInflater.inflate(R.layout.dialog_dob_picker, null)
-        val datePicker = dialogView.findViewById<DatePicker>(R.id.date_picker)
-        datePicker.maxDate = todayMillis
-        datePicker.minDate = minMillis
-        val defaultCal = Calendar.getInstance()
-        defaultCal.add(Calendar.YEAR, -25)
-        datePicker.updateDate(
-            defaultCal.get(Calendar.YEAR),
-            defaultCal.get(Calendar.MONTH),
-            defaultCal.get(Calendar.DAY_OF_MONTH)
-        )
-
-        MaterialAlertDialogBuilder(requireContext())
-            .setTitle(R.string.dob_label)
-            .setView(dialogView)
-            .setPositiveButton(android.R.string.ok) { _, _ ->
-                val year = datePicker.year
-                val month = datePicker.month
-                val day = datePicker.dayOfMonth
-                val iso = "%04d-%02d-%02d".format(year, month + 1, day)
-                val today = Calendar.getInstance()
-                var age = today.get(Calendar.YEAR) - year
-                val m = today.get(Calendar.MONTH) - month
-                if (m < 0 || (m == 0 && today.get(Calendar.DAY_OF_MONTH) < day)) age--
-
-                if (age < 18) {
-                    dobIso = null
-                    dobSelected = false
-                    dobInput.setText("")
-                    dobErrorText.setText(R.string.dob_error_under_age)
-                    dobErrorText.isVisible = true
-                } else {
-                    dobIso = iso
-                    dobSelected = true
-                    val display = "%02d/%02d/%04d".format(month + 1, day, year)
-                    dobInput.setText(display)
-                    dobErrorText.isVisible = false
-                }
-                validate()
-            }
-            .setNegativeButton(android.R.string.cancel, null)
-            .show()
     }
 
     private fun registerUser(displayName: String, email: String, password: String, dateOfBirth: String) {
