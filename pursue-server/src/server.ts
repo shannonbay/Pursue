@@ -5,6 +5,7 @@ import path from 'node:path';
 import { app } from './app.js';
 import { logger } from './utils/logger.js';
 import { attachSignalingServer } from './services/signaling.service.js';
+import { signalingRelay } from './services/signaling.relay.js';
 
 // Validate required environment variables
 const requiredEnvVars = [
@@ -115,6 +116,8 @@ server.listen(Number(PORT), '0.0.0.0', () => {
     debugAvatar,
     googleOAuth: hasWebClient || hasAndroidClient,
     semanticSearch: !!process.env.OPENAI_API_KEY,
+    signalingRelay: signalingRelay.enabled,
+    instanceId: signalingRelay.enabled ? signalingRelay.instanceId : undefined,
     webClientId: hasWebClient && webClientId ? `${webClientId.substring(0, 30)}...` : undefined,
     androidClientId: hasAndroidClient && androidClientId ? `${androidClientId.substring(0, 30)}...` : undefined,
   });

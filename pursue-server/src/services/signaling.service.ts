@@ -7,6 +7,7 @@ import { verifyAccessToken } from '../utils/jwt.js';
 import { authenticate } from '../middleware/authenticate.js';
 import type { AuthRequest } from '../types/express.js';
 import { logger } from '../utils/logger.js';
+import { signalingRelay, type RemotePeer } from './signaling.relay.js';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -48,8 +49,83 @@ function generateConnectionId(): string {
 }
 
 // ---------------------------------------------------------------------------
+// Multi-instance relay callbacks (Supabase Realtime)
+// ---------------------------------------------------------------------------
+
+if (signalingRelay.enabled) {
+  signalingRelay.setCallbacks({
+    onRemoteMessage(sessionId: string, msg: Record<string, unknown>) {
+      const targetUserId = msg.targetUserId as string | undefined;
+      if (targetUserId) {
+        // Targeted message (offer/answer/ICE) — deliver to specific local peer
+        const room = sessions.get(sessionId);
+        const localPeer = room?.get(targetUserId);
+        if (localPeer) {
+          // Strip relay metadata before forwarding to client
+          const { targetUserId: _, excludeUserId: __, _instanceId, ...clientMsg } = msg;
+          localPeer.send(clientMsg);
+        }
+      } else {
+        // Room-wide message (phase-changed, session-ended) — broadcast to all local peers
+        const excludeUserId = msg.excludeUserId as string | undefined;
+        const { targetUserId: _, excludeUserId: __, _instanceId, ...clientMsg } = msg;
+        broadcastToRoom(sessionId, clientMsg, excludeUserId);
+      }
+    },
+
+    onRemotePresenceJoin(sessionId: string, peers: RemotePeer[]) {
+      const room = sessions.get(sessionId);
+      if (!room) return;
+      for (const remotePeer of peers) {
+        // Notify all local peers about the new remote peer
+        for (const [, localPeer] of room) {
+          localPeer.send({
+            type: 'peer-joined',
+            peerId: remotePeer.userId,
+            peerName: remotePeer.displayName,
+            peerAvatar: remotePeer.avatarUrl,
+          });
+        }
+        logger.info('signaling relay: remote peer joined', {
+          sessionId,
+          remotePeerId: remotePeer.userId,
+        });
+      }
+    },
+
+    onRemotePresenceLeave(sessionId: string, peers: RemotePeer[]) {
+      const room = sessions.get(sessionId);
+      if (!room) return;
+      for (const remotePeer of peers) {
+        for (const [, localPeer] of room) {
+          localPeer.send({ type: 'peer-left', peerId: remotePeer.userId });
+        }
+        logger.info('signaling relay: remote peer left', {
+          sessionId,
+          remotePeerId: remotePeer.userId,
+        });
+      }
+    },
+  });
+}
+
+// ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
+
+function getLocalPeersForRelay(sessionId: string): RemotePeer[] {
+  const room = sessions.get(sessionId);
+  if (!room) return [];
+  const peers: RemotePeer[] = [];
+  for (const [, peer] of room) {
+    peers.push({
+      userId: peer.userId,
+      displayName: peer.displayName,
+      avatarUrl: peer.avatarUrl,
+    });
+  }
+  return peers;
+}
 
 function broadcastToRoom(
   sessionId: string,
@@ -76,6 +152,15 @@ async function handleLeave(sessionId: string, userId: string): Promise<void> {
   }
 
   broadcastToRoom(sessionId, { type: 'peer-left', peerId: userId });
+
+  // --- Multi-instance relay: sync presence or remove channel ---
+  if (signalingRelay.enabled) {
+    if (room.size === 0) {
+      signalingRelay.removeChannel(sessionId);
+    } else {
+      signalingRelay.syncPresence(sessionId, getLocalPeersForRelay(sessionId));
+    }
+  }
 
   // Sync DB: mark participant as left
   const now = new Date().toISOString();
@@ -209,39 +294,28 @@ function addPeerToRoom(sessionId: string, peer: PeerInfo): void {
   if (!sessions.has(sessionId)) {
     sessions.set(sessionId, new Map());
   }
-  let room = sessions.get(sessionId)!;
+  const room = sessions.get(sessionId)!;
 
-  // If the user already has a connection (reconnect), close the stale one.
-  // IMPORTANT: add the new peer BEFORE closing the old one. This prevents a
-  // race where the old req 'close' handler fires synchronously (e.g. dead
-  // socket), calls handleLeave, sees an empty room, and deletes the session
-  // from the sessions Map — orphaning the new peer.
+  // If the user already has a connection (reconnect), silently overwrite it.
+  // Do NOT call existingPeerForUser.close() — on Cloud Run, res.end() on the
+  // old SSE response appears to kill the new SSE response too (shared socket
+  // or Envoy proxy behavior). Instead, just overwrite the entry in the room
+  // map. The old connection's req 'close' handler will eventually fire when
+  // Cloud Run / the client notices it's dead; the stale connectionId guard
+  // in that handler will prevent it from evicting the reconnected user.
   const existingPeerForUser = room.get(peer.userId);
   if (existingPeerForUser) {
-    logger.info('signaling: replacing stale connection for user', {
+    logger.info('signaling: replacing stale connection for user (no close)', {
       sessionId,
       userId: peer.userId,
       oldConnectionId: existingPeerForUser.connectionId,
       newConnectionId: peer.connectionId,
     });
-    // Add new peer first so the room is never empty during the swap
-    room.set(peer.userId, peer);
-    // Now safe to close the old connection — even if the close handler fires
-    // synchronously, handleLeave will see the room still has the new peer
-    // and won't delete the session.
-    existingPeerForUser.close();
-    // Notify other peers so they tear down stale WebRTC state
+    // Notify other peers so they tear down stale WebRTC state and re-negotiate
     broadcastToRoom(sessionId, { type: 'peer-left', peerId: peer.userId }, peer.userId);
-  } else {
-    room.set(peer.userId, peer);
   }
 
-  // Re-fetch room in case handleLeave deleted and recreated it (defensive)
-  if (!sessions.has(sessionId)) {
-    sessions.set(sessionId, new Map());
-    sessions.get(sessionId)!.set(peer.userId, peer);
-  }
-  room = sessions.get(sessionId)!;
+  room.set(peer.userId, peer);
 
   // Notify existing peers about new peer, and tell new peer about existing peers
   for (const [existingUid, existingPeer] of room) {
@@ -265,6 +339,21 @@ function addPeerToRoom(sessionId: string, peer: PeerInfo): void {
     userId: peer.userId,
     roomSize: room.size,
   });
+
+  // --- Multi-instance relay ---
+  if (signalingRelay.enabled) {
+    // Notify new local peer about all remote peers
+    for (const remotePeer of signalingRelay.getRemotePeers(sessionId)) {
+      peer.send({
+        type: 'peer-joined',
+        peerId: remotePeer.userId,
+        peerName: remotePeer.displayName,
+        peerAvatar: remotePeer.avatarUrl,
+      });
+    }
+    // Sync this instance's local peers so other instances learn about the new peer
+    signalingRelay.syncPresence(sessionId, getLocalPeersForRelay(sessionId));
+  }
 }
 
 async function sendCurrentPhaseToNewPeer(sessionId: string, peer: PeerInfo): Promise<void> {
@@ -314,8 +403,11 @@ async function processSignalingMessage(
       const targetUserId = msg.to;
       if (!targetUserId) break;
       const targetPeer = currentRoom.get(targetUserId);
+      const payload = { type: msg.type, from: userId, to: msg.to, sdp: msg.sdp };
       if (targetPeer) {
-        targetPeer.send({ type: msg.type, from: userId, to: msg.to, sdp: msg.sdp });
+        targetPeer.send(payload);
+      } else if (signalingRelay.enabled) {
+        signalingRelay.sendToRemotePeer(sessionId, targetUserId, payload);
       }
       break;
     }
@@ -323,13 +415,16 @@ async function processSignalingMessage(
       const targetUserId = msg.to;
       if (!targetUserId) break;
       const targetPeer = currentRoom.get(targetUserId);
+      const payload = {
+        type: 'ice-candidate',
+        from: userId,
+        to: msg.to,
+        candidate: msg.candidate,
+      };
       if (targetPeer) {
-        targetPeer.send({
-          type: 'ice-candidate',
-          from: userId,
-          to: msg.to,
-          candidate: msg.candidate,
-        });
+        targetPeer.send(payload);
+      } else if (signalingRelay.enabled) {
+        signalingRelay.sendToRemotePeer(sessionId, targetUserId, payload);
       }
       break;
     }
@@ -371,6 +466,10 @@ async function processSignalingMessage(
             .where('id', '=', sessionId)
             .execute();
           broadcastToRoom(sessionId, { type: 'session-ended' });
+          if (signalingRelay.enabled) {
+            signalingRelay.broadcastToRemotePeers(sessionId, { type: 'session-ended' });
+            signalingRelay.removeChannel(sessionId);
+          }
           sessions.delete(sessionId);
         } else {
           const newStatus = phase === 'focus' ? 'focus' : 'chit-chat';
@@ -397,11 +496,15 @@ async function processSignalingMessage(
             now.getTime() + minutes * 60 * 1000
           ).toISOString();
 
-          broadcastToRoom(sessionId, {
+          const phaseMsg = {
             type: 'phase-changed',
             phase: newStatus,
             timer: { endsAt },
-          });
+          };
+          broadcastToRoom(sessionId, phaseMsg);
+          if (signalingRelay.enabled) {
+            signalingRelay.broadcastToRemotePeers(sessionId, phaseMsg);
+          }
         }
       } catch (err) {
         logger.error('signaling: phase-change DB error', { err, sessionId });
@@ -616,12 +719,12 @@ export function createSignalingRouter(): Router {
     // Node.js / Cloud Run proxies may impose idle timeouts that kill streams.
     req.socket?.setTimeout(0);
 
-    // Set SSE headers — avoid hop-by-hop headers (Connection) which confuse
-    // Cloud Run's Envoy proxy and can cause premature stream termination.
+    // Set SSE headers
     res.writeHead(200, {
       'Content-Type': 'text/event-stream',
       'Cache-Control': 'no-cache, no-transform',
-      'X-Accel-Buffering': 'no', // Disable nginx/proxy buffering
+      'Connection': 'keep-alive',
+      'X-Accel-Buffering': 'no',
     });
     res.flushHeaders();
 
@@ -651,15 +754,14 @@ export function createSignalingRouter(): Router {
     addPeerToRoom(sessionId, peer);
     await sendCurrentPhaseToNewPeer(sessionId, peer);
 
-    // Heartbeat every 15 seconds to keep connection alive through Cloud Run's
-    // Envoy proxy (which may close idle streams sooner than a typical reverse proxy).
+    // Heartbeat to keep connection alive through proxies
     const heartbeatInterval = setInterval(() => {
       if (!res.writableEnded) {
         res.write(': heartbeat\n\n');
       } else {
         clearInterval(heartbeatInterval);
       }
-    }, 15_000);
+    }, 30_000);
 
     // Handle client disconnect — guard against stale close handler firing after reconnect
     req.on('close', async () => {
