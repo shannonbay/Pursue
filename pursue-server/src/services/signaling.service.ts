@@ -7,6 +7,7 @@ import { verifyAccessToken } from '../utils/jwt.js';
 import { authenticate } from '../middleware/authenticate.js';
 import type { AuthRequest } from '../types/express.js';
 import { logger } from '../utils/logger.js';
+import { sendSilentGroupMessage } from './fcm.service.js';
 import { signalingRelay, type RemotePeer } from './signaling.relay.js';
 
 // ---------------------------------------------------------------------------
@@ -176,7 +177,7 @@ async function handleLeave(sessionId: string, userId: string): Promise<void> {
     // Host promotion / session auto-end
     const session = await db
       .selectFrom('focus_sessions')
-      .select(['host_user_id', 'status'])
+      .select(['host_user_id', 'status', 'group_id'])
       .where('id', '=', sessionId)
       .executeTakeFirst();
 
@@ -204,6 +205,13 @@ async function handleLeave(sessionId: string, userId: string): Promise<void> {
           .where('id', '=', sessionId)
           .execute();
         sessions.delete(sessionId);
+
+        // Silent FCM so group members' UI refreshes without a visible notification
+        sendSilentGroupMessage(session.group_id, {
+          type: 'session_ended',
+          session_id: sessionId,
+          group_id: session.group_id,
+        }).catch((err) => logger.error('Silent FCM session auto-end (signaling) failed', { err }));
       }
     }
   } catch (err) {

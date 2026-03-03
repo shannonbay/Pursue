@@ -206,6 +206,60 @@ export async function sendToTopic(
 }
 
 /**
+ * Send a silent data-only FCM message to all devices of members in a group.
+ * No `notification` field — Android won't auto-display a notification tray entry.
+ * Uses high priority for prompt delivery even when the app is backgrounded.
+ * Does not throw; logs errors so callers can fire-and-forget.
+ */
+export async function sendSilentGroupMessage(
+  groupId: string,
+  data: Record<string, string>
+): Promise<void> {
+  if (!admin.apps.length) return;
+  try {
+    const devices = await db
+      .selectFrom('devices')
+      .innerJoin('group_memberships', 'devices.user_id', 'group_memberships.user_id')
+      .select(['devices.fcm_token'])
+      .where('group_memberships.group_id', '=', groupId)
+      .where('group_memberships.status', '=', 'active')
+      .execute();
+
+    const tokens = devices.map((d) => d.fcm_token);
+    if (tokens.length === 0) return;
+
+    const message = {
+      data: { ...data, silent: 'true' },
+      tokens,
+      android: {
+        priority: 'high' as const,
+      },
+    };
+
+    const response = await admin.messaging().sendEachForMulticast(message);
+
+    if (response.failureCount > 0) {
+      const failedTokens: string[] = [];
+      response.responses.forEach((resp, idx) => {
+        if (!resp.success) failedTokens.push(tokens[idx]);
+      });
+      if (failedTokens.length > 0) {
+        await db
+          .deleteFrom('devices')
+          .where('fcm_token', 'in', failedTokens)
+          .execute();
+      }
+    }
+  } catch (error) {
+    logger.error('sendSilentGroupMessage failed', {
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      groupId,
+    });
+  }
+}
+
+/**
  * Send push notification to all devices of a single user.
  * On FCM failures, invalid tokens are removed from the database.
  * Does not throw; logs errors so HTTP requests are not failed by FCM.

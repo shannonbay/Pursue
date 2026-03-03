@@ -13,6 +13,7 @@ import {
 
 jest.mock('../../../src/services/fcm.service', () => ({
   sendGroupNotification: jest.fn().mockResolvedValue(undefined),
+  sendSilentGroupMessage: jest.fn().mockResolvedValue(undefined),
   sendNotificationToUser: jest.fn().mockResolvedValue(undefined),
   buildTopicName: (groupId: string, type: string) => `${groupId}_${type}`,
   sendToTopic: jest.fn().mockResolvedValue(undefined),

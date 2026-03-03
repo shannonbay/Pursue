@@ -123,6 +123,9 @@ class PursueFirebaseMessagingService : FirebaseMessagingService() {
             }
         }
 
+        // Silent data-only messages: emit session events (above) but skip visible notification
+        if (remoteMessage.data["silent"] == "true") return
+
         UnreadBadgeManager.incrementCount()
 
         createNotificationChannelIfNeeded()

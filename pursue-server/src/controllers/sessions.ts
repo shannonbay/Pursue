@@ -6,6 +6,7 @@ import { CreateSessionSchema, CreateSlotSchema } from '../validations/sessions.j
 import { requireActiveGroupMember, UUID_REGEX } from '../services/authorization.js';
 import {
   sendGroupNotification,
+  sendSilentGroupMessage,
   sendNotificationToUser,
   buildTopicName,
 } from '../services/fcm.service.js';
@@ -402,6 +403,7 @@ export async function leaveSession(
     await requireActiveGroupMember(userId, groupId);
 
     // Use transaction + forUpdate to prevent race conditions on host promotion
+    let sessionAutoEnded = false;
     await db.transaction().execute(async (trx) => {
       // Lock the session row
       const session = await trx
@@ -454,9 +456,19 @@ export async function leaveSession(
             .set({ status: 'ended', ended_at: now })
             .where('id', '=', sessionId)
             .execute();
+          sessionAutoEnded = true;
         }
       }
     });
+
+    // Silent FCM so group members' UI refreshes without a visible notification
+    if (sessionAutoEnded) {
+      sendSilentGroupMessage(groupId, {
+        type: 'session_ended',
+        session_id: sessionId,
+        group_id: groupId,
+      }).catch((err) => logger.error('Silent FCM session auto-end (leaveSession) failed', { err }));
+    }
 
     res.status(204).send();
   } catch (error) {
