@@ -94,6 +94,8 @@ class FocusSessionFragment : Fragment(), SignalingClient.SignalingListener {
     private val chatMessages = mutableListOf<String>()
     private var timerJob: Job? = null
     private var sessionActive = false
+    private var isInPreview = true
+    private var previewRenderer: SurfaceViewRenderer? = null
 
     // --- Signaling / WebRTC ---
     private lateinit var signalingClient: SignalingClient
@@ -136,6 +138,12 @@ class FocusSessionFragment : Fragment(), SignalingClient.SignalingListener {
     private lateinit var chitChatMessageInput: TextInputEditText
     private lateinit var btnSendMessage: ImageButton
 
+    // --- Views: Preview ---
+    private lateinit var previewOverlay: FrameLayout
+    private lateinit var previewParticipantCount: TextView
+    private lateinit var previewControls: View
+    private lateinit var btnGoLive: MaterialButton
+
     // --- Chat adapter (simple string list) ---
     private val chatAdapter by lazy {
         object : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
@@ -163,9 +171,8 @@ class FocusSessionFragment : Fragment(), SignalingClient.SignalingListener {
             setupAudioManager()
             if (cameraGranted) {
                 webRtcManager.initLocalVideo(requireContext())
-                setupLocalVideoPreview()
             }
-            connectSignaling()
+            showPreview()
         } else {
             // Audio is mandatory; exit
             Toast.makeText(
@@ -237,6 +244,12 @@ class FocusSessionFragment : Fragment(), SignalingClient.SignalingListener {
         chitChatMessageInput = view.findViewById(R.id.chit_chat_message_input)
         btnSendMessage = view.findViewById(R.id.btn_send_message)
 
+        // Preview
+        previewOverlay = view.findViewById(R.id.preview_overlay)
+        previewParticipantCount = view.findViewById(R.id.preview_participant_count)
+        previewControls = view.findViewById(R.id.preview_controls)
+        btnGoLive = view.findViewById(R.id.btn_go_live)
+
         lobbyGroupName.text = groupName
         btnStartFocus.visibility = if (isHost) View.VISIBLE else View.GONE
         btnEndEarly.visibility = if (isHost) View.VISIBLE else View.GONE
@@ -251,6 +264,7 @@ class FocusSessionFragment : Fragment(), SignalingClient.SignalingListener {
     }
 
     private fun setupClickListeners() {
+        btnGoLive.setOnClickListener { goLive() }
         btnStartFocus.setOnClickListener { hostStartFocus() }
         btnEndEarly.setOnClickListener { hostEndSession() }
         btnSendMessage.setOnClickListener { sendChatMessage() }
@@ -382,10 +396,9 @@ class FocusSessionFragment : Fragment(), SignalingClient.SignalingListener {
                 Log.w(TAG, "connectSignaling: context is null, aborting")
                 return@launch
             }
-            val token = withContext(Dispatchers.IO) {
+            val token = accessToken ?: withContext(Dispatchers.IO) {
                 SecureTokenManager.getInstance(ctx).getAccessToken()
-            }
-            if (token == null) {
+            } ?: run {
                 Log.w(TAG, "connectSignaling: no access token, aborting")
                 return@launch
             }
@@ -654,6 +667,83 @@ class FocusSessionFragment : Fragment(), SignalingClient.SignalingListener {
 
     fun isSessionActive() = sessionActive && currentPhase != "ended"
 
+    fun isInPreview(): Boolean = isInPreview
+
+    // --- Preview phase ---
+
+    private fun showPreview() {
+        val renderer = SurfaceViewRenderer(requireContext()).apply {
+            init(webRtcManager.getEglBaseContext(), null)
+            setMirror(true)
+            setEnableHardwareScaler(true)
+        }
+        previewRenderer = renderer
+        previewOverlay.addView(renderer, FrameLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT))
+        // Keep badge on top since addView appends (renders below declared XML children)
+        previewOverlay.bringChildToFront(previewParticipantCount)
+        webRtcManager.getLocalVideoTrack()?.addSink(renderer)
+
+        previewOverlay.visibility = View.VISIBLE
+        videoGrid.visibility = View.GONE
+        previewControls.visibility = View.VISIBLE
+        lobbyControls.visibility = View.GONE
+
+        // Mic starts muted
+        webRtcManager.muteLocalAudio(true)
+        updateMicIcon()
+
+        fetchPreviewParticipantCount()
+    }
+
+    private fun fetchPreviewParticipantCount() {
+        lifecycleScope.launch {
+            val ctx = context ?: return@launch
+            val token = withContext(Dispatchers.IO) {
+                SecureTokenManager.getInstance(ctx).getAccessToken()
+            } ?: return@launch
+            accessToken = token
+            try {
+                val response = withContext(Dispatchers.IO) {
+                    ApiClient.getActiveSessions(token, groupId)
+                }
+                val count = response.sessions.find { it.id == sessionId }?.participants?.size ?: 0
+                previewParticipantCount.text = when (count) {
+                    0    -> getString(R.string.focus_session_preview_no_one)
+                    1    -> getString(R.string.focus_session_preview_one_person)
+                    else -> getString(R.string.focus_session_preview_people_count, count)
+                }
+                previewParticipantCount.visibility = View.VISIBLE
+            } catch (_: Exception) {
+                // Silently suppress — count stays hidden
+            }
+        }
+    }
+
+    private fun goLive() {
+        isInPreview = false
+        btnGoLive.isEnabled = false
+        btnGoLive.text = getString(R.string.focus_session_connecting)
+
+        // Release preview renderer
+        previewRenderer?.let {
+            webRtcManager.getLocalVideoTrack()?.removeSink(it)
+            it.release()
+        }
+        previewRenderer = null
+
+        // Switch UI: hide preview, show session grid + lobby controls
+        previewOverlay.visibility = View.GONE
+        previewControls.visibility = View.GONE
+        videoGrid.visibility = View.VISIBLE
+        renderPhase(PHASE_LOBBY)
+
+        // Place local video into the session grid
+        setupLocalVideoPreview()
+
+        // Connect signaling (token already cached in accessToken by fetchPreviewParticipantCount)
+        connectSignaling()
+    }
+
     private fun finishSession() {
         Log.d(TAG, "finishSession() called", Exception("stack trace"))
         sessionActive = false
@@ -747,6 +837,13 @@ class FocusSessionFragment : Fragment(), SignalingClient.SignalingListener {
             it.isSpeakerphoneOn = false
             it.mode = previousAudioMode
         }
+
+        // Release preview renderer
+        previewRenderer?.let {
+            webRtcManager.getLocalVideoTrack()?.removeSink(it)
+            it.release()
+        }
+        previewRenderer = null
 
         // Release renderers before WebRTC teardown
         localRenderer?.let { renderer ->

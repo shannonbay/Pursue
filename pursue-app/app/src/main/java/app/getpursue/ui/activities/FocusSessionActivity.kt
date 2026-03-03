@@ -46,12 +46,12 @@ class FocusSessionActivity : AppCompatActivity() {
     }
 
     override fun onBackPressed() {
-        // Intercept back press — show leave confirmation dialog
         val fragment = supportFragmentManager.findFragmentById(R.id.session_fragment_container)
-        if (fragment is FocusSessionFragment && fragment.isSessionActive()) {
-            showLeaveConfirmation()
-        } else {
-            super.onBackPressed()
+                as? FocusSessionFragment
+        when {
+            fragment?.isInPreview() == true -> super.onBackPressed()  // exit immediately, no dialog
+            fragment?.isSessionActive() == true -> showLeaveConfirmation()
+            else -> super.onBackPressed()
         }
     }
 

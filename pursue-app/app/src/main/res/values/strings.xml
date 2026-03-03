@@ -1016,6 +1016,10 @@
     <string name="focus_session_camera_off">Camera off</string>
     <string name="focus_session_camera_on">Camera on</string>
     <string name="focus_session_camera_permission">Camera access lets others see you during body doubling</string>
+    <string name="focus_session_ready_to_join">Ready to join?</string>
+    <string name="focus_session_preview_no_one">No one is live yet</string>
+    <string name="focus_session_preview_one_person">1 person is live</string>
+    <string name="focus_session_preview_people_count">%d people are live</string>
 
     <!-- Body-Teaming: Schedule Slot Bottom Sheet -->
     <string name="schedule_slot_title">Schedule a Session</string>

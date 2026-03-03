@@ -8,16 +8,46 @@
     android:orientation="vertical"
     android:background="@android:color/black">
 
-    <!-- ===== VIDEO GRID (visible in all phases) ===== -->
-    <GridLayout
-        android:id="@+id/video_grid"
+    <!-- ===== VIDEO AREA: preview overlay OR session grid ===== -->
+    <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="1"
-        android:columnCount="2"
-        android:rowCount="2"
-        android:padding="4dp"
-        android:background="@android:color/black" />
+        android:layout_weight="1">
+
+        <!-- Session grid (visible after Go Live) -->
+        <GridLayout
+            android:id="@+id/video_grid"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:columnCount="2"
+            android:rowCount="2"
+            android:padding="4dp"
+            android:background="@android:color/black"
+            android:visibility="gone" />
+
+        <!-- Preview overlay (visible before Go Live) -->
+        <FrameLayout
+            android:id="@+id/preview_overlay"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@android:color/black">
+
+            <!-- Participant count badge (SurfaceViewRenderer added programmatically below it) -->
+            <TextView
+                android:id="@+id/preview_participant_count"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="bottom|center_horizontal"
+                android:layout_marginBottom="16dp"
+                android:padding="8dp"
+                android:textColor="@android:color/white"
+                android:textAppearance="?attr/textAppearanceBodyMedium"
+                android:background="#80000000"
+                android:visibility="gone" />
+
+        </FrameLayout>
+
+    </FrameLayout>
 
     <!-- ===== CAMERA CONTROLS ===== -->
     <LinearLayout
@@ -71,7 +101,36 @@
 
     </LinearLayout>
 
-    <!-- ===== LOBBY CONTROLS (visible in lobby phase) ===== -->
+    <!-- ===== PREVIEW CONTROLS (visible before Go Live) ===== -->
+    <LinearLayout
+        android:id="@+id/preview_controls"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp"
+        android:gravity="center"
+        android:background="@color/background_light"
+        android:visibility="visible">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/focus_session_ready_to_join"
+            android:textAppearance="?attr/textAppearanceBodyMedium"
+            android:textColor="@color/on_surface_variant"
+            android:layout_marginBottom="12dp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_go_live"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:text="@string/focus_session_go_live"
+            android:textColor="@color/on_primary"
+            app:backgroundTint="@color/primary" />
+
+    </LinearLayout>
+
+    <!-- ===== LOBBY CONTROLS (visible in lobby phase, after Go Live) ===== -->
     <LinearLayout
         android:id="@+id/lobby_controls"
         android:layout_width="match_parent"
@@ -79,7 +138,7 @@
         android:orientation="vertical"
         android:padding="16dp"
         android:background="@color/background_light"
-        android:visibility="visible">
+        android:visibility="gone">
 
         <!-- Group name -->
         <TextView
