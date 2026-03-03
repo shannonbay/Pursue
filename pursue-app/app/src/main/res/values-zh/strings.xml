@@ -129,6 +129,14 @@
     <string name="display_name_hint">输入你的名字</string>
     <string name="display_name_char_counter">%1$d/30</string>
     <string name="display_name_error">显示名称必须在 1 到 30 个字符之间</string>
+    <string name="dob_label">出生日期 *</string>
+    <string name="dob_hint">选择您的出生日期</string>
+    <string name="dob_error_under_age">您必须年满18岁才能创建账户。</string>
+    <string name="dob_error_required">请选择您的出生日期。</string>
+    <string name="dob_gate_title">您多大了？</string>
+    <string name="dob_gate_subtitle">Pursue 是一个仅限成年人的责任社区。</string>
+    <string name="dob_gate_continue">继续</string>
+    <string name="dob_gate_under_age_message">Pursue 仅限成年人（18+）。</string>
     <string name="email_label_signup">电子邮件 *</string>
     <string name="confirm_password_label">确认密码 *</string>
     <string name="confirm_password_hint">重新输入密码</string>
@@ -957,5 +965,17 @@
     <string name="community_standards_title">Pursue 是一个一起成长的地方</string>
     <string name="community_standards_body">保持真实，保持友善。我们自动过滤内容来保持小组安全，成员可以报告任何不合适的内容。严重违规会导致账户被暂停。</string>
     <string name="community_standards_got_it">明白了</string>
+
+    <!-- Body-Teaming: 专注会话卡片（群组详情） -->
+    <string name="focus_card_live">直播中</string>
+    <string name="focus_card_host_started">由 %1$s 发起</string>
+    <string name="focus_card_remaining">剩余 %1$s</string>
+    <string name="focus_card_slot_starts_in">%1$s 后开始</string>
+
+    <!-- Body-Teaming: 专注会话预览 -->
+    <string name="focus_session_ready_to_join">准备加入？</string>
+    <string name="focus_session_preview_no_one">暂时没有人直播</string>
+    <string name="focus_session_preview_one_person">1 人正在直播</string>
+    <string name="focus_session_preview_people_count">%d 人正在直播</string>
 
 </resources>

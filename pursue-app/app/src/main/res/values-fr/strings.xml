@@ -129,6 +129,14 @@
     <string name="display_name_hint">Entrez votre nom</string>
     <string name="display_name_char_counter">%1$d/30</string>
     <string name="display_name_error">Le nom d\'affichage doit avoir entre 1 et 30 caractères</string>
+    <string name="dob_label">Date de naissance *</string>
+    <string name="dob_hint">Sélectionnez votre date de naissance</string>
+    <string name="dob_error_under_age">Vous devez avoir 18 ans ou plus pour créer un compte.</string>
+    <string name="dob_error_required">Veuillez sélectionner votre date de naissance.</string>
+    <string name="dob_gate_title">Quel âge avez-vous ?</string>
+    <string name="dob_gate_subtitle">Pursue est une communauté de responsabilité réservée aux adultes.</string>
+    <string name="dob_gate_continue">Continuer</string>
+    <string name="dob_gate_under_age_message">Pursue est réservé aux adultes (18+).</string>
     <string name="email_label_signup">Email *</string>
     <string name="confirm_password_label">Confirmer le mot de passe *</string>
     <string name="confirm_password_hint">Réentrez le mot de passe</string>
@@ -957,5 +965,17 @@
     <string name="community_standards_title">Pursue est un endroit pour grandir ensemble</string>
     <string name="community_standards_body">Soyez authentique, soyez gentil. Nous filtrons automatiquement le contenu pour maintenir les groupes sûrs, et les membres peuvent signaler tout ce qui n\'a pas sa place. Les violations graves entraînent la suspension du compte.</string>
     <string name="community_standards_got_it">Compris</string>
+
+    <!-- Body-Teaming: Carte de session (Détail du groupe) -->
+    <string name="focus_card_live">EN DIRECT</string>
+    <string name="focus_card_host_started">Démarré par %1$s</string>
+    <string name="focus_card_remaining">%1$s restant</string>
+    <string name="focus_card_slot_starts_in">Commence dans %1$s</string>
+
+    <!-- Body-Teaming: Aperçu de session de concentration -->
+    <string name="focus_session_ready_to_join">Prêt à rejoindre ?</string>
+    <string name="focus_session_preview_no_one">Personne n\'est en direct pour l\'instant</string>
+    <string name="focus_session_preview_one_person">1 personne est en direct</string>
+    <string name="focus_session_preview_people_count">%d personnes sont en direct</string>
 
 </resources>

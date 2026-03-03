@@ -125,6 +125,14 @@
     <string name="display_name_hint">Digite seu nome</string>
     <string name="display_name_char_counter">%1$d/30</string>
     <string name="display_name_error">O nome de exibição deve ter entre 1 e 30 caracteres</string>
+    <string name="dob_label">Data de Nascimento *</string>
+    <string name="dob_hint">Selecione sua data de nascimento</string>
+    <string name="dob_error_under_age">Você deve ter 18 anos ou mais para criar uma conta.</string>
+    <string name="dob_error_required">Por favor, selecione sua data de nascimento.</string>
+    <string name="dob_gate_title">Quantos anos você tem?</string>
+    <string name="dob_gate_subtitle">Pursue é uma comunidade de responsabilidade exclusiva para adultos.</string>
+    <string name="dob_gate_continue">Continuar</string>
+    <string name="dob_gate_under_age_message">Pursue é para adultos (18+).</string>
     <string name="email_label_signup">E-mail *</string>
     <string name="confirm_password_label">Confirmar Senha *</string>
     <string name="confirm_password_hint">Digite a senha novamente</string>
@@ -971,6 +979,10 @@
     <string name="focus_card_active_title">Sessão em andamento</string>
     <string name="focus_card_participant_count">%1$d aqui</string>
     <string name="focus_card_slot_rsvp_count">%1$d confirmados</string>
+    <string name="focus_card_live">AO VIVO</string>
+    <string name="focus_card_host_started">Iniciado por %1$s</string>
+    <string name="focus_card_remaining">Resta %1$s</string>
+    <string name="focus_card_slot_starts_in">Começa em %1$s</string>
 
     <!-- Body-Teaming: Tela de sessão de foco -->
     <string name="focus_session_lobby">Sessão de Foco · Lobby</string>
@@ -1001,6 +1013,10 @@
     <string name="focus_session_camera_off">Câmera desligada</string>
     <string name="focus_session_camera_on">Câmera ligada</string>
     <string name="focus_session_camera_permission">O acesso à câmera permite que outros vejam você durante a sessão</string>
+    <string name="focus_session_ready_to_join">Pronto para entrar?</string>
+    <string name="focus_session_preview_no_one">Ninguém está ao vivo ainda</string>
+    <string name="focus_session_preview_one_person">1 pessoa está ao vivo</string>
+    <string name="focus_session_preview_people_count">%d pessoas estão ao vivo</string>
 
     <!-- Body-Teaming: Agendar slot -->
     <string name="schedule_slot_title">Agendar uma Sessão</string>

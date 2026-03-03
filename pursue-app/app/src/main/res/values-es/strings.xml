@@ -129,6 +129,14 @@
     <string name="display_name_hint">Ingresa tu nombre</string>
     <string name="display_name_char_counter">%1$d/30</string>
     <string name="display_name_error">El nombre mostrado debe tener entre 1 y 30 caracteres</string>
+    <string name="dob_label">Fecha de Nacimiento *</string>
+    <string name="dob_hint">Selecciona tu fecha de nacimiento</string>
+    <string name="dob_error_under_age">Debes tener 18 años o más para crear una cuenta.</string>
+    <string name="dob_error_required">Por favor selecciona tu fecha de nacimiento.</string>
+    <string name="dob_gate_title">¿Cuántos años tienes?</string>
+    <string name="dob_gate_subtitle">Pursue es una comunidad de responsabilidad solo para adultos.</string>
+    <string name="dob_gate_continue">Continuar</string>
+    <string name="dob_gate_under_age_message">Pursue es para adultos (18+).</string>
     <string name="email_label_signup">Correo *</string>
     <string name="confirm_password_label">Confirmar Contraseña *</string>
     <string name="confirm_password_hint">Reingresa contraseña</string>
@@ -957,5 +965,17 @@
     <string name="community_standards_title">Pursue es un lugar para crecer juntos</string>
     <string name="community_standards_body">Sé real, sé amable. Filtramos contenido automáticamente para mantener los grupos seguros, y los miembros pueden reportar cualquier cosa que no pertenezca. Las violaciones graves resultan en suspensión de cuenta.</string>
     <string name="community_standards_got_it">Entendido</string>
+
+    <!-- Body-Teaming: Tarjeta de sesión (Detalle del grupo) -->
+    <string name="focus_card_live">EN VIVO</string>
+    <string name="focus_card_host_started">Iniciado por %1$s</string>
+    <string name="focus_card_remaining">%1$s restantes</string>
+    <string name="focus_card_slot_starts_in">Comienza en %1$s</string>
+
+    <!-- Body-Teaming: Vista previa de sesión de enfoque -->
+    <string name="focus_session_ready_to_join">¿Listo para unirte?</string>
+    <string name="focus_session_preview_no_one">Nadie está en vivo aún</string>
+    <string name="focus_session_preview_one_person">1 persona está en vivo</string>
+    <string name="focus_session_preview_people_count">%d personas están en vivo</string>
 
 </resources>
