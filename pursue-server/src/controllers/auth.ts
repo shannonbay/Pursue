@@ -101,7 +101,7 @@ export async function register(
           email: data.email.toLowerCase(),
           display_name: data.display_name,
           password_hash: passwordHash,
-          date_of_birth: data.date_of_birth,
+          age_verified: true,
         })
         .returning(['id', 'email', 'display_name', 'created_at'])
         .executeTakeFirstOrThrow();
@@ -173,7 +173,7 @@ export async function login(
         'email',
         'display_name',
         'password_hash',
-        'date_of_birth',
+        'age_verified',
         sql<boolean>`avatar_data IS NOT NULL`.as('has_avatar'),
       ])
       .where('email', '=', data.email.toLowerCase())
@@ -214,7 +214,7 @@ export async function login(
         email: user.email,
         display_name: user.display_name,
         has_avatar: Boolean(user.has_avatar),
-        has_date_of_birth: user.date_of_birth !== null,
+        has_date_of_birth: Boolean(user.age_verified),
       },
     });
   } catch (error) {
@@ -267,7 +267,7 @@ export async function googleAuth(
         'users.id',
         'users.email',
         'users.display_name',
-        'users.date_of_birth',
+        'users.age_verified',
         sql<boolean>`users.avatar_data IS NOT NULL`.as('has_avatar'),
       ])
       .where('auth_providers.provider', '=', 'google')
@@ -275,7 +275,7 @@ export async function googleAuth(
       .where('users.deleted_at', 'is', null)
       .executeTakeFirst();
 
-    let user: { id: string; email: string; display_name: string; has_avatar: boolean; date_of_birth: string | null };
+    let user: { id: string; email: string; display_name: string; has_avatar: boolean; age_verified: boolean };
     let isNewUser = false;
     let accessToken: string;
     let refreshToken: string;
@@ -287,7 +287,7 @@ export async function googleAuth(
         email: existingProvider.email,
         display_name: existingProvider.display_name,
         has_avatar: Boolean(existingProvider.has_avatar),
-        date_of_birth: existingProvider.date_of_birth ?? null,
+        age_verified: Boolean(existingProvider.age_verified),
       };
     } else {
       // Case 2: Google account not linked - check if user exists by email
@@ -298,7 +298,7 @@ export async function googleAuth(
           'id',
           'email',
           'display_name',
-          'date_of_birth',
+          'age_verified',
           sql<boolean>`avatar_data IS NOT NULL`.as('has_avatar'),
         ])
         .where('email', '=', googleUser.email.toLowerCase())
@@ -321,7 +321,7 @@ export async function googleAuth(
           email: existingUserByEmail.email,
           display_name: existingUserByEmail.display_name,
           has_avatar: Boolean(existingUserByEmail.has_avatar),
-          date_of_birth: existingUserByEmail.date_of_birth ?? null,
+          age_verified: Boolean(existingUserByEmail.age_verified),
         };
 
         // Download and update Google avatar if user doesn't have one
@@ -408,7 +408,7 @@ export async function googleAuth(
           email: txResult.newUser.email,
           display_name: txResult.newUser.display_name,
           has_avatar: avatarData !== null,
-          date_of_birth: null, // New Google users have no DOB yet; gate will collect it
+          age_verified: false, // New Google users have not yet passed the age gate
         };
         isNewUser = true;
         accessToken = txResult.accessToken;
@@ -444,7 +444,7 @@ export async function googleAuth(
         email: user.email,
         display_name: user.display_name,
         has_avatar: user.has_avatar,
-        has_date_of_birth: user.date_of_birth !== null,
+        has_date_of_birth: Boolean(user.age_verified),
       },
     });
   } catch (error) {

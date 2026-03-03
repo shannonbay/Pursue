@@ -2704,7 +2704,7 @@ data class User(
     val email: String,
     val display_name: String,
     val has_avatar: Boolean, // true if user has an avatar image (BYTEA), false otherwise
-    val has_date_of_birth: Boolean = false, // true if server has DOB on file for this user
+    val has_date_of_birth: Boolean = false, // true if user has passed the 18+ age verification gate
     val updated_at: String? // ISO 8601 timestamp for cache invalidation
 )
 

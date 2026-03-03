@@ -363,7 +363,15 @@ export async function updateCurrentUser(
       updates.display_name = data.display_name;
     }
     if (data.date_of_birth !== undefined) {
-      updates.date_of_birth = data.date_of_birth;
+      const dob = new Date(data.date_of_birth);
+      const today = new Date();
+      let age = today.getFullYear() - dob.getFullYear();
+      const m = today.getMonth() - dob.getMonth();
+      if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) age--;
+      if (age < 18) {
+        throw new ApplicationError('You must be 18 or older to use Pursue.', 400, 'UNDER_AGE');
+      }
+      updates.age_verified = true;
     }
 
     if (Object.keys(updates).length === 0) {

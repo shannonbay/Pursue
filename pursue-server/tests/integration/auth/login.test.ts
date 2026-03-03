@@ -24,7 +24,7 @@ describe('POST /api/auth/login', () => {
       display_name: 'Test User'
     });
     expect(response.body.user).toHaveProperty('has_date_of_birth');
-    expect(response.body.user.has_date_of_birth).toBe(false); // legacy user created without DOB
+    expect(response.body.user.has_date_of_birth).toBe(true); // createTestUser sets age_verified: true
   });
 
   it('should login with email case-insensitively', async () => {

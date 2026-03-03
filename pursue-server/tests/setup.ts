@@ -71,9 +71,9 @@ async function createSchema(db: Kysely<Database>) {
       IF EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'users') THEN
         IF NOT EXISTS (
           SELECT 1 FROM information_schema.columns
-          WHERE table_name = 'users' AND column_name = 'date_of_birth'
+          WHERE table_name = 'users' AND column_name = 'age_verified'
         ) THEN
-          ALTER TABLE users ADD COLUMN date_of_birth DATE;
+          ALTER TABLE users ADD COLUMN age_verified BOOLEAN NOT NULL DEFAULT FALSE;
         END IF;
       END IF;
     END $$;
@@ -124,7 +124,7 @@ async function createSchema(db: Kysely<Database>) {
       avatar_mime_type VARCHAR(50),
       password_hash VARCHAR(255),
       timezone VARCHAR(50) DEFAULT 'UTC',
-      date_of_birth DATE,
+      age_verified BOOLEAN NOT NULL DEFAULT FALSE,
       created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
       updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
       deleted_at TIMESTAMP WITH TIME ZONE,
@@ -189,9 +189,9 @@ async function createSchema(db: Kysely<Database>) {
       END IF;
       IF NOT EXISTS (
         SELECT 1 FROM information_schema.columns
-        WHERE table_name = 'users' AND column_name = 'date_of_birth'
+        WHERE table_name = 'users' AND column_name = 'age_verified'
       ) THEN
-        ALTER TABLE users ADD COLUMN date_of_birth DATE;
+        ALTER TABLE users ADD COLUMN age_verified BOOLEAN NOT NULL DEFAULT FALSE;
       END IF;
     END $$;
   `.execute(db);

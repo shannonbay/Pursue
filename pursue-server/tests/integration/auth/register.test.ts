@@ -50,7 +50,7 @@ describe('POST /api/auth/register', () => {
     expect(user).toBeDefined();
     expect(user?.password_hash).not.toBe(password);
     expect(user?.password_hash).toMatch(/^\$2[aby]\$/); // bcrypt hash
-    expect(user?.date_of_birth).toBe(VALID_DOB);
+    expect(user?.age_verified).toBe(true);
   });
 
   it('should create email auth provider', async () => {
@@ -317,7 +317,7 @@ describe('POST /api/auth/register', () => {
 
     expect(consents).toHaveLength(2);
     const types = consents.map(c => c.consent_type).sort();
-    expect(types).toEqual(['privacy policy Mar 1, 2026', 'terms Feb 11, 2026']);
+    expect(types).toEqual(['privacy policy Mar 3, 2026', 'terms Feb 11, 2026']);
   });
 
   it('should reject missing date_of_birth', async () => {

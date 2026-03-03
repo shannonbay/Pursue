@@ -50,6 +50,7 @@ export async function createTestUser(
       email: email.toLowerCase(),
       display_name: displayName,
       password_hash: passwordHash,
+      age_verified: true,
     })
     .returning(['id', 'email', 'display_name', 'created_at'])
     .executeTakeFirstOrThrow();
