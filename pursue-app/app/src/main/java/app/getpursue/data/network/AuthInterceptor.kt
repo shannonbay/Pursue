@@ -41,10 +41,9 @@ class AuthInterceptor(
     
     /**
      * Check if the URL should skip authentication header.
-     * 
+     *
      * Skip for:
      * - Auth endpoints (login, register, google, refresh)
-     * - Public avatar endpoints (/users/{id}/avatar where id != "me")
      * - Public group icon endpoints (/groups/{id}/icon)
      */
     private fun shouldSkipAuth(url: String): Boolean {
@@ -52,7 +51,6 @@ class AuthInterceptor(
                url.contains("/auth/register") ||
                url.contains("/auth/refresh") ||
                url.contains("/auth/google") ||
-               (url.contains("/users/") && url.endsWith("/avatar") && !url.contains("/users/me/avatar")) ||
                (url.contains("/groups/") && url.endsWith("/icon"))
     }
 }

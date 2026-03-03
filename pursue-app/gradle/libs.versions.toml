@@ -25,7 +25,7 @@ kotlinx-coroutines-test = "1.7.3"
 shimmer = "0.5.0"
 googleSignIn = "21.2.0"
 glide = "4.16.0"
-glideOkHttp = "4.12.0"
+glideOkHttp = "4.16.0"
 imageCropper = "4.5.0"
 zxing = "3.5.3"
 playServicesCodeScanner = "16.1.0"
@@ -63,6 +63,7 @@ shimmer = { group = "com.facebook.shimmer", name = "shimmer", version.ref = "shi
 googleSignIn = { group = "com.google.android.gms", name = "play-services-auth", version.ref = "googleSignIn" }
 glide = { group = "com.github.bumptech.glide", name = "glide", version.ref = "glide" }
 glideOkHttp = { group = "com.github.bumptech.glide", name = "okhttp3-integration", version.ref = "glideOkHttp" }
+glideCompiler = { group = "com.github.bumptech.glide", name = "compiler", version.ref = "glide" }
 imageCropper = { group = "com.vanniktech", name = "android-image-cropper", version.ref = "imageCropper" }
 zxing = { group = "com.google.zxing", name = "core", version.ref = "zxing" }
 googleCodeScanner = { group = "com.google.android.gms", name = "play-services-code-scanner", version.ref = "playServicesCodeScanner" }

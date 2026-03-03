@@ -3,6 +3,7 @@ import java.util.Properties
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
+    kotlin("kapt")
     id("com.google.gms.google-services")
     id("com.google.firebase.crashlytics")
 }
@@ -124,6 +125,7 @@ dependencies {
     // Image loading
     implementation(libs.glide)
     implementation(libs.glideOkHttp)
+    kapt(libs.glideCompiler)
     implementation(libs.androidx.exifinterface)
     implementation(libs.compressor)
     
