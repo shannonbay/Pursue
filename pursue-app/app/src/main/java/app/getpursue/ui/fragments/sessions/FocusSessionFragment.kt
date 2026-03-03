@@ -422,8 +422,8 @@ class FocusSessionFragment : Fragment(), SignalingClient.SignalingListener {
     override fun onConnected(userId: String, isReconnect: Boolean) {
         Log.d(TAG, "onConnected myUserId=$userId isReconnect=$isReconnect")
         myUserId = userId
-        if (isReconnect) {
-            requireActivity().runOnUiThread {
+        requireActivity().runOnUiThread {
+            if (isReconnect) {
                 Log.d(TAG, "Reconnected — tearing down stale WebRTC state")
                 // Close all stale peer connections (server will re-send peer-joined events)
                 webRtcManager.closeAllPeerConnections()
@@ -441,14 +441,22 @@ class FocusSessionFragment : Fragment(), SignalingClient.SignalingListener {
                 remoteRenderers.clear()
                 participants.clear()
                 updateGridColumns()
-                updateParticipantCountUI()
             }
+            // Always update count (shows "1 people here" on initial connect)
+            updateParticipantCountUI()
         }
     }
 
     override fun onPeerJoined(userId: String, displayName: String) {
         val localId = myUserId  // capture volatile read
         Log.d(TAG, "onPeerJoined peerId=$userId myUserId=$localId willOffer=${localId.isNotEmpty() && localId < userId}")
+
+        // Ignore self-notifications (server may echo our own userId on reconnect)
+        if (userId == localId) {
+            Log.d(TAG, "onPeerJoined: ignoring self-notification")
+            return
+        }
+
         requireActivity().runOnUiThread {
             // Add synthetic participant entry to local list for UI
             val existing = participants.any { it.user_id == userId }
