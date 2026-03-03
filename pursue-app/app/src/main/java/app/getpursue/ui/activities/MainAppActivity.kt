@@ -826,6 +826,10 @@ class MainAppActivity : AppCompatActivity(),
         GoogleSignInHelper(this).signOut()
         FcmTokenManager.getInstance(this).clearToken()
         authRepository.signOut()
+        // Clear DOB gate flag so it can be re-evaluated on next sign-in
+        getSharedPreferences(MainActivity.PREFS_NAME, MODE_PRIVATE).edit()
+            .remove(MainActivity.KEY_HAS_DATE_OF_BIRTH)
+            .apply()
     }
 
     override fun onChallengeSuggestionClicked() {

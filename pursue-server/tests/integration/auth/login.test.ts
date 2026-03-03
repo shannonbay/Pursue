@@ -23,6 +23,8 @@ describe('POST /api/auth/login', () => {
       email: 'test@example.com',
       display_name: 'Test User'
     });
+    expect(response.body.user).toHaveProperty('has_date_of_birth');
+    expect(response.body.user.has_date_of_birth).toBe(false); // legacy user created without DOB
   });
 
   it('should login with email case-insensitively', async () => {

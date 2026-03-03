@@ -2,6 +2,8 @@ import request from 'supertest';
 import { app } from '../../../src/app';
 import { testDb } from '../../setup';
 
+const VALID_DOB = '1990-01-01';
+
 describe('POST /api/auth/register', () => {
   it('should register a new user successfully', async () => {
     const response = await request(app)
@@ -10,6 +12,7 @@ describe('POST /api/auth/register', () => {
         email: 'test@example.com',
         password: 'Test123!@#',
         display_name: 'Test User',
+        date_of_birth: VALID_DOB,
         consent_agreed: true
       });
 
@@ -22,6 +25,7 @@ describe('POST /api/auth/register', () => {
     });
     expect(response.body.user).toHaveProperty('id');
     expect(response.body.user).toHaveProperty('created_at');
+    expect(response.body.user.has_date_of_birth).toBe(true);
   });
 
   it('should store user in database with hashed password', async () => {
@@ -33,6 +37,7 @@ describe('POST /api/auth/register', () => {
         email: 'test@example.com',
         password: password,
         display_name: 'Test User',
+        date_of_birth: VALID_DOB,
         consent_agreed: true
       });
 
@@ -45,6 +50,7 @@ describe('POST /api/auth/register', () => {
     expect(user).toBeDefined();
     expect(user?.password_hash).not.toBe(password);
     expect(user?.password_hash).toMatch(/^\$2[aby]\$/); // bcrypt hash
+    expect(user?.date_of_birth).toBe(VALID_DOB);
   });
 
   it('should create email auth provider', async () => {
@@ -54,6 +60,7 @@ describe('POST /api/auth/register', () => {
         email: 'test@example.com',
         password: 'Test123!@#',
         display_name: 'Test User',
+        date_of_birth: VALID_DOB,
         consent_agreed: true
       });
 
@@ -75,6 +82,7 @@ describe('POST /api/auth/register', () => {
         email: 'test@example.com',
         password: 'Test123!@#',
         display_name: 'Test User',
+        date_of_birth: VALID_DOB,
         consent_agreed: true
       });
 
@@ -97,6 +105,7 @@ describe('POST /api/auth/register', () => {
         email: 'test@example.com',
         password: 'Test123!@#',
         display_name: 'First User',
+        date_of_birth: VALID_DOB,
         consent_agreed: true
       });
 
@@ -107,6 +116,7 @@ describe('POST /api/auth/register', () => {
         email: 'test@example.com',
         password: 'Different123!@#',
         display_name: 'Second User',
+        date_of_birth: VALID_DOB,
         consent_agreed: true
       });
 
@@ -121,6 +131,7 @@ describe('POST /api/auth/register', () => {
         email: 'test@example.com',
         password: 'Test123!@#',
         display_name: 'First User',
+        date_of_birth: VALID_DOB,
         consent_agreed: true
       });
 
@@ -130,6 +141,7 @@ describe('POST /api/auth/register', () => {
         email: 'TEST@EXAMPLE.COM',
         password: 'Different123!@#',
         display_name: 'Second User',
+        date_of_birth: VALID_DOB,
         consent_agreed: true
       });
 
@@ -142,7 +154,8 @@ describe('POST /api/auth/register', () => {
       .send({
         email: 'test@example.com',
         password: '123',
-        display_name: 'Test User'
+        display_name: 'Test User',
+        date_of_birth: VALID_DOB,
       });
 
     expect(response.status).toBe(400);
@@ -155,7 +168,8 @@ describe('POST /api/auth/register', () => {
       .send({
         email: 'not-an-email',
         password: 'Test123!@#',
-        display_name: 'Test User'
+        display_name: 'Test User',
+        date_of_birth: VALID_DOB,
       });
 
     expect(response.status).toBe(400);
@@ -167,7 +181,8 @@ describe('POST /api/auth/register', () => {
       .post('/api/auth/register')
       .send({
         password: 'Test123!@#',
-        display_name: 'Test User'
+        display_name: 'Test User',
+        date_of_birth: VALID_DOB,
       });
 
     expect(response.status).toBe(400);
@@ -178,7 +193,8 @@ describe('POST /api/auth/register', () => {
       .post('/api/auth/register')
       .send({
         email: 'test@example.com',
-        display_name: 'Test User'
+        display_name: 'Test User',
+        date_of_birth: VALID_DOB,
       });
 
     expect(response.status).toBe(400);
@@ -189,7 +205,8 @@ describe('POST /api/auth/register', () => {
       .post('/api/auth/register')
       .send({
         email: 'test@example.com',
-        password: 'Test123!@#'
+        password: 'Test123!@#',
+        date_of_birth: VALID_DOB,
       });
 
     expect(response.status).toBe(400);
@@ -201,7 +218,8 @@ describe('POST /api/auth/register', () => {
       .send({
         email: 'test@example.com',
         password: 'Test123!@#',
-        display_name: ''
+        display_name: '',
+        date_of_birth: VALID_DOB,
       });
 
     expect(response.status).toBe(400);
@@ -213,7 +231,8 @@ describe('POST /api/auth/register', () => {
       .send({
         email: 'test@example.com',
         password: 'Test123!@#',
-        display_name: 'A'.repeat(101)
+        display_name: 'A'.repeat(101),
+        date_of_birth: VALID_DOB,
       });
 
     expect(response.status).toBe(400);
@@ -225,7 +244,8 @@ describe('POST /api/auth/register', () => {
       .send({
         email: 'test@example.com',
         password: 'Test123!@#',
-        display_name: 'A'.repeat(150)
+        display_name: 'A'.repeat(150),
+        date_of_birth: VALID_DOB,
       });
 
     expect(response.status).toBe(400);
@@ -239,6 +259,7 @@ describe('POST /api/auth/register', () => {
         email: 'TEST@EXAMPLE.COM',
         password: 'Test123!@#',
         display_name: 'Test User',
+        date_of_birth: VALID_DOB,
         consent_agreed: true
       });
 
@@ -252,7 +273,8 @@ describe('POST /api/auth/register', () => {
       .send({
         email: 'test@example.com',
         password: 'Test123!@#',
-        display_name: 'Test User'
+        display_name: 'Test User',
+        date_of_birth: VALID_DOB,
       });
 
     expect(response.status).toBe(400);
@@ -266,6 +288,7 @@ describe('POST /api/auth/register', () => {
         email: 'test@example.com',
         password: 'Test123!@#',
         display_name: 'Test User',
+        date_of_birth: VALID_DOB,
         consent_agreed: false
       });
 
@@ -280,6 +303,7 @@ describe('POST /api/auth/register', () => {
         email: 'test@example.com',
         password: 'Test123!@#',
         display_name: 'Test User',
+        date_of_birth: VALID_DOB,
         consent_agreed: true
       });
 
@@ -294,5 +318,72 @@ describe('POST /api/auth/register', () => {
     expect(consents).toHaveLength(2);
     const types = consents.map(c => c.consent_type).sort();
     expect(types).toEqual(['privacy policy Mar 1, 2026', 'terms Feb 11, 2026']);
+  });
+
+  it('should reject missing date_of_birth', async () => {
+    const response = await request(app)
+      .post('/api/auth/register')
+      .send({
+        email: 'test@example.com',
+        password: 'Test123!@#',
+        display_name: 'Test User',
+        consent_agreed: true
+      });
+
+    expect(response.status).toBe(400);
+    expect(response.body.error.code).toBe('VALIDATION_ERROR');
+  });
+
+  it('should reject invalid date_of_birth format', async () => {
+    const response = await request(app)
+      .post('/api/auth/register')
+      .send({
+        email: 'test@example.com',
+        password: 'Test123!@#',
+        display_name: 'Test User',
+        date_of_birth: '01/01/1990',
+        consent_agreed: true
+      });
+
+    expect(response.status).toBe(400);
+    expect(response.body.error.code).toBe('VALIDATION_ERROR');
+  });
+
+  it('should reject user under 18 years old', async () => {
+    const today = new Date();
+    const underAge = new Date(today.getFullYear() - 17, today.getMonth(), today.getDate());
+    const dob = underAge.toISOString().substring(0, 10);
+
+    const response = await request(app)
+      .post('/api/auth/register')
+      .send({
+        email: 'young@example.com',
+        password: 'Test123!@#',
+        display_name: 'Young User',
+        date_of_birth: dob,
+        consent_agreed: true
+      });
+
+    expect(response.status).toBe(400);
+    expect(response.body.error.code).toBe('UNDER_AGE');
+  });
+
+  it('should accept user exactly 18 years old', async () => {
+    const today = new Date();
+    const exactly18 = new Date(today.getFullYear() - 18, today.getMonth(), today.getDate());
+    const dob = exactly18.toISOString().substring(0, 10);
+
+    const response = await request(app)
+      .post('/api/auth/register')
+      .send({
+        email: 'eighteen@example.com',
+        password: 'Test123!@#',
+        display_name: 'Adult User',
+        date_of_birth: dob,
+        consent_agreed: true
+      });
+
+    expect(response.status).toBe(201);
+    expect(response.body.user.has_date_of_birth).toBe(true);
   });
 });

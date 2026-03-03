@@ -69,6 +69,16 @@ export async function register(
     // Validate display name against reserved names and profanity
     assertValidName(validateDisplayName(data.display_name));
 
+    // Age check: must be 18 or older
+    const dob = new Date(data.date_of_birth);
+    const today = new Date();
+    let age = today.getFullYear() - dob.getFullYear();
+    const m = today.getMonth() - dob.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) age--;
+    if (age < 18) {
+      throw new ApplicationError('You must be 18 or older to create an account.', 400, 'UNDER_AGE');
+    }
+
     // Check if email already registered
     const existingUser = await db
       .selectFrom('users')
@@ -91,6 +101,7 @@ export async function register(
           email: data.email.toLowerCase(),
           display_name: data.display_name,
           password_hash: passwordHash,
+          date_of_birth: data.date_of_birth,
         })
         .returning(['id', 'email', 'display_name', 'created_at'])
         .executeTakeFirstOrThrow();
@@ -136,6 +147,7 @@ export async function register(
         email: result.user.email,
         display_name: result.user.display_name,
         has_avatar: false, // New user, no avatar yet
+        has_date_of_birth: true, // DOB was provided at registration
         created_at: result.user.created_at,
       },
     });
@@ -161,6 +173,7 @@ export async function login(
         'email',
         'display_name',
         'password_hash',
+        'date_of_birth',
         sql<boolean>`avatar_data IS NOT NULL`.as('has_avatar'),
       ])
       .where('email', '=', data.email.toLowerCase())
@@ -201,6 +214,7 @@ export async function login(
         email: user.email,
         display_name: user.display_name,
         has_avatar: Boolean(user.has_avatar),
+        has_date_of_birth: user.date_of_birth !== null,
       },
     });
   } catch (error) {
@@ -253,6 +267,7 @@ export async function googleAuth(
         'users.id',
         'users.email',
         'users.display_name',
+        'users.date_of_birth',
         sql<boolean>`users.avatar_data IS NOT NULL`.as('has_avatar'),
       ])
       .where('auth_providers.provider', '=', 'google')
@@ -260,7 +275,7 @@ export async function googleAuth(
       .where('users.deleted_at', 'is', null)
       .executeTakeFirst();
 
-    let user: { id: string; email: string; display_name: string; has_avatar: boolean };
+    let user: { id: string; email: string; display_name: string; has_avatar: boolean; date_of_birth: string | null };
     let isNewUser = false;
     let accessToken: string;
     let refreshToken: string;
@@ -272,6 +287,7 @@ export async function googleAuth(
         email: existingProvider.email,
         display_name: existingProvider.display_name,
         has_avatar: Boolean(existingProvider.has_avatar),
+        date_of_birth: existingProvider.date_of_birth ?? null,
       };
     } else {
       // Case 2: Google account not linked - check if user exists by email
@@ -282,6 +298,7 @@ export async function googleAuth(
           'id',
           'email',
           'display_name',
+          'date_of_birth',
           sql<boolean>`avatar_data IS NOT NULL`.as('has_avatar'),
         ])
         .where('email', '=', googleUser.email.toLowerCase())
@@ -304,8 +321,9 @@ export async function googleAuth(
           email: existingUserByEmail.email,
           display_name: existingUserByEmail.display_name,
           has_avatar: Boolean(existingUserByEmail.has_avatar),
+          date_of_birth: existingUserByEmail.date_of_birth ?? null,
         };
-        
+
         // Download and update Google avatar if user doesn't have one
         if (!user.has_avatar && googleUser.picture) {
           const avatarData = await downloadAndProcessGoogleAvatar(googleUser.picture);
@@ -390,6 +408,7 @@ export async function googleAuth(
           email: txResult.newUser.email,
           display_name: txResult.newUser.display_name,
           has_avatar: avatarData !== null,
+          date_of_birth: null, // New Google users have no DOB yet; gate will collect it
         };
         isNewUser = true;
         accessToken = txResult.accessToken;
@@ -425,6 +444,7 @@ export async function googleAuth(
         email: user.email,
         display_name: user.display_name,
         has_avatar: user.has_avatar,
+        has_date_of_birth: user.date_of_birth !== null,
       },
     });
   } catch (error) {

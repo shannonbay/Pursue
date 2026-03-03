@@ -34,6 +34,10 @@
             android:exported="false" />
 
         <activity
+            android:name="app.getpursue.ui.activities.DobGateActivity"
+            android:exported="false" />
+
+        <activity
             android:name="app.getpursue.ui.activities.MainAppActivity"
             android:exported="false" />
 

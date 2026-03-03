@@ -18,6 +18,7 @@ export async function createAuthenticatedUser(
       email,
       password,
       display_name: displayName,
+      date_of_birth: '1990-01-01',
       consent_agreed: true
     });
 

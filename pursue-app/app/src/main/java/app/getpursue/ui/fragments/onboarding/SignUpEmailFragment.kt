@@ -1,5 +1,7 @@
 package app.getpursue.ui.fragments.onboarding
 
+import android.widget.DatePicker
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import android.content.Context
 import android.os.Bundle
 import android.text.Editable
@@ -36,6 +38,7 @@ import app.getpursue.R
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.util.Calendar
 
 /**
  * 4.1.4 Sign Up with Email
@@ -53,6 +56,8 @@ class SignUpEmailFragment : Fragment() {
     private var callbacks: Callbacks? = null
 
     private lateinit var displayNameInput: TextInputEditText
+    private lateinit var dobInput: TextInputEditText
+    private lateinit var dobErrorText: TextView
     private lateinit var emailInput: TextInputEditText
     private lateinit var passwordInput: TextInputEditText
     private lateinit var confirmPasswordInput: TextInputEditText
@@ -71,6 +76,9 @@ class SignUpEmailFragment : Fragment() {
     private lateinit var reqUppercaseText: TextView
     private lateinit var reqNumberText: TextView
     private lateinit var reqSpecialText: TextView
+
+    private var dobIso: String? = null // "YYYY-MM-DD" when a valid 18+ date is chosen
+    private var dobSelected = false
 
     data class PasswordRequirements(
         val hasMinLength: Boolean,
@@ -105,6 +113,8 @@ class SignUpEmailFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         displayNameInput = view.findViewById(R.id.input_display_name)
+        dobInput = view.findViewById(R.id.et_dob)
+        dobErrorText = view.findViewById(R.id.tv_dob_error)
         emailInput = view.findViewById(R.id.input_email)
         passwordInput = view.findViewById(R.id.input_password)
         confirmPasswordInput = view.findViewById(R.id.input_confirm_password)
@@ -133,6 +143,9 @@ class SignUpEmailFragment : Fragment() {
         consentText.movementMethod = LinkMovementMethod.getInstance()
 
         consentCheckbox.setOnCheckedChangeListener { _, _ -> validate() }
+
+        // DOB picker
+        dobInput.setOnClickListener { showDobPicker() }
 
         // Initialize character counter
         charCounter.text = getString(R.string.display_name_char_counter, 0)
@@ -177,7 +190,8 @@ class SignUpEmailFragment : Fragment() {
                 val displayName = displayNameInput.text?.toString() ?: ""
                 val email = emailInput.text?.toString() ?: ""
                 val password = passwordInput.text?.toString() ?: ""
-                registerUser(displayName, email, password)
+                val dob = dobIso ?: return@setOnClickListener
+                registerUser(displayName, email, password, dob)
             }
         }
 
@@ -308,11 +322,13 @@ class SignUpEmailFragment : Fragment() {
 
         // Enable submit button only if:
         // - Display name is valid
+        // - DOB is selected and age ≥ 18
         // - Email is valid
         // - All password requirements are met
         // - Passwords match
         // - Consent is checked
         createAccountButton.isEnabled = displayNameValid &&
+                                         dobSelected &&
                                          emailValid &&
                                          reqs.allMet &&
                                          password == confirmPassword &&
@@ -322,7 +338,57 @@ class SignUpEmailFragment : Fragment() {
         return createAccountButton.isEnabled
     }
 
-    private fun registerUser(displayName: String, email: String, password: String) {
+    private fun showDobPicker() {
+        val cal = Calendar.getInstance()
+        val todayMillis = cal.timeInMillis
+        cal.add(Calendar.YEAR, -120)
+        val minMillis = cal.timeInMillis
+
+        val dialogView = layoutInflater.inflate(R.layout.dialog_dob_picker, null)
+        val datePicker = dialogView.findViewById<DatePicker>(R.id.date_picker)
+        datePicker.maxDate = todayMillis
+        datePicker.minDate = minMillis
+        val defaultCal = Calendar.getInstance()
+        defaultCal.add(Calendar.YEAR, -25)
+        datePicker.updateDate(
+            defaultCal.get(Calendar.YEAR),
+            defaultCal.get(Calendar.MONTH),
+            defaultCal.get(Calendar.DAY_OF_MONTH)
+        )
+
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle(R.string.dob_label)
+            .setView(dialogView)
+            .setPositiveButton(android.R.string.ok) { _, _ ->
+                val year = datePicker.year
+                val month = datePicker.month
+                val day = datePicker.dayOfMonth
+                val iso = "%04d-%02d-%02d".format(year, month + 1, day)
+                val today = Calendar.getInstance()
+                var age = today.get(Calendar.YEAR) - year
+                val m = today.get(Calendar.MONTH) - month
+                if (m < 0 || (m == 0 && today.get(Calendar.DAY_OF_MONTH) < day)) age--
+
+                if (age < 18) {
+                    dobIso = null
+                    dobSelected = false
+                    dobInput.setText("")
+                    dobErrorText.setText(R.string.dob_error_under_age)
+                    dobErrorText.isVisible = true
+                } else {
+                    dobIso = iso
+                    dobSelected = true
+                    val display = "%02d/%02d/%04d".format(month + 1, day, year)
+                    dobInput.setText(display)
+                    dobErrorText.isVisible = false
+                }
+                validate()
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
+    }
+
+    private fun registerUser(displayName: String, email: String, password: String, dateOfBirth: String) {
         // Disable button during request
         createAccountButton.isEnabled = false
         createAccountButton.text = getString(R.string.creating_account)
@@ -338,6 +404,7 @@ class SignUpEmailFragment : Fragment() {
                 val response = withContext(Dispatchers.IO) {
                     ApiClient.register(
                         displayName, email, password,
+                        dateOfBirth = dateOfBirth,
                         consentAgreed = true,
                         consentTermsVersion = config?.min_required_terms_version,
                         consentPrivacyVersion = config?.min_required_privacy_version
@@ -361,6 +428,7 @@ class SignUpEmailFragment : Fragment() {
                 requireContext().getSharedPreferences(MainActivity.Companion.PREFS_NAME, Context.MODE_PRIVATE)
                     .edit()
                     .putBoolean(MainActivity.Companion.KEY_HAS_IDENTITY, true)
+                    .putBoolean(MainActivity.Companion.KEY_HAS_DATE_OF_BIRTH, true)
                     .apply()
                 
                 // Register FCM token (non-blocking - don't fail registration if this fails)
@@ -380,12 +448,20 @@ class SignUpEmailFragment : Fragment() {
                 })
                 callbacks?.onSignUp(displayName, email, password)
             } catch (e: ApiException) {
-                val errorMessage = when (e.code) {
-                    409 -> "An account with this email already exists"
-                    400 -> "Invalid registration data. Please check your inputs."
-                    else -> e.message ?: "Registration failed. Please try again."
+                val msg = e.message ?: ""
+                if (e.code == 400 && msg.contains("18 or older", ignoreCase = true)) {
+                    dobErrorText.text = getString(R.string.dob_error_under_age)
+                    dobErrorText.isVisible = true
+                    dobSelected = false
+                    dobIso = null
+                } else {
+                    val errorMessage = when (e.code) {
+                        409 -> "An account with this email already exists"
+                        400 -> "Invalid registration data. Please check your inputs."
+                        else -> msg.ifBlank { "Registration failed. Please try again." }
+                    }
+                    Toast.makeText(requireContext(), errorMessage, Toast.LENGTH_LONG).show()
                 }
-                Toast.makeText(requireContext(), errorMessage, Toast.LENGTH_LONG).show()
                 createAccountButton.isEnabled = true
                 createAccountButton.text = getString(R.string.create_account_button)
             } catch (e: Exception) {

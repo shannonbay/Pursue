@@ -23,6 +23,7 @@ CREATE TABLE users (
     CHECK (subscription_status IN ('active', 'cancelled', 'expired', 'grace_period', 'over_limit')),
   group_limit INTEGER NOT NULL DEFAULT 1,
   current_group_count INTEGER NOT NULL DEFAULT 0,
+  date_of_birth DATE, -- NULL for legacy users; required for new email sign-ups
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   deleted_at TIMESTAMP WITH TIME ZONE -- NULL if active, timestamp if soft deleted

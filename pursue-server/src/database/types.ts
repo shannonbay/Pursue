@@ -17,6 +17,7 @@ export interface UsersTable {
   subscription_status: ColumnType<'active' | 'cancelled' | 'expired' | 'grace_period' | 'over_limit', string | undefined, string>;
   group_limit: ColumnType<number, number | undefined, number>;
   current_group_count: ColumnType<number, number | undefined, number>;
+  date_of_birth: ColumnType<string | null, string | null | undefined, string | null | undefined>;
 }
 
 export type User = Selectable<UsersTable>;

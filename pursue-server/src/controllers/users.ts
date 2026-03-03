@@ -362,6 +362,9 @@ export async function updateCurrentUser(
     if (data.display_name !== undefined) {
       updates.display_name = data.display_name;
     }
+    if (data.date_of_birth !== undefined) {
+      updates.date_of_birth = data.date_of_birth;
+    }
 
     if (Object.keys(updates).length === 0) {
       // No updates, return current user

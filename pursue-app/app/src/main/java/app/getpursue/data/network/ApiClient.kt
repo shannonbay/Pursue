@@ -115,11 +115,12 @@ object ApiClient {
         displayName: String,
         email: String,
         password: String,
+        dateOfBirth: String,
         consentAgreed: Boolean,
         consentTermsVersion: String? = null,
         consentPrivacyVersion: String? = null
     ): RegistrationResponse {
-        val requestBody = gson.toJson(RegisterRequest(displayName, email, password, consentAgreed, consentTermsVersion, consentPrivacyVersion))
+        val requestBody = gson.toJson(RegisterRequest(displayName, email, password, dateOfBirth, consentAgreed, consentTermsVersion, consentPrivacyVersion))
             .toRequestBody(jsonMediaType)
         
         val request = Request.Builder()
@@ -291,10 +292,27 @@ object ApiClient {
             .get()
             .addHeader("Content-Type", "application/json")
             .build()
-        
+
         return executeRequest(request, getClient()) { responseBody ->
             gson.fromJson(responseBody, User::class.java)
         }
+    }
+
+    /**
+     * Update the authenticated user's date of birth.
+     *
+     * @param dateOfBirth ISO 8601 date string (YYYY-MM-DD)
+     * @throws ApiException on error
+     */
+    suspend fun updateDateOfBirth(dateOfBirth: String) {
+        val body = JsonObject().apply { addProperty("date_of_birth", dateOfBirth) }
+        val requestBody = gson.toJson(body).toRequestBody(jsonMediaType)
+        val request = Request.Builder()
+            .url("$baseUrl/users/me")
+            .patch(requestBody)
+            .addHeader("Content-Type", "application/json")
+            .build()
+        executeRequest(request, getClient()) { /* no response body needed */ }
     }
 
     /**
@@ -2611,6 +2629,7 @@ data class RegisterRequest(
     val display_name: String,
     val email: String,
     val password: String,
+    val date_of_birth: String,
     val consent_agreed: Boolean,
     val consent_terms_version: String? = null,
     val consent_privacy_version: String? = null
@@ -2685,6 +2704,7 @@ data class User(
     val email: String,
     val display_name: String,
     val has_avatar: Boolean, // true if user has an avatar image (BYTEA), false otherwise
+    val has_date_of_birth: Boolean = false, // true if server has DOB on file for this user
     val updated_at: String? // ISO 8601 timestamp for cache invalidation
 )
 

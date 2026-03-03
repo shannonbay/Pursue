@@ -39,7 +39,11 @@ class MainActivity : AppCompatActivity() {
         val fcmIntent = buildFcmDeepLinkIntent(intent)
 
         if (hasIdentity()) {
-            if (fcmIntent != null) {
+            val hasDateOfBirth = prefs.getBoolean(KEY_HAS_DATE_OF_BIRTH, false)
+            if (!hasDateOfBirth) {
+                // Existing user with no DOB on file — show age gate before main app
+                startActivity(Intent(this, DobGateActivity::class.java))
+            } else if (fcmIntent != null) {
                 startActivity(fcmIntent)
             } else if (isOrientationPending()) {
                 // User started orientation but didn't complete it (app killed mid-flow)
@@ -117,5 +121,6 @@ class MainActivity : AppCompatActivity() {
         const val PREFS_NAME = "pursue_prefs"
         const val KEY_HAS_IDENTITY = "has_identity"
         const val KEY_PENDING_INVITE_CODE = "pending_invite_code"
+        const val KEY_HAS_DATE_OF_BIRTH = "has_date_of_birth"
     }
 }

@@ -25,6 +25,7 @@ import app.getpursue.data.network.ApiClient
 import app.getpursue.data.network.ApiException
 import com.google.firebase.analytics.FirebaseAnalytics
 import com.google.firebase.crashlytics.FirebaseCrashlytics
+import app.getpursue.ui.fragments.onboarding.DobGateFragment
 import app.getpursue.ui.fragments.onboarding.SignInEmailFragment
 import app.getpursue.ui.fragments.onboarding.SignUpEmailFragment
 import app.getpursue.ui.fragments.onboarding.WelcomeFragment
@@ -45,10 +46,14 @@ import kotlinx.coroutines.withContext
 class OnboardingActivity : AppCompatActivity(),
     WelcomeFragment.Callbacks,
     SignInEmailFragment.Callbacks,
-    SignUpEmailFragment.Callbacks {
+    SignUpEmailFragment.Callbacks,
+    DobGateFragment.Callbacks {
 
     private val RC_GOOGLE_SIGN_IN = 9001
     private lateinit var googleSignInHelper: GoogleSignInHelper
+
+    // Tracks whether the in-progress sign-in was a new user (affects post-DOB-gate routing)
+    private var dobGateIsNewUser = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -97,10 +102,13 @@ class OnboardingActivity : AppCompatActivity(),
                 val authRepository = AuthRepository.Companion.getInstance(this@OnboardingActivity)
                 authRepository.setSignedIn()
 
+                val hasDateOfBirth = response.user?.has_date_of_birth ?: false
+
                 // Update SharedPreferences for backward compatibility
                 getSharedPreferences(MainActivity.PREFS_NAME, MODE_PRIVATE)
                     .edit()
                     .putBoolean(MainActivity.KEY_HAS_IDENTITY, true)
+                    .putBoolean(MainActivity.KEY_HAS_DATE_OF_BIRTH, hasDateOfBirth)
                     .apply()
 
                 // Register FCM token (non-blocking - don't fail sign-in if this fails)
@@ -123,12 +131,14 @@ class OnboardingActivity : AppCompatActivity(),
                     putString(FirebaseAnalytics.Param.METHOD, "email")
                 })
 
-                // Navigate to main app (ensure UI operations run on main thread)
+                // Navigate to DOB gate if DOB missing, otherwise to main app
                 runOnUiThread {
                     Toast.makeText(this@OnboardingActivity, "Sign in successful", Toast.LENGTH_SHORT).show()
-                    Log.d("OnboardingActivity", "Navigating to MainAppActivity after email sign-in")
+                    Log.d("OnboardingActivity", "Navigating after email sign-in, has_date_of_birth=$hasDateOfBirth")
 
-                    if (!CrashlyticsPreference.isConsentAsked(this@OnboardingActivity)) {
+                    if (!hasDateOfBirth) {
+                        showDobGate(isNewUser = false)
+                    } else if (!CrashlyticsPreference.isConsentAsked(this@OnboardingActivity)) {
                         showCrashConsentDialog(response.access_token)
                     } else {
                         navigateToMainApp()
@@ -295,10 +305,13 @@ class OnboardingActivity : AppCompatActivity(),
                 val authRepository = AuthRepository.Companion.getInstance(this@OnboardingActivity)
                 authRepository.setSignedIn()
 
+                val hasDateOfBirth = response.user?.has_date_of_birth ?: false
+
                 // Update SharedPreferences for backward compatibility
                 getSharedPreferences(MainActivity.PREFS_NAME, MODE_PRIVATE)
                     .edit()
                     .putBoolean(MainActivity.KEY_HAS_IDENTITY, true)
+                    .putBoolean(MainActivity.KEY_HAS_DATE_OF_BIRTH, hasDateOfBirth)
                     .apply()
 
                 // Register FCM token (non-blocking - don't fail sign-in if this fails)
@@ -322,7 +335,7 @@ class OnboardingActivity : AppCompatActivity(),
                     putString(FirebaseAnalytics.Param.METHOD, "google")
                 })
 
-                // Navigate to main app or orientation (ensure UI operations run on main thread)
+                // Navigate to DOB gate if DOB missing, otherwise to orientation/main app
                 runOnUiThread {
                     val successMessage = if (response.is_new_user) {
                         getString(R.string.account_created_google)
@@ -331,14 +344,17 @@ class OnboardingActivity : AppCompatActivity(),
                     }
                     Toast.makeText(this@OnboardingActivity, successMessage, Toast.LENGTH_SHORT).show()
 
-                    if (response.is_new_user) {
-                        Log.d("OnboardingActivity", "New user — navigating to OrientationActivity")
+                    if (!hasDateOfBirth) {
+                        Log.d("OnboardingActivity", "No DOB on file — showing DOB gate")
+                        showDobGate(isNewUser = response.is_new_user)
+                    } else if (response.is_new_user) {
+                        Log.d("OnboardingActivity", "New user with DOB — navigating to OrientationActivity")
                         val intent = OrientationActivity.newIntent(this@OnboardingActivity)
                         intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
                         startActivity(intent)
                         finish()
                     } else {
-                        Log.d("OnboardingActivity", "Returning user — navigating to MainAppActivity")
+                        Log.d("OnboardingActivity", "Returning user with DOB — navigating to MainAppActivity")
                         if (!CrashlyticsPreference.isConsentAsked(this@OnboardingActivity)) {
                             showCrashConsentDialog(response.access_token)
                         } else {
@@ -375,6 +391,47 @@ class OnboardingActivity : AppCompatActivity(),
             }
         }
     }
+
+    private fun showDobGate(isNewUser: Boolean) {
+        dobGateIsNewUser = isNewUser
+        supportFragmentManager.commit {
+            replace(R.id.onboarding_container, DobGateFragment.newInstance())
+            addToBackStack(null)
+        }
+    }
+
+    // region DobGateFragment.Callbacks
+
+    override fun onDobVerified() {
+        // DOB stored on server; proceed to main app or orientation
+        if (dobGateIsNewUser) {
+            val intent = OrientationActivity.newIntent(this)
+            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+            startActivity(intent)
+            finish()
+        } else {
+            navigateToMainApp()
+        }
+    }
+
+    override fun onDobUnderAge() {
+        // Sign out: clear tokens, identity, and DOB prefs
+        getSharedPreferences(MainActivity.PREFS_NAME, MODE_PRIVATE).edit()
+            .remove(MainActivity.KEY_HAS_IDENTITY)
+            .remove(MainActivity.KEY_HAS_DATE_OF_BIRTH)
+            .apply()
+        val authRepository = AuthRepository.Companion.getInstance(this)
+        authRepository.signOut() // also clears tokens
+
+        // Pop back to Welcome screen and show message
+        supportFragmentManager.popBackStack(null, androidx.fragment.app.FragmentManager.POP_BACK_STACK_INCLUSIVE)
+        supportFragmentManager.commit {
+            replace(R.id.onboarding_container, WelcomeFragment.Companion.newInstance())
+        }
+        Toast.makeText(this, getString(R.string.dob_gate_under_age_message), Toast.LENGTH_LONG).show()
+    }
+
+    // endregion
 
     private fun navigateToMainApp() {
         val intent = Intent(this, MainAppActivity::class.java)

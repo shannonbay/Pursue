@@ -63,6 +63,22 @@ beforeEach(async () => {
 });
 
 async function createSchema(db: Kysely<Database>) {
+  // Always run column migrations before the fast-path return so they apply to
+  // existing test databases that already have all tables.
+  await sql`
+    DO $$
+    BEGIN
+      IF EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'users') THEN
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_name = 'users' AND column_name = 'date_of_birth'
+        ) THEN
+          ALTER TABLE users ADD COLUMN date_of_birth DATE;
+        END IF;
+      END IF;
+    END $$;
+  `.execute(db);
+
   // Fast path: if the last table in our schema exists, skip all CREATE statements.
   // This avoids 30+ redundant round-trips on every test file after the first run.
   const result = await sql<{ exists: boolean }>`
@@ -108,6 +124,7 @@ async function createSchema(db: Kysely<Database>) {
       avatar_mime_type VARCHAR(50),
       password_hash VARCHAR(255),
       timezone VARCHAR(50) DEFAULT 'UTC',
+      date_of_birth DATE,
       created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
       updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
       deleted_at TIMESTAMP WITH TIME ZONE,
@@ -169,6 +186,12 @@ async function createSchema(db: Kysely<Database>) {
         WHERE table_name = 'users' AND column_name = 'timezone'
       ) THEN
         ALTER TABLE users ADD COLUMN timezone VARCHAR(50) DEFAULT 'UTC';
+      END IF;
+      IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = 'users' AND column_name = 'date_of_birth'
+      ) THEN
+        ALTER TABLE users ADD COLUMN date_of_birth DATE;
       END IF;
     END $$;
   `.execute(db);

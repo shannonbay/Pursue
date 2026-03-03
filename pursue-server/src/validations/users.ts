@@ -2,6 +2,7 @@ import { z } from 'zod';
 
 export const UpdateUserSchema = z.object({
   display_name: z.string().min(1, 'Display name must be at least 1 character').max(100, 'Display name must be at most 100 characters').optional(),
+  date_of_birth: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid date format (expected YYYY-MM-DD)').optional(),
 }).strict();
 
 export const ChangePasswordSchema = z.object({

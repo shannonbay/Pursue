@@ -25,6 +25,7 @@ export const RegisterSchema = z.object({
   email: z.string().email('Invalid email format').max(255),
   password: passwordSchema,
   display_name: z.string().min(1, 'Display name is required').max(100),
+  date_of_birth: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid date format (expected YYYY-MM-DD)'),
   consent_agreed: z.literal(true, {
     error: 'You must agree to the Terms of Service and Privacy Policy',
   }),
