@@ -15,6 +15,7 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import app.getpursue.R
 import app.getpursue.data.network.ApiClient
+import app.getpursue.data.network.ApiException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -34,6 +35,8 @@ class DobGateFragment : Fragment() {
         fun onDobVerified()
         /** Called when user is under 18. The host should sign out and show a message. */
         fun onDobUnderAge()
+        /** Called when the DOB submission fails with 401. The host should sign out. */
+        fun onDobAuthFailed() {}
     }
 
     private var callbacks: Callbacks? = null
@@ -128,6 +131,14 @@ class DobGateFragment : Fragment() {
                 ).apply()
 
                 callbacks?.onDobVerified()
+            } catch (e: ApiException) {
+                Log.e("DobGateFragment", "Failed to submit DOB (${e.code})", e)
+                if (e.code == 401) {
+                    callbacks?.onDobAuthFailed()
+                } else {
+                    Toast.makeText(requireContext(), "Failed to save date of birth. Please try again.", Toast.LENGTH_LONG).show()
+                    continueButton.isEnabled = dobValid
+                }
             } catch (e: Exception) {
                 Log.e("DobGateFragment", "Failed to submit DOB", e)
                 Toast.makeText(requireContext(), "Failed to save date of birth. Please try again.", Toast.LENGTH_LONG).show()

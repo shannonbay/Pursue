@@ -414,6 +414,22 @@ class OnboardingActivity : AppCompatActivity(),
         }
     }
 
+    override fun onDobAuthFailed() {
+        // Token is invalid — sign out and pop back to Welcome so the user can try again
+        getSharedPreferences(MainActivity.PREFS_NAME, MODE_PRIVATE).edit()
+            .remove(MainActivity.KEY_HAS_IDENTITY)
+            .remove(MainActivity.KEY_HAS_DATE_OF_BIRTH)
+            .apply()
+        val authRepository = AuthRepository.Companion.getInstance(this)
+        authRepository.signOut()
+
+        supportFragmentManager.popBackStack(null, androidx.fragment.app.FragmentManager.POP_BACK_STACK_INCLUSIVE)
+        supportFragmentManager.commit {
+            replace(R.id.onboarding_container, WelcomeFragment.Companion.newInstance())
+        }
+        Toast.makeText(this, "Session expired. Please sign in again.", Toast.LENGTH_LONG).show()
+    }
+
     override fun onDobUnderAge() {
         // Sign out: clear tokens, identity, and DOB prefs
         getSharedPreferences(MainActivity.PREFS_NAME, MODE_PRIVATE).edit()

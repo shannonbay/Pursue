@@ -36,6 +36,22 @@ class DobGateActivity : AppCompatActivity(), DobGateFragment.Callbacks {
         finish()
     }
 
+    override fun onDobAuthFailed() {
+        // Token is invalid — sign out and let the user start fresh
+        getSharedPreferences(MainActivity.PREFS_NAME, MODE_PRIVATE).edit()
+            .remove(MainActivity.KEY_HAS_IDENTITY)
+            .remove(MainActivity.KEY_HAS_DATE_OF_BIRTH)
+            .apply()
+        val authRepository = AuthRepository.getInstance(this)
+        authRepository.signOut()
+
+        Toast.makeText(this, "Session expired. Please sign in again.", Toast.LENGTH_LONG).show()
+        startActivity(Intent(this, OnboardingActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        })
+        finish()
+    }
+
     override fun onDobUnderAge() {
         // Sign out: clear tokens and identity/DOB flags
         getSharedPreferences(MainActivity.PREFS_NAME, MODE_PRIVATE).edit()
