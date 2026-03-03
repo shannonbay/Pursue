@@ -12,6 +12,7 @@ import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import app.getpursue.data.auth.SecureTokenManager
 import app.getpursue.data.notifications.NotificationPreferences
+import app.getpursue.data.notifications.SessionEventManager
 import app.getpursue.data.notifications.UnreadBadgeManager
 import app.getpursue.ui.activities.FocusSessionActivity
 import app.getpursue.ui.activities.GroupDetailActivity
@@ -108,6 +109,17 @@ class PursueFirebaseMessagingService : FirebaseMessagingService() {
             ) {
                 Log.d(TAG, "Skipping notification (no POST_NOTIFICATIONS permission)")
                 return
+            }
+        }
+
+        when (type) {
+            "session_started" -> {
+                val gid = remoteMessage.data["group_id"]?.takeIf { it.isNotBlank() }
+                if (gid != null) SessionEventManager.emitSessionStarted(gid)
+            }
+            "session_ended" -> {
+                val gid = remoteMessage.data["group_id"]?.takeIf { it.isNotBlank() }
+                if (gid != null) SessionEventManager.emitSessionEnded(gid)
             }
         }
 

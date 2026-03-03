@@ -44,6 +44,10 @@ import androidx.viewpager2.adapter.FragmentStateAdapter
 import androidx.viewpager2.widget.ViewPager2
 import app.getpursue.data.analytics.AnalyticsEvents
 import app.getpursue.data.analytics.AnalyticsLogger
+import app.getpursue.data.notifications.SessionEventManager
+import androidx.lifecycle.repeatOnLifecycle
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.merge
 import android.widget.LinearLayout
 import app.getpursue.data.auth.SecureTokenManager
 import app.getpursue.ui.views.DailyPulseWidget
@@ -301,9 +305,21 @@ class GroupDetailFragment : Fragment() {
 
         // Setup FAB
         setupFAB()
-        
+
         // Apply WindowInsets to FAB for proper positioning above system navigation bar
         setupFABWindowInsets()
+
+        // Refresh focus session card when a session_started or session_ended FCM notification arrives
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.RESUMED) {
+                merge(
+                    SessionEventManager.sessionStartedFlow,
+                    SessionEventManager.sessionEndedFlow
+                )
+                    .filter { it == groupId }
+                    .collect { loadFocusSessionCard(null) }
+            }
+        }
 
         // Initial load and refresh on return from Edit happen in onResume
     }

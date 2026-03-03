@@ -371,6 +371,13 @@ export async function endSession(
       .returningAll()
       .executeTakeFirstOrThrow();
 
+    sendGroupNotification(
+      groupId,
+      { title: 'Focus Session Ended', body: 'The focus session has ended.' },
+      { type: 'session_ended', session_id: sessionId, group_id: groupId },
+      { membershipStatus: 'active' }
+    ).catch((err) => logger.error('FCM session_ended failed', { err }));
+
     res.status(200).json({ session: updated });
   } catch (error) {
     next(error);
