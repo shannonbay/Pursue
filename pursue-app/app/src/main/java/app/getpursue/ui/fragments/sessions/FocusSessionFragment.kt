@@ -19,13 +19,16 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import app.getpursue.BuildConfig
 import app.getpursue.R
 import app.getpursue.data.auth.SecureTokenManager
 import app.getpursue.data.network.ApiClient
+import app.getpursue.data.notifications.SessionEventManager
 import app.getpursue.data.network.ApiException
 import app.getpursue.data.network.FocusParticipant
 import app.getpursue.data.websocket.SignalingClient
@@ -36,6 +39,8 @@ import com.google.android.material.textfield.TextInputEditText
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -58,6 +63,7 @@ class FocusSessionFragment : Fragment(), SignalingClient.SignalingListener {
         private const val ARG_GROUP_ID = "group_id"
         private const val ARG_GROUP_NAME = "group_name"
         private const val ARG_IS_HOST = "is_host"
+        private const val ARG_DURATION = "duration"
 
         private const val PHASE_LOBBY = "lobby"
         private const val PHASE_FOCUS = "focus"
@@ -66,25 +72,28 @@ class FocusSessionFragment : Fragment(), SignalingClient.SignalingListener {
         private const val CHIT_CHAT_DURATION_SECS = 10 * 60L
 
         fun newInstance(
-            sessionId: String,
+            sessionId: String,    // "" signals host creating new session on "Go Live"
             groupId: String,
             groupName: String,
-            isHost: Boolean
+            isHost: Boolean,
+            duration: Int = 45
         ) = FocusSessionFragment().apply {
             arguments = Bundle().apply {
                 putString(ARG_SESSION_ID, sessionId)
                 putString(ARG_GROUP_ID, groupId)
                 putString(ARG_GROUP_NAME, groupName)
                 putBoolean(ARG_IS_HOST, isHost)
+                putInt(ARG_DURATION, duration)
             }
         }
     }
 
     // --- Args ---
-    private lateinit var sessionId: String
+    private var sessionId: String = ""    // empty until created on the host path
     private lateinit var groupId: String
     private lateinit var groupName: String
     private var isHost = false
+    private var duration: Int = 45
 
     // --- State ---
     private var currentPhase = PHASE_LOBBY
@@ -190,6 +199,7 @@ class FocusSessionFragment : Fragment(), SignalingClient.SignalingListener {
         groupId = arguments?.getString(ARG_GROUP_ID) ?: ""
         groupName = arguments?.getString(ARG_GROUP_NAME) ?: ""
         isHost = arguments?.getBoolean(ARG_IS_HOST, false) ?: false
+        duration = arguments?.getInt(ARG_DURATION, 45) ?: 45
     }
 
     override fun onCreateView(
@@ -693,6 +703,7 @@ class FocusSessionFragment : Fragment(), SignalingClient.SignalingListener {
         updateMicIcon()
 
         fetchPreviewParticipantCount()
+        startPreviewSessionObserver()
     }
 
     private fun fetchPreviewParticipantCount() {
@@ -706,7 +717,12 @@ class FocusSessionFragment : Fragment(), SignalingClient.SignalingListener {
                 val response = withContext(Dispatchers.IO) {
                     ApiClient.getActiveSessions(token, groupId)
                 }
-                val count = response.sessions.find { it.id == sessionId }?.participants?.size ?: 0
+                val count = if (sessionId.isNotEmpty()) {
+                    response.sessions.find { it.id == sessionId }?.participants?.size ?: 0
+                } else {
+                    // Host path: check if a joinable session already exists
+                    response.sessions.firstOrNull { it.status != PHASE_FOCUS }?.participants?.size ?: 0
+                }
                 previewParticipantCount.text = when (count) {
                     0    -> getString(R.string.focus_session_preview_no_one)
                     1    -> getString(R.string.focus_session_preview_one_person)
@@ -715,6 +731,19 @@ class FocusSessionFragment : Fragment(), SignalingClient.SignalingListener {
                 previewParticipantCount.visibility = View.VISIBLE
             } catch (_: Exception) {
                 // Silently suppress — count stays hidden
+            }
+        }
+    }
+
+    private fun startPreviewSessionObserver() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.RESUMED) {
+                merge(
+                    SessionEventManager.sessionStartedFlow,
+                    SessionEventManager.sessionEndedFlow
+                )
+                    .filter { it == groupId }
+                    .collect { if (isInPreview) fetchPreviewParticipantCount() }
             }
         }
     }
@@ -741,7 +770,45 @@ class FocusSessionFragment : Fragment(), SignalingClient.SignalingListener {
         setupLocalVideoPreview()
 
         // Connect signaling (token already cached in accessToken by fetchPreviewParticipantCount)
-        connectSignaling()
+        if (sessionId.isEmpty()) {
+            createSessionThenConnect()   // host: create session first, then join
+        } else {
+            connectSignaling()           // member: session already exists
+        }
+    }
+
+    private fun createSessionThenConnect() {
+        lifecycleScope.launch {
+            val ctx = context ?: return@launch
+            val token = accessToken ?: withContext(Dispatchers.IO) {
+                SecureTokenManager.getInstance(ctx).getAccessToken()
+            } ?: return@launch
+            accessToken = token
+            try {
+                // Check for an existing joinable session before creating a new one
+                val joinableSession = withContext(Dispatchers.IO) {
+                    ApiClient.getActiveSessions(token, groupId)
+                }.sessions.firstOrNull { it.status != PHASE_FOCUS }
+
+                if (joinableSession != null) {
+                    // Another session is already running — join it instead
+                    sessionId = joinableSession.id
+                    isHost = false
+                    btnStartFocus.visibility = View.GONE
+                    btnEndEarly.visibility = View.GONE
+                } else {
+                    // No joinable session — create a fresh one
+                    val response = withContext(Dispatchers.IO) {
+                        ApiClient.createFocusSession(token, groupId, duration)
+                    }
+                    sessionId = response.session.id
+                }
+                connectSignaling()
+            } catch (e: ApiException) {
+                Toast.makeText(ctx, e.message ?: "Failed to start session", Toast.LENGTH_SHORT).show()
+                requireActivity().finish()
+            }
+        }
     }
 
     private fun finishSession() {
