@@ -38,6 +38,13 @@ Group members can now co-work in real-time video focus sessions — a structured
 - Push notification when a new slot is posted
 - Push notification when 3+ members RSVP to a slot
 
+#### Age Gate (18+ Requirement)
+All users must now confirm they are 18 or older before accessing the app:
+
+- **Sign-up** — date of birth is collected inline during registration via a scroll-wheel date picker embedded directly in the form; the "Create Account" button stays disabled until an 18+ date is selected
+- **Existing users** — users without a date of birth on file (e.g. existing Google sign-in accounts) are shown a dedicated DOB screen before entering the app; under-18 accounts are signed out with an explanatory message
+- The picker defaults to today − 17 years so the button starts disabled; scrolling to a valid 18+ date enables it in real time
+
 #### Password Requirements Checklist
 - Sign-up form now shows a real-time checklist as you type your password, indicating which requirements are met:
   - At least 8 characters
