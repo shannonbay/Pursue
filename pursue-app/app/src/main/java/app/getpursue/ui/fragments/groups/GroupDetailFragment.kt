@@ -183,9 +183,12 @@ class GroupDetailFragment : Fragment() {
     private lateinit var focusCardParticipantAvatars: LinearLayout
     private lateinit var focusCardParticipantCount: TextView
     private lateinit var focusCardActiveTitle: TextView
+    private lateinit var focusCardRemainingTime: TextView
     private lateinit var focusCardSlotTime: TextView
     private lateinit var focusCardSlotDuration: TextView
     private lateinit var focusCardSlotRsvpCount: TextView
+    private lateinit var focusCardSlotStartsIn: TextView
+    private lateinit var focusCardSlotNote: TextView
 
     private var pendingExportGid: String? = null
     private var pendingExportStartDate: String? = null
@@ -270,9 +273,12 @@ class GroupDetailFragment : Fragment() {
         focusCardParticipantAvatars = view.findViewById(R.id.focus_card_participant_avatars)
         focusCardParticipantCount = view.findViewById(R.id.focus_card_participant_count)
         focusCardActiveTitle = view.findViewById(R.id.focus_card_active_title)
+        focusCardRemainingTime = view.findViewById(R.id.focus_card_remaining_time)
         focusCardSlotTime = view.findViewById(R.id.focus_card_slot_time)
         focusCardSlotDuration = view.findViewById(R.id.focus_card_slot_duration)
         focusCardSlotRsvpCount = view.findViewById(R.id.focus_card_slot_rsvp_count)
+        focusCardSlotStartsIn = view.findViewById(R.id.focus_card_slot_starts_in)
+        focusCardSlotNote = view.findViewById(R.id.focus_card_slot_note)
         setupFocusCardClickListeners(view)
 
         // Heat section tap -> show info dialog
@@ -754,26 +760,63 @@ class GroupDetailFragment : Fragment() {
                 focusCardActive.visibility = View.VISIBLE
                 focusCardSlot.visibility = View.GONE
 
-                val count = session.participants?.size ?: 0
-                focusCardParticipantCount.text = getString(R.string.focus_card_participant_count, count)
+                // Host name in title
+                val hostMember = lastKnownMembers?.firstOrNull { it.user_id == session.host_user_id }
+                focusCardActiveTitle.text = if (hostMember != null)
+                    getString(R.string.focus_card_host_started, hostMember.display_name)
+                else
+                    getString(R.string.focus_card_active_title)
+
+                // Participant count (active only)
+                val participants = session.participants?.filter { it.left_at == null } ?: emptyList()
+                focusCardParticipantCount.text = getString(R.string.focus_card_participant_count, participants.size)
+
+                // Avatar circles
+                buildParticipantAvatars(participants)
+
+                // Remaining / elapsed time
+                val remainingText = computeSessionTimeLabel(session)
+                if (remainingText != null) {
+                    focusCardRemainingTime.visibility = View.VISIBLE
+                    focusCardRemainingTime.text = remainingText
+                } else {
+                    focusCardRemainingTime.visibility = View.GONE
+                }
             }
             slot != null -> {
                 focusSessionCardContainer.visibility = View.VISIBLE
                 focusCardActive.visibility = View.GONE
                 focusCardSlot.visibility = View.VISIBLE
 
-                try {
-                    val dt = OffsetDateTime.parse(slot.scheduled_start)
-                    focusCardSlotTime.text = dt.format(
-                        DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT).withLocale(Locale.getDefault())
-                    )
-                } catch (_: Exception) {
-                    focusCardSlotTime.text = slot.scheduled_start
-                }
+                // Date + time with context
+                focusCardSlotTime.text = formatSlotDateTime(slot.scheduled_start)
+
+                // Duration
                 focusCardSlotDuration.text = "${slot.focus_duration_minutes} min"
+
+                // Countdown
+                val countdown = formatCountdown(slot.scheduled_start)
+                if (countdown != null) {
+                    focusCardSlotStartsIn.visibility = View.VISIBLE
+                    focusCardSlotStartsIn.text = getString(R.string.focus_card_slot_starts_in, countdown)
+                } else {
+                    focusCardSlotStartsIn.visibility = View.GONE
+                }
+
+                // Note
+                val note = slot.note?.trim()
+                if (!note.isNullOrEmpty()) {
+                    focusCardSlotNote.visibility = View.VISIBLE
+                    focusCardSlotNote.text = "\"$note\""
+                } else {
+                    focusCardSlotNote.visibility = View.GONE
+                }
+
+                // RSVP count
                 val rsvpCount = slot.rsvp_count ?: 0
                 focusCardSlotRsvpCount.text = getString(R.string.focus_card_slot_rsvp_count, rsvpCount)
 
+                // RSVP button state
                 val btnRsvp = focusCardSlot.findViewById<MaterialButton>(R.id.btn_rsvp_slot)
                 if (slot.user_rsvped == true) {
                     btnRsvp?.text = getString(R.string.focus_session_rsvp_cancel)
@@ -792,6 +835,166 @@ class GroupDetailFragment : Fragment() {
             val instant = OffsetDateTime.parse(isoDateTime).toInstant()
             instant.isAfter(from) && instant.isBefore(to)
         } catch (_: Exception) { false }
+    }
+
+    private fun buildParticipantAvatars(participants: List<app.getpursue.data.network.FocusParticipant>) {
+        focusCardParticipantAvatars.removeAllViews()
+        val ctx = context ?: return
+        val sizePx = (32 * resources.displayMetrics.density).toInt()
+        val marginPx = (4 * resources.displayMetrics.density).toInt()
+        val maxVisible = 5
+        val visible = participants.take(maxVisible)
+        val overflow = participants.size - maxVisible
+
+        visible.forEachIndexed { index, participant ->
+            val member = lastKnownMembers?.firstOrNull { it.user_id == participant.user_id }
+            val view: android.view.View
+            if (member?.has_avatar == true) {
+                val img = ImageView(ctx)
+                img.layoutParams = LinearLayout.LayoutParams(sizePx, sizePx).apply {
+                    if (index > 0) marginStart = marginPx
+                }
+                Glide.with(ctx)
+                    .load("${ApiClient.getBaseUrl()}/users/${participant.user_id}/avatar")
+                    .circleCrop()
+                    .diskCacheStrategy(DiskCacheStrategy.ALL)
+                    .error(
+                        buildInitialsDrawable(ctx, participant.display_name, sizePx)
+                    )
+                    .into(img)
+                view = img
+            } else {
+                view = buildInitialsView(ctx, participant.display_name, sizePx, index > 0, marginPx)
+            }
+            focusCardParticipantAvatars.addView(view)
+        }
+
+        if (overflow > 0) {
+            val tv = TextView(ctx)
+            tv.layoutParams = LinearLayout.LayoutParams(sizePx, sizePx).apply {
+                marginStart = marginPx
+            }
+            tv.text = "+$overflow"
+            tv.gravity = android.view.Gravity.CENTER
+            tv.textSize = 10f
+            tv.setTextColor(ContextCompat.getColor(ctx, R.color.on_surface_variant))
+            tv.background = ContextCompat.getDrawable(ctx, R.drawable.circle_background)
+            tv.backgroundTintList = ColorStateList.valueOf(
+                ContextCompat.getColor(ctx, R.color.surface_variant)
+            )
+            focusCardParticipantAvatars.addView(tv)
+        }
+    }
+
+    private fun buildInitialsView(
+        ctx: android.content.Context,
+        displayName: String?,
+        sizePx: Int,
+        addMargin: Boolean,
+        marginPx: Int
+    ): TextView {
+        val tv = TextView(ctx)
+        tv.layoutParams = LinearLayout.LayoutParams(sizePx, sizePx).apply {
+            if (addMargin) marginStart = marginPx
+        }
+        tv.text = displayName?.firstOrNull()?.uppercaseChar()?.toString() ?: "?"
+        tv.gravity = android.view.Gravity.CENTER
+        tv.textSize = 12f
+        tv.setTextColor(ContextCompat.getColor(ctx, R.color.on_primary))
+        tv.background = ContextCompat.getDrawable(ctx, R.drawable.circle_background)
+        tv.backgroundTintList = ColorStateList.valueOf(
+            ContextCompat.getColor(ctx, R.color.primary)
+        )
+        return tv
+    }
+
+    private fun buildInitialsDrawable(
+        ctx: android.content.Context,
+        displayName: String?,
+        sizePx: Int
+    ): android.graphics.drawable.Drawable {
+        val bmp = android.graphics.Bitmap.createBitmap(sizePx, sizePx, android.graphics.Bitmap.Config.ARGB_8888)
+        val canvas = android.graphics.Canvas(bmp)
+        val paint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG)
+        paint.color = ContextCompat.getColor(ctx, R.color.primary)
+        canvas.drawCircle(sizePx / 2f, sizePx / 2f, sizePx / 2f, paint)
+        paint.color = ContextCompat.getColor(ctx, R.color.on_primary)
+        paint.textSize = sizePx * 0.4f
+        paint.textAlign = android.graphics.Paint.Align.CENTER
+        val letter = displayName?.firstOrNull()?.uppercaseChar()?.toString() ?: "?"
+        val yOffset = (paint.descent() - paint.ascent()) / 2 - paint.descent()
+        canvas.drawText(letter, sizePx / 2f, sizePx / 2f + yOffset, paint)
+        return android.graphics.drawable.BitmapDrawable(resources, bmp)
+    }
+
+    private fun computeSessionTimeLabel(session: FocusSession): String? {
+        return try {
+            val startedAt = session.started_at ?: return null
+            val start = OffsetDateTime.parse(startedAt).toInstant()
+            val now = java.time.Instant.now()
+            val elapsedSec = java.time.Duration.between(start, now).seconds
+            val totalSec = session.focus_duration_minutes * 60L
+            val remainingSec = totalSec - elapsedSec
+            if (remainingSec > 0) {
+                val mins = remainingSec / 60
+                if (mins >= 60) {
+                    val h = mins / 60
+                    val m = mins % 60
+                    if (m == 0L) getString(R.string.focus_card_remaining, "${h}h")
+                    else getString(R.string.focus_card_remaining, "${h}h ${m}m")
+                } else {
+                    getString(R.string.focus_card_remaining, "${mins}m")
+                }
+            } else {
+                val mins = elapsedSec / 60
+                if (mins >= 60) {
+                    val h = mins / 60
+                    val m = mins % 60
+                    if (m == 0L) "${h}h elapsed"
+                    else "${h}h ${m}m elapsed"
+                } else {
+                    "${mins}m elapsed"
+                }
+            }
+        } catch (_: Exception) { null }
+    }
+
+    private fun formatSlotDateTime(isoString: String): String {
+        return try {
+            val dt = OffsetDateTime.parse(isoString)
+            val localDate = dt.toLocalDate()
+            val today = java.time.LocalDate.now()
+            val timeStr = dt.format(
+                DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT).withLocale(Locale.getDefault())
+            )
+            when {
+                localDate == today -> timeStr
+                localDate == today.plusDays(1) ->
+                    "${getString(R.string.focus_slots_tomorrow)} · $timeStr"
+                else -> {
+                    val dayAbbr = dt.dayOfWeek.getDisplayName(
+                        java.time.format.TextStyle.SHORT, Locale.getDefault()
+                    )
+                    "$dayAbbr · $timeStr"
+                }
+            }
+        } catch (_: Exception) { isoString }
+    }
+
+    private fun formatCountdown(isoString: String): String? {
+        return try {
+            val start = OffsetDateTime.parse(isoString).toInstant()
+            val now = java.time.Instant.now()
+            val diffSec = java.time.Duration.between(now, start).seconds
+            if (diffSec <= 0) return null
+            if (diffSec < 3600) {
+                "${diffSec / 60}m"
+            } else {
+                val h = diffSec / 3600
+                val m = (diffSec % 3600) / 60
+                if (m == 0L) "${h}h" else "${h}h ${m}m"
+            }
+        } catch (_: Exception) { null }
     }
 
     private fun createSessionAndNavigate() {

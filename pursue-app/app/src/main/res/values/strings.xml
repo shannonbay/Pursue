@@ -982,6 +982,10 @@
     <string name="focus_card_active_title">Session in progress</string>
     <string name="focus_card_participant_count">%1$d here</string>
     <string name="focus_card_slot_rsvp_count">%1$d going</string>
+    <string name="focus_card_live">LIVE</string>
+    <string name="focus_card_host_started">Started by %1$s</string>
+    <string name="focus_card_remaining">%1$s remaining</string>
+    <string name="focus_card_slot_starts_in">Starts in %1$s</string>
 
     <!-- Body-Teaming: Focus Session Screen -->
     <string name="focus_session_lobby">Focus Session · Lobby</string>

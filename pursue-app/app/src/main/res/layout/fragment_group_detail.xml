@@ -335,13 +335,40 @@
                     android:layout_height="wrap_content"
                     android:visibility="gone"
                     app:cardCornerRadius="12dp"
-                    app:cardElevation="1dp">
+                    app:cardElevation="1dp"
+                    app:cardBackgroundColor="@color/surface_variant">
 
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="vertical"
                         android:padding="12dp">
+
+                        <!-- LIVE indicator row -->
+                        <LinearLayout
+                            android:id="@+id/focus_card_live_row"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical"
+                            android:layout_marginBottom="4dp">
+
+                            <View
+                                android:layout_width="8dp"
+                                android:layout_height="8dp"
+                                android:background="@drawable/bg_dot_filled"
+                                android:backgroundTint="@color/primary" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="4dp"
+                                android:text="@string/focus_card_live"
+                                android:textAppearance="?attr/textAppearanceBodySmall"
+                                android:textColor="@color/primary"
+                                android:textStyle="bold" />
+
+                        </LinearLayout>
 
                         <TextView
                             android:id="@+id/focus_card_active_title"
@@ -360,7 +387,7 @@
                             <LinearLayout
                                 android:id="@+id/focus_card_participant_avatars"
                                 android:layout_width="wrap_content"
-                                android:layout_height="40dp"
+                                android:layout_height="32dp"
                                 android:orientation="horizontal"
                                 android:gravity="center_vertical" />
 
@@ -381,15 +408,24 @@
                                 android:textAppearance="?attr/textAppearanceBodySmall"
                                 android:textColor="@color/on_surface_variant" />
 
-                            <com.google.android.material.button.MaterialButton
-                                android:id="@+id/btn_join_session"
+                            <TextView
+                                android:id="@+id/focus_card_remaining_time"
                                 android:layout_width="wrap_content"
-                                android:layout_height="40dp"
-                                android:text="@string/focus_session_join"
-                                android:textColor="@color/on_primary"
-                                app:backgroundTint="@color/primary" />
+                                android:layout_height="wrap_content"
+                                android:visibility="gone"
+                                android:textAppearance="?attr/textAppearanceBodySmall"
+                                android:textColor="@color/on_surface_variant" />
 
                         </LinearLayout>
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btn_join_session"
+                            android:layout_width="match_parent"
+                            android:layout_height="40dp"
+                            android:layout_marginTop="8dp"
+                            android:text="@string/focus_session_join"
+                            android:textColor="@color/on_primary"
+                            app:backgroundTint="@color/primary" />
 
                     </LinearLayout>
 
@@ -430,6 +466,23 @@
                                 android:layout_height="wrap_content"
                                 android:textAppearance="?attr/textAppearanceBodySmall"
                                 android:textColor="@color/on_surface_variant" />
+
+                            <TextView
+                                android:id="@+id/focus_card_slot_starts_in"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:visibility="gone"
+                                android:textAppearance="?attr/textAppearanceBodySmall"
+                                android:textColor="@color/on_surface_variant" />
+
+                            <TextView
+                                android:id="@+id/focus_card_slot_note"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:visibility="gone"
+                                android:textAppearance="?attr/textAppearanceBodySmall"
+                                android:textColor="@color/on_surface_variant"
+                                android:textStyle="italic" />
 
                             <TextView
                                 android:id="@+id/focus_card_slot_rsvp_count"
