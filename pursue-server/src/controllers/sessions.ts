@@ -8,7 +8,6 @@ import {
   sendGroupNotification,
   sendSilentGroupMessage,
   sendNotificationToUser,
-  buildTopicName,
 } from '../services/fcm.service.js';
 import { logger } from '../utils/logger.js';
 
@@ -69,11 +68,6 @@ async function createSessionWithHost(
     .returningAll()
     .executeTakeFirstOrThrow();
 
-  await db
-    .insertInto('focus_session_participants')
-    .values({ session_id: session.id, user_id: hostUserId })
-    .execute();
-
   return session;
 }
 
@@ -120,16 +114,6 @@ export async function createSession(
 
     const session = await createSessionWithHost(groupId, userId, data.focus_duration_minutes);
     const participants = await fetchActiveParticipants(session.id);
-
-    // Notify all active group members except the host
-    const user = await db.selectFrom('users').select('display_name').where('id', '=', userId).executeTakeFirst();
-    const topicName = buildTopicName(groupId, 'group_events');
-    sendGroupNotification(
-      groupId,
-      { title: 'Focus Session Started', body: `${user?.display_name ?? 'Someone'} started a focus session — join now!` },
-      { type: 'session_started', session_id: session.id, group_id: groupId },
-      { membershipStatus: 'active' }
-    ).catch((err) => logger.error('FCM session_started failed', { err }));
 
     res.status(201).json({ session: { ...session, participants } });
   } catch (error) {
@@ -251,6 +235,7 @@ export async function joinSession(
         .where('user_id', '=', userId)
         .executeTakeFirst();
 
+      let isFirstJoin = false;
       if (existing) {
         if (existing.left_at !== null) {
           await trx
@@ -264,9 +249,10 @@ export async function joinSession(
           .insertInto('focus_session_participants')
           .values({ session_id: sessionId, user_id: userId })
           .execute();
+        isFirstJoin = true;
       }
 
-      return { spawn: false, session } as const;
+      return { spawn: false, session, isFirstJoin } as const;
     });
 
     if (result.spawn) {
@@ -282,8 +268,28 @@ export async function joinSession(
         }
       }
       const newSession = await createSessionWithHost(groupId, userId, result.duration);
+      // Insert overflow user as first participant (createSessionWithHost no longer auto-inserts)
+      await db
+        .insertInto('focus_session_participants')
+        .values({ session_id: newSession.id, user_id: userId })
+        .execute();
       const newParticipants = await fetchActiveParticipants(newSession.id);
       return void res.status(201).json({ session: { ...newSession, participants: newParticipants }, spawned: true });
+    }
+
+    // Fire session_started when the host (session creator) joins for the first time
+    if (result.isFirstJoin && userId === result.session.host_user_id) {
+      const user = await db
+        .selectFrom('users')
+        .select('display_name')
+        .where('id', '=', userId)
+        .executeTakeFirst();
+      sendGroupNotification(
+        groupId,
+        { title: 'Focus Session Started', body: `${user?.display_name ?? 'Someone'} started a focus session — join now!` },
+        { type: 'session_started', session_id: sessionId, group_id: groupId },
+        { membershipStatus: 'active' }
+      ).catch((err) => logger.error('FCM session_started failed', { err }));
     }
 
     const updatedParticipants = await fetchActiveParticipants(sessionId);

@@ -41,18 +41,25 @@ describe('Session REST endpoints', () => {
 
       expect(res.status).toBe(201);
       expect(res.body.session).toMatchObject({ status: 'lobby', focus_duration_minutes: 25, group_id: groupId });
-      expect(res.body.session.participants).toHaveLength(1);
-      expect(res.body.session.participants[0].user_id).toBe(userId);
+      expect(res.body.session.participants).toHaveLength(0);
     });
 
-    it('sends FCM notification to group members', async () => {
+    it('sends FCM notification when host joins for the first time', async () => {
       const { accessToken } = await createAuthenticatedUser(randomEmail(), 'Test123!@#', 'Host');
       const { groupId } = await createGroupWithGoal(accessToken, { includeGoal: false });
 
-      await request(app)
+      const createRes = await request(app)
         .post(`/api/groups/${groupId}/sessions`)
         .set('Authorization', `Bearer ${accessToken}`)
         .send({ focus_duration_minutes: 25 });
+
+      // FCM should NOT fire on session creation
+      expect(sendGroupNotification).not.toHaveBeenCalled();
+
+      // FCM fires when host presses "Go Live" (calls join)
+      await request(app)
+        .post(`/api/groups/${groupId}/sessions/${createRes.body.session.id}/join`)
+        .set('Authorization', `Bearer ${accessToken}`);
 
       expect(sendGroupNotification).toHaveBeenCalledTimes(1);
     });
@@ -442,8 +449,8 @@ describe('Session REST endpoints', () => {
         .send({ focus_duration_minutes: 90 });
       const sessionId = res1.body.session.id;
 
-      // Fill session to 8 participants (host + 7 more)
-      for (let i = 0; i < 7; i++) {
+      // Fill session to 8 participants (host not auto-inserted, so 8 manual inserts)
+      for (let i = 0; i < 8; i++) {
         const { memberUserId } = await addMemberToGroup(hostToken, groupId);
         await testDb
           .insertInto('focus_session_participants')
