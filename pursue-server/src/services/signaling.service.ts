@@ -209,9 +209,13 @@ function addPeerToRoom(sessionId: string, peer: PeerInfo): void {
   if (!sessions.has(sessionId)) {
     sessions.set(sessionId, new Map());
   }
-  const room = sessions.get(sessionId)!;
+  let room = sessions.get(sessionId)!;
 
-  // If the user already has a connection (reconnect), close the stale one
+  // If the user already has a connection (reconnect), close the stale one.
+  // IMPORTANT: add the new peer BEFORE closing the old one. This prevents a
+  // race where the old req 'close' handler fires synchronously (e.g. dead
+  // socket), calls handleLeave, sees an empty room, and deletes the session
+  // from the sessions Map — orphaning the new peer.
   const existingPeerForUser = room.get(peer.userId);
   if (existingPeerForUser) {
     logger.info('signaling: replacing stale connection for user', {
@@ -220,14 +224,28 @@ function addPeerToRoom(sessionId: string, peer: PeerInfo): void {
       oldConnectionId: existingPeerForUser.connectionId,
       newConnectionId: peer.connectionId,
     });
+    // Add new peer first so the room is never empty during the swap
+    room.set(peer.userId, peer);
+    // Now safe to close the old connection — even if the close handler fires
+    // synchronously, handleLeave will see the room still has the new peer
+    // and won't delete the session.
     existingPeerForUser.close();
-    room.delete(peer.userId);
     // Notify other peers so they tear down stale WebRTC state
-    broadcastToRoom(sessionId, { type: 'peer-left', peerId: peer.userId });
+    broadcastToRoom(sessionId, { type: 'peer-left', peerId: peer.userId }, peer.userId);
+  } else {
+    room.set(peer.userId, peer);
   }
+
+  // Re-fetch room in case handleLeave deleted and recreated it (defensive)
+  if (!sessions.has(sessionId)) {
+    sessions.set(sessionId, new Map());
+    sessions.get(sessionId)!.set(peer.userId, peer);
+  }
+  room = sessions.get(sessionId)!;
 
   // Notify existing peers about new peer, and tell new peer about existing peers
   for (const [existingUid, existingPeer] of room) {
+    if (existingUid === peer.userId) continue;
     existingPeer.send({
       type: 'peer-joined',
       peerId: peer.userId,
@@ -242,7 +260,6 @@ function addPeerToRoom(sessionId: string, peer: PeerInfo): void {
     });
   }
 
-  room.set(peer.userId, peer);
   logger.info('signaling: peer joined room', {
     sessionId,
     userId: peer.userId,
@@ -595,11 +612,15 @@ export function createSignalingRouter(): Router {
 
     logger.info('signaling SSE: stream opened', { sessionId, userId });
 
-    // Set SSE headers
+    // Disable socket-level timeout for this long-lived SSE connection.
+    // Node.js / Cloud Run proxies may impose idle timeouts that kill streams.
+    req.socket?.setTimeout(0);
+
+    // Set SSE headers — avoid hop-by-hop headers (Connection) which confuse
+    // Cloud Run's Envoy proxy and can cause premature stream termination.
     res.writeHead(200, {
       'Content-Type': 'text/event-stream',
-      'Cache-Control': 'no-cache',
-      Connection: 'keep-alive',
+      'Cache-Control': 'no-cache, no-transform',
       'X-Accel-Buffering': 'no', // Disable nginx/proxy buffering
     });
     res.flushHeaders();
@@ -630,14 +651,15 @@ export function createSignalingRouter(): Router {
     addPeerToRoom(sessionId, peer);
     await sendCurrentPhaseToNewPeer(sessionId, peer);
 
-    // Heartbeat every 30 seconds to keep connection alive through proxies
+    // Heartbeat every 15 seconds to keep connection alive through Cloud Run's
+    // Envoy proxy (which may close idle streams sooner than a typical reverse proxy).
     const heartbeatInterval = setInterval(() => {
       if (!res.writableEnded) {
         res.write(': heartbeat\n\n');
       } else {
         clearInterval(heartbeatInterval);
       }
-    }, 30_000);
+    }, 15_000);
 
     // Handle client disconnect — guard against stale close handler firing after reconnect
     req.on('close', async () => {
