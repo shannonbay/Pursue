@@ -261,29 +261,54 @@
                     android:progressTint="@color/primary"
                     android:progressBackgroundTint="@color/surface_variant" />
 
-                <LinearLayout
-                    android:layout_width="match_parent"
+            </LinearLayout>
+
+            <!-- Unified action button row (always visible for all groups) -->
+            <LinearLayout
+                android:id="@+id/group_action_buttons_row"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
+                android:paddingTop="8dp"
+                android:paddingBottom="8dp"
+                android:background="@color/surface">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/challenge_share_button"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:orientation="horizontal">
+                    android:layout_weight="2"
+                    android:text="@string/challenge_share_button"
+                    android:visibility="gone"
+                    app:icon="@android:drawable/ic_menu_share" />
 
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/challenge_share_button"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="@string/challenge_share_button"
-                        app:icon="@android:drawable/ic_menu_share" />
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/challenge_go_live_button"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text=""
+                    android:contentDescription="@string/focus_session_go_live"
+                    app:icon="@drawable/ic_videocam"
+                    app:iconGravity="textStart"
+                    app:iconPadding="0dp" />
 
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/challenge_invite_button"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:layout_marginStart="8dp"
-                        android:text="@string/challenge_invite_button"
-                        app:icon="@android:drawable/ic_menu_add" />
-                </LinearLayout>
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/challenge_schedule_button"
+                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginStart="8dp"
+                    android:text=""
+                    android:contentDescription="@string/focus_session_schedule"
+                    app:strokeColor="@color/primary"
+                    app:icon="@drawable/ic_calendar"
+                    app:iconGravity="textStart"
+                    app:iconPadding="0dp" />
+
             </LinearLayout>
 
             <app.getpursue.ui.views.DailyPulseWidget
@@ -302,35 +327,6 @@
                 android:paddingEnd="16dp"
                 android:paddingBottom="12dp"
                 android:visibility="gone">
-
-                <!-- State 1: No active session -->
-                <LinearLayout
-                    android:id="@+id/focus_card_no_session"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical">
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btn_go_live"
-                        android:layout_width="0dp"
-                        android:layout_height="48dp"
-                        android:layout_weight="1"
-                        android:text="@string/focus_session_go_live"
-                        android:textColor="@color/on_primary"
-                        app:backgroundTint="@color/primary" />
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btn_schedule_slot"
-                        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                        android:layout_width="0dp"
-                        android:layout_height="48dp"
-                        android:layout_weight="1"
-                        android:layout_marginStart="8dp"
-                        android:text="@string/focus_session_schedule"
-                        app:strokeColor="@color/primary" />
-
-                </LinearLayout>
 
                 <!-- State 2: Active session in progress -->
                 <androidx.cardview.widget.CardView

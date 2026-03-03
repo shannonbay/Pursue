@@ -162,7 +162,8 @@ class GroupDetailFragment : Fragment() {
     private lateinit var challengeHeaderDayProgress: TextView
     private lateinit var challengeHeaderProgressBar: android.widget.ProgressBar
     private lateinit var challengeShareButton: MaterialButton
-    private lateinit var challengeInviteButton: MaterialButton
+    private lateinit var challengeGoLiveButton: MaterialButton
+    private lateinit var challengeScheduleButton: MaterialButton
     private lateinit var heatSection: View
     private lateinit var heatIconDetail: ImageView
     private lateinit var heatTierLabel: TextView
@@ -177,7 +178,6 @@ class GroupDetailFragment : Fragment() {
     private var activeSession: FocusSession? = null
     private var upcomingSlot: FocusSlot? = null
     private lateinit var focusSessionCardContainer: LinearLayout
-    private lateinit var focusCardNoSession: LinearLayout
     private lateinit var focusCardActive: View
     private lateinit var focusCardSlot: View
     private lateinit var focusCardParticipantAvatars: LinearLayout
@@ -249,7 +249,8 @@ class GroupDetailFragment : Fragment() {
         challengeHeaderDayProgress = view.findViewById(R.id.challenge_header_day_progress)
         challengeHeaderProgressBar = view.findViewById(R.id.challenge_header_progress_bar)
         challengeShareButton = view.findViewById(R.id.challenge_share_button)
-        challengeInviteButton = view.findViewById(R.id.challenge_invite_button)
+        challengeGoLiveButton = view.findViewById(R.id.challenge_go_live_button)
+        challengeScheduleButton = view.findViewById(R.id.challenge_schedule_button)
         heatSection = view.findViewById(R.id.heat_section)
         heatIconDetail = view.findViewById(R.id.heat_icon_detail)
         heatTierLabel = view.findViewById(R.id.heat_tier_label)
@@ -264,7 +265,6 @@ class GroupDetailFragment : Fragment() {
 
         // Focus session card views
         focusSessionCardContainer = view.findViewById(R.id.focus_session_card_container)
-        focusCardNoSession = view.findViewById(R.id.focus_card_no_session)
         focusCardActive = view.findViewById(R.id.focus_card_active)
         focusCardSlot = view.findViewById(R.id.focus_card_slot)
         focusCardParticipantAvatars = view.findViewById(R.id.focus_card_participant_avatars)
@@ -279,7 +279,12 @@ class GroupDetailFragment : Fragment() {
         val heatClickListener = View.OnClickListener { showHeatInfoDialog() }
         heatSection.setOnClickListener(heatClickListener)
         heatDetails.setOnClickListener(heatClickListener)
-        challengeInviteButton.setOnClickListener { showInviteMembersSheet() }
+        challengeGoLiveButton.setOnClickListener { createSessionAndNavigate() }
+        challengeScheduleButton.setOnClickListener {
+            val gid = groupId ?: return@setOnClickListener
+            val sheet = ScheduleSlotBottomSheet.show(childFragmentManager, gid)
+            sheet.onSlotPosted = { loadFocusSessionCard(null) }
+        }
         challengeShareButton.setOnClickListener { shareChallenge() }
 
         // Load initial icon from arguments (no icon_color until details load)
@@ -694,14 +699,6 @@ class GroupDetailFragment : Fragment() {
     // --- Focus Session Card ---
 
     private fun setupFocusCardClickListeners(view: View) {
-        view.findViewById<MaterialButton>(R.id.btn_go_live)?.setOnClickListener {
-            createSessionAndNavigate()
-        }
-        view.findViewById<MaterialButton>(R.id.btn_schedule_slot)?.setOnClickListener {
-            val gid = groupId ?: return@setOnClickListener
-            val sheet = ScheduleSlotBottomSheet.show(childFragmentManager, gid)
-            sheet.onSlotPosted = { loadFocusSessionCard(null) }
-        }
         view.findViewById<MaterialButton>(R.id.btn_join_session)?.setOnClickListener {
             val session = activeSession ?: return@setOnClickListener
             navigateToSession(session.id, isHost = false)
@@ -751,11 +748,9 @@ class GroupDetailFragment : Fragment() {
             .minByOrNull { it.scheduled_start }
         upcomingSlot = slot
 
-        focusSessionCardContainer.visibility = View.VISIBLE
-
         when {
             session != null -> {
-                focusCardNoSession.visibility = View.GONE
+                focusSessionCardContainer.visibility = View.VISIBLE
                 focusCardActive.visibility = View.VISIBLE
                 focusCardSlot.visibility = View.GONE
 
@@ -763,7 +758,7 @@ class GroupDetailFragment : Fragment() {
                 focusCardParticipantCount.text = getString(R.string.focus_card_participant_count, count)
             }
             slot != null -> {
-                focusCardNoSession.visibility = View.GONE
+                focusSessionCardContainer.visibility = View.VISIBLE
                 focusCardActive.visibility = View.GONE
                 focusCardSlot.visibility = View.VISIBLE
 
@@ -787,9 +782,7 @@ class GroupDetailFragment : Fragment() {
                 }
             }
             else -> {
-                focusCardNoSession.visibility = View.VISIBLE
-                focusCardActive.visibility = View.GONE
-                focusCardSlot.visibility = View.GONE
+                focusSessionCardContainer.visibility = View.GONE
             }
         }
     }
@@ -1429,6 +1422,7 @@ class GroupDetailFragment : Fragment() {
     private fun updateChallengeHeader(detail: GroupDetailResponse) {
         if (!detail.is_challenge || detail.challenge_start_date.isNullOrBlank() || detail.challenge_end_date.isNullOrBlank()) {
             challengeHeaderContainer.visibility = View.GONE
+            challengeShareButton.visibility = View.GONE
             return
         }
 
@@ -1453,13 +1447,12 @@ class GroupDetailFragment : Fragment() {
         challengeHeaderDayProgress.text = "${progress.dayLabel} · ${progress.daysRemainingLabel}"
         challengeHeaderProgressBar.progress = progress.progressPercent
 
+        challengeShareButton.visibility = View.VISIBLE
         val status = effectiveChallengeStatus(detail)
         if (status == "completed") {
-            challengeInviteButton.visibility = View.GONE
             challengeShareButton.text = getString(R.string.challenge_share_result_button)
             challengeShareButton.setOnClickListener { shareChallengeResult() }
         } else {
-            challengeInviteButton.visibility = View.VISIBLE
             challengeShareButton.text = getString(R.string.challenge_share_button)
             challengeShareButton.setOnClickListener { shareChallenge() }
         }
