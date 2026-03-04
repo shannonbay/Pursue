@@ -7,7 +7,12 @@ Update the Claude Pursue project-level Pursue Features list with any major new f
 
 ## Ask an agent in planning mode to implement the backend for the spec with full test coverage - Can use Sonnet or Auto for backend builds
 PLANNING MODE
-`Implement the backend for specs/*.md with full test coverage - don't forget to update schema.sql and pursue-server/migrations if needed.  Run the relevant E2E tests in pursue-app (see E2ETESTING.md) - the local dev server is running.`
+`Implement the backend for specs/*.md with full test coverage - don't forget to update schema.sql, setup.ts (for tests) and pursue-server/migrations if needed.  Run the relevant E2E tests in pursue-app (see E2ETESTING.md) - the local dev server is running.`
+
+## Security check
+`Assess the new sessions.ts for security vulnerabilities`
+PLANNING MODE
+`Resolve all the issues, with full test coverage`
 
 ## Ask an agent in planning mode to implement E2E tests
 prmopt template:
