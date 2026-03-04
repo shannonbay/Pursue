@@ -3,6 +3,7 @@ package app.getpursue.ui.activities
 import android.os.Bundle
 import android.view.WindowManager
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.WindowCompat
 import androidx.fragment.app.commit
 import app.getpursue.R
 import app.getpursue.ui.fragments.sessions.FocusSessionFragment
@@ -27,6 +28,8 @@ class FocusSessionActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        WindowCompat.setDecorFitsSystemWindows(window, false)
 
         // Prevent screenshots during focus sessions
         window.setFlags(WindowManager.LayoutParams.FLAG_SECURE, WindowManager.LayoutParams.FLAG_SECURE)

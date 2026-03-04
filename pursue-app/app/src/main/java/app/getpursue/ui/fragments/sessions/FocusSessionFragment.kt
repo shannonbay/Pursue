@@ -18,6 +18,9 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.updatePadding
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
@@ -212,6 +215,7 @@ class FocusSessionFragment : Fragment(), SignalingClient.SignalingListener {
         super.onViewCreated(view, savedInstanceState)
 
         bindViews(view)
+        setupWindowInsets(view)
         setupClickListeners()
 
         // Init WebRTC
@@ -271,6 +275,19 @@ class FocusSessionFragment : Fragment(), SignalingClient.SignalingListener {
 
         // Mic starts muted
         updateMicIcon()
+    }
+
+    private fun setupWindowInsets(root: View) {
+        val designPaddingPx = (16 * resources.displayMetrics.density).toInt()
+        ViewCompat.setOnApplyWindowInsetsListener(root) { _, insets ->
+            val navBar = insets.getInsets(WindowInsetsCompat.Type.navigationBars())
+            val bottomPadding = designPaddingPx + navBar.bottom
+            previewControls.updatePadding(bottom = bottomPadding)
+            lobbyControls.updatePadding(bottom = bottomPadding)
+            focusOverlay.updatePadding(bottom = bottomPadding)
+            chitChatOverlay.updatePadding(bottom = bottomPadding)
+            insets
+        }
     }
 
     private fun setupClickListeners() {
