@@ -26,6 +26,7 @@ import app.getpursue.models.GroupMember
 import app.getpursue.models.TodayGoalsResponse
 import app.getpursue.ui.adapters.TodayGoalAdapter
 import app.getpursue.ui.fragments.goals.GoalDetailFragment
+import app.getpursue.ui.fragments.observeMemberLoggedToday
 import app.getpursue.ui.handlers.GoalLogProgressHandler
 import app.getpursue.ui.views.OnboardingTooltip
 import app.getpursue.data.prefs.OnboardingPrefs
@@ -158,6 +159,11 @@ class TodayFragment : Fragment() {
         // Setup pull-to-refresh
         swipeRefreshLayout.setOnRefreshListener {
             loadTodayGoals()
+        }
+
+        // Refresh DailyPulse immediately when any group member logs their first entry today
+        observeMemberLoggedToday { token ->
+            loadAndBindPulse(token)
         }
 
         // Load goals on first view

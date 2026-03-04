@@ -63,6 +63,7 @@ import app.getpursue.ui.activities.FocusSessionActivity
 import app.getpursue.ui.activities.GroupDetailActivity
 import app.getpursue.ui.activities.ShareableMilestoneCardActivity
 import app.getpursue.ui.fragments.goals.CreateGoalFragment
+import app.getpursue.ui.fragments.observeMemberLoggedToday
 import app.getpursue.ui.views.IconPickerBottomSheet
 import app.getpursue.ui.views.InviteMembersBottomSheet
 import app.getpursue.ui.views.ScheduleSlotBottomSheet
@@ -81,10 +82,8 @@ import com.google.android.material.tabs.TabLayoutMediator
 import com.google.android.material.textfield.TextInputEditText
 import com.google.gson.Gson
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -144,7 +143,6 @@ class GroupDetailFragment : Fragment() {
     internal var nowProvider: () -> LocalDateTime = { LocalDateTime.now() }
 
     private lateinit var dailyPulseWidget: DailyPulseWidget
-    private var pollingJob: Job? = null
     private var lastKnownMembers: List<GroupMember>? = null
     private var currentUserId: String? = null
     
@@ -217,13 +215,10 @@ class GroupDetailFragment : Fragment() {
         }
         // Refresh when returning from Edit Group (or other nested screens)
         loadGroupDetails()
-        startPulsePolling()
     }
 
     override fun onPause() {
         super.onPause()
-        pollingJob?.cancel()
-        pollingJob = null
     }
 
     override fun onCreateView(
@@ -331,6 +326,17 @@ class GroupDetailFragment : Fragment() {
                     .filter { it == groupId }
                     .collect { loadFocusSessionCard(null) }
             }
+        }
+
+        // Refresh DailyPulse immediately when a group member logs their first entry today
+        observeMemberLoggedToday(groupId) { token ->
+            val gid = groupId ?: return@observeMemberLoggedToday
+            val fresh = withContext(Dispatchers.IO) {
+                ApiClient.getGroupMembers(token, gid).members
+            }
+            if (!isAdded) return@observeMemberLoggedToday
+            lastKnownMembers = fresh
+            dailyPulseWidget.updateMembers(fresh, animate = true)
         }
 
         // Initial load and refresh on return from Edit happen in onResume
@@ -1919,26 +1925,6 @@ class GroupDetailFragment : Fragment() {
         }
     }
 
-    private fun startPulsePolling() {
-        pollingJob?.cancel()
-        pollingJob = lifecycleScope.launch {
-            while (isActive) {
-                delay(60_000L)
-                if (!isAdded) break
-                val gid = groupId ?: break
-                val ctx = context ?: break
-                val token = SecureTokenManager.getInstance(ctx).getAccessToken() ?: break
-                try {
-                    val fresh = withContext(Dispatchers.IO) {
-                        ApiClient.getGroupMembers(token, gid).members
-                    }
-                    if (!isAdded) break
-                    lastKnownMembers = fresh
-                    dailyPulseWidget.updateMembers(fresh, animate = true)
-                } catch (_: Exception) { /* silent — poll retry next cycle */ }
-            }
-        }
-    }
 
     /**
      * ViewPager adapter for Group Detail tabs.

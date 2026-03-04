@@ -30,4 +30,15 @@ object SessionEventManager {
     fun emitSessionEnded(groupId: String) {
         _sessionEndedFlow.tryEmit(groupId)
     }
+
+    private val _memberLoggedTodayFlow = MutableSharedFlow<String>(
+        replay = 0,
+        extraBufferCapacity = 1
+    )
+    val memberLoggedTodayFlow: SharedFlow<String> = _memberLoggedTodayFlow.asSharedFlow()
+
+    /** Call from any thread when a member_logged_today FCM notification is received. */
+    fun emitMemberLoggedToday(groupId: String) {
+        _memberLoggedTodayFlow.tryEmit(groupId)
+    }
 }

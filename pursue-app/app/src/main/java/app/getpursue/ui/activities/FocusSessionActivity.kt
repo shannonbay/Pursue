@@ -22,6 +22,7 @@ class FocusSessionActivity : AppCompatActivity() {
         const val EXTRA_GROUP_ID = "extra_group_id"
         const val EXTRA_GROUP_NAME = "extra_group_name"
         const val EXTRA_IS_HOST = "extra_is_host"
+        const val EXTRA_DURATION = "extra_duration"
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -33,12 +34,13 @@ class FocusSessionActivity : AppCompatActivity() {
         setContentView(R.layout.activity_focus_session)
 
         if (savedInstanceState == null) {
-            val sessionId = intent.getStringExtra(EXTRA_SESSION_ID) ?: return
+            val sessionId = intent.getStringExtra(EXTRA_SESSION_ID) ?: ""  // "" = host creating new session
             val groupId = intent.getStringExtra(EXTRA_GROUP_ID) ?: return
             val groupName = intent.getStringExtra(EXTRA_GROUP_NAME) ?: ""
             val isHost = intent.getBooleanExtra(EXTRA_IS_HOST, false)
+            val duration = intent.getIntExtra(EXTRA_DURATION, 45)
 
-            val fragment = FocusSessionFragment.newInstance(sessionId, groupId, groupName, isHost)
+            val fragment = FocusSessionFragment.newInstance(sessionId, groupId, groupName, isHost, duration)
             supportFragmentManager.commit {
                 replace(R.id.session_fragment_container, fragment)
             }

@@ -121,6 +121,10 @@ class PursueFirebaseMessagingService : FirebaseMessagingService() {
                 val gid = remoteMessage.data["group_id"]?.takeIf { it.isNotBlank() }
                 if (gid != null) SessionEventManager.emitSessionEnded(gid)
             }
+            "member_logged_today" -> {
+                val gid = remoteMessage.data["group_id"]?.takeIf { it.isNotBlank() }
+                if (gid != null) SessionEventManager.emitMemberLoggedToday(gid)
+            }
         }
 
         // Silent data-only messages: emit session events (above) but skip visible notification
