@@ -17,7 +17,7 @@ import {
 import { canUserWriteInGroup } from '../services/subscription.service.js';
 import { createGroupActivity, ACTIVITY_TYPES } from '../services/activity.service.js';
 import { checkMilestones } from '../services/notification.service.js';
-import { sendToTopic, buildTopicName } from '../services/fcm.service.js';
+import { sendToTopic, buildTopicName, sendSilentGroupMessage } from '../services/fcm.service.js';
 import { computeChallengeWindowStatus } from '../utils/timezone.js';
 import { checkTextContent } from '../services/openai-moderation.service.js';
 
@@ -146,6 +146,20 @@ export async function createProgress(
       );
     }
 
+    // Check if this is the user's first progress log today in this group (UTC day boundary)
+    const todayUTC = new Date();
+    todayUTC.setUTCHours(0, 0, 0, 0);
+    const priorTodayEntry = await db
+      .selectFrom('progress_entries')
+      .innerJoin('goals', 'progress_entries.goal_id', 'goals.id')
+      .select('progress_entries.id')
+      .where('progress_entries.user_id', '=', req.user.id)
+      .where('goals.group_id', '=', goal.group_id)
+      .where('goals.deleted_at', 'is', null)
+      .where('progress_entries.logged_at', '>=', todayUTC)
+      .executeTakeFirst();
+    const isFirstLogToday = !priorTodayEntry;
+
     // Create progress entry
     const entry = await db
       .insertInto('progress_entries')
@@ -228,6 +242,14 @@ export async function createProgress(
     );
 
     await checkMilestones(req.user.id, goal.id, goal.group_id);
+
+    // Silently notify group members so their DailyPulse refreshes immediately
+    if (isFirstLogToday) {
+      await sendSilentGroupMessage(goal.group_id, {
+        type: 'member_logged_today',
+        group_id: goal.group_id,
+      });
+    }
 
     res.status(201).json({
       id: entry.id,
