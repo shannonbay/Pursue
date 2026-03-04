@@ -98,6 +98,7 @@ services/fcm.service.ts - Push notifications, topic messaging, invalid token cle
 services/activity.service.ts - Group activity event logging
 services/googleAuth.ts - Google OAuth token verification
 services/signaling.service.ts - WebSocket signaling server (attachSignalingServer), peer relay, phase management
+services/signaling.relay.ts - Supabase Realtime relay for multi-instance signaling (broadcast + presence)
 services/storage.service.ts - Avatar/icon upload (WebP 256x256), deletion
 services/gcs.service.ts - GCS photo upload, signed URLs, user photo deletion
 services/exportProgress.service.ts - Excel workbook generation for progress export
