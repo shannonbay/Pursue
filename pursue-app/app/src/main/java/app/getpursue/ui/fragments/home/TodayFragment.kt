@@ -19,7 +19,7 @@ import app.getpursue.data.network.ApiException
 import app.getpursue.ui.views.DailyPulseWidget
 import app.getpursue.ui.views.EmptyStateView
 import app.getpursue.ui.views.ErrorStateView
-import app.getpursue.ui.views.showConfettiOverlay
+import app.getpursue.ui.views.showMemberLoggedCelebration
 import app.getpursue.R
 import app.getpursue.data.auth.SecureTokenManager
 import androidx.fragment.app.commit
@@ -102,7 +102,7 @@ class TodayFragment : Fragment() {
 
         dailyPulseWidget.setFragmentManager(childFragmentManager, "")
         dailyPulseWidget.showLoading()
-        dailyPulseWidget.onNewMembersLogged = { activity?.let { showConfettiOverlay(it) } }
+        dailyPulseWidget.onNewMembersLogged = { names -> activity?.let { showMemberLoggedCelebration(it, names) } }
 
         // Setup RecyclerView
         goalsRecyclerView.layoutManager = LinearLayoutManager(requireContext())

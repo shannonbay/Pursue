@@ -978,4 +978,9 @@
     <string name="focus_session_preview_one_person">1 persona está en vivo</string>
     <string name="focus_session_preview_people_count">%d personas están en vivo</string>
 
+    <!-- Confetti celebration toast -->
+    <string name="celebration_one_logged">¡%1$s registró hoy!</string>
+    <string name="celebration_two_logged">¡%1$s y %2$s registraron hoy!</string>
+    <string name="celebration_many_logged">¡%1$s, %2$s y %3$d más registraron hoy!</string>
+
 </resources>

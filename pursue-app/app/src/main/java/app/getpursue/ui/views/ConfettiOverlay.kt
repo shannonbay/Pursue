@@ -7,9 +7,13 @@ import android.animation.ObjectAnimator
 import android.app.Activity
 import android.graphics.PorterDuff
 import android.graphics.PorterDuffColorFilter
+import android.os.Build
+import android.os.VibrationEffect
+import android.os.Vibrator
 import android.view.animation.LinearInterpolator
 import android.widget.FrameLayout
 import android.widget.ImageView
+import android.widget.Toast
 import androidx.vectordrawable.graphics.drawable.AnimatedVectorDrawableCompat
 import app.getpursue.R
 import kotlin.random.Random
@@ -19,7 +23,22 @@ import kotlin.random.Random
  * 10 animated confetti pieces fall from random positions above the screen
  * to below it at constant speed, then the overlay is removed automatically.
  */
-fun showConfettiOverlay(activity: Activity) {
+fun showMemberLoggedCelebration(activity: Activity, memberNames: List<String>) {
+    val vibrator = activity.getSystemService(Vibrator::class.java)
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        vibrator?.vibrate(VibrationEffect.createOneShot(200, VibrationEffect.DEFAULT_AMPLITUDE))
+    } else {
+        @Suppress("DEPRECATION")
+        vibrator?.vibrate(200)
+    }
+
+    val message = when (memberNames.size) {
+        1    -> activity.getString(R.string.celebration_one_logged, memberNames[0])
+        2    -> activity.getString(R.string.celebration_two_logged, memberNames[0], memberNames[1])
+        else -> activity.getString(R.string.celebration_many_logged, memberNames[0], memberNames[1], memberNames.size - 2)
+    }
+    Toast.makeText(activity, message, Toast.LENGTH_SHORT).show()
+
     val root = activity.findViewById<FrameLayout>(android.R.id.content)
     root.post {
         val screenW = root.width.toFloat()

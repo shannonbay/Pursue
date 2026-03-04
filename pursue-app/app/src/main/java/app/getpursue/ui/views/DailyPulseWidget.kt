@@ -66,7 +66,7 @@ class DailyPulseWidget @JvmOverloads constructor(
     private val fadeRight: View
 
     /** Fired once per batch when [LoggedMembersTracker] detects newly-logged members. */
-    var onNewMembersLogged: (() -> Unit)? = null
+    var onNewMembersLogged: ((List<String>) -> Unit)? = null
 
     private var lastMembers: List<GroupMember> = emptyList()
     private var fragmentManager: FragmentManager? = null
@@ -145,8 +145,9 @@ class DailyPulseWidget @JvmOverloads constructor(
         visibility = View.VISIBLE
 
         // Trigger confetti if any member newly appears as logged (DRY across both widgets)
-        if (LoggedMembersTracker.checkAndMark(members).isNotEmpty()) {
-            onNewMembersLogged?.invoke()
+        val newlyLogged = LoggedMembersTracker.checkAndMark(members)
+        if (newlyLogged.isNotEmpty()) {
+            onNewMembersLogged?.invoke(newlyLogged.map { it.display_name })
         }
 
         val sorted = sortMembers(members, currentUserId)
@@ -177,7 +178,7 @@ class DailyPulseWidget @JvmOverloads constructor(
         fadeRight.visibility = if (tier == Tier.SMALL) View.GONE else View.VISIBLE
 
         // Determine which members changed logged state (for animation)
-        val newlyLogged: Set<String> = if (animate && lastMembers.isNotEmpty()) {
+        val newlyAnimated: Set<String> = if (animate && lastMembers.isNotEmpty()) {
             val oldNotLogged = lastMembers.filter { !it.logged_this_period }.map { it.user_id }.toSet()
             members.filter { it.logged_this_period && it.user_id in oldNotLogged }.map { it.user_id }.toSet()
         } else {
@@ -190,7 +191,7 @@ class DailyPulseWidget @JvmOverloads constructor(
         displayList.forEachIndexed { index, member ->
             val avatarView = buildAvatarView(member)
             avatarContainer.addView(avatarView)
-            if (animate && member.user_id in newlyLogged) {
+            if (animate && member.user_id in newlyAnimated) {
                 Handler(Looper.getMainLooper()).postDelayed(
                     { animateLoggedIn(avatarView) },
                     (80L * index)

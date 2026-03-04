@@ -1048,4 +1048,9 @@
     <string name="slot_reminder_notification_title">Starting in 15 minutes</string>
     <string name="slot_reminder_notification_body">%1$s focus session is about to start</string>
 
+    <!-- Confetti celebration toast -->
+    <string name="celebration_one_logged">%1$s logged today!</string>
+    <string name="celebration_two_logged">%1$s and %2$s logged today!</string>
+    <string name="celebration_many_logged">%1$s, %2$s and %3$d more logged today!</string>
+
 </resources>

@@ -16,13 +16,10 @@ object LoggedMembersTracker {
      * Returns the subset of [members] who are logged today but not yet seen.
      * Marks them as seen before returning.
      */
-    fun checkAndMark(members: List<GroupMember>): Set<String> {
+    fun checkAndMark(members: List<GroupMember>): List<GroupMember> {
         val newlyLogged = members
-            .filter { it.logged_this_period }
-            .map { it.user_id }
-            .filterNot { it in seenLoggedIds }
-            .toSet()
-        seenLoggedIds.addAll(newlyLogged)
+            .filter { it.logged_this_period && it.user_id !in seenLoggedIds }
+        seenLoggedIds.addAll(newlyLogged.map { it.user_id })
         return newlyLogged
     }
 }

@@ -51,7 +51,7 @@ import kotlinx.coroutines.flow.merge
 import android.widget.LinearLayout
 import app.getpursue.data.auth.SecureTokenManager
 import app.getpursue.ui.views.DailyPulseWidget
-import app.getpursue.ui.views.showConfettiOverlay
+import app.getpursue.ui.views.showMemberLoggedCelebration
 import app.getpursue.data.fcm.FcmTopicManager
 import app.getpursue.data.network.ApiClient
 import app.getpursue.data.network.ApiException
@@ -262,7 +262,7 @@ class GroupDetailFragment : Fragment() {
         fabAction = view.findViewById(R.id.fab_action)
         dailyPulseWidget = view.findViewById(R.id.daily_pulse_widget)
         dailyPulseWidget.setFragmentManager(childFragmentManager, groupId ?: "")
-        dailyPulseWidget.onNewMembersLogged = { activity?.let { showConfettiOverlay(it) } }
+        dailyPulseWidget.onNewMembersLogged = { names -> activity?.let { showMemberLoggedCelebration(it, names) } }
 
         // Focus session card views
         focusSessionCardContainer = view.findViewById(R.id.focus_session_card_container)

@@ -978,4 +978,9 @@
     <string name="focus_session_preview_one_person">1 人正在直播</string>
     <string name="focus_session_preview_people_count">%d 人正在直播</string>
 
+    <!-- Confetti celebration toast -->
+    <string name="celebration_one_logged">%1$s 今天记录了进度！</string>
+    <string name="celebration_two_logged">%1$s 和 %2$s 今天记录了进度！</string>
+    <string name="celebration_many_logged">%1$s、%2$s 等 %3$d 人今天记录了进度！</string>
+
 </resources>
