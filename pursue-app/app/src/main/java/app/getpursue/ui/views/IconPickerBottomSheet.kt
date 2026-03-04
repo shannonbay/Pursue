@@ -162,6 +162,7 @@ class IconPickerBottomSheet : BottomSheetDialogFragment() {
             IconItem("ic_icon_inbox", "Inbox Zero", "Productivity"),
             IconItem("ic_icon_alarmclock", "Waking Up", "Productivity"),
             IconItem("ic_icon_lightning", "Focus", "Productivity"),
+            IconItem("ic_icon_focus", "Focus Session", "Productivity"),
             IconItem("ic_icon_socialmediaban", "Social Media Ban", "Productivity"),
 
             // Nature & Outdoors

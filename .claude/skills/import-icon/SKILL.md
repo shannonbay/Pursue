@@ -67,6 +67,28 @@ Commit message format:
 feat(assets): add ic_icon_<name> drawable at all densities
 ```
 
+### Step 5 — Register the icon in the picker
+
+Add the new icon to `IconsGridFragment.icons` in `pursue-app/app/src/main/java/app/getpursue/ui/views/IconPickerBottomSheet.kt`.
+
+Find the appropriate category section and insert an `IconItem`:
+
+```kotlin
+IconItem("ic_icon_<name>", "<Label>", "<Category>"),
+```
+
+Category must match an existing section comment (e.g. `Fitness`, `Health`, `Learning`, `Productivity`, `Nature`, `Finance`, `Faith`, `General`). Choose a label that is distinct from all existing labels in the same category.
+
+After editing, verify the build compiles:
+```bash
+cd pursue-app
+./gradlew compileDebugKotlin --no-daemon
+```
+
+### Step 6 — Commit
+
+Stage `IconPickerBottomSheet.kt` alongside the icon files in the same commit, or as a follow-up commit in the Android repo.
+
 ## Notes
 
 - The drawable is referenced in group template migrations as `res://drawable/ic_icon_<name>` (no `.png` extension, no path prefix).
