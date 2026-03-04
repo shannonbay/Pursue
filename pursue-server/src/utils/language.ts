@@ -25,8 +25,14 @@ export function getLanguageVariants(languageTag?: string): { exact: string; base
   if (!languageTag) {
     return { exact: 'en', base: 'en' };
   }
-  const normalized = languageTag.toLowerCase().trim();
-  const baseLanguage = getBaseLanguage(normalized);
+  // Normalize to BCP 47 canonical form: language lowercase, region uppercase.
+  // This ensures "pt-BR" stays "pt-BR" (not "pt-br") to match DB values.
+  const parts = languageTag.trim().split('-');
+  const normalized =
+    parts.length > 1
+      ? `${parts[0].toLowerCase()}-${parts[1].toUpperCase()}`
+      : parts[0].toLowerCase();
+  const baseLanguage = parts[0].toLowerCase() || 'en';
   return {
     exact: normalized,
     base: baseLanguage,
