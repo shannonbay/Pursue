@@ -20,6 +20,7 @@ import app.getpursue.R
 import app.getpursue.data.analytics.AnalyticsEvents
 import app.getpursue.data.analytics.AnalyticsLogger
 import app.getpursue.data.network.ApiClient
+import app.getpursue.data.notifications.LoggedMembersTracker
 import app.getpursue.models.GroupMember
 import app.getpursue.utils.GrayscaleTransformation
 import app.getpursue.utils.ImageUtils
@@ -63,6 +64,9 @@ class DailyPulseWidget @JvmOverloads constructor(
     private val scrollView: HorizontalScrollView
     private val avatarContainer: LinearLayout
     private val fadeRight: View
+
+    /** Fired once per batch when [LoggedMembersTracker] detects newly-logged members. */
+    var onNewMembersLogged: (() -> Unit)? = null
 
     private var lastMembers: List<GroupMember> = emptyList()
     private var fragmentManager: FragmentManager? = null
@@ -139,6 +143,12 @@ class DailyPulseWidget @JvmOverloads constructor(
         }
 
         visibility = View.VISIBLE
+
+        // Trigger confetti if any member newly appears as logged (DRY across both widgets)
+        if (LoggedMembersTracker.checkAndMark(members).isNotEmpty()) {
+            onNewMembersLogged?.invoke()
+        }
+
         val sorted = sortMembers(members, currentUserId)
         val tier = when {
             members.size <= 5  -> Tier.SMALL
