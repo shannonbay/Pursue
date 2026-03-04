@@ -73,6 +73,7 @@ import com.bumptech.glide.Glide
 import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import app.getpursue.R
+import android.widget.ImageButton
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.tabs.TabLayout
@@ -162,8 +163,8 @@ class GroupDetailFragment : Fragment() {
     private lateinit var challengeHeaderDayProgress: TextView
     private lateinit var challengeHeaderProgressBar: android.widget.ProgressBar
     private lateinit var challengeShareButton: MaterialButton
-    private lateinit var challengeGoLiveButton: MaterialButton
-    private lateinit var challengeScheduleButton: MaterialButton
+    private lateinit var challengeGoLiveButton: ImageButton
+    private lateinit var challengeScheduleButton: ImageButton
     private lateinit var heatSection: View
     private lateinit var heatIconDetail: ImageView
     private lateinit var heatTierLabel: TextView
@@ -999,21 +1000,15 @@ class GroupDetailFragment : Fragment() {
 
     private fun createSessionAndNavigate() {
         val gid = groupId ?: return
-        lifecycleScope.launch {
-            val ctx = context ?: return@launch
-            val token = withContext(Dispatchers.IO) {
-                SecureTokenManager.getInstance(ctx).getAccessToken()
-            } ?: return@launch
-
-            try {
-                val response = withContext(Dispatchers.IO) {
-                    ApiClient.createFocusSession(token, gid, 45)
-                }
-                navigateToSession(response.session.id, isHost = true)
-            } catch (e: ApiException) {
-                Toast.makeText(ctx, e.message, Toast.LENGTH_SHORT).show()
-            }
+        val gname = groupDetail?.name ?: arguments?.getString(ARG_GROUP_NAME) ?: ""
+        val intent = Intent(requireContext(), FocusSessionActivity::class.java).apply {
+            // EXTRA_SESSION_ID intentionally omitted — session is created when host presses "Go Live"
+            putExtra(FocusSessionActivity.EXTRA_GROUP_ID, gid)
+            putExtra(FocusSessionActivity.EXTRA_GROUP_NAME, gname)
+            putExtra(FocusSessionActivity.EXTRA_IS_HOST, true)
+            putExtra(FocusSessionActivity.EXTRA_DURATION, 45)
         }
+        startActivity(intent)
     }
 
     private fun navigateToSession(sessionId: String, isHost: Boolean) {

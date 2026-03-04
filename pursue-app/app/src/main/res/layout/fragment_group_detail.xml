@@ -284,30 +284,30 @@
                     android:visibility="gone"
                     app:icon="@android:drawable/ic_menu_share" />
 
-                <com.google.android.material.button.MaterialButton
+                <ImageButton
                     android:id="@+id/challenge_go_live_button"
                     android:layout_width="0dp"
-                    android:layout_height="wrap_content"
+                    android:layout_height="48dp"
                     android:layout_weight="1"
-                    android:text=""
+                    android:src="@drawable/ic_videocam"
                     android:contentDescription="@string/focus_session_go_live"
-                    app:icon="@drawable/ic_videocam"
-                    app:iconGravity="textStart"
-                    app:iconPadding="0dp" />
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    app:tint="@color/primary"
+                    android:padding="0dp"
+                    android:scaleType="fitCenter" />
 
-                <com.google.android.material.button.MaterialButton
+                <ImageButton
                     android:id="@+id/challenge_schedule_button"
-                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
                     android:layout_width="0dp"
-                    android:layout_height="wrap_content"
+                    android:layout_height="48dp"
                     android:layout_weight="1"
                     android:layout_marginStart="8dp"
-                    android:text=""
+                    android:src="@drawable/ic_calendar"
                     android:contentDescription="@string/focus_session_schedule"
-                    app:strokeColor="@color/primary"
-                    app:icon="@drawable/ic_calendar"
-                    app:iconGravity="textStart"
-                    app:iconPadding="0dp" />
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    app:tint="@color/primary"
+                    android:padding="0dp"
+                    android:scaleType="fitCenter" />
 
             </LinearLayout>
 
